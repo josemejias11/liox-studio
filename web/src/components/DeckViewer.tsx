@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { SlideFrame } from "./SlideFrame";
 import { Hotspot } from "./Hotspot";
@@ -41,6 +41,32 @@ export default function DeckViewer({
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [activeLayer, setActiveLayer] = useState<{ topic: string; title: string } | null>(null);
   const [visited, setVisited] = useState<Record<string, Set<string>>>({});
+  const [sessionId, setSessionId] = useState("");
+
+  // Generate or restore anonymous session ID
+  useEffect(() => {
+    let sid = localStorage.getItem("decktutor_session");
+    if (!sid) {
+      sid = crypto.randomUUID();
+      localStorage.setItem("decktutor_session", sid);
+    }
+    setSessionId(sid);
+  }, []);
+
+  // Hydrate hotspot progress from DB once sessionId is ready
+  useEffect(() => {
+    if (!sessionId) return;
+    fetch(`/api/progress?sessionId=${sessionId}`)
+      .then((r) => r.json())
+      .then((data: { slides: Record<string, { visitedHotspots: string[] }> }) => {
+        const restored: Record<string, Set<string>> = {};
+        for (const [sid, prog] of Object.entries(data.slides ?? {})) {
+          restored[sid] = new Set(prog.visitedHotspots);
+        }
+        setVisited(restored);
+      })
+      .catch(() => {});
+  }, [sessionId]);
 
   const currentSlide = slides[currentSlideIndex];
   const slideKey = currentSlide?._key ?? "";
@@ -50,10 +76,24 @@ export default function DeckViewer({
   const imageUrl = currentSlide?.media?.asset?.url;
 
   function markVisited(label: string) {
-    setVisited((prev) => ({
-      ...prev,
-      [slideKey]: new Set([...(prev[slideKey] ?? []), label]),
-    }));
+    setVisited((prev) => {
+      const next = new Set([...(prev[slideKey] ?? []), label]);
+      const allVisited = hotspots.length > 0 && next.size >= hotspots.length;
+      if (sessionId) {
+        fetch("/api/progress", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "slide",
+            sessionId,
+            slideId: slideKey,
+            visitedHotspots: Array.from(next),
+            completed: allVisited,
+          }),
+        }).catch(() => {});
+      }
+      return { ...prev, [slideKey]: next };
+    });
   }
 
   // ── Cover ──────────────────────────────────────────────────────────────────
