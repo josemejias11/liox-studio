@@ -1,9 +1,9 @@
 import { z } from "zod";
 
-export const SlideProgressSchema = z.object({
-  type: z.literal("slide"),
+export const LessonProgressSchema = z.object({
+  type: z.literal("lesson"),
   sessionId: z.string().min(1),
-  slideId: z.string().min(1),
+  lessonId: z.string().min(1),
   visitedHotspots: z.array(z.string()).optional(),
   completed: z.boolean().optional(),
 });
@@ -23,8 +23,18 @@ export const QuizProgressSchema = z.object({
   ).optional(),
 });
 
+export const LayerProgressSchema = z.object({
+  type: z.literal("layer"),
+  sessionId: z.string().min(1),
+  lessonId: z.string().min(1),
+  layerId: z.string().min(1),
+  visitedHotspots: z.array(z.string()).optional(),
+  completed: z.boolean().optional(),
+});
+
 export const ProgressRequestSchema = z.discriminatedUnion("type", [
-  SlideProgressSchema,
+  LessonProgressSchema,
+  LayerProgressSchema,
   QuizProgressSchema,
 ]);
 

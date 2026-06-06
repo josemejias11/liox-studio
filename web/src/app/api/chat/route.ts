@@ -11,7 +11,7 @@ interface ChatRequestBody {
   query?: string;
   messages?: ChatMessage[];
   context_hint?: boolean;
-  slide_content?: string;
+  lesson_content?: string;
 }
 
 const ASSET_SCOPE =
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
     query,
     messages: msgHistory,
     context_hint,
-    slide_content,
+    lesson_content,
   } = (await req.json()) as ChatRequestBody;
 
   const headers = {
@@ -102,13 +102,13 @@ export async function POST(req: NextRequest) {
   const { default: Anthropic } = await import("@anthropic-ai/sdk");
   const client = new Anthropic({ apiKey: API_KEY });
 
-  // Build system prompt — include slide body content when available
+  // Build system prompt — include lesson body content when available
   let systemPrompt = context_hint
     ? ASSET_SCOPE
     : "You are a helpful AI tutor. Answer based on the course content provided.";
-  if (slide_content) {
+  if (lesson_content) {
     systemPrompt +=
-      `\n\nOfficial content for this feature (use as your primary reference):\n"""\n${slide_content}\n"""`;
+      `\n\nOfficial content for this feature (use as your primary reference):\n"""\n${lesson_content}\n"""`;
   }
 
   // Support multi-turn: use full messages array when provided, else wrap single query

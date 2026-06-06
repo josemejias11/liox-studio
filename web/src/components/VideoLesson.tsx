@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { ChevronRight, PlayCircle, AlertCircle } from "lucide-react";
 
-interface VideoSlideProps {
+interface VideoLessonProps {
   headline: string;
   videoUrl?: string;
   videoFileUrl?: string;
@@ -36,7 +36,7 @@ function getEmbedUrl(url: string): string | null {
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export function VideoSlide({ headline, videoUrl, videoFileUrl, onNext }: VideoSlideProps) {
+export function VideoLesson({ headline, videoUrl, videoFileUrl, onNext }: VideoLessonProps) {
   const [hasEnded, setHasEnded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -47,7 +47,7 @@ export function VideoSlide({ headline, videoUrl, videoFileUrl, onNext }: VideoSl
     return (
       <div className="absolute inset-0 bg-moto-black flex flex-col items-center justify-center gap-3">
         <AlertCircle className="h-8 w-8 text-moto-slate" />
-        <p className="text-moto-slate text-[13px]">No video source configured for this slide.</p>
+        <p className="text-moto-slate text-[13px]">No video source configured for this lesson.</p>
         <button
           onClick={onNext}
           className="mt-2 flex items-center gap-1.5 text-[12px] font-semibold text-moto-frost/50

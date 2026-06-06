@@ -1,0 +1,29 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - img [ref=e5]
+        - generic [ref=e8]: DeckTutor AI
+      - generic [ref=e9]:
+        - link "Analytics" [ref=e10] [cursor=pointer]:
+          - /url: /analytics
+          - img [ref=e11]
+          - text: Analytics
+        - img "@user" [ref=e13]
+    - main [ref=e14]:
+      - generic [ref=e15]:
+        - heading "Explore Courses" [level=1] [ref=e16]
+        - paragraph [ref=e17]: Select a module to begin your learning journey.
+      - 'link "Start course: Moto QIRA" [ref=e19] [cursor=pointer]':
+        - /url: /module/moto-qira
+        - generic [ref=e20]:
+          - img [ref=e24]
+          - generic [ref=e27]:
+            - heading "Moto QIRA" [level=2] [ref=e28]
+            - paragraph [ref=e29]: Test New
+          - generic [ref=e31]:
+            - img [ref=e32]
+            - text: 1 Chapter
+  - button "Open Next.js Dev Tools" [ref=e39] [cursor=pointer]:
+    - img [ref=e40]
+  - alert [ref=e43]

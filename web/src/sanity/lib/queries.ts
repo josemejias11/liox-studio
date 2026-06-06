@@ -9,11 +9,11 @@ export const MODULES_QUERY = groq`
     description,
     thumbnail { asset->{ url } },
     learningObjectives,
-    "lessonCount": count(lessons),
+    "chapterCount": count(chapters),
   }
 `;
 
-// Single module with all lessons and slides fully resolved
+// Single module with all chapters and lessons fully resolved
 export const MODULE_BY_SLUG_QUERY = groq`
   *[_type == "module" && slug.current == $slug && published == true][0] {
     _id,
@@ -26,16 +26,16 @@ export const MODULE_BY_SLUG_QUERY = groq`
     coverButtonText,
     coverButtonColor,
     learningObjectives,
-    "lessons": lessons[]-> {
+    "chapters": chapters[]-> {
       _id,
       title,
       slug,
       estimatedDuration,
-      slides[] {
+      lessons[] {
         _key,
         headline,
         body,
-        slideType,
+        lessonType,
         speakerNotes,
         media { asset->{ url } },
         hotspots[] {
@@ -51,6 +51,25 @@ export const MODULE_BY_SLUG_QUERY = groq`
         videoFile { asset->{ url } },
         stageBackground { asset->{ url } },
         completionTransition,
+        layers[] {
+          _key,
+          headline,
+          body,
+          layerType,
+          speakerNotes,
+          media { asset->{ url } },
+          hotspots[] {
+            _key,
+            label,
+            topic,
+            body,
+            photos[] { asset->{ url } },
+            x,
+            y,
+          },
+          videoUrl,
+          videoFile { asset->{ url } },
+        },
       },
     },
   }
@@ -65,16 +84,16 @@ export const FIRST_MODULE_QUERY = groq`
     description,
     thumbnail,
     learningObjectives,
-    "lessons": lessons[]-> {
+    "chapters": chapters[]-> {
       _id,
       title,
       slug,
       estimatedDuration,
-      slides[] {
+      lessons[] {
         _key,
         headline,
         body,
-        slideType,
+        lessonType,
         speakerNotes,
         media { asset->{ url } },
         hotspots[] {
@@ -90,6 +109,25 @@ export const FIRST_MODULE_QUERY = groq`
         videoFile { asset->{ url } },
         stageBackground { asset->{ url } },
         completionTransition,
+        layers[] {
+          _key,
+          headline,
+          body,
+          layerType,
+          speakerNotes,
+          media { asset->{ url } },
+          hotspots[] {
+            _key,
+            label,
+            topic,
+            body,
+            photos[] { asset->{ url } },
+            x,
+            y,
+          },
+          videoUrl,
+          videoFile { asset->{ url } },
+        },
       },
     },
   }

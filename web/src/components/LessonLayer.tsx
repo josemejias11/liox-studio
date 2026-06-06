@@ -7,7 +7,7 @@ import { useFocusTrap } from "@/lib/useFocusTrap";
 type Message = { role: "assistant" | "user"; text: string; streaming?: boolean };
 type Turn    = { role: "user" | "assistant"; content: string };
 
-interface SlideLayerProps {
+interface LessonLayerProps {
   open: boolean;
   onClose: () => void;
   title: string;
@@ -57,9 +57,9 @@ function renderText(text: string) {
   );
 }
 
-const TITLE_ID = "slide-layer-title";
+const TITLE_ID = "lesson-layer-title";
 
-export function SlideLayer({
+export function LessonLayer({
   open,
   onClose,
   title,
@@ -71,7 +71,7 @@ export function SlideLayer({
   headerClassName  = "",
   contentClassName = "",
   animation        = "up",
-}: SlideLayerProps) {
+}: LessonLayerProps) {
   const [messages, setMessages]               = useState<Message[]>([]);
   const [input, setInput]                     = useState("");
   const [streaming, setStreaming]             = useState(false);
@@ -149,7 +149,7 @@ export function SlideLayer({
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: conversationRef.current, context_hint: topic, slide_content: body }),
+        body: JSON.stringify({ messages: conversationRef.current, context_hint: topic, lesson_content: body }),
         signal: abortRef.current.signal,
       });
 

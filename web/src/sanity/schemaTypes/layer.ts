@@ -1,9 +1,9 @@
 import { defineType, defineField } from "sanity";
 import { HotspotMapInput } from "../components/HotspotMapInput";
 
-export const slideType = defineType({
-  name: "slide",
-  title: "Slide",
+export const layerType = defineType({
+  name: "layer",
+  title: "Layer",
   type: "object",
   fields: [
     defineField({
@@ -31,14 +31,13 @@ export const slideType = defineType({
       rows: 3,
     }),
     defineField({
-      name: "slideType",
-      title: "Slide Type",
+      name: "layerType",
+      title: "Layer Type",
       type: "string",
       options: {
         list: [
           { title: "Content", value: "content" },
           { title: "Interaction (Hotspots)", value: "interaction" },
-          { title: "Product Stage", value: "stage" },
           { title: "Video", value: "video" },
           { title: "Quiz", value: "quiz" },
         ],
@@ -48,8 +47,8 @@ export const slideType = defineType({
     }),
     defineField({
       name: "theme",
-      title: "Slide Color Theme",
-      description: "Controls the slide background and text color pairing. Motorola 2026 approved pairings only.",
+      title: "Layer Color Theme",
+      description: "Controls the layer background and text color pairing.",
       type: "string",
       options: {
         list: [
@@ -62,14 +61,14 @@ export const slideType = defineType({
         layout: "radio",
       },
       initialValue: "frost-black",
-      hidden: ({ parent }) => parent?.slideType === "video",
+      hidden: ({ parent }) => parent?.layerType === "video",
     }),
     defineField({
       name: "videoUrl",
       title: "Video URL",
       description: "YouTube, Vimeo, or direct .mp4 URL.",
       type: "url",
-      hidden: ({ parent }) => parent?.slideType !== "video",
+      hidden: ({ parent }) => parent?.layerType !== "video",
     }),
     defineField({
       name: "videoFile",
@@ -77,38 +76,14 @@ export const slideType = defineType({
       description: "Upload an MP4 to Sanity CDN. Used when Video URL is empty.",
       type: "file",
       options: { accept: "video/*" },
-      hidden: ({ parent }) => parent?.slideType !== "video",
-    }),
-    defineField({
-      name: "stageBackground",
-      title: "Stage Background Image",
-      description: "Optional full-bleed background for Product Stage slides. If omitted, a gradient is used.",
-      type: "image",
-      options: { hotspot: true },
-      hidden: ({ parent }) => parent?.slideType !== "stage",
-    }),
-    defineField({
-      name: "completionTransition",
-      title: "Completion Animation",
-      description: "Animation played after all hotspots are discovered.",
-      type: "string",
-      options: {
-        list: [
-          { title: "Spin (360° product rotate)", value: "spin" },
-          { title: "Rise (content rises in)", value: "rise" },
-          { title: "Fade", value: "fade" },
-        ],
-        layout: "radio",
-      },
-      initialValue: "spin",
-      hidden: ({ parent }) => parent?.slideType !== "stage",
+      hidden: ({ parent }) => parent?.layerType !== "video",
     }),
     defineField({
       name: "hotspots",
       title: "Hotspot Definitions",
       type: "array",
       components: { input: HotspotMapInput },
-      hidden: ({ parent }) => parent?.slideType !== "interaction" && parent?.slideType !== "stage",
+      hidden: ({ parent }) => parent?.layerType !== "interaction",
       of: [
         {
           type: "object",
@@ -141,6 +116,6 @@ export const slideType = defineType({
     }),
   ],
   preview: {
-    select: { title: "headline", subtitle: "slideType", media: "media" },
+    select: { title: "headline", subtitle: "layerType", media: "media" },
   },
 });

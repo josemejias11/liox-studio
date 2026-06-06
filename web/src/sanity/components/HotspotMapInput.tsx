@@ -319,7 +319,7 @@ export function HotspotMapInput(props: ArrayOfObjectsInputProps) {
   const client = useClient({ apiVersion: "2024-01-01" });
   const { projectId = "", dataset = "" } = client.config();
 
-  // Resolve media field from the parent slide object
+  // Resolve media field from the parent lesson object
   const parentPath = (path as Path).slice(0, -1);
   const media = useFormValue([...parentPath, "media"]) as SanityImage | undefined;
   const imageUrl = media?.asset?._ref

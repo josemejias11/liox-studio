@@ -16,7 +16,7 @@ export default defineConfig({
           .title("Content")
           .items([
             S.listItem().title("Modules").schemaType("module").child(S.documentTypeList("module")),
-            S.listItem().title("Lessons").schemaType("lesson").child(S.documentTypeList("lesson")),
+            S.listItem().title("Chapters").schemaType("chapter").child(S.documentTypeList("chapter")),
           ]),
     }),
     visionTool(), // GROQ query explorer at /studio/vision

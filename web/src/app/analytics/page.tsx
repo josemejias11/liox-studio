@@ -187,7 +187,7 @@ export default async function AnalyticsPage() {
                   <table className="w-full text-left" role="table">
                     <thead>
                       <tr className="border-b border-border">
-                        {["Session ID", "Slides", "Features", "Status", "Last Active"].map((h) => (
+                        {["Session ID", "Lessons", "Features", "Status", "Last Active"].map((h) => (
                           <th
                             key={h}
                             scope="col"
@@ -210,7 +210,7 @@ export default async function AnalyticsPage() {
                             </code>
                           </td>
                           <td className="px-6 py-3 text-sm text-muted-foreground tabular-nums">
-                            {s.slideCount}
+                            {s.lessonCount}
                           </td>
                           <td className="px-6 py-3 text-sm text-moto-indigo tabular-nums font-semibold">
                             {s.hotspotsVisited}

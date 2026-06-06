@@ -313,7 +313,7 @@
   animation: stage-product-breathe 4.5s ease-in-out infinite;
 }
 
-/* ── Phase 8 — Quiz slide ───────────────────────────────────────────────── */
+/* ── Phase 8 — Quiz lesson ───────────────────────────────────────────────── */
 @keyframes quiz-enter {
   0%   { opacity: 0; transform: translateX(22px); }
   100% { opacity: 1; transform: none;             }
@@ -339,28 +339,28 @@
 .quiz-option-wrong   { animation: quiz-wrong   0.45s ease-out                           both; }
 .quiz-score-in       { animation: quiz-score-in 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 
-/* ── Phase 10 — Slide transitions ──────────────────────────────────────── */
-@keyframes slide-enter-forward {
+/* ── Phase 10 — Lesson transitions ──────────────────────────────────────── */
+@keyframes lesson-enter-forward {
   0%   { opacity: 0; transform: translateX(28px) scale(0.98); }
   100% { opacity: 1; transform: none; }
 }
-@keyframes slide-exit-forward {
+@keyframes lesson-exit-forward {
   0%   { opacity: 1; transform: none; }
   100% { opacity: 0; transform: translateX(-28px) scale(0.98); }
 }
-@keyframes slide-enter-backward {
+@keyframes lesson-enter-backward {
   0%   { opacity: 0; transform: translateX(-28px) scale(0.98); }
   100% { opacity: 1; transform: none; }
 }
-@keyframes slide-exit-backward {
+@keyframes lesson-exit-backward {
   0%   { opacity: 1; transform: none; }
   100% { opacity: 0; transform: translateX(28px) scale(0.98); }
 }
 
-.slide-enter-forward  { animation: slide-enter-forward  0.32s cubic-bezier(0.34, 1.15, 0.64, 1) both; }
-.slide-exit-forward   { animation: slide-exit-forward   0.2s  ease-in forwards;                        }
-.slide-enter-backward { animation: slide-enter-backward 0.32s cubic-bezier(0.34, 1.15, 0.64, 1) both; }
-.slide-exit-backward  { animation: slide-exit-backward  0.2s  ease-in forwards;                        }
+.lesson-enter-forward  { animation: lesson-enter-forward  0.32s cubic-bezier(0.34, 1.15, 0.64, 1) both; }
+.lesson-exit-forward   { animation: lesson-exit-forward   0.2s  ease-in forwards;                        }
+.lesson-enter-backward { animation: lesson-enter-backward 0.32s cubic-bezier(0.34, 1.15, 0.64, 1) both; }
+.lesson-exit-backward  { animation: lesson-exit-backward  0.2s  ease-in forwards;                        }
 
 /* ── Phase 10 — Course completion ──────────────────────────────────────── */
 @keyframes cc-spin     { to { transform: rotate(360deg);  } }

@@ -73,7 +73,7 @@ async def stream_tutor_response(query: str, context: str, context_hint: Optional
 
     system_prompt = ASSET_SCOPE if context_hint else (
         "You are a helpful and knowledgeable AI tutor. "
-        "Use the provided slide content context to answer the student's question accurately. "
+        "Use the provided lesson content context to answer the student's question accurately. "
         "If the answer is not contained within the context, politely let the student know."
     )
 

@@ -147,7 +147,7 @@ export function DiscoveryPanel({
         body: JSON.stringify({
           messages: conversationRef.current,
           context_hint: topic,
-          slide_content: body,
+          lesson_content: body,
         }),
         signal: abortRef.current.signal,
       });
@@ -238,7 +238,7 @@ export function DiscoveryPanel({
         {liveAnnouncement}
       </div>
 
-      {/* Panel — slides in from the right */}
+      {/* Panel — lessons in from the right */}
       <div
         ref={panelRef}
         role="dialog"

@@ -15,7 +15,7 @@ interface QuizData {
   questions: Question[];
 }
 
-interface QuizSlideProps {
+interface QuizLessonProps {
   context: string;
   numQuestions?: number;
   onNext: () => void;
@@ -32,7 +32,7 @@ const SCORE_TIERS = [
   { min: 0,    icon: RefreshCw, color: "text-moto-slate",     label: "Keep Exploring!",   message: "Revisit the features and give it another go.", emoji: "🔁" },
 ];
 
-export function QuizSlide({ context, numQuestions = 5, onNext, sessionId, moduleId }: QuizSlideProps) {
+export function QuizLesson({ context, numQuestions = 5, onNext, sessionId, moduleId }: QuizLessonProps) {
   const [quiz, setQuiz]       = useState<QuizData | null>(null);
   const [loadErr, setLoadErr] = useState<string | null>(null);
   const [currentQ, setCurrentQ] = useState(0);
@@ -264,7 +264,7 @@ export function QuizSlide({ context, numQuestions = 5, onNext, sessionId, module
           })}
         </div>
 
-        {/* Explanation — slides in after reveal */}
+        {/* Explanation — lessons in after reveal */}
         {revealed && (
           <div className="quiz-enter shrink-0 bg-moto-frost/5 border border-moto-frost/8 rounded-xl px-4 py-3">
             <p className="text-[9.5px] text-moto-frost/25 font-semibold uppercase tracking-widest mb-1">Why</p>

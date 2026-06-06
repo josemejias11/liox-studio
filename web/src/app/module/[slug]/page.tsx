@@ -12,17 +12,17 @@ export default async function ModulePage({ params }: { params: Promise<{ slug: s
     notFound();
   }
 
-  // Flatten slides across all lessons
-  const slides = module.lessons?.flatMap((lesson: any) =>
-    (lesson.slides ?? []).map((slide: any) => ({
-      ...slide,
-      lessonTitle: lesson.title,
+  // Flatten lessons across all chapters
+  const lessons = module.chapters?.flatMap((chapter: any) =>
+    (chapter.lessons ?? []).map((lesson: any) => ({
+      ...lesson,
+      chapterTitle: chapter.title,
     }))
   ) ?? [];
 
   return (
     <div className="w-full h-dvh overflow-hidden bg-moto-black">
-      <DeckViewer module={module} slides={slides} />
+      <DeckViewer module={module} lessons={lessons} />
     </div>
   );
 }

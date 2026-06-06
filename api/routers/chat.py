@@ -19,8 +19,8 @@ class ChatRequest(BaseModel):
 @router.post("/", dependencies=[Depends(verify_api_key)])
 async def chat_with_tutor(request: ChatRequest):
     deck_id_str = str(request.deck_id) if request.deck_id else None
-    relevant_slides = query_db(query=request.query, deck_id=deck_id_str, n_results=3)
-    context = "\n---\n".join(relevant_slides) if relevant_slides else "No relevant context found in the uploaded slides."
+    relevant_lessons = query_db(query=request.query, deck_id=deck_id_str, n_results=3)
+    context = "\n---\n".join(relevant_lessons) if relevant_lessons else "No relevant context found in the uploaded lessons."
 
     return StreamingResponse(
         stream_tutor_response(request.query, context, context_hint=request.context_hint),

@@ -320,7 +320,7 @@ export function ProductStage({
         </div>
       )}
 
-      {/* ── Slide label — bottom left ── */}
+      {/* ── Lesson label — bottom left ── */}
       <div
         className="absolute bottom-10 left-5 z-20 pointer-events-none stage-enter-bottom"
         style={{ animationDelay: "380ms" }}

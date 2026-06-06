@@ -18,12 +18,12 @@ class QuizRequest(BaseModel):
 @router.post("/", dependencies=[Depends(verify_api_key)])
 async def create_quiz(request: QuizRequest):
     deck_id_str = str(request.deck_id) if request.deck_id else None
-    relevant_slides = query_db(query=request.topic, deck_id=deck_id_str, n_results=5)
+    relevant_lessons = query_db(query=request.topic, deck_id=deck_id_str, n_results=5)
 
-    if not relevant_slides:
+    if not relevant_lessons:
         raise HTTPException(status_code=404, detail="No relevant context found to generate a quiz.")
 
-    context = "\n---\n".join(relevant_slides)
+    context = "\n---\n".join(relevant_lessons)
     quiz_data = await generate_quiz(context, request.num_questions)
 
     if "error" in quiz_data:

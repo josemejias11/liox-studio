@@ -2,15 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ChevronRight } from "lucide-react";
-import { SlideFrame } from "./SlideFrame";
+import { LessonFrame } from "./LessonFrame";
 import { Hotspot } from "./Hotspot";
-import { SlideLayer } from "./SlideLayer";
+import { LessonLayer } from "./LessonLayer";
 import { ProductStage } from "./ProductStage";
-import { QuizSlide } from "./QuizSlide";
+import { QuizLesson } from "./QuizLesson";
 import { CourseComplete } from "./CourseComplete";
 import { NavMap } from "./NavMap";
-import { VideoSlide } from "./VideoSlide";
-import { useSlideProgress } from "@/hooks/useSlideProgress";
+import { VideoLesson } from "./VideoLesson";
+import { useLessonProgress } from "@/hooks/useLessonProgress";
+import { LayerFrame } from "./LayerFrame";
 
 interface SanityHotspot {
   _key: string;
@@ -22,19 +23,32 @@ interface SanityHotspot {
   y: number;
 }
 
-interface SanitySlide {
+interface SanityLayer {
   _key: string;
   headline: string;
   body?: string;
-  slideType: "content" | "interaction" | "stage" | "video" | "quiz";
+  layerType: "content" | "interaction" | "video" | "quiz";
   media?: { asset?: { url?: string } };
-  stageBackground?: { asset?: { url?: string } };
-  completionTransition?: "spin" | "rise" | "fade";
   hotspots?: SanityHotspot[];
   videoUrl?: string;
   videoFile?: { asset?: { url?: string } };
   speakerNotes?: string;
-  lessonTitle?: string;
+}
+
+interface SanityLesson {
+  _key: string;
+  headline: string;
+  body?: string;
+  lessonType: "content" | "interaction" | "stage" | "video" | "quiz";
+  media?: { asset?: { url?: string } };
+  stageBackground?: { asset?: { url?: string } };
+  completionTransition?: "spin" | "rise" | "fade";
+  hotspots?: SanityHotspot[];
+  layers?: SanityLayer[];
+  videoUrl?: string;
+  videoFile?: { asset?: { url?: string } };
+  speakerNotes?: string;
+  chapterTitle?: string;
   theme?: "frost-black" | "black-frost" | "pearl-black" | "black-pearl" | "indigo-frost";
 }
 
@@ -49,7 +63,7 @@ interface SanityModule {
   learningObjectives?: string[];
 }
 
-const SLIDE_THEMES = {
+const LESSON_THEMES = {
   "frost-black":  { bg: "bg-moto-frost",  headline: "text-moto-black",  body: "text-moto-slate"     },
   "black-frost":  { bg: "bg-moto-black",  headline: "text-moto-frost",  body: "text-moto-slate"     },
   "pearl-black":  { bg: "bg-moto-pearl",  headline: "text-moto-black",  body: "text-moto-sandstone" },
@@ -57,23 +71,24 @@ const SLIDE_THEMES = {
   "indigo-frost": { bg: "bg-moto-indigo", headline: "text-moto-frost",  body: "text-moto-frost"     },
 } as const;
 
-type SlideTheme = keyof typeof SLIDE_THEMES;
+type LessonTheme = keyof typeof LESSON_THEMES;
 
 const TRANSITION_EXIT_MS  = 210;
 const TRANSITION_ENTER_MS = 380;
 
 export default function DeckViewer({
   module,
-  slides,
+  lessons,
 }: {
   module: SanityModule;
-  slides: SanitySlide[];
+  lessons: SanityLesson[];
 }) {
   const [hasStarted, setHasStarted] = useState(false);
-  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [activeLayer, setActiveLayer] = useState<{ topic: string; title: string; body?: string } | null>(null);
+  const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState("");
-  const { visited, markVisited: baseMarkVisited } = useSlideProgress(sessionId);
+  const { visited, markVisited: baseMarkVisited } = useLessonProgress(sessionId);
 
   // Phase 10 — transitions + completion
   const [animClass, setAnimClass] = useState("");
@@ -116,28 +131,34 @@ export default function DeckViewer({
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
-  const currentSlide = slides[currentSlideIndex];
-  const slideKey = currentSlide?._key ?? "";
-  const hotspots = currentSlide?.hotspots ?? [];
-  const visitedOnSlide = visited[slideKey]?.size ?? 0;
-  const nextLocked = hotspots.length > 0 && visitedOnSlide < hotspots.length;
-  const imageUrl = currentSlide?.media?.asset?.url;
+  const currentLesson = lessons[currentLessonIndex];
+  const lessonKey = currentLesson?._key ?? "";
+  const hotspots = currentLesson?.hotspots ?? [];
+  const layers = currentLesson?.layers ?? [];
+  
+  // A lesson is locked until all hotspots AND all layers are visited
+  const visitedOnLesson = visited[lessonKey]?.size ?? 0;
+  const missingHotspots = hotspots.filter(h => !(visited[lessonKey]?.has(h.label)));
+  const missingLayers = layers.filter(l => !(visited[lessonKey]?.has(l._key)));
+  const nextLocked = (hotspots.length > 0 && missingHotspots.length > 0) || (layers.length > 0 && missingLayers.length > 0);
+  
+  const imageUrl = currentLesson?.media?.asset?.url;
 
   // Stats for completion screen
   const totalHotspotsVisited = Object.values(visited).reduce((sum, s) => sum + s.size, 0);
-  const totalHotspots = slides.reduce((sum, s) => sum + (s.hotspots?.length ?? 0), 0);
+  const totalHotspots = lessons.reduce((sum, s) => sum + (s.hotspots?.length ?? 0), 0);
 
   function markVisited(label: string) {
-    baseMarkVisited(slideKey, label, hotspots.length);
+    baseMarkVisited(lessonKey, label, hotspots.length);
   }
 
   // ── Transition helper ──────────────────────────────────────────────────────
   function transitionTo(action: () => void, dir: "forward" | "backward") {
     clearTimers();
-    setAnimClass(`slide-exit-${dir}`);
+    setAnimClass(`lesson-exit-${dir}`);
     const t1 = setTimeout(() => {
       action();
-      setAnimClass(`slide-enter-${dir}`);
+      setAnimClass(`lesson-enter-${dir}`);
       const t2 = setTimeout(() => setAnimClass(""), TRANSITION_ENTER_MS);
       timerRefs.current = [t2];
     }, TRANSITION_EXIT_MS);
@@ -145,47 +166,47 @@ export default function DeckViewer({
   }
 
   function navigate(targetIndex: number) {
-    const dir = targetIndex > currentSlideIndex ? "forward" : "backward";
+    const dir = targetIndex > currentLessonIndex ? "forward" : "backward";
     transitionTo(() => {
-      setCurrentSlideIndex(targetIndex);
+      setCurrentLessonIndex(targetIndex);
       setActiveLayer(null);
     }, dir);
   }
 
   function goNext() {
     if (nextLocked) return;
-    if (currentSlideIndex >= slides.length - 1) {
+    if (currentLessonIndex >= lessons.length - 1) {
       transitionTo(() => setIsComplete(true), "forward");
       return;
     }
-    navigate(currentSlideIndex + 1);
+    navigate(currentLessonIndex + 1);
   }
 
   function goPrev() {
     if (isComplete) {
       transitionTo(() => {
         setIsComplete(false);
-        setCurrentSlideIndex(slides.length - 1);
+        setCurrentLessonIndex(lessons.length - 1);
         setActiveLayer(null);
       }, "backward");
       return;
     }
-    if (currentSlideIndex <= 0) return;
-    navigate(currentSlideIndex - 1);
+    if (currentLessonIndex <= 0) return;
+    navigate(currentLessonIndex - 1);
   }
 
-  // ── Nav map overlay (rendered inside each post-cover SlideFrame) ──────────
+  // ── Nav map overlay (rendered inside each post-cover LessonFrame) ──────────
   const navMapEl = showNavMap ? (
     <NavMap
-      slides={slides}
-      currentIndex={isComplete ? slides.length : currentSlideIndex}
+      lessons={lessons}
+      currentIndex={isComplete ? lessons.length : currentLessonIndex}
       visited={visited}
       onNavigate={(i) => {
         setShowNavMap(false);
         if (isComplete) {
           transitionTo(() => {
             setIsComplete(false);
-            setCurrentSlideIndex(i);
+            setCurrentLessonIndex(i);
             setActiveLayer(null);
           }, "backward");
         } else {
@@ -198,7 +219,7 @@ export default function DeckViewer({
 
   // ── Cover ──────────────────────────────────────────────────────────────────
   if (!hasStarted) {
-    const finalImageUrl = module.coverImage?.asset?.url || module.thumbnail?.asset?.url || slides[0]?.media?.asset?.url;
+    const finalImageUrl = module.coverImage?.asset?.url || module.thumbnail?.asset?.url || lessons[0]?.media?.asset?.url;
     const finalHeadline = module.coverHeadline || module.title;
     const buttonText = module.coverButtonText || "start course";
     
@@ -209,7 +230,7 @@ export default function DeckViewer({
     else if (module.coverButtonColor === "moto-pearl") btnClass = "bg-moto-pearl text-moto-black hover:bg-moto-pearl/90 border-transparent";
 
     return (
-      <SlideFrame moduleTitle={module.title}>
+      <LessonFrame moduleTitle={module.title}>
         {finalImageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={finalImageUrl} alt="Course cover" className="absolute inset-0 w-full h-full object-cover" />
@@ -269,77 +290,77 @@ export default function DeckViewer({
         >
           {buttonText} <ChevronRight className="h-5 w-5" />
         </button>
-      </SlideFrame>
+      </LessonFrame>
     );
   }
 
   // ── Course completion ──────────────────────────────────────────────────────
   if (isComplete) {
     return (
-      <SlideFrame onToggleNavMap={toggleNavMap} onToggleNotes={toggleNotes} notesOpen={showNotes} moduleTitle={module.title}>
+      <LessonFrame onToggleNavMap={toggleNavMap} onToggleNotes={toggleNotes} notesOpen={showNotes} moduleTitle={module.title}>
         <div className={`absolute inset-0 ${animClass}`}>
           <CourseComplete
             moduleTitle={module.title}
-            totalSlides={slides.length}
+            totalLessons={lessons.length}
             totalHotspotsVisited={totalHotspotsVisited}
             totalHotspots={totalHotspots}
             onRestart={() => {
               transitionTo(() => {
                 setIsComplete(false);
-                setCurrentSlideIndex(0);
+                setCurrentLessonIndex(0);
                 setActiveLayer(null);
               }, "forward");
             }}
           />
         </div>
         {navMapEl}
-      </SlideFrame>
+      </LessonFrame>
     );
   }
 
-  // ── Product Stage slide ────────────────────────────────────────────────────
-  if (currentSlide?.slideType === "stage") {
+  // ── Product Stage lesson ────────────────────────────────────────────────────
+  if (currentLesson?.lessonType === "stage") {
     return (
-      <SlideFrame onToggleNavMap={toggleNavMap} onToggleNotes={toggleNotes} notesOpen={showNotes} speakerNotes={currentSlide.speakerNotes} moduleTitle={module.title}>
+      <LessonFrame onToggleNavMap={toggleNavMap} onToggleNotes={toggleNotes} notesOpen={showNotes} speakerNotes={currentLesson.speakerNotes} moduleTitle={module.title}>
         <div className={`absolute inset-0 ${animClass}`}>
           <ProductStage
-            headline={currentSlide.headline}
-            productImage={currentSlide.media?.asset?.url}
-            stageBackground={currentSlide.stageBackground?.asset?.url}
-            completionTransition={currentSlide.completionTransition}
+            headline={currentLesson.headline}
+            productImage={currentLesson.media?.asset?.url}
+            stageBackground={currentLesson.stageBackground?.asset?.url}
+            completionTransition={currentLesson.completionTransition}
             hotspots={hotspots}
-            visited={visited[slideKey] ?? new Set()}
+            visited={visited[lessonKey] ?? new Set()}
             onVisit={markVisited}
             onNext={goNext}
           />
         </div>
         {navMapEl}
-      </SlideFrame>
+      </LessonFrame>
     );
   }
 
-  // ── Video slide ────────────────────────────────────────────────────────────
-  if (currentSlide?.slideType === "video") {
+  // ── Video lesson ────────────────────────────────────────────────────────────
+  if (currentLesson?.lessonType === "video") {
     return (
-      <SlideFrame onToggleNavMap={toggleNavMap} onToggleNotes={toggleNotes} notesOpen={showNotes} speakerNotes={currentSlide.speakerNotes} moduleTitle={module.title}>
+      <LessonFrame onToggleNavMap={toggleNavMap} onToggleNotes={toggleNotes} notesOpen={showNotes} speakerNotes={currentLesson.speakerNotes} moduleTitle={module.title}>
         <div className={`absolute inset-0 ${animClass}`}>
-          <VideoSlide
-            headline={currentSlide.headline}
-            videoUrl={currentSlide.videoUrl}
-            videoFileUrl={currentSlide.videoFile?.asset?.url}
+          <VideoLesson
+            headline={currentLesson.headline}
+            videoUrl={currentLesson.videoUrl}
+            videoFileUrl={currentLesson.videoFile?.asset?.url}
             onNext={goNext}
           />
         </div>
         {navMapEl}
-      </SlideFrame>
+      </LessonFrame>
     );
   }
 
-  // ── Quiz slide ─────────────────────────────────────────────────────────────
-  if (currentSlide?.slideType === "quiz") {
+  // ── Quiz lesson ─────────────────────────────────────────────────────────────
+  if (currentLesson?.lessonType === "quiz") {
     const quizContext = [
       `Product: ${module.title}`,
-      `Features: ${slides
+      `Features: ${lessons
         .flatMap((s) => s.hotspots ?? [])
         .map((h) => h.topic || h.label)
         .filter(Boolean)
@@ -350,50 +371,89 @@ export default function DeckViewer({
     ].join("\n");
 
     return (
-      <SlideFrame onToggleNavMap={toggleNavMap} onToggleNotes={toggleNotes} notesOpen={showNotes} speakerNotes={currentSlide.speakerNotes} moduleTitle={module.title}>
+      <LessonFrame onToggleNavMap={toggleNavMap} onToggleNotes={toggleNotes} notesOpen={showNotes} speakerNotes={currentLesson.speakerNotes} moduleTitle={module.title}>
         <div className={`absolute inset-0 ${animClass}`}>
-          <QuizSlide context={quizContext} onNext={goNext} sessionId={sessionId} moduleId={module._id} />
+          <QuizLesson context={quizContext} onNext={goNext} sessionId={sessionId} moduleId={module._id} />
         </div>
         {navMapEl}
-      </SlideFrame>
+      </LessonFrame>
     );
   }
 
-  // ── Regular slides ─────────────────────────────────────────────────────────
-  const rawTheme = currentSlide?.theme;
-  const slideTheme: SlideTheme = rawTheme && rawTheme in SLIDE_THEMES ? rawTheme as SlideTheme : "frost-black";
-  const tc = SLIDE_THEMES[slideTheme];
+  // ── Regular lessons ─────────────────────────────────────────────────────────
+  const rawTheme = currentLesson?.theme;
+  const lessonTheme: LessonTheme = rawTheme && rawTheme in LESSON_THEMES ? rawTheme as LessonTheme : "frost-black";
+  const tc = LESSON_THEMES[lessonTheme];
 
   return (
-    <SlideFrame
-      currentSlide={currentSlideIndex + 1}
-      totalSlides={slides.length}
+    <LessonFrame
+      currentLesson={currentLessonIndex + 1}
+      totalLessons={lessons.length}
       onPrev={goPrev}
       onNext={goNext}
       nextDisabled={nextLocked}
       onToggleNavMap={toggleNavMap}
       onToggleNotes={toggleNotes}
       notesOpen={showNotes}
-      speakerNotes={currentSlide?.speakerNotes}
-      theme={slideTheme}
+      speakerNotes={currentLesson?.speakerNotes}
+      theme={lessonTheme}
       moduleTitle={module.title}
       completionHint={
         nextLocked
-          ? `Tap all ${hotspots.length} features to continue (${visitedOnSlide} / ${hotspots.length})`
+          ? `Tap all ${hotspots.length} features to continue (${visitedOnLesson} / ${hotspots.length})`
           : undefined
       }
     >
       <div className={`absolute inset-0 ${animClass}`}>
-        {/* Slide content — image from Sanity CDN or text fallback */}
+        {/* Lesson content — image from Sanity CDN or text fallback */}
         {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt={currentSlide.headline} className="absolute inset-0 w-full h-full object-cover" />
+          <img src={imageUrl} alt={currentLesson.headline} className="absolute inset-0 w-full h-full object-cover" />
         ) : (
           <div className={`absolute inset-0 ${tc.bg} flex flex-col items-start justify-center p-[6%] overflow-auto gap-4`}>
-            <h2 className={`${tc.headline} text-2xl font-semibold leading-tight`}>{currentSlide?.headline}</h2>
-            {currentSlide?.body && (
-              <p className={`${tc.body} text-base font-light leading-relaxed whitespace-pre-wrap`}>{currentSlide.body}</p>
+            <h2 className={`${tc.headline} text-2xl font-semibold leading-tight`}>{currentLesson?.headline}</h2>
+            {currentLesson?.body && (
+              <p className={`${tc.body} text-base font-light leading-relaxed whitespace-pre-wrap`}>{currentLesson.body}</p>
             )}
+          </div>
+        )}
+        
+        {/* Deep Dive Layers overlaid at the bottom */}
+        {layers.length > 0 && (
+          <div className={`absolute ${imageUrl ? 'bottom-[12%] left-[6%] right-[6%] max-w-xl mx-auto' : 'bottom-12 left-[6%] w-[88%]'} space-y-3 z-10`}>
+            <div className="flex items-center gap-3 mb-2">
+              <div className={`h-px flex-1 ${imageUrl ? 'bg-moto-frost opacity-30' : tc.headline + ' opacity-20'}`} />
+              <span className={`text-[10px] uppercase tracking-widest font-bold ${imageUrl ? 'text-moto-frost drop-shadow-md opacity-80' : tc.headline + ' opacity-60'}`}>Dive Deeper</span>
+              <div className={`h-px flex-1 ${imageUrl ? 'bg-moto-frost opacity-30' : tc.headline + ' opacity-20'}`} />
+            </div>
+            {layers.map(layer => {
+              const isLayerVisited = visited[lessonKey]?.has(layer._key);
+              return (
+                <button
+                  key={layer._key}
+                  onClick={() => {
+                    baseMarkVisited(lessonKey, layer._key, hotspots.length + layers.length);
+                    setActiveLayerId(layer._key);
+                  }}
+                  className={`w-full text-left p-4 rounded-2xl flex items-center justify-between group transition-all shadow-xl backdrop-blur-md
+                    ${imageUrl 
+                      ? (isLayerVisited ? 'bg-moto-black/40 opacity-90 border border-white/10' : 'bg-moto-black/60 hover:bg-moto-black/80 ring-1 ring-moto-indigo/50 hover:ring-moto-indigo')
+                      : (isLayerVisited ? 'bg-moto-black/10 opacity-70' : 'bg-moto-black/5 hover:bg-moto-black/10 ring-1 ring-moto-indigo/30 hover:ring-moto-indigo')
+                    }`}
+                >
+                  <div className="flex flex-col">
+                    <span className={`${imageUrl ? 'text-moto-frost' : tc.headline} font-medium`}>{layer.headline}</span>
+                    <span className={`${imageUrl ? 'text-moto-slate' : tc.body} text-xs mt-1`}>
+                      {layer.layerType === "video" && "Watch Video"}
+                      {layer.layerType === "interaction" && "Interactive Explorer"}
+                      {layer.layerType === "quiz" && "Knowledge Check"}
+                      {layer.layerType === "content" && "Learn More"}
+                    </span>
+                  </div>
+                  <ChevronRight className={`w-5 h-5 ${imageUrl ? 'text-moto-frost opacity-60' : tc.headline + ' opacity-40'} group-hover:opacity-100 group-hover:translate-x-1 transition-all`} />
+                </button>
+              );
+            })}
           </div>
         )}
 
@@ -404,22 +464,73 @@ export default function DeckViewer({
             x={h.x}
             y={h.y}
             label={h.label}
-            visited={visited[slideKey]?.has(h.label) ?? false}
+            visited={visited[lessonKey]?.has(h.label) ?? false}
             onVisit={() => markVisited(h.label)}
             onOpen={() => setActiveLayer({ topic: h.topic, title: h.label, body: h.body })}
           />
         ))}
 
         {/* AI Layer */}
-        <SlideLayer
+        {/* AI Panel */}
+        <LessonLayer
           open={activeLayer !== null}
           onClose={() => setActiveLayer(null)}
           title={activeLayer?.title ?? ""}
           topic={activeLayer?.topic}
           body={activeLayer?.body}
         />
+
+        {/* Layer Sub-content */}
+        {activeLayerId && (() => {
+          const layer = layers.find(l => l._key === activeLayerId);
+          if (!layer) return null;
+          
+          return (
+            <LayerFrame
+              open={true}
+              onClose={() => setActiveLayerId(null)}
+              parentLessonTitle={currentLesson.headline}
+              layerTitle={layer.headline}
+            >
+              {layer.media?.asset?.url && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={layer.media.asset.url} alt={layer.headline} className="w-full rounded-2xl mb-6 object-cover max-h-[40vh]" />
+              )}
+              {layer.body && (
+                <div className="prose prose-invert max-w-none text-moto-frost/80 whitespace-pre-wrap leading-relaxed">
+                  {layer.body}
+                </div>
+              )}
+              
+              {layer.layerType === "video" && (layer.videoUrl || layer.videoFile?.asset?.url) && (
+                <div className="mt-6 aspect-video bg-black rounded-2xl overflow-hidden border border-white/10 relative shadow-2xl">
+                  <video
+                    src={layer.videoFile?.asset?.url || layer.videoUrl}
+                    controls
+                    className="absolute inset-0 w-full h-full object-contain"
+                  />
+                </div>
+              )}
+              
+              {/* If layer has hotspots, render them relatively */}
+              {layer.layerType === "interaction" && layer.hotspots && layer.hotspots.length > 0 && (
+                <div className="mt-8">
+                  <h3 className="text-sm uppercase tracking-widest text-moto-indigo/80 font-bold mb-4">Interactive Features</h3>
+                  <div className="space-y-4">
+                    {layer.hotspots.map((h, i) => (
+                      <div key={i} className="bg-white/5 rounded-2xl p-5 border border-white/10">
+                        <h4 className="font-semibold text-moto-frost text-lg mb-2">{h.label}</h4>
+                        <p className="text-moto-frost/70 text-sm leading-relaxed">{h.body}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </LayerFrame>
+          );
+        })()}
       </div>
       {navMapEl}
-    </SlideFrame>
+    </LessonFrame>
   );
 }

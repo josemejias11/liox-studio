@@ -11,7 +11,7 @@ export interface ModuleSummary {
   slug: { current: string };
   description?: string;
   thumbnail?: { asset?: { url?: string } };
-  lessonCount: number;
+  chapterCount: number;
 }
 
 export default async function Home() {
@@ -96,7 +96,7 @@ export default async function Home() {
                   <CardContent className="p-5 pt-0 mt-auto">
                     <div className="flex items-center text-xs font-medium text-muted-foreground gap-1.5">
                       <BookOpen className="h-3.5 w-3.5" />
-                      {module.lessonCount} {module.lessonCount === 1 ? 'Lesson' : 'Lessons'}
+                      {module.chapterCount} {module.chapterCount === 1 ? 'Chapter' : 'Chapters'}
                     </div>
                   </CardContent>
                 </Card>

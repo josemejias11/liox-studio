@@ -4,7 +4,7 @@ import { ChevronLeft, GraduationCap } from "lucide-react";
 
 interface CourseCompleteProps {
   moduleTitle: string;
-  totalSlides: number;
+  totalLessons: number;
   totalHotspotsVisited: number;
   totalHotspots: number;
   onRestart: () => void;
@@ -12,7 +12,7 @@ interface CourseCompleteProps {
 
 export function CourseComplete({
   moduleTitle,
-  totalSlides,
+  totalLessons,
   totalHotspotsVisited,
   totalHotspots,
   onRestart,
@@ -61,10 +61,10 @@ export function CourseComplete({
           <div className="flex items-stretch bg-moto-frost/[0.04] border border-moto-frost/[0.07] rounded-2xl overflow-hidden">
             <div className="flex-1 flex flex-col items-center justify-center py-3 gap-0.5">
               <span className="text-[28px] font-bold text-moto-frost tabular-nums leading-none">
-                {totalSlides}
+                {totalLessons}
               </span>
               <span className="text-[9px] text-moto-frost/25 font-semibold uppercase tracking-wider">
-                Slides
+                Lessons
               </span>
             </div>
 

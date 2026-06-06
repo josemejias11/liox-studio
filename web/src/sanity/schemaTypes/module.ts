@@ -37,10 +37,10 @@ export const moduleType = defineType({
       of: [{ type: "string" }],
     }),
     defineField({
-      name: "lessons",
-      title: "Lessons",
+      name: "chapters",
+      title: "Chapters",
       type: "array",
-      of: [{ type: "reference", to: [{ type: "lesson" }] }],
+      of: [{ type: "reference", to: [{ type: "chapter" }] }],
       validation: (r) => r.required().min(1),
     }),
     defineField({

@@ -19,12 +19,12 @@ Next.js 16 (web/)              FastAPI (api/)
 /studio           authoring UI      /health  ChromaDB status
 /api/chat         AI tutor (SSE)
 /api/quiz         quiz generation
-/api/progress     slide + quiz progress (SQLite)
+/api/progress     lesson + quiz progress (SQLite)
 ```
 
 **Data flow:**
 1. Content is authored in Sanity Studio → published to the Sanity CDN
-2. `page.tsx` fetches module + slides from Sanity at render time
+2. `page.tsx` fetches module + lessons from Sanity at render time
 3. Learner asks a question → Next.js `/api/chat` → Claude streaming response (SSE)
 4. Quiz request → Next.js `/api/quiz` → Claude returns structured JSON
 5. Hotspot visits and quiz results → `/api/progress` → SQLite via Prisma
@@ -98,19 +98,19 @@ In **sanity.io/manage → your project → API → Tokens** → **Add API token*
 ### Course Player — learner view
 `http://localhost:3000`
 
-Strict 16:9 interactive player with animated slide transitions, hotspot-gated navigation, and an AI chat panel for every feature.
+Strict 16:9 interactive player with animated lesson transitions, hotspot-gated navigation, and an AI chat panel for every feature.
 
 | Component | What it does |
 |-----------|-------------|
-| `SlideFrame` | 16:9 locked frame, nav bar, progress bar, speaker notes panel, course map toggle |
+| `LessonFrame` | 16:9 locked frame, nav bar, progress bar, speaker notes panel, course map toggle |
 | `Hotspot` / `PulseHotspot` | Pulsing dot positioned by %; turns emerald when visited |
-| `SlideLayer` | Bottom-sheet AI chat — auto-fires on open, multi-turn follow-ups |
+| `LessonLayer` | Bottom-sheet AI chat — auto-fires on open, multi-turn follow-ups |
 | `ProductStage` | 3D-style product view with floating hotspots and a completion burst animation |
-| `VideoSlide` | YouTube / Vimeo embed or native `<video>` with continue-gating |
-| `QuizSlide` | Claude-generated multiple-choice quiz with animated score screen |
-| `CourseComplete` | Completion screen with rotating rings and stats (slides, hotspots, %) |
-| `NavMap` | Slide-over course map with type icons and completion dots |
-| `DiscoveryPanel` | Collapsible feature list for stage slides |
+| `VideoLesson` | YouTube / Vimeo embed or native `<video>` with continue-gating |
+| `QuizLesson` | Claude-generated multiple-choice quiz with animated score screen |
+| `CourseComplete` | Completion screen with rotating rings and stats (lessons, hotspots, %) |
+| `NavMap` | Lesson-over course map with type icons and completion dots |
+| `DiscoveryPanel` | Collapsible feature list for stage lessons |
 
 ### Sanity Studio — authoring tool
 `http://localhost:3000/studio`
@@ -118,13 +118,13 @@ Strict 16:9 interactive player with animated slide transitions, hotspot-gated na
 Where instructional designers create and publish course content.
 
 **Content model:**
-- **Module** — top-level course (title, description, thumbnail, objectives, ordered lessons)
-- **Lesson** — ordered collection of slides
-- **Slide** — atomic content unit with:
+- **Module** — top-level course (title, description, thumbnail, objectives, ordered chapters)
+- **Chapter** — ordered collection of lessons
+- **Lesson** — atomic content unit with:
   - `headline`, `body`, `media`, `speakerNotes`
-  - `slideType`: `content` | `interaction` | `stage` | `video` | `quiz`
+  - `lessonType`: `content` | `interaction` | `stage` | `video` | `quiz`
   - `hotspots[]` — label, AI topic query, x/y position (%)
-  - `videoUrl` / `videoFile` — YouTube, Vimeo, or uploaded video (video slides)
+  - `videoUrl` / `videoFile` — YouTube, Vimeo, or uploaded video (video lessons)
 
 ### Instructor Dashboard — analytics
 `http://localhost:3000/analytics`
@@ -133,7 +133,7 @@ Server-rendered dashboard reading directly from SQLite:
 - **Summary cards** — total sessions, features explored, avg quiz score, quiz attempts
 - **Top Features bar chart** — top 8 most-visited hotspots with CSS progress bars
 - **Quiz Breakdown** — large avg% display + Perfect / Great / Good / Below-60% distribution
-- **Recent Sessions table** — last 12 sessions with slide count, hotspot count, status, and relative time
+- **Recent Sessions table** — last 12 sessions with lesson count, hotspot count, status, and relative time
 
 ---
 
@@ -142,20 +142,20 @@ Server-rendered dashboard reading directly from SQLite:
 1. Open `http://localhost:3000/studio`
 2. Go to **Content > Modules** and click **Create new Module** (or click the + icon).
 3. Enter a **Title** (e.g., "Test Module") and click **Generate** for the Slug.
-4. Under the **Lessons** array, click **Add item**.
-5. In the reference search dropdown, click **Create** to create a new nested Lesson.
-6. Enter a **Title** for the new Lesson (e.g., "Lesson 1") and click **Generate** for the Slug.
-7. Under the **Slides** array in the Lesson, click **Add item** to create slides (e.g., add 2 slides).
-8. Fill out the **Headline** and slide content, then close the slide dialog.
-9. Click **Publish** on the Lesson, then click **Publish** on the parent Module.
+4. Under the **Chapters** array, click **Add item**.
+5. In the reference search dropdown, click **Create** to create a new nested Chapter.
+6. Enter a **Title** for the new Chapter (e.g., "Chapter 1") and click **Generate** for the Slug.
+7. Under the **Lessons** array in the Chapter, click **Add item** to create lessons (e.g., add 2 lessons).
+8. Fill out the **Headline** and lesson content, then close the lesson dialog.
+9. Click **Publish** on the Chapter, then click **Publish** on the parent Module.
 10. Refresh `http://localhost:3000` — your course appears immediately.
 
-**Slide types:**
+**Lesson types:**
 
 | Type | Description |
 |------|-------------|
-| `content` | Image or text slide; optional hotspots |
-| `interaction` | Hotspot-gated slide — next locked until all hotspots visited |
+| `content` | Image or text lesson; optional hotspots |
+| `interaction` | Hotspot-gated lesson — next locked until all hotspots visited |
 | `stage` | 3D product view with floating discovery hotspots |
 | `video` | YouTube/Vimeo URL or uploaded video file |
 | `quiz` | Claude generates questions from your course context at runtime |
@@ -170,8 +170,8 @@ Server-rendered dashboard reading directly from SQLite:
 |--------|------|-------------|
 | `POST` | `/api/chat` | Streams AI tutor response (SSE). Body: `{ query, context_hint? }` |
 | `POST` | `/api/quiz` | Generates multiple-choice quiz JSON. Body: `{ context?, num_questions? }` |
-| `GET`  | `/api/progress?sessionId=` | Returns slide progress for a session |
-| `POST` | `/api/progress` | Upserts slide progress or records a quiz attempt |
+| `GET`  | `/api/progress?sessionId=` | Returns lesson progress for a session |
+| `POST` | `/api/progress` | Upserts lesson progress or records a quiz attempt |
 
 ### FastAPI (direct RAG access — `localhost:8000`)
 
@@ -198,7 +198,7 @@ Anonymous sessions are identified by a UUID stored in `localStorage` under the k
 
 | Table | Records |
 |-------|---------|
-| `SlideProgress` | Per-session, per-slide: visited hotspots + completion flag |
+| `LessonProgress` | Per-session, per-lesson: visited hotspots + completion flag |
 | `QuizAttempt` | Per-session, per-module: score, total, timestamp |
 
 ---

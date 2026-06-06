@@ -13,33 +13,48 @@ model Session {
   id          String          @id // Browser-generated UUID
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt // Tracks last activity
-  progress    SlideProgress[]
+  progress    LessonProgress[]
+  layerProg   LayerProgress[]
   quizzes     QuizAttempt[]
   hotspots    HotspotVisit[]
 }
 
-// Tracks per-slide progress for a session
-model SlideProgress {
+// Tracks per-lesson progress for a session
+model LessonProgress {
   sessionId       String
-  slideId         String
+  lessonId        String
   completed       Boolean  @default(false)
   updatedAt       DateTime @updatedAt
 
   session         Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
-  @@id([sessionId, slideId])
+  @@id([sessionId, lessonId])
+}
+
+// Tracks per-layer progress for a session
+model LayerProgress {
+  sessionId       String
+  lessonId        String
+  layerId         String
+  completed       Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
+
+  session         Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@id([sessionId, lessonId, layerId])
 }
 
 // Normalized Hotspot Visits
 model HotspotVisit {
   sessionId String
-  slideId   String
+  lessonId  String
+  layerId   String   @default("") // "" if it belongs directly to the lesson
   label     String
   createdAt DateTime @default(now())
 
   session   Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
-  @@id([sessionId, slideId, label])
+  @@id([sessionId, lessonId, layerId, label])
   @@index([label])
 }
 

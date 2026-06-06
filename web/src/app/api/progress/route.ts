@@ -8,7 +8,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "sessionId required" }, { status: 400 });
   }
 
-  const progressRecords = await prisma.slideProgress.findMany({
+  const progressRecords = await prisma.lessonProgress.findMany({
+    where: { sessionId },
+  });
+
+  const layerProgressRecords = await prisma.layerProgress.findMany({
     where: { sessionId },
   });
 
@@ -16,25 +20,42 @@ export async function GET(req: NextRequest) {
     where: { sessionId },
   });
 
-  const slides: Record<string, { visitedHotspots: string[]; completed: boolean }> = {};
+  const lessons: Record<string, { visitedHotspots: string[]; completed: boolean }> = {};
+  const layers: Record<string, { visitedHotspots: string[]; completed: boolean }> = {};
 
   for (const r of progressRecords) {
-    slides[r.slideId] = {
+    lessons[r.lessonId] = {
+      visitedHotspots: [],
+      completed: r.completed,
+    };
+  }
+
+  for (const r of layerProgressRecords) {
+    layers[r.layerId] = {
       visitedHotspots: [],
       completed: r.completed,
     };
   }
 
   for (const h of hotspotRecords) {
-    if (!slides[h.slideId]) {
-      slides[h.slideId] = { visitedHotspots: [], completed: false };
-    }
-    if (!slides[h.slideId].visitedHotspots.includes(h.label)) {
-      slides[h.slideId].visitedHotspots.push(h.label);
+    if (h.layerId && h.layerId !== "") {
+      if (!layers[h.layerId]) {
+        layers[h.layerId] = { visitedHotspots: [], completed: false };
+      }
+      if (!layers[h.layerId].visitedHotspots.includes(h.label)) {
+        layers[h.layerId].visitedHotspots.push(h.label);
+      }
+    } else {
+      if (!lessons[h.lessonId]) {
+        lessons[h.lessonId] = { visitedHotspots: [], completed: false };
+      }
+      if (!lessons[h.lessonId].visitedHotspots.includes(h.label)) {
+        lessons[h.lessonId].visitedHotspots.push(h.label);
+      }
     }
   }
 
-  return NextResponse.json({ slides });
+  return NextResponse.json({ lessons, layers });
 }
 
 export async function POST(req: NextRequest) {
@@ -54,22 +75,46 @@ export async function POST(req: NextRequest) {
     create: { id: body.sessionId },
   });
 
-  if (body.type === "slide") {
-    const { sessionId, slideId, visitedHotspots, completed } = body;
+  if (body.type === "lesson") {
+    const { sessionId, lessonId, visitedHotspots, completed } = body;
 
-    await prisma.slideProgress.upsert({
-      where: { sessionId_slideId: { sessionId, slideId } },
+    await prisma.lessonProgress.upsert({
+      where: { sessionId_lessonId: { sessionId, lessonId } },
       update: { completed: completed ?? false },
-      create: { sessionId, slideId, completed: completed ?? false },
+      create: { sessionId, lessonId, completed: completed ?? false },
     });
 
     if (visitedHotspots && visitedHotspots.length > 0) {
       await Promise.all(
         visitedHotspots.map((label) =>
           prisma.hotspotVisit.upsert({
-            where: { sessionId_slideId_label: { sessionId, slideId, label } },
+            where: { sessionId_lessonId_layerId_label: { sessionId, lessonId, layerId: "", label } },
             update: {},
-            create: { sessionId, slideId, label },
+            create: { sessionId, lessonId, layerId: "", label },
+          })
+        )
+      );
+    }
+
+    return NextResponse.json({ ok: true });
+  }
+
+  if (body.type === "layer") {
+    const { sessionId, lessonId, layerId, visitedHotspots, completed } = body;
+
+    await prisma.layerProgress.upsert({
+      where: { sessionId_lessonId_layerId: { sessionId, lessonId, layerId } },
+      update: { completed: completed ?? false },
+      create: { sessionId, lessonId, layerId, completed: completed ?? false },
+    });
+
+    if (visitedHotspots && visitedHotspots.length > 0) {
+      await Promise.all(
+        visitedHotspots.map((label) =>
+          prisma.hotspotVisit.upsert({
+            where: { sessionId_lessonId_layerId_label: { sessionId, lessonId, layerId, label } },
+            update: {},
+            create: { sessionId, lessonId, layerId, label },
           })
         )
       );

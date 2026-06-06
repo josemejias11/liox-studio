@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db";
 
 export type SessionData = {
   id: string;
-  slideCount: number;
+  lessonCount: number;
   hotspotsVisited: number;
   hasCompletion: boolean;
   lastActivity: Date;
@@ -44,7 +44,7 @@ export async function getAnalyticsData() {
 
   const recentSessions: SessionData[] = sessions.map((s) => ({
     id: s.id,
-    slideCount: s._count.progress,
+    lessonCount: s._count.progress,
     hotspotsVisited: s._count.hotspots,
     hasCompletion: s.progress.length > 0,
     lastActivity: s.updatedAt,

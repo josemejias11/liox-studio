@@ -4,15 +4,15 @@ import { useEffect, useRef } from "react";
 import { X, FileText, MousePointer2, Layers, PlayCircle, HelpCircle } from "lucide-react";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 
-interface NavMapSlide {
+interface NavMapLesson {
   _key: string;
   headline: string;
-  slideType: string;
+  lessonType: string;
   hotspots?: { _key: string; label: string }[];
 }
 
 interface NavMapProps {
-  slides: NavMapSlide[];
+  lessons: NavMapLesson[];
   currentIndex: number;
   visited: Record<string, Set<string>>;
   onNavigate: (index: number) => void;
@@ -27,16 +27,16 @@ const TYPE_META: Record<string, { icon: React.ElementType; color: string; label:
   quiz:        { icon: HelpCircle,    color: "text-moto-sandstone",  label: "Quiz"        },
 };
 
-function slideCompletion(slide: NavMapSlide, visited: Record<string, Set<string>>) {
-  const hs = slide.hotspots ?? [];
+function lessonCompletion(lesson: NavMapLesson, visited: Record<string, Set<string>>) {
+  const hs = lesson.hotspots ?? [];
   if (hs.length === 0) return "auto";
-  const visitedCount = visited[slide._key]?.size ?? 0;
+  const visitedCount = visited[lesson._key]?.size ?? 0;
   if (visitedCount === 0) return "none";
   if (visitedCount >= hs.length) return "full";
   return "partial";
 }
 
-export function NavMap({ slides, currentIndex, visited, onNavigate, onClose }: NavMapProps) {
+export function NavMap({ lessons, currentIndex, visited, onNavigate, onClose }: NavMapProps) {
   const panelRef  = useRef<HTMLElement>(null);
   const onCloseRef = useRef(onClose);
   useEffect(() => { onCloseRef.current = onClose; });
@@ -52,14 +52,14 @@ export function NavMap({ slides, currentIndex, visited, onNavigate, onClose }: N
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
-  const exploredCount = slides.filter((s) => {
-    const st = slideCompletion(s, visited);
+  const exploredCount = lessons.filter((s) => {
+    const st = lessonCompletion(s, visited);
     return st === "auto" || st === "full";
   }).length;
 
   return (
     <div className="absolute inset-0 z-[60] flex">
-      {/* ── Slide-in panel ── */}
+      {/* ── Lesson-in panel ── */}
       <nav
         ref={panelRef as React.RefObject<HTMLElement>}
         aria-label="Course navigation"
@@ -80,20 +80,20 @@ export function NavMap({ slides, currentIndex, visited, onNavigate, onClose }: N
           </button>
         </div>
 
-        {/* Slide list */}
+        {/* Lesson list */}
         <div
           className="flex-1 overflow-y-auto py-2 px-2 flex flex-col gap-0.5"
           style={{ scrollbarWidth: "none" }}
         >
-          {slides.map((slide, i) => {
-            const meta = TYPE_META[slide.slideType] ?? TYPE_META.content;
+          {lessons.map((lesson, i) => {
+            const meta = TYPE_META[lesson.lessonType] ?? TYPE_META.content;
             const Icon = meta.icon;
             const isCurrent = i === currentIndex;
-            const completion = slideCompletion(slide, visited);
+            const completion = lessonCompletion(lesson, visited);
 
             return (
               <button
-                key={slide._key}
+                key={lesson._key}
                 onClick={() => onNavigate(i)}
                 className={`
                   w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg
@@ -103,7 +103,7 @@ export function NavMap({ slides, currentIndex, visited, onNavigate, onClose }: N
                     : "hover:bg-moto-frost/[0.045]"}
                 `}
               >
-                {/* Slide number */}
+                {/* Lesson number */}
                 <span className={`shrink-0 text-xs font-bold tabular-nums w-4 text-right
                   ${isCurrent ? "text-moto-indigo" : "text-moto-frost/25"}`}>
                   {i + 1}
@@ -115,7 +115,7 @@ export function NavMap({ slides, currentIndex, visited, onNavigate, onClose }: N
                 {/* Headline */}
                 <span className={`flex-1 text-sm font-medium leading-tight truncate
                   ${isCurrent ? "text-moto-frost" : "text-moto-frost/50"}`}>
-                  {slide.headline}
+                  {lesson.headline}
                 </span>
 
                 {/* Completion dot */}
@@ -134,7 +134,7 @@ export function NavMap({ slides, currentIndex, visited, onNavigate, onClose }: N
         <div className="shrink-0 border-t border-moto-frost/[0.07] px-4 py-2.5">
           <p className="text-xs text-moto-frost/30">
             <span className="text-moto-frost/55 font-semibold">{exploredCount}</span>
-            {" "}of {slides.length} slides explored
+            {" "}of {lessons.length} lessons explored
           </p>
         </div>
       </nav>

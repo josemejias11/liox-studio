@@ -1,8 +1,8 @@
 -- CreateTable
-CREATE TABLE "SlideProgress" (
+CREATE TABLE "LessonProgress" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "sessionId" TEXT NOT NULL,
-    "slideId" TEXT NOT NULL,
+    "lessonId" TEXT NOT NULL,
     "visitedHotspots" TEXT NOT NULL DEFAULT '[]',
     "completed" BOOLEAN NOT NULL DEFAULT false,
     "updatedAt" DATETIME NOT NULL
@@ -20,4 +20,4 @@ CREATE TABLE "QuizAttempt" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "SlideProgress_sessionId_slideId_key" ON "SlideProgress"("sessionId", "slideId");
+CREATE UNIQUE INDEX "LessonProgress_sessionId_lessonId_key" ON "LessonProgress"("sessionId", "lessonId");

@@ -1,7 +1,7 @@
 "use client";
 
 interface HotspotProps {
-  // Position within the slide as percentages (0–100)
+  // Position within the lesson as percentages (0–100)
   x: number;
   y: number;
   label: string;

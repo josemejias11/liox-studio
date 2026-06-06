@@ -3,11 +3,11 @@
 import { ReactNode } from "react";
 import { ChevronLeft, ChevronRight, LayoutGrid, StickyNote, X } from "lucide-react";
 
-interface SlideFrameProps {
+interface LessonFrameProps {
   children: ReactNode;
-  // Nav — omit all three to hide the nav bar entirely (e.g. cover / stage / quiz slides)
-  currentSlide?: number;
-  totalSlides?: number;
+  // Nav — omit all three to hide the nav bar entirely (e.g. cover / stage / quiz lessons)
+  currentLesson?: number;
+  totalLessons?: number;
   onPrev?: () => void;
   onNext?: () => void;
   nextDisabled?: boolean;
@@ -35,10 +35,10 @@ const FRAME_BG: Record<string, string> = {
   "indigo-frost": "bg-moto-indigo",
 };
 
-export function SlideFrame({
+export function LessonFrame({
   children,
-  currentSlide,
-  totalSlides,
+  currentLesson,
+  totalLessons,
   onPrev,
   onNext,
   nextDisabled = false,
@@ -50,16 +50,16 @@ export function SlideFrame({
   notesOpen = false,
   speakerNotes,
   moduleTitle,
-}: SlideFrameProps) {
-  const showNav = currentSlide !== undefined && totalSlides !== undefined;
+}: LessonFrameProps) {
+  const showNav = currentLesson !== undefined && totalLessons !== undefined;
   const frameBg = theme && theme in FRAME_BG ? FRAME_BG[theme] : "bg-moto-black";
   const isLightTheme = theme === "frost-black" || theme === "pearl-black";
   const navGradient = isLightTheme
     ? "bg-gradient-to-t from-moto-black via-moto-black/50 to-transparent"
     : "bg-gradient-to-t from-moto-black via-moto-black/60 to-transparent";
 
-  const showProgress = currentSlide !== undefined && totalSlides !== undefined && totalSlides > 0;
-  const progressPct = showProgress ? (currentSlide / totalSlides) * 100 : 0;
+  const showProgress = currentLesson !== undefined && totalLessons !== undefined && totalLessons > 0;
+  const progressPct = showProgress ? (currentLesson / totalLessons) * 100 : 0;
 
   return (
     // Outer shell — flex-col so the device banner stacks below the frame.
@@ -70,7 +70,7 @@ export function SlideFrame({
       >
         {children}
 
-        {/* ── Bottom vignette — blends slide content into the black banner below ── */}
+        {/* ── Bottom vignette — blends lesson content into the black banner below ── */}
         <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-moto-black to-transparent pointer-events-none z-10" />
 
         {/* ── Click-Outside Overlay ── */}
@@ -82,7 +82,7 @@ export function SlideFrame({
           />
         )}
 
-        {/* ── Speaker notes panel — slides up from just above the nav bar ── */}
+        {/* ── Speaker notes panel — lessons up from just above the nav bar ── */}
         {onToggleNotes && (
           <div
             className={`absolute left-0 right-0 z-40 flex flex-col
@@ -131,14 +131,14 @@ export function SlideFrame({
                 </p>
               ) : (
                 <p className="text-moto-slate text-sm italic">
-                  No speaker notes for this slide.
+                  No speaker notes for this lesson.
                 </p>
               )}
             </div>
           </div>
         )}
 
-        {/* ── Floating utility buttons (slides without nav bar) ── */}
+        {/* ── Floating utility buttons (lessons without nav bar) ── */}
         {!showNav && onToggleNavMap && (
           <button
             onClick={onToggleNavMap}
@@ -213,26 +213,26 @@ export function SlideFrame({
               {/* Right cluster — prev / counter / next */}
               <button
                 onClick={onPrev}
-                disabled={currentSlide === 1}
+                disabled={currentLesson === 1}
                 className="h-10 w-10 rounded-full flex items-center justify-center text-moto-white/60 hover:text-moto-white hover:bg-moto-white/10 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
-                aria-label="Previous slide"
+                aria-label="Previous lesson"
               >
                 <ChevronLeft className="h-6 w-6" />
               </button>
 
               <span className="text-sm font-medium text-moto-white/80 min-w-[3rem] text-center tabular-nums select-none" aria-hidden="true">
-                {currentSlide} / {totalSlides}
+                {currentLesson} / {totalLessons}
               </span>
-              {/* Announced to screen readers on each slide change */}
+              {/* Announced to screen readers on each lesson change */}
               <span aria-live="polite" aria-atomic="true" className="sr-only">
-                Slide {currentSlide} of {totalSlides}
+                Lesson {currentLesson} of {totalLessons}
               </span>
 
               <button
                 onClick={onNext}
-                disabled={currentSlide === totalSlides || nextDisabled}
+                disabled={currentLesson === totalLessons || nextDisabled}
                 className="h-10 w-10 rounded-full flex items-center justify-center text-moto-white/60 hover:text-moto-white hover:bg-moto-white/10 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
-                aria-label="Next slide"
+                aria-label="Next lesson"
               >
                 <ChevronRight className="h-6 w-6" />
               </button>
@@ -241,15 +241,15 @@ export function SlideFrame({
             {/* Progress bar — 1px stripe along the very bottom edge */}
             <div
               role="progressbar"
-              aria-valuenow={currentSlide}
+              aria-valuenow={currentLesson}
               aria-valuemin={1}
-              aria-valuemax={totalSlides}
+              aria-valuemax={totalLessons}
               aria-label="Course progress"
               className="absolute bottom-0 left-0 right-0 h-px bg-moto-white/10 z-30"
             >
               <div
                 className="h-full bg-moto-indigo transition-[width] duration-500 ease-out"
-                style={{ width: `${(currentSlide / totalSlides) * 100}%` }}
+                style={{ width: `${(currentLesson / totalLessons) * 100}%` }}
               />
             </div>
           </>
@@ -277,7 +277,7 @@ export function SlideFrame({
 
           {/* Progress indicator — always rendered to keep banner height constant */}
           <p className={`mt-1 text-xs tabular-nums text-moto-slate/70 leading-none ${showProgress ? "" : "invisible"}`}>
-            slide {currentSlide}&thinsp;/&thinsp;{totalSlides}
+            lesson {currentLesson}&thinsp;/&thinsp;{totalLessons}
           </p>
         </div>
       )}

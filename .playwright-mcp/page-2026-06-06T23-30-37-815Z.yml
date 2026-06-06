@@ -1,0 +1,69 @@
+- generic [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e39] [cursor=pointer]:
+    - img [ref=e40]
+  - alert [ref=e43]
+  - generic [ref=e46]:
+    - generic [ref=e47]:
+      - generic [ref=e57]:
+        - img "Lense" [ref=e58]
+        - generic [ref=e81]:
+          - generic [ref=e84]: Dive Deeper
+          - button "Layer 1 Interactive Explorer" [ref=e86]:
+            - generic [ref=e87]:
+              - generic [ref=e88]: Layer 1
+              - generic [ref=e89]: Interactive Explorer
+            - img [ref=e90]
+          - button "Lenses Deep Dive Learn More" [ref=e92]:
+            - generic [ref=e93]:
+              - generic [ref=e94]: Lenses Deep Dive
+              - generic [ref=e95]: Learn More
+            - img [ref=e96]
+        - generic:
+          - dialog:
+            - generic:
+              - generic:
+                - img
+              - heading [level=3]
+              - button "Close panel":
+                - img
+            - generic "Conversation"
+        - dialog "Lenses Deep Dive" [ref=e100]:
+          - banner [ref=e101]:
+            - generic [ref=e102]:
+              - button "Back to Lense" [active] [ref=e103]:
+                - img [ref=e104]
+              - generic [ref=e106]:
+                - generic [ref=e107]: Lense
+                - heading "Lenses Deep Dive" [level=2] [ref=e108]
+            - button "Close" [ref=e109]:
+              - img [ref=e110]
+          - generic [ref=e114]: This is a deep dive into the camera lenses. We have ultra-wide, wide, and telephoto lenses. Each lens serves a specific photographic purpose.
+      - generic:
+        - generic:
+          - generic:
+            - img
+            - heading "Speaker Notes" [level=3]
+          - generic:
+            - generic: "N"
+            - button "Close speaker notes":
+              - img
+        - generic:
+          - paragraph: Note
+      - generic:
+        - generic: Tap all 0 features to continue (1 / 0)
+      - generic [ref=e59]:
+        - button "Open course navigation" [ref=e60]:
+          - img [ref=e61]
+        - button "Toggle speaker notes" [ref=e66]:
+          - img [ref=e67]
+        - button "Previous lesson" [disabled] [ref=e70]:
+          - img [ref=e71]
+        - generic [ref=e73]: 1 / 1
+        - generic [ref=e74]: Lesson 1 of 1
+        - button "Next lesson" [disabled] [ref=e75]:
+          - img [ref=e76]
+      - progressbar "Course progress" [ref=e78]
+    - generic [ref=e53]:
+      - paragraph [ref=e54]: You are learning about
+      - paragraph [ref=e55]: Moto QIRA
+      - paragraph [ref=e80]: lesson 1 / 1

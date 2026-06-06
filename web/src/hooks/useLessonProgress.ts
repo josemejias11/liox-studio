@@ -4,7 +4,7 @@ import { ProgressRequestBody } from "@/lib/contracts/progress";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-export function useSlideProgress(sessionId: string) {
+export function useLessonProgress(sessionId: string) {
   const [visited, setVisited] = useState<Record<string, Set<string>>>({});
   
   const { data, error, isLoading, mutate } = useSWR(
@@ -16,31 +16,31 @@ export function useSlideProgress(sessionId: string) {
   );
 
   useEffect(() => {
-    if (data?.slides) {
+    if (data?.lessons) {
       const restored: Record<string, Set<string>> = {};
-      for (const [sid, prog] of Object.entries(data.slides)) {
+      for (const [sid, prog] of Object.entries(data.lessons)) {
         restored[sid] = new Set((prog as any).visitedHotspots);
       }
       setVisited(restored);
     }
   }, [data]);
 
-  const markVisited = async (slideKey: string, label: string, totalHotspots: number) => {
-    const currentSlideVisited = visited[slideKey] ?? new Set<string>();
-    const nextVisitedSet = new Set([...currentSlideVisited, label]);
+  const markVisited = async (lessonKey: string, label: string, totalHotspots: number) => {
+    const currentLessonVisited = visited[lessonKey] ?? new Set<string>();
+    const nextVisitedSet = new Set([...currentLessonVisited, label]);
     const isCompleted = totalHotspots > 0 && nextVisitedSet.size >= totalHotspots;
     
     // Update local React state
-    setVisited((prev) => ({ ...prev, [slideKey]: nextVisitedSet }));
+    setVisited((prev) => ({ ...prev, [lessonKey]: nextVisitedSet }));
 
     // Perform side effects outside of the setState updater
     if (sessionId) {
       const visitedHotspots = Array.from(nextVisitedSet);
       
       const payload: ProgressRequestBody = {
-        type: "slide",
+        type: "lesson",
         sessionId,
-        slideId: slideKey,
+        lessonId: lessonKey,
         visitedHotspots,
         completed: isCompleted,
       };
@@ -56,9 +56,9 @@ export function useSlideProgress(sessionId: string) {
         if (!currentData) return currentData;
         return {
           ...currentData,
-          slides: {
-            ...currentData.slides,
-            [slideKey]: {
+          lessons: {
+            ...currentData.lessons,
+            [lessonKey]: {
               visitedHotspots,
               completed: isCompleted,
             }

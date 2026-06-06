@@ -33,17 +33,17 @@ npm run lint
 
 ### Data Flow
 1. Course content is authored in Sanity CMS Studio (`/studio`)
-2. `page.tsx` fetches module + slides from Sanity at render time via `sanityClient`
+2. `page.tsx` fetches module + lessons from Sanity at render time via `sanityClient`
 3. User asks a question → Next.js `/api/chat` → Claude streaming chat (SSE); the FastAPI `/chat` route remains available for direct RAG queries against ChromaDB
 4. Quiz request → Next.js `/api/quiz` → Claude returns structured JSON
 
 ### Storage
-- **Sanity CMS** — authoritative course content (modules, lessons, slides, hotspots)
+- **Sanity CMS** — authoritative course content (modules, chapters, lessons, hotspots)
 - **ChromaDB** (`api/chroma_data/`) — vector embeddings for RAG, used by FastAPI chat/quiz routes
 
 ### Frontend Architecture
 - `page.tsx` is a **server component** that fetches from Sanity via `sanityClient`
-- `DeckViewer.tsx` is a **client component** — handles slide navigation state and the AI chat panel UI
+- `DeckViewer.tsx` is a **client component** — handles lesson navigation state and the AI chat panel UI
 - UI uses **shadcn/ui v4** components (in `src/components/ui/`) + **Tailwind CSS v4** + **tw-animate-css**
 - Custom font: `MotoSans` loaded from `web/public/fonts/`
 
