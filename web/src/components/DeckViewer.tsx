@@ -17,6 +17,7 @@ interface SanityHotspot {
   _key: string;
   label: string;
   topic: string;
+  linkedLayer?: string;
   body?: string;
   photos?: { asset?: { url?: string } }[];
   x: number;
@@ -29,6 +30,7 @@ interface SanityLayer {
   body?: string;
   layerType: "content" | "interaction" | "video" | "quiz";
   media?: { asset?: { url?: string } };
+  photos?: { asset?: { url?: string } }[];
   hotspots?: SanityHotspot[];
   videoUrl?: string;
   videoFile?: { asset?: { url?: string } };
@@ -44,6 +46,7 @@ interface SanityLesson {
   stageBackground?: { asset?: { url?: string } };
   completionTransition?: "spin" | "rise" | "fade";
   hotspots?: SanityHotspot[];
+  textHotspots?: { _key: string; triggerWord: string; linkedLayer: string }[];
   layers?: SanityLayer[];
   videoUrl?: string;
   videoFile?: { asset?: { url?: string } };
@@ -75,6 +78,42 @@ type LessonTheme = keyof typeof LESSON_THEMES;
 
 const TRANSITION_EXIT_MS  = 210;
 const TRANSITION_ENTER_MS = 380;
+
+function renderBodyWithTextHotspots(body: string, textHotspots: SanityLesson['textHotspots'], tc: any, onTrigger: (linkedLayer: string) => void) {
+  if (!textHotspots || textHotspots.length === 0) return <p className={`${tc.body} text-base font-light leading-relaxed whitespace-pre-wrap`}>{body}</p>;
+
+  let elements: (string | JSX.Element)[] = [body];
+
+  textHotspots.forEach(th => {
+    if (!th.triggerWord || !th.linkedLayer) return;
+    
+    elements = elements.flatMap(el => {
+      if (typeof el !== 'string') return [el];
+      
+      const parts = el.split(new RegExp(`(${th.triggerWord})`, 'gi'));
+      return parts.map((part, i) => {
+        if (part.toLowerCase() === th.triggerWord.toLowerCase()) {
+          return (
+            <button
+              key={`${th._key}-${i}`}
+              onClick={() => onTrigger(th.linkedLayer)}
+              className="text-moto-indigo font-medium underline underline-offset-4 decoration-moto-indigo/40 hover:decoration-moto-indigo transition-colors mx-1"
+            >
+              {part}
+            </button>
+          );
+        }
+        return part;
+      });
+    });
+  });
+
+  return (
+    <p className={`${tc.body} text-base font-light leading-relaxed whitespace-pre-wrap`}>
+      {elements.map((el, i) => <span key={i}>{el}</span>)}
+    </p>
+  );
+}
 
 export default function DeckViewer({
   module,
@@ -134,6 +173,7 @@ export default function DeckViewer({
   const currentLesson = lessons[currentLessonIndex];
   const lessonKey = currentLesson?._key ?? "";
   const hotspots = currentLesson?.hotspots ?? [];
+  const textHotspots = currentLesson?.textHotspots ?? [];
   const layers = currentLesson?.layers ?? [];
   
   // A lesson is locked until all hotspots AND all layers are visited
@@ -412,9 +452,13 @@ export default function DeckViewer({
         ) : (
           <div className={`absolute inset-0 ${tc.bg} flex flex-col items-start justify-center p-[6%] overflow-auto gap-4`}>
             <h2 className={`${tc.headline} text-2xl font-semibold leading-tight`}>{currentLesson?.headline}</h2>
-            {currentLesson?.body && (
-              <p className={`${tc.body} text-base font-light leading-relaxed whitespace-pre-wrap`}>{currentLesson.body}</p>
-            )}
+            {currentLesson?.body && renderBodyWithTextHotspots(currentLesson.body, textHotspots, tc, (linkedLayerHeadline) => {
+              const layer = layers.find(l => l.headline === linkedLayerHeadline);
+              if (layer) {
+                baseMarkVisited(lessonKey, layer._key, hotspots.length + layers.length);
+                setActiveLayerId(layer._key);
+              }
+            })}
           </div>
         )}
         
@@ -457,16 +501,26 @@ export default function DeckViewer({
           </div>
         )}
 
-        {/* Hotspots — driven directly from Sanity content */}
-        {hotspots.map((h) => (
+        {/* Hotspots */}
+        {hotspots.map((h, i) => (
           <Hotspot
-            key={h._key}
+            key={i}
             x={h.x}
             y={h.y}
             label={h.label}
             visited={visited[lessonKey]?.has(h.label) ?? false}
             onVisit={() => markVisited(h.label)}
-            onOpen={() => setActiveLayer({ topic: h.topic, title: h.label, body: h.body })}
+            onOpen={() => {
+              if (h.linkedLayer) {
+                const targetLayer = layers.find(l => l.headline === h.linkedLayer);
+                if (targetLayer) {
+                  baseMarkVisited(lessonKey, targetLayer._key, hotspots.length + layers.length);
+                  setActiveLayerId(targetLayer._key);
+                  return;
+                }
+              }
+              setActiveLayer({ topic: h.topic, title: h.label, body: h.body });
+            }}
           />
         ))}
 
@@ -495,6 +549,23 @@ export default function DeckViewer({
               {layer.media?.asset?.url && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={layer.media.asset.url} alt={layer.headline} className="w-full rounded-2xl mb-6 object-cover max-h-[40vh]" />
+              )}
+              {layer.photos && layer.photos.length > 0 && (
+                <div className="mb-6 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10 relative">
+                  <div className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar">
+                    {layer.photos.map((p, i) => p.asset?.url && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img key={i} src={p.asset.url} alt={`${layer.headline} ${i}`} className="w-full h-auto object-cover snap-center shrink-0" style={{ maxHeight: '50vh' }} />
+                    ))}
+                  </div>
+                  {layer.photos.length > 1 && (
+                    <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 pointer-events-none">
+                      {layer.photos.map((p, i) => (
+                        <div key={i} className="w-1.5 h-1.5 rounded-full bg-white/50 backdrop-blur-sm" />
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
               {layer.body && (
                 <div className="prose prose-invert max-w-none text-moto-frost/80 whitespace-pre-wrap leading-relaxed">

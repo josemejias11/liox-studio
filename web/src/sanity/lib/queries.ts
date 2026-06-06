@@ -42,10 +42,16 @@ export const MODULE_BY_SLUG_QUERY = groq`
           _key,
           label,
           topic,
+          linkedLayer,
           body,
           photos[] { asset->{ url } },
           x,
           y,
+        },
+        textHotspots[] {
+          _key,
+          triggerWord,
+          linkedLayer
         },
         videoUrl,
         videoFile { asset->{ url } },
@@ -58,6 +64,7 @@ export const MODULE_BY_SLUG_QUERY = groq`
           layerType,
           speakerNotes,
           media { asset->{ url } },
+          photos[] { asset->{ url } },
           hotspots[] {
             _key,
             label,
@@ -100,10 +107,16 @@ export const FIRST_MODULE_QUERY = groq`
           _key,
           label,
           topic,
+          linkedLayer,
           body,
           photos[] { asset->{ url } },
           x,
           y,
+        },
+        textHotspots[] {
+          _key,
+          triggerWord,
+          linkedLayer
         },
         videoUrl,
         videoFile { asset->{ url } },
@@ -116,6 +129,7 @@ export const FIRST_MODULE_QUERY = groq`
           layerType,
           speakerNotes,
           media { asset->{ url } },
+          photos[] { asset->{ url } },
           hotspots[] {
             _key,
             label,

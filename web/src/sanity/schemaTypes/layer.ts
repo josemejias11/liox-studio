@@ -25,6 +25,13 @@ export const layerType = defineType({
       options: { hotspot: true },
     }),
     defineField({
+      name: "photos",
+      title: "Photo Gallery",
+      description: "Optional image carousel to display in the layer.",
+      type: "array",
+      of: [{ type: "image", options: { hotspot: true } }],
+    }),
+    defineField({
       name: "speakerNotes",
       title: "Speaker Notes",
       type: "text",

@@ -116,6 +116,12 @@ export const lessonType = defineType({
           fields: [
             defineField({ name: "label", title: "Label", type: "string", validation: (r) => r.required() }),
             defineField({ name: "topic", title: "AI Topic Query", type: "string" }),
+            defineField({ 
+              name: "linkedLayer", 
+              title: "Linked Layer Headline", 
+              description: "If provided, tapping this hotspot opens the matching deep dive layer instead of the inline panel.",
+              type: "string" 
+            }),
             defineField({
               name: "body",
               title: "Panel Body",
@@ -138,6 +144,33 @@ export const lessonType = defineType({
           },
         },
       ],
+    }),
+    defineField({
+      name: "textHotspots",
+      title: "Text Interactions",
+      description: "Words or phrases in the Body Copy that should act as clickable links to open Deep Dive Layers.",
+      type: "array",
+      of: [
+        {
+          type: "object",
+          fields: [
+            defineField({ 
+              name: "triggerWord", 
+              title: "Word or Phrase", 
+              description: "Exact text snippet to make interactive (e.g., 'telephoto lenses').",
+              type: "string", 
+              validation: (r) => r.required() 
+            }),
+            defineField({ 
+              name: "linkedLayer", 
+              title: "Linked Layer Headline", 
+              description: "The headline of the layer to open when this text is tapped.",
+              type: "string", 
+              validation: (r) => r.required() 
+            }),
+          ]
+        }
+      ]
     }),
     defineField({
       name: "layers",
