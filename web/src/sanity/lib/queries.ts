@@ -7,7 +7,7 @@ export const MODULES_QUERY = groq`
     title,
     slug,
     description,
-    thumbnail,
+    thumbnail { asset->{ url } },
     learningObjectives,
     "lessonCount": count(lessons),
   }
@@ -20,7 +20,11 @@ export const MODULE_BY_SLUG_QUERY = groq`
     title,
     slug,
     description,
-    thumbnail,
+    thumbnail { asset->{ url } },
+    coverImage { asset->{ url } },
+    coverHeadline,
+    coverButtonText,
+    coverButtonColor,
     learningObjectives,
     "lessons": lessons[]-> {
       _id,

@@ -26,42 +26,46 @@ export function useSlideProgress(sessionId: string) {
   }, [data]);
 
   const markVisited = async (slideKey: string, label: string, totalHotspots: number) => {
-    setVisited((prev) => {
-      const next = new Set([...(prev[slideKey] ?? []), label]);
-      const isCompleted = totalHotspots > 0 && next.size >= totalHotspots;
-      
-      if (sessionId) {
-        const payload: ProgressRequestBody = {
-          type: "slide",
-          sessionId,
-          slideId: slideKey,
-          visitedHotspots: Array.from(next),
-          completed: isCompleted,
-        };
+    const currentSlideVisited = visited[slideKey] ?? new Set<string>();
+    const nextVisitedSet = new Set([...currentSlideVisited, label]);
+    const isCompleted = totalHotspots > 0 && nextVisitedSet.size >= totalHotspots;
+    
+    // Update local React state
+    setVisited((prev) => ({ ...prev, [slideKey]: nextVisitedSet }));
 
-        fetch("/api/progress", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }).catch(() => {});
-        
-        // Optimistically mutate local SWR cache
-        mutate((currentData: any) => {
-          if (!currentData) return currentData;
-          return {
-            ...currentData,
-            slides: {
-              ...currentData.slides,
-              [slideKey]: {
-                visitedHotspots: Array.from(next),
-                completed: isCompleted,
-              }
+    // Perform side effects outside of the setState updater
+    if (sessionId) {
+      const visitedHotspots = Array.from(nextVisitedSet);
+      
+      const payload: ProgressRequestBody = {
+        type: "slide",
+        sessionId,
+        slideId: slideKey,
+        visitedHotspots,
+        completed: isCompleted,
+      };
+
+      fetch("/api/progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).catch(() => {});
+      
+      // Optimistically mutate local SWR cache
+      mutate((currentData: any) => {
+        if (!currentData) return currentData;
+        return {
+          ...currentData,
+          slides: {
+            ...currentData.slides,
+            [slideKey]: {
+              visitedHotspots,
+              completed: isCompleted,
             }
-          };
-        }, false);
-      }
-      return { ...prev, [slideKey]: next };
-    });
+          }
+        };
+      }, false);
+    }
   };
 
   return {
