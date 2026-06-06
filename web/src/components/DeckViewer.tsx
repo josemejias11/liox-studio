@@ -224,23 +224,48 @@ export default function DeckViewer({
           </h1>
           
           {module.learningObjectives && module.learningObjectives.length > 0 && (
-            <div className="mt-8 w-full max-w-2xl bg-moto-black/40 backdrop-blur-md p-6 sm:p-8 rounded-3xl border border-moto-white/20 shadow-2xl">
-              <h3 className="text-moto-frost uppercase tracking-[0.2em] text-xs font-bold mb-4 text-center">What you will learn</h3>
-              <ul className="text-moto-white text-lg md:text-xl space-y-3">
-                {module.learningObjectives.map((obj, i) => (
-                  <li key={i} className="flex items-start gap-3 text-left">
-                    <span className="text-moto-indigo mt-1">✓</span>
-                    <span className="drop-shadow-sm font-medium">{obj}</span>
-                  </li>
-                ))}
-              </ul>
+            <div className="mt-8 w-full max-w-2xl relative">
+              {/* Ambient indigo glow — floats the card off the hero */}
+              <div className="absolute inset-0 rounded-3xl bg-moto-indigo/10 blur-2xl pointer-events-none" />
+
+              <div className="relative bg-gradient-to-br from-white/5 via-moto-black/55 to-moto-black/70 backdrop-blur-xl p-6 sm:p-8 rounded-3xl border border-moto-white/10 shadow-2xl overflow-hidden">
+                {/* Top edge accent line */}
+                <div className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-moto-indigo/55 to-transparent" />
+
+                {/* Label row with flanking lines */}
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="flex-1 h-px bg-gradient-to-r from-transparent to-moto-indigo/35" />
+                  <h3 className="text-[10px] uppercase tracking-[0.28em] text-moto-slate font-semibold shrink-0 select-none">
+                    What you will learn
+                  </h3>
+                  <div className="flex-1 h-px bg-gradient-to-l from-transparent to-moto-indigo/35" />
+                </div>
+
+                {/* Objectives list */}
+                <ul className="space-y-3.5">
+                  {module.learningObjectives.map((obj, i) => (
+                    <li
+                      key={i}
+                      className="flex items-start gap-3.5 text-left stage-rise"
+                      style={{ animationDelay: `${0.08 + i * 0.07}s`, animationFillMode: "both" }}
+                    >
+                      <span className="mt-0.5 shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full bg-moto-indigo/20 ring-1 ring-inset ring-moto-indigo/45 text-moto-indigo text-[9px] font-bold leading-none select-none">
+                        ✓
+                      </span>
+                      <span className="text-moto-frost/90 text-base md:text-lg font-medium leading-snug">
+                        {obj}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           )}
         </div>
 
         <button
           onClick={() => setHasStarted(true)}
-          className={`absolute bottom-8 md:bottom-12 right-8 md:right-12 flex items-center gap-2 font-semibold text-base px-6 py-3 rounded-full shadow-2xl transition-all active:scale-95 z-20 hover:-translate-y-1 ${btnClass}`}
+          className={`absolute bottom-8 md:bottom-12 right-8 md:right-12 flex items-center gap-2 font-semibold text-base px-6 py-3 rounded-full shadow-2xl transition-all active:scale-95 z-20 hover:shadow-[0_0_24px_rgba(104,91,199,0.75)] ${btnClass}`}
         >
           {buttonText} <ChevronRight className="h-5 w-5" />
         </button>

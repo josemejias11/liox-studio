@@ -63,12 +63,12 @@ export function NavMap({ slides, currentIndex, visited, onNavigate, onClose }: N
       <nav
         ref={panelRef as React.RefObject<HTMLElement>}
         aria-label="Course navigation"
-        className="nav-map-in relative h-full w-[220px] flex flex-col bg-moto-black/96 backdrop-blur-2xl border-r border-moto-frost/[0.07] shadow-2xl"
+        className="nav-map-in relative h-full w-[260px] flex flex-col bg-moto-black/96 backdrop-blur-2xl border-r border-moto-frost/[0.07] shadow-2xl"
       >
 
         {/* Header */}
         <div className="shrink-0 flex items-center justify-between px-4 pt-3.5 pb-3 border-b border-moto-frost/[0.07]">
-          <p className="text-[9.5px] font-bold uppercase tracking-[0.2em] text-moto-frost/35">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-moto-frost/35">
             Course Map
           </p>
           <button
@@ -96,7 +96,7 @@ export function NavMap({ slides, currentIndex, visited, onNavigate, onClose }: N
                 key={slide._key}
                 onClick={() => onNavigate(i)}
                 className={`
-                  w-full text-left flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg
+                  w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg
                   transition-all duration-150 active:scale-[0.97]
                   ${isCurrent
                     ? "bg-moto-indigo/14 ring-1 ring-inset ring-moto-indigo/35"
@@ -104,22 +104,22 @@ export function NavMap({ slides, currentIndex, visited, onNavigate, onClose }: N
                 `}
               >
                 {/* Slide number */}
-                <span className={`shrink-0 text-[9px] font-bold tabular-nums w-[14px] text-right
-                  ${isCurrent ? "text-moto-indigo" : "text-moto-frost/18"}`}>
+                <span className={`shrink-0 text-xs font-bold tabular-nums w-4 text-right
+                  ${isCurrent ? "text-moto-indigo" : "text-moto-frost/25"}`}>
                   {i + 1}
                 </span>
 
                 {/* Type icon */}
-                <Icon className={`shrink-0 h-[11px] w-[11px] ${meta.color}`} />
+                <Icon className={`shrink-0 h-3.5 w-3.5 ${meta.color}`} />
 
                 {/* Headline */}
-                <span className={`flex-1 text-[11px] font-medium leading-tight truncate
-                  ${isCurrent ? "text-moto-frost" : "text-moto-frost/45"}`}>
+                <span className={`flex-1 text-sm font-medium leading-tight truncate
+                  ${isCurrent ? "text-moto-frost" : "text-moto-frost/50"}`}>
                   {slide.headline}
                 </span>
 
                 {/* Completion dot */}
-                <span className={`shrink-0 h-[7px] w-[7px] rounded-full
+                <span className={`shrink-0 h-2 w-2 rounded-full
                   ${completion === "full"    ? "bg-moto-indigo"
                   : completion === "partial" ? "bg-moto-slate"
                   : completion === "auto"    ? "bg-moto-frost/18"
@@ -132,8 +132,8 @@ export function NavMap({ slides, currentIndex, visited, onNavigate, onClose }: N
 
         {/* Footer */}
         <div className="shrink-0 border-t border-moto-frost/[0.07] px-4 py-2.5">
-          <p className="text-[9px] text-moto-frost/20">
-            <span className="text-moto-frost/45 font-semibold">{exploredCount}</span>
+          <p className="text-xs text-moto-frost/30">
+            <span className="text-moto-frost/55 font-semibold">{exploredCount}</span>
             {" "}of {slides.length} slides explored
           </p>
         </div>
