@@ -275,12 +275,10 @@ export function SlideFrame({
           {/* Indigo underline accent */}
           <span className="block mt-1 h-[2px] w-10 rounded-full bg-moto-indigo" />
 
-          {/* Progress indicator */}
-          {showProgress && (
-            <p className="mt-1 text-xs tabular-nums text-moto-slate/70 leading-none">
-              slide {currentSlide} of {totalSlides}
-            </p>
-          )}
+          {/* Progress indicator — always rendered to keep banner height constant */}
+          <p className={`mt-1 text-xs tabular-nums text-moto-slate/70 leading-none ${showProgress ? "" : "invisible"}`}>
+            slide {currentSlide}&thinsp;/&thinsp;{totalSlides}
+          </p>
         </div>
       )}
     </div>
