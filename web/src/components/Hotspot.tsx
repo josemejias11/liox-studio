@@ -52,9 +52,9 @@ export function Hotspot({
 
       {/* Core dot — swap className to change size, color, shape */}
       <span
-        className={`relative flex h-5 w-5 rounded-full border-[3px] border-white shadow-lg shadow-black/40
+        className={`relative flex h-5 w-5 rounded-full border-[3px] border-moto-frost shadow-lg shadow-moto-black/40
           transition-transform duration-150 group-hover:scale-125 group-focus-visible:scale-125
-          ${visited ? "bg-emerald-400 border-emerald-200" : "bg-primary"}
+          ${visited ? "bg-moto-indigo border-moto-frost" : "bg-primary"}
           ${className}`}
       />
 
@@ -64,11 +64,11 @@ export function Hotspot({
           rounded-md px-3 py-1.5 text-xs font-semibold
           opacity-0 group-hover:opacity-100 transition-opacity duration-150
           pointer-events-none shadow-xl
-          ${labelClassName || "bg-zinc-900/90 backdrop-blur-sm text-white border border-white/10"}`}
+          ${labelClassName || "bg-moto-black/90 backdrop-blur-sm text-moto-frost border border-moto-frost/10"}`}
       >
         {label}
         {/* Arrow */}
-        <span className="absolute left-1/2 -translate-x-1/2 top-full border-4 border-transparent border-t-zinc-900/90" />
+        <span className="absolute left-1/2 -translate-x-1/2 top-full border-4 border-transparent border-t-moto-black/90" />
       </span>
     </button>
   );

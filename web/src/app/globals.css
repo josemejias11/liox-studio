@@ -17,6 +17,15 @@
 }@custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* Motorola Brand Colors */
+  --color-moto-indigo: #685BC7;
+  --color-moto-black: #131417;
+  --color-moto-white: #FFFFFF;
+  --color-moto-frost: #E9EAF2;
+  --color-moto-slate: #636880;
+  --color-moto-pearl: #F0EDE9;
+  --color-moto-sandstone: #7A7670;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: 'MotoSans', sans-serif;
@@ -61,72 +70,82 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  /* Motorola 2026 brand — semantic token mapping */
+  /* Frost #E9EAF2 ≈ oklch(0.934 0.012 264) */
+  /* Black #131417 ≈ oklch(0.122 0.007 264) */
+  /* White #FFFFFF = oklch(1 0 0)            */
+  /* Moto Indigo #685BC7 ≈ oklch(0.499 0.172 282) */
+  /* Pearl #F0EDE9 ≈ oklch(0.944 0.008  60) */
+  /* Slate #636880 ≈ oklch(0.461 0.024 264) */
+  /* Sandstone #7A7670 ≈ oklch(0.515 0.013  60) */
+
+  --background: oklch(0.934 0.012 264);          /* Frost — dominant light surface */
+  --foreground: oklch(0.122 0.007 264);          /* Black on Frost */
+  --card: oklch(1 0 0);                          /* White — digital card surface */
+  --card-foreground: oklch(0.122 0.007 264);     /* Black on White */
+  --popover: oklch(1 0 0);                       /* White — digital popover surface */
+  --popover-foreground: oklch(0.122 0.007 264);  /* Black on White */
+  --primary: oklch(0.122 0.007 264);             /* Black — primary action */
+  --primary-foreground: oklch(0.934 0.012 264);  /* Frost on Black */
+  --secondary: oklch(0.934 0.012 264);           /* Frost — secondary surface */
+  --secondary-foreground: oklch(0.122 0.007 264);/* Black on Frost */
+  --muted: oklch(0.944 0.008 60);               /* Pearl — warm muted surface */
+  --muted-foreground: oklch(0.515 0.013 60);    /* Sandstone on Pearl */
+  --accent: oklch(0.499 0.172 282);              /* Moto Indigo — brand accent */
+  --accent-foreground: oklch(0.934 0.012 264);   /* Frost on Indigo */
+  --destructive: oklch(0.577 0.245 27.325);      /* unchanged */
+  --border: oklch(0.461 0.024 264 / 40%);        /* Slate at 40% opacity */
+  --input: oklch(0.461 0.024 264 / 20%);         /* Slate at 20% opacity */
+  --ring: oklch(0.499 0.172 282 / 60%);          /* Moto Indigo at 60% — focus ring */
+  --chart-1: oklch(0.499 0.172 282);             /* Moto Indigo */
+  --chart-2: oklch(0.461 0.024 264);             /* Slate */
+  --chart-3: oklch(0.515 0.013 60);             /* Sandstone */
+  --chart-4: oklch(0.944 0.008 60);             /* Pearl */
+  --chart-5: oklch(0.122 0.007 264);             /* Black */
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: oklch(0.934 0.012 264);             /* Frost sidebar background */
+  --sidebar-foreground: oklch(0.122 0.007 264);  /* Black on Frost */
+  --sidebar-primary: oklch(0.122 0.007 264);     /* Black — sidebar primary action */
+  --sidebar-primary-foreground: oklch(0.934 0.012 264); /* Frost on Black */
+  --sidebar-accent: oklch(0.499 0.172 282);      /* Moto Indigo — sidebar accent */
+  --sidebar-accent-foreground: oklch(0.934 0.012 264);  /* Frost on Indigo */
+  --sidebar-border: oklch(0.461 0.024 264 / 40%); /* Slate at 40% */
+  --sidebar-ring: oklch(0.499 0.172 282 / 60%);  /* Moto Indigo at 60% */
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* Dark mode: Black bg with Frost/Pearl text — approved "Frost on Black" pairing */
+  --background: oklch(0.122 0.007 264);          /* Black */
+  --foreground: oklch(0.934 0.012 264);          /* Frost on Black */
+  --card: oklch(0.161 0.007 264);               /* Black slightly lifted for card depth */
+  --card-foreground: oklch(0.934 0.012 264);     /* Frost on dark card */
+  --popover: oklch(0.161 0.007 264);            /* Same as card */
+  --popover-foreground: oklch(0.934 0.012 264);  /* Frost on dark popover */
+  --primary: oklch(0.934 0.012 264);             /* Frost — primary action in dark mode */
+  --primary-foreground: oklch(0.122 0.007 264);  /* Black on Frost */
+  --secondary: oklch(0.200 0.007 264);           /* Dark surface — secondary */
+  --secondary-foreground: oklch(0.934 0.012 264);/* Frost on dark secondary */
+  --muted: oklch(0.200 0.007 264);              /* Dark muted surface */
+  --muted-foreground: oklch(0.461 0.024 264);    /* Slate as muted text in dark */
+  --accent: oklch(0.499 0.172 282);              /* Moto Indigo — same accent in dark */
+  --accent-foreground: oklch(0.934 0.012 264);   /* Frost on Indigo */
+  --destructive: oklch(0.704 0.191 22.216);      /* unchanged */
+  --border: oklch(0.934 0.012 264 / 12%);        /* Frost at 12% — subtle border on black */
+  --input: oklch(0.934 0.012 264 / 18%);         /* Frost at 18% — input surface on black */
+  --ring: oklch(0.499 0.172 282 / 70%);          /* Moto Indigo at 70% — focus ring on dark */
+  --chart-1: oklch(0.499 0.172 282);             /* Moto Indigo */
+  --chart-2: oklch(0.934 0.012 264);             /* Frost */
+  --chart-3: oklch(0.944 0.008 60);             /* Pearl */
+  --chart-4: oklch(0.461 0.024 264);             /* Slate */
+  --chart-5: oklch(0.515 0.013 60);             /* Sandstone */
+  --sidebar: oklch(0.161 0.007 264);            /* Dark sidebar */
+  --sidebar-foreground: oklch(0.934 0.012 264);  /* Frost on Black */
+  --sidebar-primary: oklch(0.499 0.172 282);     /* Moto Indigo — sidebar primary in dark */
+  --sidebar-primary-foreground: oklch(0.934 0.012 264); /* Frost on Indigo */
+  --sidebar-accent: oklch(0.200 0.007 264);      /* Dark accent surface */
+  --sidebar-accent-foreground: oklch(0.934 0.012 264);  /* Frost */
+  --sidebar-border: oklch(0.934 0.012 264 / 12%); /* Frost at 12% */
+  --sidebar-ring: oklch(0.499 0.172 282 / 70%);  /* Moto Indigo at 70% */
 }
 
 @layer base {
@@ -223,8 +242,8 @@
   100% { transform: translateY(0)     scale(1);    opacity: 1; }
 }
 @keyframes completion-glow-pulse {
-  0%, 100% { box-shadow: 0 0 0 0   rgba(52, 211, 153, 0);    }
-  50%       { box-shadow: 0 0 20px 6px rgba(52, 211, 153, 0.28); }
+  0%, 100% { box-shadow: 0 0 0 0   rgba(104, 91, 199, 0);    }
+  50%       { box-shadow: 0 0 20px 6px rgba(104, 91, 199, 0.28); }
 }
 
 .burst-ring {
@@ -372,7 +391,7 @@
 
 /* Visible keyboard focus ring on every interactive element */
 :focus-visible {
-  outline: 2px solid rgba(56, 189, 248, 0.8);
+  outline: 2px solid rgba(104, 91, 199, 0.8);
   outline-offset: 2px;
   border-radius: 4px;
 }

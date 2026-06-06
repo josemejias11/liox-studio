@@ -58,9 +58,9 @@ export function PhotoCardStack({ photos }: PhotoCardStackProps) {
           <button
             onClick={() => scroll("left")}
             className="absolute left-1 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full
-              bg-black/60 backdrop-blur-sm text-white flex items-center justify-center
+              bg-moto-black/60 backdrop-blur-sm text-moto-frost flex items-center justify-center
               opacity-0 group-hover/stack:opacity-100 transition-opacity duration-150
-              hover:bg-black/80 active:scale-90"
+              hover:bg-moto-black/80 active:scale-90"
             aria-label="Previous photo"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -68,9 +68,9 @@ export function PhotoCardStack({ photos }: PhotoCardStackProps) {
           <button
             onClick={() => scroll("right")}
             className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full
-              bg-black/60 backdrop-blur-sm text-white flex items-center justify-center
+              bg-moto-black/60 backdrop-blur-sm text-moto-frost flex items-center justify-center
               opacity-0 group-hover/stack:opacity-100 transition-opacity duration-150
-              hover:bg-black/80 active:scale-90"
+              hover:bg-moto-black/80 active:scale-90"
             aria-label="Next photo"
           >
             <ChevronRight className="h-4 w-4" />
@@ -84,7 +84,7 @@ export function PhotoCardStack({ photos }: PhotoCardStackProps) {
           {validPhotos.map((_, i) => (
             <span
               key={i}
-              className="h-1 w-1 rounded-full bg-white/30"
+              className="h-1 w-1 rounded-full bg-moto-frost/30"
             />
           ))}
         </div>

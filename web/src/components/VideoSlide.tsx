@@ -45,13 +45,13 @@ export function VideoSlide({ headline, videoUrl, videoFileUrl, onNext }: VideoSl
   // ── No source configured ─────────────────────────────────────────────────
   if (!src) {
     return (
-      <div className="absolute inset-0 bg-zinc-950 flex flex-col items-center justify-center gap-3">
-        <AlertCircle className="h-8 w-8 text-zinc-700" />
-        <p className="text-zinc-500 text-[13px]">No video source configured for this slide.</p>
+      <div className="absolute inset-0 bg-moto-black flex flex-col items-center justify-center gap-3">
+        <AlertCircle className="h-8 w-8 text-moto-slate" />
+        <p className="text-moto-slate text-[13px]">No video source configured for this slide.</p>
         <button
           onClick={onNext}
-          className="mt-2 flex items-center gap-1.5 text-[12px] font-semibold text-white/50
-            hover:text-white px-4 py-2 rounded-full border border-white/10 hover:border-white/25
+          className="mt-2 flex items-center gap-1.5 text-[12px] font-semibold text-moto-frost/50
+            hover:text-moto-frost px-4 py-2 rounded-full border border-moto-frost/10 hover:border-moto-frost/25
             transition-all duration-200 active:scale-95"
         >
           Continue <ChevronRight className="h-3.5 w-3.5" />
@@ -67,9 +67,9 @@ export function VideoSlide({ headline, videoUrl, videoFileUrl, onNext }: VideoSl
   const canContinue = isEmbed || hasEnded;
 
   return (
-    <div className="absolute inset-0 bg-zinc-950 flex flex-col select-none">
+    <div className="absolute inset-0 bg-moto-black flex flex-col select-none">
       {/* Ambient gradient */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_40%,rgba(14,165,233,0.05),transparent)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_40%,rgba(104,91,199,0.05),transparent)] pointer-events-none" />
 
       {/* ── Video area ── */}
       <div className="flex-1 flex items-center justify-center px-5 pt-5 pb-2 min-h-0">
@@ -99,10 +99,10 @@ export function VideoSlide({ headline, videoUrl, videoFileUrl, onNext }: VideoSl
               {!hasEnded && (
                 <div
                   className="absolute inset-0 flex items-center justify-center pointer-events-none
-                    bg-black/20 transition-opacity duration-300"
+                    bg-moto-black/20 transition-opacity duration-300"
                   style={{ opacity: videoRef.current?.paused === false ? 0 : 0 }}
                 >
-                  <PlayCircle className="h-14 w-14 text-white/20" />
+                  <PlayCircle className="h-14 w-14 text-moto-frost/20" />
                 </div>
               )}
             </>
@@ -112,15 +112,15 @@ export function VideoSlide({ headline, videoUrl, videoFileUrl, onNext }: VideoSl
 
       {/* ── Footer: headline + continue ── */}
       <div className="shrink-0 flex items-center justify-between gap-4 px-5 py-3">
-        <p className="text-white/35 text-[11px] font-medium truncate flex-1">{headline}</p>
+        <p className="text-moto-frost/35 text-[11px] font-medium truncate flex-1">{headline}</p>
 
         <button
           onClick={canContinue ? onNext : undefined}
           className={`shrink-0 flex items-center gap-1.5 text-[12px] font-semibold
             px-4 py-2 rounded-full transition-all duration-300 active:scale-95
             ${canContinue
-              ? "bg-white text-zinc-900 shadow-lg hover:bg-zinc-100 cursor-pointer"
-              : "bg-white/8 text-white/25 cursor-default"
+              ? "bg-moto-black text-moto-frost shadow-lg hover:bg-moto-black/90 cursor-pointer"
+              : "bg-moto-frost/8 text-moto-frost/25 cursor-default"
             }`}
           aria-disabled={!canContinue}
           title={canContinue ? undefined : "Watch the video to continue"}

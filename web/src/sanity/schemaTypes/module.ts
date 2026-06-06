@@ -44,6 +44,40 @@ export const moduleType = defineType({
       validation: (r) => r.required().min(1),
     }),
     defineField({
+      name: "coverImage",
+      title: "Cover Screen Image (optional)",
+      description: "If not provided, the Thumbnail will be used.",
+      type: "image",
+      options: { hotspot: true },
+    }),
+    defineField({
+      name: "coverHeadline",
+      title: "Cover Headline (optional)",
+      type: "string",
+    }),
+    defineField({
+      name: "coverButtonText",
+      title: "Start Button Text",
+      type: "string",
+      initialValue: "start course",
+    }),
+    defineField({
+      name: "coverButtonColor",
+      title: "Start Button Color",
+      description: "Motorola 2026 brand-compliant button colors only.",
+      type: "string",
+      options: {
+        list: [
+          { title: "Black (Primary)", value: "moto-black" },
+          { title: "Moto Indigo (Accent)", value: "moto-indigo" },
+          { title: "Frost (Light)", value: "moto-frost" },
+          { title: "Pearl (Warm Light)", value: "moto-pearl" },
+        ],
+        layout: "radio",
+      },
+      initialValue: "moto-black",
+    }),
+    defineField({
       name: "published",
       title: "Published",
       type: "boolean",

@@ -35,12 +35,29 @@ interface SanitySlide {
   videoFile?: { asset?: { url?: string } };
   speakerNotes?: string;
   lessonTitle?: string;
+  theme?: "frost-black" | "black-frost" | "pearl-black" | "black-pearl" | "indigo-frost";
 }
 
 interface SanityModule {
   _id: string;
   title: string;
+  thumbnail?: { asset?: { url?: string } };
+  coverImage?: { asset?: { url?: string } };
+  coverHeadline?: string;
+  coverButtonText?: string;
+  coverButtonColor?: string;
+  learningObjectives?: string[];
 }
+
+const SLIDE_THEMES = {
+  "frost-black":  { bg: "bg-moto-frost",  headline: "text-moto-black",  body: "text-moto-slate"     },
+  "black-frost":  { bg: "bg-moto-black",  headline: "text-moto-frost",  body: "text-moto-slate"     },
+  "pearl-black":  { bg: "bg-moto-pearl",  headline: "text-moto-black",  body: "text-moto-sandstone" },
+  "black-pearl":  { bg: "bg-moto-black",  headline: "text-moto-pearl",  body: "text-moto-sandstone" },
+  "indigo-frost": { bg: "bg-moto-indigo", headline: "text-moto-frost",  body: "text-moto-frost"     },
+} as const;
+
+type SlideTheme = keyof typeof SLIDE_THEMES;
 
 const TRANSITION_EXIT_MS  = 210;
 const TRANSITION_ENTER_MS = 380;
@@ -181,23 +198,51 @@ export default function DeckViewer({
 
   // ── Cover ──────────────────────────────────────────────────────────────────
   if (!hasStarted) {
-    const coverImage = slides[0]?.media?.asset?.url;
+    const finalImageUrl = module.coverImage?.asset?.url || module.thumbnail?.asset?.url || slides[0]?.media?.asset?.url;
+    const finalHeadline = module.coverHeadline || module.title;
+    const buttonText = module.coverButtonText || "start course";
+    
+    // Map button colors — Motorola 2026 brand palette only
+    let btnClass = "bg-moto-black text-moto-frost hover:bg-moto-black/90 border-transparent";
+    if (module.coverButtonColor === "moto-indigo") btnClass = "bg-moto-indigo text-moto-frost hover:bg-moto-indigo/90 border-transparent";
+    else if (module.coverButtonColor === "moto-frost") btnClass = "bg-moto-frost text-moto-black hover:bg-moto-frost/90 border-transparent";
+    else if (module.coverButtonColor === "moto-pearl") btnClass = "bg-moto-pearl text-moto-black hover:bg-moto-pearl/90 border-transparent";
+
     return (
       <SlideFrame>
-        {coverImage ? (
+        {finalImageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={coverImage} alt="Course cover" className="absolute inset-0 w-full h-full object-cover" />
+          <img src={finalImageUrl} alt="Course cover" className="absolute inset-0 w-full h-full object-cover" />
         ) : (
-          <div className="absolute inset-0 bg-zinc-900 flex items-center justify-center">
-            <p className="text-white text-2xl font-light">{module.title}</p>
-          </div>
+          <div className="absolute inset-0 bg-moto-black flex items-center justify-center" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
+        
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-8 z-10 pointer-events-none">
+          <h1 className="text-4xl md:text-6xl font-bold text-moto-frost text-center drop-shadow-2xl max-w-4xl tracking-tight">
+            {finalHeadline}
+          </h1>
+          
+          {module.learningObjectives && module.learningObjectives.length > 0 && (
+            <div className="mt-8 w-full max-w-2xl bg-moto-black/40 backdrop-blur-md p-6 sm:p-8 rounded-3xl border border-moto-white/20 shadow-2xl">
+              <h3 className="text-moto-frost uppercase tracking-[0.2em] text-xs font-bold mb-4 text-center">What you will learn</h3>
+              <ul className="text-moto-white text-lg md:text-xl space-y-3">
+                {module.learningObjectives.map((obj, i) => (
+                  <li key={i} className="flex items-start gap-3 text-left">
+                    <span className="text-moto-indigo mt-1">✓</span>
+                    <span className="drop-shadow-sm font-medium">{obj}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
         <button
           onClick={() => setHasStarted(true)}
-          className="absolute bottom-8 right-8 flex items-center gap-2 bg-white text-zinc-900 font-semibold text-sm px-5 py-2.5 rounded-sm shadow-xl hover:bg-zinc-100 active:scale-95 transition-all"
+          className={`absolute bottom-8 md:bottom-12 right-8 md:right-12 flex items-center gap-2 font-semibold text-base px-6 py-3 rounded-full shadow-2xl transition-all active:scale-95 z-20 hover:-translate-y-1 ${btnClass}`}
         >
-          start course <ChevronRight className="h-4 w-4" />
+          {buttonText} <ChevronRight className="h-5 w-5" />
         </button>
       </SlideFrame>
     );
@@ -290,6 +335,10 @@ export default function DeckViewer({
   }
 
   // ── Regular slides ─────────────────────────────────────────────────────────
+  const rawTheme = currentSlide?.theme;
+  const slideTheme: SlideTheme = rawTheme && rawTheme in SLIDE_THEMES ? rawTheme as SlideTheme : "frost-black";
+  const tc = SLIDE_THEMES[slideTheme];
+
   return (
     <SlideFrame
       currentSlide={currentSlideIndex + 1}
@@ -301,6 +350,7 @@ export default function DeckViewer({
       onToggleNotes={toggleNotes}
       notesOpen={showNotes}
       speakerNotes={currentSlide?.speakerNotes}
+      theme={slideTheme}
       completionHint={
         nextLocked
           ? `Tap all ${hotspots.length} features to continue (${visitedOnSlide} / ${hotspots.length})`
@@ -313,10 +363,10 @@ export default function DeckViewer({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={imageUrl} alt={currentSlide.headline} className="absolute inset-0 w-full h-full object-cover" />
         ) : (
-          <div className="absolute inset-0 bg-white flex flex-col items-start justify-center p-[6%] overflow-auto gap-4">
-            <h2 className="text-zinc-900 text-2xl font-semibold leading-tight">{currentSlide?.headline}</h2>
+          <div className={`absolute inset-0 ${tc.bg} flex flex-col items-start justify-center p-[6%] overflow-auto gap-4`}>
+            <h2 className={`${tc.headline} text-2xl font-semibold leading-tight`}>{currentSlide?.headline}</h2>
             {currentSlide?.body && (
-              <p className="text-zinc-600 text-base font-light leading-relaxed whitespace-pre-wrap">{currentSlide.body}</p>
+              <p className={`${tc.body} text-base font-light leading-relaxed whitespace-pre-wrap`}>{currentSlide.body}</p>
             )}
           </div>
         )}

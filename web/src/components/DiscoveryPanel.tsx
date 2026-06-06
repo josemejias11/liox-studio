@@ -40,11 +40,11 @@ function renderText(text: string) {
         return (
           <span key={i}>
             {isBullet && (
-              <span className="mr-1.5 text-sky-400 select-none">•</span>
+              <span className="mr-1.5 text-moto-indigo select-none">•</span>
             )}
             {parts.map((part, j) =>
               part.startsWith("**") && part.endsWith("**") ? (
-                <strong key={j} className="font-semibold text-white">
+                <strong key={j} className="font-semibold text-moto-frost">
                   {part.slice(2, -2)}
                 </strong>
               ) : (
@@ -228,7 +228,7 @@ export function DiscoveryPanel({
       {/* Dimmer */}
       <div
         onClick={onClose}
-        className={`absolute inset-0 transition-opacity duration-300 bg-black/40 backdrop-blur-[1px] ${
+        className={`absolute inset-0 transition-opacity duration-300 bg-moto-black/40 backdrop-blur-[1px] ${
           open ? "opacity-100" : "opacity-0"
         }`}
       />
@@ -250,31 +250,31 @@ export function DiscoveryPanel({
           if (e.changedTouches[0].clientX - swipeTouchStartX.current > 56) onClose();
         }}
         className={`absolute top-0 right-0 bottom-0 w-[42%] flex flex-col
-          bg-zinc-900/96 backdrop-blur-2xl border-l border-white/10
-          shadow-2xl shadow-black/60
+          bg-moto-black/96 backdrop-blur-2xl border-l border-moto-frost/10
+          shadow-2xl shadow-moto-black/60
           transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]
           ${open ? "translate-x-0" : "translate-x-full"}`}
       >
         {/* ── Header ── */}
-        <div className="shrink-0 px-4 pt-4 pb-3 border-b border-white/8">
+        <div className="shrink-0 px-4 pt-4 pb-3 border-b border-moto-frost/8">
           <div className="flex items-center justify-between mb-2">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide bg-sky-500/20 text-sky-300 border border-sky-500/30">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide bg-moto-indigo/20 text-moto-frost border border-moto-indigo/30">
               {label}
             </span>
             <button
               onClick={onClose}
-              className="text-zinc-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/10"
+              className="text-moto-slate hover:text-moto-frost transition-colors p-1.5 rounded-lg hover:bg-moto-frost/10"
               aria-label="Close panel"
             >
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
 
-          <div className="flex gap-1 bg-white/5 p-0.5 rounded-lg">
+          <div className="flex gap-1 bg-moto-frost/5 p-0.5 rounded-lg">
             <button
               onClick={() => setTab("learn")}
               className={`flex-1 flex items-center justify-center gap-1.5 text-[11px] font-semibold py-1.5 rounded-md transition-all duration-150
-                ${tab === "learn" ? "bg-white/12 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300"}`}
+                ${tab === "learn" ? "bg-moto-frost/12 text-moto-frost shadow-sm" : "text-moto-slate hover:text-moto-frost"}`}
             >
               <BookOpen className="h-3 w-3" />
               Learn
@@ -282,7 +282,7 @@ export function DiscoveryPanel({
             <button
               onClick={() => setTab("ask")}
               className={`flex-1 flex items-center justify-center gap-1.5 text-[11px] font-semibold py-1.5 rounded-md transition-all duration-150
-                ${tab === "ask" ? "bg-white/12 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300"}`}
+                ${tab === "ask" ? "bg-moto-frost/12 text-moto-frost shadow-sm" : "text-moto-slate hover:text-moto-frost"}`}
             >
               <Sparkles className="h-3 w-3" />
               Ask AI
@@ -298,10 +298,10 @@ export function DiscoveryPanel({
           >
             {photos.length > 0 && <PhotoCardStack photos={photos} />}
             {body ? (
-              <p className="text-zinc-300 text-[12px] leading-relaxed">{body}</p>
+              <p className="text-moto-frost text-[12px] leading-relaxed">{body}</p>
             ) : (
               !photos.length && (
-                <p className="text-zinc-600 text-[11px] italic text-center mt-6">
+                <p className="text-moto-slate text-[11px] italic text-center mt-6">
                   No content yet. Switch to Ask AI to learn about this feature.
                 </p>
               )
@@ -323,15 +323,15 @@ export function DiscoveryPanel({
                   className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   {msg.role === "assistant" && (
-                    <div className="shrink-0 mt-0.5 bg-sky-500/20 rounded-full p-1 h-fit">
-                      <Bot className="h-2.5 w-2.5 text-sky-400" />
+                    <div className="shrink-0 mt-0.5 bg-moto-indigo/20 rounded-full p-1 h-fit">
+                      <Bot className="h-2.5 w-2.5 text-moto-indigo" />
                     </div>
                   )}
                   <div
                     className={`text-[11.5px] leading-relaxed rounded-2xl px-3 py-2 max-w-[88%]
                       ${msg.role === "user"
-                        ? "bg-sky-500/20 text-white rounded-tr-sm"
-                        : "bg-white/7 text-zinc-200 rounded-tl-sm"
+                        ? "bg-moto-indigo/20 text-moto-frost rounded-tr-sm"
+                        : "bg-moto-frost/7 text-moto-frost rounded-tl-sm"
                       }`}
                   >
                     {msg.text ? (
@@ -342,7 +342,7 @@ export function DiscoveryPanel({
                           {[0, 150, 300].map((d) => (
                             <span
                               key={d}
-                              className="h-1 w-1 rounded-full bg-sky-400/60 animate-bounce"
+                              className="h-1 w-1 rounded-full bg-moto-indigo/60 animate-bounce"
                               style={{ animationDelay: `${d}ms` }}
                             />
                           ))}
@@ -358,7 +358,7 @@ export function DiscoveryPanel({
             {/* Suggested question pills — appear after first AI response */}
             {showSuggestions && !streaming && (
               <div className="shrink-0 px-3 pb-2 flex flex-col gap-1.5">
-                <p className="text-[9px] text-zinc-600 font-semibold uppercase tracking-widest">
+                <p className="text-[9px] text-moto-slate font-semibold uppercase tracking-widest">
                   Try asking
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -366,8 +366,8 @@ export function DiscoveryPanel({
                     <button
                       key={s}
                       onClick={() => handleSend(s)}
-                      className="text-[10.5px] text-sky-300 bg-sky-500/10 border border-sky-500/25
-                        rounded-full px-3 py-1 hover:bg-sky-500/20 active:scale-95
+                      className="text-[10.5px] text-moto-frost bg-moto-indigo/10 border border-moto-indigo/25
+                        rounded-full px-3 py-1 hover:bg-moto-indigo/20 active:scale-95
                         transition-all duration-150 text-left"
                     >
                       {s}
@@ -378,7 +378,7 @@ export function DiscoveryPanel({
             )}
 
             {/* Input bar */}
-            <div className="shrink-0 px-3 py-2 border-t border-white/8 flex gap-2 items-center">
+            <div className="shrink-0 px-3 py-2 border-t border-moto-frost/8 flex gap-2 items-center">
               <input
                 ref={inputRef}
                 type="text"
@@ -387,15 +387,15 @@ export function DiscoveryPanel({
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
                 placeholder="Ask about this feature…"
                 disabled={streaming}
-                className="flex-1 bg-white/7 text-white text-[11.5px] placeholder:text-zinc-600
-                  rounded-xl px-3 py-2 outline-none focus:ring-1 focus:ring-sky-500/50
+                className="flex-1 bg-moto-frost/7 text-moto-frost text-[11.5px] placeholder:text-moto-slate
+                  rounded-xl px-3 py-2 outline-none focus:ring-1 focus:ring-moto-indigo/50
                   disabled:opacity-40 transition-all"
               />
               <button
                 onClick={() => handleSend()}
                 disabled={!input.trim() || streaming}
-                className="shrink-0 bg-sky-500/20 hover:bg-sky-500/35 disabled:opacity-30
-                  disabled:cursor-not-allowed text-sky-400 rounded-xl p-2 transition-all active:scale-90"
+                className="shrink-0 bg-moto-indigo/20 hover:bg-moto-indigo/35 disabled:opacity-30
+                  disabled:cursor-not-allowed text-moto-indigo rounded-xl p-2 transition-all active:scale-90"
                 aria-label="Send"
               >
                 <Send className="h-3.5 w-3.5" />
