@@ -2,6 +2,18 @@ import { NextRequest } from "next/server";
 
 const API_KEY = process.env.ANTHROPIC_API_KEY ?? "";
 
+interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+interface ChatRequestBody {
+  query?: string;
+  messages?: ChatMessage[];
+  context_hint?: boolean;
+  slide_content?: string;
+}
+
 const ASSET_SCOPE =
   "You are a sales training assistant for the motorola edge 70 max. " +
   "You may ONLY answer questions about this device's specifications, features, and capabilities " +
@@ -69,7 +81,7 @@ export async function POST(req: NextRequest) {
     messages: msgHistory,
     context_hint,
     slide_content,
-  } = await req.json();
+  } = (await req.json()) as ChatRequestBody;
 
   const headers = {
     "Content-Type": "text/event-stream",
@@ -79,9 +91,7 @@ export async function POST(req: NextRequest) {
 
   // Derive the last user query for mock-mode keyword matching
   const lastQuery: string =
-    (msgHistory as { role: string; content: string }[] | undefined)?.findLast(
-      (m) => m.role === "user"
-    )?.content ?? query ?? "";
+    msgHistory?.findLast((m) => m.role === "user")?.content ?? query ?? "";
 
   // Mock mode — no API key needed
   if (!API_KEY) {
@@ -102,8 +112,8 @@ export async function POST(req: NextRequest) {
   }
 
   // Support multi-turn: use full messages array when provided, else wrap single query
-  const claudeMessages: { role: "user" | "assistant"; content: string }[] =
-    msgHistory ?? [{ role: "user", content: query }];
+  const claudeMessages: ChatMessage[] =
+    msgHistory ?? [{ role: "user", content: query ?? "" }];
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -121,8 +131,9 @@ export async function POST(req: NextRequest) {
           }
         }
         controller.enqueue("data: [DONE]\n\n");
-      } catch (e: any) {
-        controller.enqueue(`data: ${JSON.stringify({ error: e.message })}\n\n`);
+      } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : "Unknown error occurred";
+        controller.enqueue(`data: ${JSON.stringify({ error: errorMessage })}\n\n`);
       } finally {
         controller.close();
       }

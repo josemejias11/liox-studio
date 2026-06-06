@@ -42,17 +42,10 @@ interface HotspotMapProps {
 function HotspotMap({ hotspots, imageUrl, onChange }: HotspotMapProps) {
   const [selected,  setSelected]  = useState<number | null>(null);
   const [dragging,  setDragging]  = useState<number | null>(null);
-  const [localPos,  setLocalPos]  = useState<{ x: number; y: number }[]>([]);
+  const [dragPos,   setDragPos]   = useState<{ x: number; y: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const dragOrigin   = useRef<{ mouseX: number; mouseY: number; x: number; y: number } | null>(null);
   const didDrag      = useRef(false);
-
-  // Sync local positions whenever Sanity value changes (but not during active drag)
-  useEffect(() => {
-    if (dragging === null) {
-      setLocalPos(hotspots.map((h) => ({ x: h.x ?? 50, y: h.y ?? 50 })));
-    }
-  }, [hotspots, dragging]);
 
   // Deselect on outside click
   useEffect(() => {
@@ -66,7 +59,8 @@ function HotspotMap({ hotspots, imageUrl, onChange }: HotspotMapProps) {
   }, []);
 
   function pos(i: number) {
-    return dragging === i ? (localPos[i] ?? { x: hotspots[i].x ?? 50, y: hotspots[i].y ?? 50 })
+    return dragging === i && dragPos
+      ? dragPos
       : { x: hotspots[i].x ?? 50, y: hotspots[i].y ?? 50 };
   }
 
@@ -96,13 +90,16 @@ function HotspotMap({ hotspots, imageUrl, onChange }: HotspotMapProps) {
     e.preventDefault();
     e.stopPropagation();
     didDrag.current = false;
+    const initialX = hotspots[i].x ?? 50;
+    const initialY = hotspots[i].y ?? 50;
     setDragging(i);
     setSelected(i);
+    setDragPos({ x: initialX, y: initialY });
     dragOrigin.current = {
       mouseX: e.clientX,
       mouseY: e.clientY,
-      x: hotspots[i].x ?? 50,
-      y: hotspots[i].y ?? 50,
+      x: initialX,
+      y: initialY,
     };
   }
 
@@ -112,17 +109,15 @@ function HotspotMap({ hotspots, imageUrl, onChange }: HotspotMapProps) {
     const rect = containerRef.current.getBoundingClientRect();
     const newX = Math.max(2, Math.min(98, Math.round((dragOrigin.current.x + ((e.clientX - dragOrigin.current.mouseX) / rect.width)  * 100) * 10) / 10));
     const newY = Math.max(2, Math.min(98, Math.round((dragOrigin.current.y + ((e.clientY - dragOrigin.current.mouseY) / rect.height) * 100) * 10) / 10));
-    setLocalPos((prev) => { const next = [...prev]; next[dragging] = { x: newX, y: newY }; return next; });
+    setDragPos({ x: newX, y: newY });
   }
 
   function handleMouseUp() {
-    if (dragging !== null && didDrag.current) {
-      const p = localPos[dragging];
-      if (p) {
-        onChange(hotspots.map((h, i) => i === dragging ? { ...h, x: p.x, y: p.y } : h));
-      }
+    if (dragging !== null && didDrag.current && dragPos) {
+      onChange(hotspots.map((h, i) => i === dragging ? { ...h, x: dragPos.x, y: dragPos.y } : h));
     }
     setDragging(null);
+    setDragPos(null);
     dragOrigin.current = null;
   }
 

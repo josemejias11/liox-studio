@@ -44,7 +44,7 @@ export function Hotspot({
       {/* Pulse ring — swap pulseClassName to change color/speed/size */}
       {!visited && (
         <span
-          className={`absolute inset-[-4px] rounded-full animate-ping opacity-50 ${
+          className={`absolute inset-[-6px] rounded-full animate-ping opacity-50 ${
             pulseClassName || "bg-primary"
           }`}
         />
@@ -52,7 +52,7 @@ export function Hotspot({
 
       {/* Core dot — swap className to change size, color, shape */}
       <span
-        className={`relative flex h-4 w-4 rounded-full border-2 border-white shadow-lg shadow-black/40
+        className={`relative flex h-5 w-5 rounded-full border-[3px] border-white shadow-lg shadow-black/40
           transition-transform duration-150 group-hover:scale-125 group-focus-visible:scale-125
           ${visited ? "bg-emerald-400 border-emerald-200" : "bg-primary"}
           ${className}`}
@@ -60,8 +60,8 @@ export function Hotspot({
 
       {/* Label tooltip — shows on hover above the dot */}
       <span
-        className={`absolute left-1/2 -translate-x-1/2 bottom-full mb-2.5 whitespace-nowrap
-          rounded-md px-2.5 py-1 text-[11px] font-semibold
+        className={`absolute left-1/2 -translate-x-1/2 bottom-full mb-3 whitespace-nowrap
+          rounded-md px-3 py-1.5 text-xs font-semibold
           opacity-0 group-hover:opacity-100 transition-opacity duration-150
           pointer-events-none shadow-xl
           ${labelClassName || "bg-zinc-900/90 backdrop-blur-sm text-white border border-white/10"}`}

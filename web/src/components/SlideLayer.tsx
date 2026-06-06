@@ -252,20 +252,20 @@ export function SlideLayer({
       >
         {/* Header */}
         <div
-          className={`relative shrink-0 flex items-center gap-3 px-4 pt-4 pb-3 border-b border-white/8
+          className={`relative shrink-0 flex items-center gap-3 px-6 pt-5 pb-4 border-b border-white/8
             ${headerClassName || "bg-zinc-800/50"}`}
         >
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-[3px] bg-white/15 rounded-full pointer-events-none" aria-hidden="true" />
-          <div className="bg-sky-500/20 p-1.5 rounded-lg shrink-0" aria-hidden="true">
-            <Sparkles className="h-3.5 w-3.5 text-sky-400" />
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 bg-white/15 rounded-full pointer-events-none" aria-hidden="true" />
+          <div className="bg-sky-500/20 p-2 rounded-lg shrink-0" aria-hidden="true">
+            <Sparkles className="h-5 w-5 text-sky-400" />
           </div>
-          <h3 id={TITLE_ID} className="text-[13px] font-semibold text-white flex-1 truncate">{title}</h3>
+          <h3 id={TITLE_ID} className="text-base font-semibold text-white flex-1 truncate">{title}</h3>
           <button
             onClick={onClose}
-            className="text-zinc-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/10 shrink-0"
+            className="text-zinc-500 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/10 shrink-0"
             aria-label="Close panel"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
@@ -283,15 +283,15 @@ export function SlideLayer({
                   className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   {msg.role === "assistant" && (
-                    <div className="shrink-0 mt-0.5 bg-sky-500/20 rounded-full p-1 h-fit" aria-hidden="true">
-                      <Bot className="h-2.5 w-2.5 text-sky-400" />
+                    <div className="shrink-0 mt-1 bg-sky-500/20 rounded-full p-1.5 h-fit" aria-hidden="true">
+                      <Bot className="h-4 w-4 text-sky-400" />
                     </div>
                   )}
                   <div
-                    className={`text-[11.5px] leading-relaxed rounded-2xl px-3 py-2 max-w-[88%]
+                    className={`text-sm leading-relaxed rounded-2xl px-4 py-3 max-w-[88%]
                       ${msg.role === "user"
                         ? "bg-sky-500/20 text-white rounded-tr-sm"
-                        : "bg-white/7 text-zinc-200 rounded-tl-sm"
+                        : "bg-white/10 text-zinc-200 rounded-tl-sm"
                       }`}
                   >
                     {msg.text ? (
@@ -315,17 +315,17 @@ export function SlideLayer({
 
         {/* Suggestions */}
         {topic && !children && showSuggestions && !streaming && (
-          <div className="shrink-0 px-3 pb-2 flex flex-col gap-1.5">
-            <p className="text-[9px] text-zinc-600 font-semibold uppercase tracking-widest" aria-hidden="true">
+          <div className="shrink-0 px-4 pb-3 flex flex-col gap-2">
+            <p className="text-xs text-zinc-500 font-semibold uppercase tracking-widest" aria-hidden="true">
               Try asking
             </p>
-            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Suggested questions">
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Suggested questions">
               {SUGGESTIONS.map((s) => (
                 <button
                   key={s}
                   onClick={() => handleSend(s)}
-                  className="text-[10.5px] text-sky-300 bg-sky-500/10 border border-sky-500/25
-                    rounded-full px-3 py-1 hover:bg-sky-500/20 active:scale-95
+                  className="text-sm text-sky-300 bg-sky-500/10 border border-sky-500/25
+                    rounded-full px-4 py-1.5 hover:bg-sky-500/20 active:scale-95
                     transition-all duration-150 text-left"
                 >
                   {s}
@@ -337,7 +337,7 @@ export function SlideLayer({
 
         {/* Input */}
         {topic && !children && (
-          <div className="shrink-0 px-3 py-2 border-t border-white/8 flex gap-2 items-center bg-zinc-900/60">
+          <div className="shrink-0 px-4 py-3 border-t border-white/8 flex gap-3 items-center bg-zinc-900/60">
             <label htmlFor="sl-input" className="sr-only">Ask about this feature</label>
             <input
               id="sl-input"
@@ -348,8 +348,8 @@ export function SlideLayer({
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
               placeholder="Ask about this feature…"
               disabled={streaming}
-              className="flex-1 bg-white/7 text-white text-[11.5px] placeholder:text-zinc-600
-                rounded-xl px-3 py-2 outline-none focus:ring-1 focus:ring-sky-500/50
+              className="flex-1 bg-white/10 text-white text-sm placeholder:text-zinc-500
+                rounded-xl px-4 py-3 outline-none focus:ring-1 focus:ring-sky-500/50
                 disabled:opacity-40 transition-all"
             />
             <button
@@ -357,9 +357,9 @@ export function SlideLayer({
               disabled={!input.trim() || streaming}
               aria-label="Send message"
               className="shrink-0 bg-sky-500/20 hover:bg-sky-500/35 disabled:opacity-30
-                disabled:cursor-not-allowed text-sky-400 rounded-xl p-2 transition-all active:scale-90"
+                disabled:cursor-not-allowed text-sky-400 rounded-xl p-3 transition-all active:scale-95"
             >
-              <Send className="h-3.5 w-3.5" aria-hidden="true" />
+              <Send className="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
         )}

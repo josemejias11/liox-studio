@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 
 const API_KEY = process.env.ANTHROPIC_API_KEY ?? "";
 
+interface QuizRequestBody {
+  context?: string;
+  num_questions?: number;
+}
+
 const MOCK_QUIZ = {
   title: "motorola edge 70 max — Knowledge Check",
   questions: [
@@ -39,7 +44,7 @@ const MOCK_QUIZ = {
 };
 
 export async function POST(req: NextRequest) {
-  const { context, num_questions = 5 } = await req.json();
+  const { context, num_questions = 5 } = (await req.json()) as QuizRequestBody;
 
   if (!API_KEY) {
     return NextResponse.json(MOCK_QUIZ);
@@ -62,7 +67,12 @@ export async function POST(req: NextRequest) {
       messages: [{ role: "user", content: prompt }],
     });
 
-    const raw = (message.content[0] as { text: string }).text;
+    const firstContentBlock = message.content[0];
+    if (firstContentBlock?.type !== "text") {
+      throw new Error("Unexpected response format from Anthropic");
+    }
+
+    const raw = firstContentBlock.text;
     const cleaned = raw.includes("```json")
       ? raw.split("```json")[1].split("```")[0].trim()
       : raw.includes("```")
@@ -70,7 +80,8 @@ export async function POST(req: NextRequest) {
         : raw;
 
     return NextResponse.json(JSON.parse(cleaned));
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e: unknown) {
+    const errorMessage = e instanceof Error ? e.message : "Unknown error occurred";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

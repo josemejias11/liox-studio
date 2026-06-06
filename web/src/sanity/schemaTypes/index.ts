@@ -1,5 +1,5 @@
-import { slide } from "./slide";
-import { lesson } from "./lesson";
-import { module } from "./module";
+import { slideType } from "./slide";
+import { lessonType } from "./lesson";
+import { moduleType } from "./module";
 
-export const schemaTypes = [module, lesson, slide];
+export const schemaTypes = [moduleType, lessonType, slideType];

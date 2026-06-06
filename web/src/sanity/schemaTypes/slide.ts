@@ -1,7 +1,7 @@
 import { defineType, defineField } from "sanity";
 import { HotspotMapInput } from "../components/HotspotMapInput";
 
-export const slide = defineType({
+export const slideType = defineType({
   name: "slide",
   title: "Slide",
   type: "object",

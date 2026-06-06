@@ -10,6 +10,7 @@ import { QuizSlide } from "./QuizSlide";
 import { CourseComplete } from "./CourseComplete";
 import { NavMap } from "./NavMap";
 import { VideoSlide } from "./VideoSlide";
+import { useSlideProgress } from "@/hooks/useSlideProgress";
 
 interface SanityHotspot {
   _key: string;
@@ -54,8 +55,8 @@ export default function DeckViewer({
   const [hasStarted, setHasStarted] = useState(false);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [activeLayer, setActiveLayer] = useState<{ topic: string; title: string; body?: string } | null>(null);
-  const [visited, setVisited] = useState<Record<string, Set<string>>>({});
   const [sessionId, setSessionId] = useState("");
+  const { visited, markVisited: baseMarkVisited } = useSlideProgress(sessionId);
 
   // Phase 10 — transitions + completion
   const [animClass, setAnimClass] = useState("");
@@ -85,21 +86,6 @@ export default function DeckViewer({
     setSessionId(sid);
   }, []);
 
-  // Hydrate hotspot progress from DB once sessionId is ready
-  useEffect(() => {
-    if (!sessionId) return;
-    fetch(`/api/progress?sessionId=${sessionId}`)
-      .then((r) => r.json())
-      .then((data: { slides: Record<string, { visitedHotspots: string[] }> }) => {
-        const restored: Record<string, Set<string>> = {};
-        for (const [sid, prog] of Object.entries(data.slides ?? {})) {
-          restored[sid] = new Set(prog.visitedHotspots);
-        }
-        setVisited(restored);
-      })
-      .catch(() => {});
-  }, [sessionId]);
-
   // Cleanup timers on unmount
   useEffect(() => clearTimers, []);
 
@@ -125,24 +111,7 @@ export default function DeckViewer({
   const totalHotspots = slides.reduce((sum, s) => sum + (s.hotspots?.length ?? 0), 0);
 
   function markVisited(label: string) {
-    setVisited((prev) => {
-      const next = new Set([...(prev[slideKey] ?? []), label]);
-      const allVisited = hotspots.length > 0 && next.size >= hotspots.length;
-      if (sessionId) {
-        fetch("/api/progress", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: "slide",
-            sessionId,
-            slideId: slideKey,
-            visitedHotspots: Array.from(next),
-            completed: allVisited,
-          }),
-        }).catch(() => {});
-      }
-      return { ...prev, [slideKey]: next };
-    });
+    baseMarkVisited(slideKey, label, hotspots.length);
   }
 
   // ── Transition helper ──────────────────────────────────────────────────────

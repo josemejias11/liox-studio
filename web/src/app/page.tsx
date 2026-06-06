@@ -3,15 +3,62 @@ import { Bot, BarChart2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { sanityClient } from "@/sanity/lib/client";
 import { FIRST_MODULE_QUERY } from "@/sanity/lib/queries";
+import { SanityDocument } from "next-sanity";
 import DeckViewer from "@/components/DeckViewer";
 
+export interface SanityHotspot {
+  _key: string;
+  label: string;
+  topic: string;
+  body?: string;
+  photos?: { asset?: { url?: string } }[];
+  x: number;
+  y: number;
+}
+
+export interface SanitySlide {
+  _key: string;
+  headline: string;
+  body?: string;
+  slideType: "content" | "interaction" | "stage" | "video" | "quiz";
+  media?: { asset?: { url?: string } };
+  stageBackground?: { asset?: { url?: string } };
+  completionTransition?: "spin" | "rise" | "fade";
+  hotspots?: SanityHotspot[];
+  videoUrl?: string;
+  videoFile?: { asset?: { url?: string } };
+  speakerNotes?: string;
+}
+
+export interface SanitySlideWithLesson extends SanitySlide {
+  lessonTitle?: string;
+}
+
+export interface LessonQueryData {
+  _id: string;
+  title: string;
+  slug: { current: string };
+  estimatedDuration?: number;
+  slides?: SanitySlide[];
+}
+
+export interface ModuleQueryData extends SanityDocument {
+  _id: string;
+  title: string;
+  slug: { current: string };
+  description?: string;
+  thumbnail?: { asset?: { url?: string } };
+  learningObjectives?: string[];
+  lessons?: LessonQueryData[];
+}
+
 export default async function Home() {
-  const module = await sanityClient.fetch(FIRST_MODULE_QUERY);
+  const module = await sanityClient.fetch<ModuleQueryData | null>(FIRST_MODULE_QUERY);
 
   // Flatten all slides across all lessons into a single ordered array
-  const slides =
-    module?.lessons?.flatMap((lesson: any) =>
-      (lesson.slides ?? []).map((slide: any) => ({
+  const slides: SanitySlideWithLesson[] =
+    module?.lessons?.flatMap((lesson: LessonQueryData) =>
+      (lesson.slides ?? []).map((slide: SanitySlide) => ({
         ...slide,
         lessonTitle: lesson.title,
       }))

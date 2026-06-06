@@ -40,14 +40,15 @@ export function SlideFrame({
   const showNav = currentSlide !== undefined && totalSlides !== undefined;
 
   return (
-    // Centering shell
-    <div className="w-full h-full bg-zinc-950 flex items-center justify-center overflow-hidden">
+    // Centering shell with padding
+    <div className="w-full h-full bg-zinc-950 flex items-center justify-center overflow-hidden p-2 sm:p-4">
       {/* 16:9 locked frame */}
       <div
-        className={`relative overflow-hidden bg-black ${className}`}
+        className={`relative overflow-hidden bg-black rounded-xl shadow-2xl shrink-0 w-full ${className}`}
         style={{
           aspectRatio: "16 / 9",
-          width: "min(100%, calc((100vh - 4rem) * 16 / 9))",
+          maxHeight: "100%",
+          maxWidth: "calc(100vh * 16 / 9)",
         }}
       >
         {children}
@@ -65,27 +66,27 @@ export function SlideFrame({
             style={{ bottom: showNav ? "2.25rem" : "0", maxHeight: "38%" }}
           >
             {/* Header row */}
-            <div className="shrink-0 flex items-center gap-2 px-4 pt-3 pb-2">
-              <StickyNote className="h-3 w-3 text-amber-400/60 shrink-0" />
-              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-amber-400/50 flex-1">
+            <div className="shrink-0 flex items-center gap-3 px-6 pt-4 pb-3">
+              <StickyNote className="h-4 w-4 text-amber-400/60 shrink-0" />
+              <p className="text-xs font-bold uppercase tracking-wider text-amber-400/50 flex-1">
                 Speaker Notes
               </p>
-              <kbd className="text-[8px] text-white/15 font-mono border border-white/10 rounded px-1 py-px">
+              <kbd className="text-xs text-white/15 font-mono border border-white/10 rounded px-1.5 py-0.5">
                 N
               </kbd>
             </div>
 
             {/* Notes content */}
             <div
-              className="overflow-y-auto px-4 pb-3"
+              className="overflow-y-auto px-6 pb-4"
               style={{ scrollbarWidth: "none" }}
             >
               {speakerNotes ? (
-                <p className="text-white/60 text-[12px] leading-relaxed whitespace-pre-wrap">
+                <p className="text-white/60 text-sm leading-relaxed whitespace-pre-wrap">
                   {speakerNotes}
                 </p>
               ) : (
-                <p className="text-white/18 text-[11px] italic">
+                <p className="text-white/18 text-sm italic">
                   No speaker notes for this slide.
                 </p>
               )}
@@ -99,11 +100,11 @@ export function SlideFrame({
             onClick={onToggleNavMap}
             aria-label="Open course navigation"
             title="Course map"
-            className="absolute bottom-3 left-3 z-50 h-7 w-7 rounded-full flex items-center justify-center
-              bg-black/35 backdrop-blur-sm text-white/35 hover:text-white/80 hover:bg-black/55
-              transition-all duration-150"
+            className="absolute bottom-4 left-4 z-50 h-10 w-10 rounded-full flex items-center justify-center
+              bg-black/35 backdrop-blur-sm text-white/40 hover:text-white/90 hover:bg-black/60
+              transition-all duration-150 shadow-md"
           >
-            <LayoutGrid className="h-3.5 w-3.5" />
+            <LayoutGrid className="h-5 w-5" />
           </button>
         )}
         {!showNav && onToggleNotes && (
@@ -112,14 +113,14 @@ export function SlideFrame({
             aria-label="Toggle speaker notes"
             aria-pressed={notesOpen}
             title="Speaker notes (N)"
-            className={`absolute bottom-3 right-3 z-50 h-7 w-7 rounded-full flex items-center justify-center
-              transition-all duration-150
+            className={`absolute bottom-4 right-4 z-50 h-10 w-10 rounded-full flex items-center justify-center
+              transition-all duration-150 shadow-md
               ${notesOpen
                 ? "bg-amber-400/20 text-amber-400"
-                : "bg-black/35 backdrop-blur-sm text-white/35 hover:text-white/80 hover:bg-black/55"
+                : "bg-black/35 backdrop-blur-sm text-white/40 hover:text-white/90 hover:bg-black/60"
               }`}
           >
-            <StickyNote className="h-3.5 w-3.5" />
+            <StickyNote className="h-5 w-5" />
           </button>
         )}
 
@@ -128,23 +129,23 @@ export function SlideFrame({
           <>
             {/* Completion hint */}
             {nextDisabled && completionHint && (
-              <div className="absolute bottom-9 left-0 right-0 flex justify-center pointer-events-none z-10">
-                <span className="bg-black/70 backdrop-blur-sm text-white/70 text-[10px] font-medium px-3 py-1 rounded-full border border-white/10">
+              <div className="absolute bottom-16 left-0 right-0 flex justify-center pointer-events-none z-10">
+                <span className="bg-black/70 backdrop-blur-md text-white shadow-md text-sm font-medium px-5 py-2 rounded-full border border-white/10">
                   {completionHint}
                 </span>
               </div>
             )}
 
-            <div className="absolute bottom-0 left-0 right-0 h-9 z-20 flex items-center px-3 gap-1 bg-gradient-to-t from-black/60 to-transparent">
+            <div className="absolute bottom-0 left-0 right-0 h-14 z-20 flex items-center px-6 gap-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
               {/* Left cluster — map + notes */}
               {onToggleNavMap && (
                 <button
                   onClick={onToggleNavMap}
                   aria-label="Open course navigation"
                   title="Course map"
-                  className="h-6 w-6 rounded-full flex items-center justify-center text-white/35 hover:text-white hover:bg-white/15 transition-all"
+                  className="h-10 w-10 rounded-full flex items-center justify-center text-white/40 hover:text-white hover:bg-white/15 transition-all"
                 >
-                  <LayoutGrid className="h-3 w-3" />
+                  <LayoutGrid className="h-5 w-5" />
                 </button>
               )}
               {onToggleNotes && (
@@ -153,13 +154,13 @@ export function SlideFrame({
                   aria-label="Toggle speaker notes"
                   aria-pressed={notesOpen}
                   title="Speaker notes (N)"
-                  className={`h-6 w-6 rounded-full flex items-center justify-center transition-all
+                  className={`h-10 w-10 rounded-full flex items-center justify-center transition-all
                     ${notesOpen
                       ? "text-amber-400 bg-amber-400/15"
-                      : "text-white/35 hover:text-white hover:bg-white/15"
+                      : "text-white/40 hover:text-white hover:bg-white/15"
                     }`}
                 >
-                  <StickyNote className="h-3 w-3" />
+                  <StickyNote className="h-5 w-5" />
                 </button>
               )}
 
@@ -169,13 +170,13 @@ export function SlideFrame({
               <button
                 onClick={onPrev}
                 disabled={currentSlide === 1}
-                className="h-6 w-6 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/15 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
+                className="h-10 w-10 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/15 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
                 aria-label="Previous slide"
               >
-                <ChevronLeft className="h-3.5 w-3.5" />
+                <ChevronLeft className="h-6 w-6" />
               </button>
 
-              <span className="text-[10px] text-white/40 w-10 text-center tabular-nums select-none" aria-hidden="true">
+              <span className="text-sm font-medium text-white/60 min-w-[3rem] text-center tabular-nums select-none" aria-hidden="true">
                 {currentSlide} / {totalSlides}
               </span>
               {/* Announced to screen readers on each slide change */}
@@ -186,10 +187,10 @@ export function SlideFrame({
               <button
                 onClick={onNext}
                 disabled={currentSlide === totalSlides || nextDisabled}
-                className="h-6 w-6 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/15 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
+                className="h-10 w-10 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/15 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
                 aria-label="Next slide"
               >
-                <ChevronRight className="h-3.5 w-3.5" />
+                <ChevronRight className="h-6 w-6" />
               </button>
             </div>
 

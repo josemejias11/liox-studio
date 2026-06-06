@@ -8,16 +8,39 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Tracks per-slide progress for an anonymous session (sessionId = browser-generated UUID)
+// Tracks user sessions
+model Session {
+  id          String          @id // Browser-generated UUID
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt // Tracks last activity
+  progress    SlideProgress[]
+  quizzes     QuizAttempt[]
+  hotspots    HotspotVisit[]
+}
+
+// Tracks per-slide progress for a session
 model SlideProgress {
-  id              String   @id @default(cuid())
   sessionId       String
   slideId         String
-  visitedHotspots String   @default("[]") // JSON: string[] of hotspot labels
   completed       Boolean  @default(false)
   updatedAt       DateTime @updatedAt
 
-  @@unique([sessionId, slideId])
+  session         Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@id([sessionId, slideId])
+}
+
+// Normalized Hotspot Visits
+model HotspotVisit {
+  sessionId String
+  slideId   String
+  label     String
+  createdAt DateTime @default(now())
+
+  session   Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@id([sessionId, slideId, label])
+  @@index([label])
 }
 
 // Records each quiz attempt for a session
@@ -27,6 +50,10 @@ model QuizAttempt {
   moduleId  String
   score     Int
   total     Int
-  answers   String   // JSON: {question: string, selected: string, correct: string}[]
+  answers   String   // JSON
   createdAt DateTime @default(now())
+
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  @@index([sessionId])
+  @@index([createdAt])
 }
