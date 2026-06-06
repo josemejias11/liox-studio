@@ -82,7 +82,6 @@ In **sanity.io/manage → your project → API → CORS Origins**, add both with
 | Origin | Purpose |
 |--------|---------|
 | `http://localhost:3000` | Embedded Studio + learner player |
-| `http://localhost:3333` | Standalone Sanity Studio |
 
 #### API Token
 In **sanity.io/manage → your project → API → Tokens** → **Add API token**:
