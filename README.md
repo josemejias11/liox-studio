@@ -67,11 +67,10 @@ uvicorn main:app --reload
 ### 3. Connect Sanity
 
 1. Go to [sanity.io/manage](https://sanity.io/manage) → **Create new project** → copy the **Project ID**
-2. Create `web/.env.local` with:
+2. Update `NEXT_PUBLIC_SANITY_PROJECT_ID` in `web/.env` with your project ID.
+3. Create `web/.env.local` with your secrets:
 
 ```env
-NEXT_PUBLIC_SANITY_PROJECT_ID="your-project-id"
-NEXT_PUBLIC_SANITY_DATASET="production"
 SANITY_API_TOKEN="your-editor-token"
 ANTHROPIC_API_KEY="sk-ant-..."
 ```
@@ -201,11 +200,11 @@ Bottom-sheet overlay with streaming AI chat.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `NEXT_PUBLIC_SANITY_PROJECT_ID` | Yes | From sanity.io/manage |
-| `NEXT_PUBLIC_SANITY_DATASET` | No (default: `production`) | Sanity dataset name |
-| `SANITY_API_TOKEN` | Yes (for Studio mutations) | Editor-level Sanity token |
-| `ANTHROPIC_API_KEY` | No | Claude API key — omit for mock mode |
-| `DATABASE_URL` | No (default: `file:./dev.db`) | SQLite path for progress tracking |
+| `NEXT_PUBLIC_SANITY_PROJECT_ID` | Yes | From sanity.io/manage — set in `web/.env` |
+| `NEXT_PUBLIC_SANITY_DATASET` | No (default: `production`) | Sanity dataset name — set in `web/.env` |
+| `SANITY_API_TOKEN` | Yes (for Studio mutations) | Editor-level Sanity token — set in `web/.env.local` |
+| `ANTHROPIC_API_KEY` | No | Claude API key — omit for mock mode — set in `web/.env.local` |
+| `DATABASE_URL` | No (default: `file:./dev.db`) | SQLite path — pre-set in `web/.env`, override in `.env.local` if needed |
 
 ---
 

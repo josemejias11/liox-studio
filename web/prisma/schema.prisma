@@ -1,0 +1,32 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Tracks per-slide progress for an anonymous session (sessionId = browser-generated UUID)
+model SlideProgress {
+  id              String   @id @default(cuid())
+  sessionId       String
+  slideId         String
+  visitedHotspots String   @default("[]") // JSON: string[] of hotspot labels
+  completed       Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
+
+  @@unique([sessionId, slideId])
+}
+
+// Records each quiz attempt for a session
+model QuizAttempt {
+  id        String   @id @default(cuid())
+  sessionId String
+  moduleId  String
+  score     Int
+  total     Int
+  answers   String   // JSON: {question: string, selected: string, correct: string}[]
+  createdAt DateTime @default(now())
+}
