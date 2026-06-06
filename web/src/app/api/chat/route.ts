@@ -64,7 +64,12 @@ function mockStream(text: string): ReadableStream {
 }
 
 export async function POST(req: NextRequest) {
-  const { query, context_hint } = await req.json();
+  const {
+    query,
+    messages: msgHistory,
+    context_hint,
+    slide_content,
+  } = await req.json();
 
   const headers = {
     "Content-Type": "text/event-stream",
@@ -72,19 +77,33 @@ export async function POST(req: NextRequest) {
     Connection: "keep-alive",
   };
 
+  // Derive the last user query for mock-mode keyword matching
+  const lastQuery: string =
+    (msgHistory as { role: string; content: string }[] | undefined)?.findLast(
+      (m) => m.role === "user"
+    )?.content ?? query ?? "";
+
   // Mock mode — no API key needed
   if (!API_KEY) {
-    return new Response(mockStream(getMockResponse(query)), { headers });
+    return new Response(mockStream(getMockResponse(lastQuery)), { headers });
   }
 
   // Real mode — stream from Claude
   const { default: Anthropic } = await import("@anthropic-ai/sdk");
   const client = new Anthropic({ apiKey: API_KEY });
 
-  const systemPrompt = context_hint ? ASSET_SCOPE : "You are a helpful AI tutor. Answer based on the course content provided.";
-  const userContent = context_hint
-    ? `[Feature context: ${context_hint}]\n\nQuestion: ${query}`
-    : `Question: ${query}`;
+  // Build system prompt — include slide body content when available
+  let systemPrompt = context_hint
+    ? ASSET_SCOPE
+    : "You are a helpful AI tutor. Answer based on the course content provided.";
+  if (slide_content) {
+    systemPrompt +=
+      `\n\nOfficial content for this feature (use as your primary reference):\n"""\n${slide_content}\n"""`;
+  }
+
+  // Support multi-turn: use full messages array when provided, else wrap single query
+  const claudeMessages: { role: "user" | "assistant"; content: string }[] =
+    msgHistory ?? [{ role: "user", content: query }];
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -93,7 +112,7 @@ export async function POST(req: NextRequest) {
           model: "claude-sonnet-4-6",
           max_tokens: 1024,
           system: systemPrompt,
-          messages: [{ role: "user", content: userContent }],
+          messages: claudeMessages,
         });
 
         for await (const event of stream) {

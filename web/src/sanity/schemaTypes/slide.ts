@@ -1,4 +1,5 @@
 import { defineType, defineField } from "sanity";
+import { HotspotMapInput } from "../components/HotspotMapInput";
 
 export const slide = defineType({
   name: "slide",
@@ -19,7 +20,7 @@ export const slide = defineType({
     }),
     defineField({
       name: "media",
-      title: "Media",
+      title: "Media / Product Image",
       type: "image",
       options: { hotspot: true },
     }),
@@ -37,6 +38,7 @@ export const slide = defineType({
         list: [
           { title: "Content", value: "content" },
           { title: "Interaction (Hotspots)", value: "interaction" },
+          { title: "Product Stage", value: "stage" },
           { title: "Video", value: "video" },
           { title: "Quiz", value: "quiz" },
         ],
@@ -45,10 +47,50 @@ export const slide = defineType({
       initialValue: "content",
     }),
     defineField({
+      name: "videoUrl",
+      title: "Video URL",
+      description: "YouTube, Vimeo, or direct .mp4 URL.",
+      type: "url",
+      hidden: ({ parent }) => parent?.slideType !== "video",
+    }),
+    defineField({
+      name: "videoFile",
+      title: "Video File",
+      description: "Upload an MP4 to Sanity CDN. Used when Video URL is empty.",
+      type: "file",
+      options: { accept: "video/*" },
+      hidden: ({ parent }) => parent?.slideType !== "video",
+    }),
+    defineField({
+      name: "stageBackground",
+      title: "Stage Background Image",
+      description: "Optional full-bleed background for Product Stage slides. If omitted, a gradient is used.",
+      type: "image",
+      options: { hotspot: true },
+      hidden: ({ parent }) => parent?.slideType !== "stage",
+    }),
+    defineField({
+      name: "completionTransition",
+      title: "Completion Animation",
+      description: "Animation played after all hotspots are discovered.",
+      type: "string",
+      options: {
+        list: [
+          { title: "Spin (360° product rotate)", value: "spin" },
+          { title: "Rise (content rises in)", value: "rise" },
+          { title: "Fade", value: "fade" },
+        ],
+        layout: "radio",
+      },
+      initialValue: "spin",
+      hidden: ({ parent }) => parent?.slideType !== "stage",
+    }),
+    defineField({
       name: "hotspots",
       title: "Hotspot Definitions",
       type: "array",
-      hidden: ({ parent }) => parent?.slideType !== "interaction",
+      components: { input: HotspotMapInput },
+      hidden: ({ parent }) => parent?.slideType !== "interaction" && parent?.slideType !== "stage",
       of: [
         {
           type: "object",
@@ -56,6 +98,20 @@ export const slide = defineType({
           fields: [
             defineField({ name: "label", title: "Label", type: "string", validation: (r) => r.required() }),
             defineField({ name: "topic", title: "AI Topic Query", type: "string" }),
+            defineField({
+              name: "body",
+              title: "Panel Body",
+              description: "Content shown in the discovery panel when this hotspot is opened.",
+              type: "text",
+              rows: 5,
+            }),
+            defineField({
+              name: "photos",
+              title: "Photo Gallery",
+              description: "Images shown as a swipeable card stack inside the panel.",
+              type: "array",
+              of: [{ type: "image", options: { hotspot: true } }],
+            }),
             defineField({ name: "x", title: "X Position (%)", type: "number", validation: (r) => r.min(0).max(100) }),
             defineField({ name: "y", title: "Y Position (%)", type: "number", validation: (r) => r.min(0).max(100) }),
           ],

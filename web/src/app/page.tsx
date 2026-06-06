@@ -1,4 +1,5 @@
-import { Bot } from "lucide-react";
+import Link from "next/link";
+import { Bot, BarChart2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { sanityClient } from "@/sanity/lib/client";
 import { FIRST_MODULE_QUERY } from "@/sanity/lib/queries";
@@ -23,7 +24,16 @@ export default async function Home() {
           <Bot className="h-6 w-6" />
           <span>DeckTutor AI</span>
         </div>
-        <div className="ml-auto flex items-center gap-4">
+        <div className="ml-auto flex items-center gap-3">
+          <Link
+            href="/analytics"
+            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-[12px] font-medium
+              px-3 py-1.5 rounded-lg border border-border hover:border-foreground/20 hover:bg-accent
+              transition-all duration-150"
+          >
+            <BarChart2 className="h-3.5 w-3.5" aria-hidden="true" />
+            Analytics
+          </Link>
           <Avatar className="h-8 w-8">
             <AvatarImage src="https://github.com/shadcn.png" alt="@user" />
             <AvatarFallback>U</AvatarFallback>
