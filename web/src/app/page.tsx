@@ -50,9 +50,9 @@ export default async function Home() {
         {modules.length === 0 ? (
           <div className="text-center text-muted-foreground py-24 border border-dashed rounded-xl border-border">
             <p className="text-lg font-light">No published courses yet.</p>
-            <a href="/studio" className="mt-4 inline-block text-primary underline text-sm hover:no-underline">
+            <Link href="/studio" className="mt-4 inline-block text-primary underline text-sm hover:no-underline">
               Open Studio →
-            </a>
+            </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

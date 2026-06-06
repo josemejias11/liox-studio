@@ -209,7 +209,7 @@ export default function DeckViewer({
     else if (module.coverButtonColor === "moto-pearl") btnClass = "bg-moto-pearl text-moto-black hover:bg-moto-pearl/90 border-transparent";
 
     return (
-      <SlideFrame>
+      <SlideFrame moduleTitle={module.title}>
         {finalImageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={finalImageUrl} alt="Course cover" className="absolute inset-0 w-full h-full object-cover" />
@@ -251,7 +251,7 @@ export default function DeckViewer({
   // ── Course completion ──────────────────────────────────────────────────────
   if (isComplete) {
     return (
-      <SlideFrame onToggleNavMap={toggleNavMap} onToggleNotes={toggleNotes} notesOpen={showNotes}>
+      <SlideFrame onToggleNavMap={toggleNavMap} onToggleNotes={toggleNotes} notesOpen={showNotes} moduleTitle={module.title}>
         <div className={`absolute inset-0 ${animClass}`}>
           <CourseComplete
             moduleTitle={module.title}
@@ -275,7 +275,7 @@ export default function DeckViewer({
   // ── Product Stage slide ────────────────────────────────────────────────────
   if (currentSlide?.slideType === "stage") {
     return (
-      <SlideFrame onToggleNavMap={toggleNavMap} onToggleNotes={toggleNotes} notesOpen={showNotes} speakerNotes={currentSlide.speakerNotes}>
+      <SlideFrame onToggleNavMap={toggleNavMap} onToggleNotes={toggleNotes} notesOpen={showNotes} speakerNotes={currentSlide.speakerNotes} moduleTitle={module.title}>
         <div className={`absolute inset-0 ${animClass}`}>
           <ProductStage
             headline={currentSlide.headline}
@@ -296,7 +296,7 @@ export default function DeckViewer({
   // ── Video slide ────────────────────────────────────────────────────────────
   if (currentSlide?.slideType === "video") {
     return (
-      <SlideFrame onToggleNavMap={toggleNavMap} onToggleNotes={toggleNotes} notesOpen={showNotes} speakerNotes={currentSlide.speakerNotes}>
+      <SlideFrame onToggleNavMap={toggleNavMap} onToggleNotes={toggleNotes} notesOpen={showNotes} speakerNotes={currentSlide.speakerNotes} moduleTitle={module.title}>
         <div className={`absolute inset-0 ${animClass}`}>
           <VideoSlide
             headline={currentSlide.headline}
@@ -325,7 +325,7 @@ export default function DeckViewer({
     ].join("\n");
 
     return (
-      <SlideFrame onToggleNavMap={toggleNavMap} onToggleNotes={toggleNotes} notesOpen={showNotes} speakerNotes={currentSlide.speakerNotes}>
+      <SlideFrame onToggleNavMap={toggleNavMap} onToggleNotes={toggleNotes} notesOpen={showNotes} speakerNotes={currentSlide.speakerNotes} moduleTitle={module.title}>
         <div className={`absolute inset-0 ${animClass}`}>
           <QuizSlide context={quizContext} onNext={goNext} sessionId={sessionId} moduleId={module._id} />
         </div>
@@ -351,6 +351,7 @@ export default function DeckViewer({
       notesOpen={showNotes}
       speakerNotes={currentSlide?.speakerNotes}
       theme={slideTheme}
+      moduleTitle={module.title}
       completionHint={
         nextLocked
           ? `Tap all ${hotspots.length} features to continue (${visitedOnSlide} / ${hotspots.length})`

@@ -23,6 +23,8 @@ interface SlideFrameProps {
   onToggleNotes?: () => void;
   notesOpen?: boolean;
   speakerNotes?: string;
+  // Letterbox info bar — shown in the space below the 16:9 frame on tall screens
+  moduleTitle?: string;
 }
 
 const FRAME_BG: Record<string, string> = {
@@ -47,6 +49,7 @@ export function SlideFrame({
   onToggleNotes,
   notesOpen = false,
   speakerNotes,
+  moduleTitle,
 }: SlideFrameProps) {
   const showNav = currentSlide !== undefined && totalSlides !== undefined;
   const frameBg = theme && theme in FRAME_BG ? FRAME_BG[theme] : "bg-moto-black";
@@ -55,9 +58,17 @@ export function SlideFrame({
     ? "bg-gradient-to-t from-moto-black/60 via-moto-black/25 to-transparent"
     : "bg-gradient-to-t from-moto-black/90 via-moto-black/50 to-transparent";
 
+  // Info bar: only has visual content when moduleTitle is provided and there is
+  // letterbox space. The bar is shrink-0 inside a flex-col container — when the
+  // 16:9 frame already fills all available vertical space the bar is naturally
+  // clipped to zero by the overflow-hidden on the outer shell.
+  const showProgress = currentSlide !== undefined && totalSlides !== undefined && totalSlides > 0;
+  const progressPct = showProgress ? (currentSlide / totalSlides) * 100 : 0;
+
   return (
-    // Centering shell — owns the full dynamic viewport, no padding so frame maximises
-    <div className="w-full h-dvh bg-moto-black flex items-center justify-center overflow-hidden">
+    // Centering shell — flex-col so the info bar stacks naturally below the frame.
+    // overflow-hidden ensures the bar is invisible when there is no letterbox room.
+    <div className="w-full h-dvh bg-moto-black flex flex-col items-center justify-center overflow-hidden">
       {/* 16:9 locked frame */}
       <div
         className={`relative overflow-hidden ${frameBg} rounded-xl shadow-2xl shrink-0 w-full ${className}`}
@@ -249,6 +260,52 @@ export function SlideFrame({
               />
             </div>
           </>
+        )}
+      </div>
+
+      {/* ── Letterbox info bar ───────────────────────────────────────────────
+          Sits in the black space below the 16:9 frame on portrait/tall screens.
+          shrink-0 prevents flex from squashing it; when the frame fills the full
+          dvh the outer shell has no remaining height, so this bar is hidden by
+          overflow-hidden on the shell — no JS required.
+          aria-hidden: content is ambient context, not interactive.            */}
+      <div
+        aria-hidden="true"
+        className="shrink-0 w-full flex flex-col"
+        style={{ maxWidth: "calc(100dvh * 16 / 9)" }}
+      >
+        {/* moto-indigo progress stripe mirrors the in-frame progress bar */}
+        {showProgress && (
+          <div className="h-px w-full bg-moto-white/5">
+            <div
+              className="h-full bg-moto-indigo/60 transition-[width] duration-500 ease-out"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+        )}
+
+        {/* Text row */}
+        {moduleTitle && (
+          <div className="flex items-center justify-between px-3 py-1.5 gap-4">
+            {/* Module / product name — primary label */}
+            <span className="text-[11px] font-medium tracking-wide text-moto-frost/70 truncate leading-none">
+              {moduleTitle}
+            </span>
+
+            {/* Right cluster — accent dot + slide counter */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="block h-1 w-1 rounded-full bg-moto-indigo/60" />
+              {showProgress ? (
+                <span className="text-[11px] tabular-nums text-moto-slate leading-none">
+                  {currentSlide}&thinsp;/&thinsp;{totalSlides}
+                </span>
+              ) : (
+                <span className="text-[11px] text-moto-slate leading-none">
+                  DeckTutor AI
+                </span>
+              )}
+            </div>
+          </div>
         )}
       </div>
     </div>

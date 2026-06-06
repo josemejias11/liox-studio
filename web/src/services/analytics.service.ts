@@ -58,10 +58,10 @@ export async function getAnalyticsData() {
       : null;
 
   const scoreBuckets = [
-    { label: "Perfect (100%)", count: allQuizzes.filter((q) => q.score === q.total).length, color: "bg-amber-400" },
-    { label: "Great (≥ 80%)", count: allQuizzes.filter((q) => q.score / q.total >= 0.8 && q.score < q.total).length, color: "bg-sky-400" },
-    { label: "Good (≥ 60%)", count: allQuizzes.filter((q) => q.score / q.total >= 0.6 && q.score / q.total < 0.8).length, color: "bg-emerald-400" },
-    { label: "Below 60%", count: allQuizzes.filter((q) => q.score / q.total < 0.6).length, color: "bg-zinc-600" },
+    { label: "Perfect (100%)", count: allQuizzes.filter((q) => q.score === q.total).length, color: "bg-moto-indigo" },
+    { label: "Great (≥ 80%)", count: allQuizzes.filter((q) => q.score / q.total >= 0.8 && q.score < q.total).length, color: "bg-moto-slate" },
+    { label: "Good (≥ 60%)", count: allQuizzes.filter((q) => q.score / q.total >= 0.6 && q.score / q.total < 0.8).length, color: "bg-moto-sandstone" },
+    { label: "Below 60%", count: allQuizzes.filter((q) => q.score / q.total < 0.6).length, color: "bg-moto-black" },
   ];
 
   return {
