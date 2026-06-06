@@ -140,10 +140,15 @@ Server-rendered dashboard reading directly from SQLite:
 ## Authoring a Course
 
 1. Open `http://localhost:3000/studio`
-2. Create a **Lesson** — add slides, set types, upload images
-3. Create a **Module** — reference your lessons, add thumbnail and objectives
-4. Set **Published → true** on the Module
-5. Refresh `http://localhost:3000` — your course appears immediately
+2. Go to **Content > Modules** and click **Create new Module** (or click the + icon).
+3. Enter a **Title** (e.g., "Test Module") and click **Generate** for the Slug.
+4. Under the **Lessons** array, click **Add item**.
+5. In the reference search dropdown, click **Create** to create a new nested Lesson.
+6. Enter a **Title** for the new Lesson (e.g., "Lesson 1") and click **Generate** for the Slug.
+7. Under the **Slides** array in the Lesson, click **Add item** to create slides (e.g., add 2 slides).
+8. Fill out the **Headline** and slide content, then close the slide dialog.
+9. Click **Publish** on the Lesson, then click **Publish** on the parent Module.
+10. Refresh `http://localhost:3000` — your course appears immediately.
 
 **Slide types:**
 
