@@ -263,51 +263,37 @@ export function SlideFrame({
         )}
       </div>
 
-      {/* ── Letterbox info bar ───────────────────────────────────────────────
-          Sits in the black space below the 16:9 frame on portrait/tall screens.
-          shrink-0 prevents flex from squashing it; when the frame fills the full
-          dvh the outer shell has no remaining height, so this bar is hidden by
-          overflow-hidden on the shell — no JS required.
-          aria-hidden: content is ambient context, not interactive.            */}
-      <div
-        aria-hidden="true"
-        className="shrink-0 w-full flex flex-col"
-        style={{ maxWidth: "calc(100dvh * 16 / 9)" }}
-      >
-        {/* moto-indigo progress stripe mirrors the in-frame progress bar */}
-        {showProgress && (
-          <div className="h-px w-full bg-moto-white/5">
-            <div
-              className="h-full bg-moto-indigo/60 transition-[width] duration-500 ease-out"
-              style={{ width: `${progressPct}%` }}
-            />
-          </div>
-        )}
+      {/* ── Letterbox device banner ─────────────────────────────────────────
+          Fills the black letterbox below the 16:9 frame on tall screens.
+          Invisible when the frame already fills the full dvh (overflow-hidden
+          clips it). Not interactive — screen readers get this from the frame. */}
+      {moduleTitle && (
+        <div
+          aria-hidden="true"
+          className="shrink-0 w-full flex flex-col items-center justify-center py-5 gap-2"
+          style={{ maxWidth: "calc(100dvh * 16 / 9)" }}
+        >
+          {/* "You are learning about" label */}
+          <p className="text-[11px] uppercase tracking-[0.22em] font-medium text-moto-slate leading-none">
+            You are learning about
+          </p>
 
-        {/* Text row */}
-        {moduleTitle && (
-          <div className="flex items-center justify-between px-3 py-1.5 gap-4">
-            {/* Module / product name — primary label */}
-            <span className="text-[11px] font-medium tracking-wide text-moto-frost/70 truncate leading-none">
-              {moduleTitle}
-            </span>
+          {/* Device / module name — the hero text */}
+          <p className="text-3xl font-bold tracking-tight text-moto-frost leading-none text-center">
+            {moduleTitle}
+          </p>
 
-            {/* Right cluster — accent dot + slide counter */}
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span className="block h-1 w-1 rounded-full bg-moto-indigo/60" />
-              {showProgress ? (
-                <span className="text-[11px] tabular-nums text-moto-slate leading-none">
-                  {currentSlide}&thinsp;/&thinsp;{totalSlides}
-                </span>
-              ) : (
-                <span className="text-[11px] text-moto-slate leading-none">
-                  DeckTutor AI
-                </span>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
+          {/* Indigo underline accent */}
+          <span className="block mt-1 h-[2px] w-10 rounded-full bg-moto-indigo" />
+
+          {/* Progress indicator */}
+          {showProgress && (
+            <p className="mt-1 text-xs tabular-nums text-moto-slate/70 leading-none">
+              slide {currentSlide} of {totalSlides}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
