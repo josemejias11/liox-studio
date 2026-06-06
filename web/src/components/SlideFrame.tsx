@@ -66,7 +66,7 @@ export function SlideFrame({
     <div className="w-full h-dvh bg-moto-black flex flex-col items-center justify-start overflow-hidden">
       {/* Fullscreen frame — fills all remaining vertical space after the banner */}
       <div
-        className={`relative overflow-hidden bg-moto-black rounded-none flex-1 w-full ${className}`}
+        className={`relative overflow-clip bg-moto-black rounded-none flex-1 w-full ${className}`}
       >
         {children}
 
