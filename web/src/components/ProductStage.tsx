@@ -212,9 +212,11 @@ export function ProductStage({
       {/* ── Product image — 3-layer: entrance / parallax / breathe+spin ── */}
       {productImage && (
         <div
-          className={`absolute inset-0 flex items-center justify-center stage-enter-product
-            ${allDiscovered && completionTransition === "fade" ? "transition-opacity duration-700 opacity-80" : ""}
+          className={`absolute top-0 left-0 bottom-0 flex items-center justify-center stage-enter-product
+            transition-[right,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]
+            ${allDiscovered && completionTransition === "fade" ? "opacity-80" : ""}
           `}
+          style={{ right: activePanel ? "42%" : "0%" }}
         >
           {/* Parallax layer */}
           <div

@@ -41,7 +41,7 @@ export default async function Home() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-hidden p-6 flex items-center justify-center">
+      <main className="flex-1 overflow-hidden flex items-center justify-center">
         {!module ? (
           <div className="text-center text-muted-foreground">
             <p className="text-lg font-light">No published courses yet.</p>

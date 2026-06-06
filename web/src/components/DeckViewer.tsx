@@ -342,7 +342,7 @@ export default function DeckViewer({
         {/* Slide content — image from Sanity CDN or text fallback */}
         {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt={currentSlide.headline} className="absolute inset-0 w-full h-full object-contain" />
+          <img src={imageUrl} alt={currentSlide.headline} className="absolute inset-0 w-full h-full object-cover" />
         ) : (
           <div className="absolute inset-0 bg-white flex flex-col items-start justify-center p-[6%] overflow-auto gap-4">
             <h2 className="text-zinc-900 text-2xl font-semibold leading-tight">{currentSlide?.headline}</h2>
