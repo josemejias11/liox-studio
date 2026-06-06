@@ -13,7 +13,7 @@ interface SlideFrameProps {
   nextDisabled?: boolean;
   // Completion hint shown above nav when nextDisabled
   completionHint?: string;
-  // Applied to the 16:9 box itself
+  // Applied to the frame div itself
   className?: string;
   // Brand theme — drives frame background and nav scrim opacity
   theme?: string;
@@ -23,7 +23,7 @@ interface SlideFrameProps {
   onToggleNotes?: () => void;
   notesOpen?: boolean;
   speakerNotes?: string;
-  // Letterbox info bar — shown in the space below the 16:9 frame on tall screens
+  // Device banner — shown as a fixed bottom bar below the fullscreen frame
   moduleTitle?: string;
 }
 
@@ -55,30 +55,23 @@ export function SlideFrame({
   const frameBg = theme && theme in FRAME_BG ? FRAME_BG[theme] : "bg-moto-black";
   const isLightTheme = theme === "frost-black" || theme === "pearl-black";
   const navGradient = isLightTheme
-    ? "bg-gradient-to-t from-moto-black/60 via-moto-black/25 to-transparent"
-    : "bg-gradient-to-t from-moto-black/90 via-moto-black/50 to-transparent";
+    ? "bg-gradient-to-t from-moto-black via-moto-black/50 to-transparent"
+    : "bg-gradient-to-t from-moto-black via-moto-black/60 to-transparent";
 
-  // Info bar: only has visual content when moduleTitle is provided and there is
-  // letterbox space. The bar is shrink-0 inside a flex-col container — when the
-  // 16:9 frame already fills all available vertical space the bar is naturally
-  // clipped to zero by the overflow-hidden on the outer shell.
   const showProgress = currentSlide !== undefined && totalSlides !== undefined && totalSlides > 0;
   const progressPct = showProgress ? (currentSlide / totalSlides) * 100 : 0;
 
   return (
-    // Centering shell — flex-col so the info bar stacks naturally below the frame.
-    // overflow-hidden ensures the bar is invisible when there is no letterbox room.
-    <div className="w-full h-dvh bg-moto-black flex flex-col items-center justify-center overflow-hidden">
-      {/* 16:9 locked frame */}
+    // Outer shell — flex-col so the device banner stacks below the frame.
+    <div className="w-full h-dvh bg-moto-black flex flex-col items-center justify-start overflow-hidden">
+      {/* Fullscreen frame — fills all remaining vertical space after the banner */}
       <div
-        className={`relative overflow-hidden ${frameBg} rounded-xl shadow-2xl shrink-0 w-full ${className}`}
-        style={{
-          aspectRatio: "16 / 9",
-          maxHeight: "100dvh",
-          maxWidth: "calc(100dvh * 16 / 9)",
-        }}
+        className={`relative overflow-hidden bg-moto-black rounded-none flex-1 w-full ${className}`}
       >
         {children}
+
+        {/* ── Bottom vignette — blends slide content into the black banner below ── */}
+        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-moto-black to-transparent pointer-events-none z-10" />
 
         {/* ── Click-Outside Overlay ── */}
         {notesOpen && (
@@ -263,15 +256,11 @@ export function SlideFrame({
         )}
       </div>
 
-      {/* ── Letterbox device banner ─────────────────────────────────────────
-          Fills the black letterbox below the 16:9 frame on tall screens.
-          Invisible when the frame already fills the full dvh (overflow-hidden
-          clips it). Not interactive — screen readers get this from the frame. */}
+      {/* ── Device banner — fixed bottom bar below the frame ── */}
       {moduleTitle && (
         <div
           aria-hidden="true"
-          className="shrink-0 w-full flex flex-col items-center justify-center py-5 gap-2"
-          style={{ maxWidth: "calc(100dvh * 16 / 9)" }}
+          className="shrink-0 w-full flex flex-col items-center justify-center py-3 gap-1 bg-moto-black"
         >
           {/* "You are learning about" label */}
           <p className="text-[11px] uppercase tracking-[0.22em] font-medium text-moto-slate leading-none">
