@@ -44,9 +44,12 @@ Next.js 16 (web/)              FastAPI (api/)
 ```bash
 cd web
 npm install
+npm run db:migrate   # creates web/prisma/dev.db on first run
 npm run dev
 # http://localhost:3000
 ```
+
+> `dev.db` is gitignored — you must run `npm run db:migrate` (or `npx prisma migrate deploy`) once after every fresh clone to recreate it.
 
 ---
 
