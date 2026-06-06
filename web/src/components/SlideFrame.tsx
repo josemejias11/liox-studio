@@ -56,15 +56,15 @@ export function SlideFrame({
     : "bg-gradient-to-t from-moto-black/90 via-moto-black/50 to-transparent";
 
   return (
-    // Centering shell with padding
-    <div className="w-full h-full bg-moto-black flex items-center justify-center overflow-hidden p-2 sm:p-4">
+    // Centering shell — owns the full dynamic viewport, no padding so frame maximises
+    <div className="w-full h-dvh bg-moto-black flex items-center justify-center overflow-hidden">
       {/* 16:9 locked frame */}
       <div
         className={`relative overflow-hidden ${frameBg} rounded-xl shadow-2xl shrink-0 w-full ${className}`}
         style={{
           aspectRatio: "16 / 9",
-          maxHeight: "100%",
-          maxWidth: "calc(100vh * 16 / 9)",
+          maxHeight: "100dvh",
+          maxWidth: "calc(100dvh * 16 / 9)",
         }}
       >
         {children}
