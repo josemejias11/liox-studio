@@ -151,7 +151,7 @@ export const lessonType = defineType({
             defineField({ 
               name: "linkedLayer", 
               title: "Linked Layer Headline", 
-              description: "If provided, tapping this hotspot opens the matching deep dive layer instead of the inline panel.",
+              description: "If provided, tapping this hotspot opens the matching dig deep layer instead of the inline panel.",
               type: "string" 
             }),
             defineField({
@@ -178,10 +178,10 @@ export const lessonType = defineType({
     }),
     defineField({
       name: "layers",
-      title: "Deep Dive Layers",
+      title: "Dig Deep Layers",
       type: "array",
       of: [{ type: "layer" }],
-      description: "Optional deep dive topics that exist on the Z-axis inside this lesson.",
+      description: "Optional dig deep topics that exist on the Z-axis inside this lesson.",
     }),
   ],
   preview: {
