@@ -9,6 +9,7 @@ import { ProductStage } from "./ProductStage";
 import { QuizLesson } from "./QuizLesson";
 import { CourseComplete } from "./CourseComplete";
 import { NavMap } from "./NavMap";
+import { FullWidthCarousel } from "./FullWidthCarousel";
 import { VideoLesson } from "./VideoLesson";
 import { useLessonProgress } from "@/hooks/useLessonProgress";
 import { LayerFrame } from "./LayerFrame";
@@ -556,21 +557,7 @@ export default function DeckViewer({
                 <img src={layer.media.asset.url} alt={layer.headline} className="w-full rounded-2xl mb-6 object-cover max-h-[40vh]" />
               )}
               {layer.photos && layer.photos.length > 0 && (
-                <div className="mb-6 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10 relative">
-                  <div className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar">
-                    {layer.photos.map((p, i) => p.asset?.url && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img key={i} src={p.asset.url} alt={`${layer.headline} ${i}`} className="w-full h-auto object-cover snap-center shrink-0" style={{ maxHeight: '50vh' }} />
-                    ))}
-                  </div>
-                  {layer.photos.length > 1 && (
-                    <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 pointer-events-none">
-                      {layer.photos.map((p, i) => (
-                        <div key={i} className="w-1.5 h-1.5 rounded-full bg-white/50 backdrop-blur-sm" />
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <FullWidthCarousel photos={layer.photos} />
               )}
               {layer.body && (
                 <div className="prose prose-invert max-w-none text-foreground/80 whitespace-pre-wrap leading-relaxed">
