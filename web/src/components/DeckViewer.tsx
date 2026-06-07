@@ -92,6 +92,10 @@ export default function DeckViewer({
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [activeLayer, setActiveLayer] = useState<{ topic: string; title: string; body?: string } | null>(null);
   const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
+  const lastLayerIdRef = useRef<string | null>(null);
+  if (activeLayerId && activeLayerId !== lastLayerIdRef.current) {
+    lastLayerIdRef.current = activeLayerId;
+  }
   const [sessionId, setSessionId] = useState("");
   const { visited, markVisited: baseMarkVisited } = useLessonProgress(sessionId);
 
@@ -167,6 +171,9 @@ export default function DeckViewer({
               if (layer) {
                 baseMarkVisited(lessonKey, layer._key, hotspots.length + layers.length);
                 setActiveLayerId(layer._key);
+              } else {
+                console.warn(`Layer link failed: No layer found with headline "${value?.linkedLayer}"`);
+                alert(`Content missing: Could not find layer "${value?.linkedLayer}"`);
               }
             }}
             className="text-moto-indigo font-medium underline underline-offset-4 decoration-moto-indigo/40 hover:decoration-moto-indigo transition-colors mx-1"
@@ -445,17 +452,27 @@ export default function DeckViewer({
           const oy = currentLesson.textOverlay?.y ?? 15;
           const oWidth = currentLesson.textOverlay?.width ?? 'max-w-xl';
           
+          const isDarkTheme = currentLesson.theme !== "frost-black" && currentLesson.theme !== "pearl-black";
+          const needsInvert = imageUrl || isDarkTheme;
+          
           return (
             <div 
-              className="absolute pointer-events-none z-10 flex flex-col"
-              style={imageUrl ? { left: `${ox}%`, top: `${oy}%` } : { inset: 0, padding: '6%', justifyContent: 'center' }}
+              className={`absolute pointer-events-none z-10 flex flex-col ${
+                imageUrl 
+                  ? 'left-[6%] right-[6%] bottom-[12%] md:left-[var(--desktop-x)] md:right-auto md:top-[var(--desktop-y)] md:bottom-auto'
+                  : ''
+              }`}
+              style={imageUrl ? { 
+                '--desktop-x': `max(6%, ${ox}%)`,
+                '--desktop-y': `${oy}%`,
+              } as React.CSSProperties : { inset: 0, padding: '6%', justifyContent: 'center' }}
             >
               <div className={`pointer-events-auto w-full ${imageUrl ? oWidth : 'max-w-xl flex flex-col gap-4'}
-                ${imageUrl ? 'bg-black/60 backdrop-blur-2xl p-8 rounded-[2rem] border border-white/10 shadow-2xl' : ''}
+                ${imageUrl ? 'bg-black/60 backdrop-blur-2xl p-6 md:p-8 rounded-[2rem] border border-white/10 shadow-2xl' : ''}
               `}>
                 <h2 className={`${imageUrl ? 'text-white' : tc.headline} text-2xl font-semibold leading-tight`}>{currentLesson?.headline}</h2>
                 {currentLesson?.body && (
-                  <div className={`prose prose-invert max-w-none ${imageUrl ? 'text-white/80 mt-4' : tc.body} text-base font-light leading-relaxed whitespace-pre-wrap`}>
+                  <div className={`prose ${needsInvert ? 'prose-invert' : ''} max-w-none ${imageUrl ? 'text-white/80 mt-4' : tc.body} text-base font-light leading-relaxed whitespace-pre-wrap`}>
                     {typeof currentLesson.body === 'string' ? currentLesson.body : <PortableText value={currentLesson.body} components={portableTextComponents} />}
                   </div>
                 )}
@@ -537,13 +554,16 @@ export default function DeckViewer({
         />
 
         {/* Layer Sub-content */}
-        {activeLayerId && (() => {
-          const layer = layers.find(l => l._key === activeLayerId);
+        {(() => {
+          const targetId = activeLayerId || lastLayerIdRef.current;
+          if (!targetId) return null;
+          
+          const layer = layers.find(l => l._key === targetId);
           if (!layer) return null;
           
           return (
             <LayerFrame
-              open={true}
+              open={activeLayerId !== null}
               onClose={() => setActiveLayerId(null)}
               parentLessonTitle={currentLesson.headline}
               layerTitle={layer.headline}
