@@ -20,6 +20,8 @@ interface DiscoveryPanelProps {
   topic?: string;
   body?: string;
   photos?: Photo[];
+  x?: number;
+  y?: number;
 }
 
 const SUGGESTIONS = [
@@ -66,6 +68,8 @@ export function DiscoveryPanel({
   topic,
   body,
   photos = [],
+  x,
+  y,
 }: DiscoveryPanelProps) {
   const hasLearnContent = !!(body || photos.length);
   const [tab, setTab] = useState<Tab>(hasLearnContent ? "learn" : "ask");
@@ -238,23 +242,42 @@ export function DiscoveryPanel({
         {liveAnnouncement}
       </div>
 
-      {/* Panel — lessons in from the right */}
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label={label}
-        onClick={(e) => e.stopPropagation()}
-        onTouchStart={(e) => { swipeTouchStartX.current = e.touches[0].clientX; }}
-        onTouchEnd={(e) => {
-          if (e.changedTouches[0].clientX - swipeTouchStartX.current > 56) onClose();
-        }}
-        className={`absolute top-0 right-0 bottom-0 w-[42%] flex flex-col
+      {/* Panel — lessons in from the right or popover */}
+      {(() => {
+        const isFloating = x !== undefined && y !== undefined;
+        let floatingStyle: React.CSSProperties = {};
+        if (isFloating) {
+          if (x! < 50) floatingStyle.left = `${x! + 2}%`;
+          else floatingStyle.right = `${100 - x! + 2}%`;
+          
+          if (y! < 50) floatingStyle.top = `${y!}%`;
+          else floatingStyle.bottom = `${100 - y!}%`;
+        }
+
+        const floatingClasses = `absolute w-[360px] max-h-[80vh] rounded-2xl flex flex-col
+          bg-background/96 backdrop-blur-2xl border border-border/10
+          shadow-2xl transition-all duration-200 ease-out
+          ${open ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`;
+
+        const sidebarClasses = `absolute top-0 right-0 bottom-0 w-[42%] flex flex-col
           bg-background/96 backdrop-blur-2xl border-l border-border/10
-          shadow-2xl shadow-moto-black/60
-          transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]
-          ${open ? "translate-x-0" : "translate-x-full"}`}
-      >
+          shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]
+          ${open ? "translate-x-0" : "translate-x-full"}`;
+
+        return (
+          <div
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={label}
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => { swipeTouchStartX.current = e.touches[0].clientX; }}
+            onTouchEnd={(e) => {
+              if (!isFloating && e.changedTouches[0].clientX - swipeTouchStartX.current > 56) onClose();
+            }}
+            style={isFloating ? floatingStyle : undefined}
+            className={isFloating ? floatingClasses : sidebarClasses}
+          >
         {/* ── Header ── */}
         <div className="shrink-0 px-4 pt-4 pb-3 border-b border-border/8">
           <div className="flex items-center justify-between mb-2">
@@ -403,7 +426,9 @@ export function DiscoveryPanel({
             </div>
           </>
         )}
-      </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

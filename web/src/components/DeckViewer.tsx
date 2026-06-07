@@ -54,7 +54,6 @@ interface SanityLesson {
   videoFile?: { asset?: { url?: string } };
   speakerNotes?: string;
   chapterTitle?: string;
-  chapterTitle?: string;
 }
 
 interface SanityModule {
@@ -80,7 +79,7 @@ export default function DeckViewer({
 }) {
   const [hasStarted, setHasStarted] = useState(false);
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
-  const [activeLayer, setActiveLayer] = useState<{ topic: string; title: string; body?: string } | null>(null);
+  const [activeLayer, setActiveLayer] = useState<{ topic: string; title: string; body?: string; x?: number; y?: number } | null>(null);
   const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
   const lastLayerIdRef = useRef<string | null>(null);
   if (activeLayerId && activeLayerId !== lastLayerIdRef.current) {
@@ -514,7 +513,7 @@ export default function DeckViewer({
                   return;
                 }
               }
-              setActiveLayer({ topic: h.topic, title: h.label, body: h.body });
+              setActiveLayer({ topic: h.topic, title: h.label, body: h.body, x: h.x, y: h.y });
             }}
           />
         ))}
@@ -527,6 +526,8 @@ export default function DeckViewer({
           label={activeLayer?.title ?? ""}
           topic={activeLayer?.topic}
           body={activeLayer?.body}
+          x={activeLayer?.x}
+          y={activeLayer?.y}
         />
 
         {/* Layer Sub-content */}
