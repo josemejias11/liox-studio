@@ -30,6 +30,7 @@ export function useLessonProgress(sessionId: string) {
       for (const [sid, prog] of Object.entries(data.lessons)) {
         restored[sid] = new Set(prog.visitedHotspots ?? []);
       }
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setVisited(restored);
     }
   }, [data]);

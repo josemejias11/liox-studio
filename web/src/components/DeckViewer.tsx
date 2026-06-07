@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { ChevronRight, PlayCircle, MousePointer2, Layers, Plus } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { PlayCircle, MousePointer2, Layers, Plus } from "lucide-react";
 import { LessonFrame } from "./LessonFrame";
 import { Hotspot } from "./Hotspot";
 import { DiscoveryPanel } from "./DiscoveryPanel";
 import { ProductStage } from "./ProductStage";
 import { QuizLesson } from "./QuizLesson";
+import type { SanityQuizDoc } from "./QuizLesson";
 import { CourseComplete } from "./CourseComplete";
 import { NavMap } from "./NavMap";
 import { FullWidthCarousel } from "./FullWidthCarousel";
@@ -14,21 +15,33 @@ import { VideoLesson } from "./VideoLesson";
 import { useLessonProgress } from "@/hooks/useLessonProgress";
 import { LayerFrame } from "./LayerFrame";
 import { PortableText } from "@portabletext/react";
+import { motion, AnimatePresence } from "framer-motion";
+import { CourseCover } from "./CourseCover";
+import { SpecificationPage } from "./SpecificationPage";
+import type { SanitySpecification } from "./SpecificationPage";
+import { DisclaimerPage } from "./DisclaimerPage";
+import type { SanityDisclaimer } from "./DisclaimerPage";
+import { CompletionBurst } from "./CompletionBurst";
 
-interface SanityLayerContent {
+import { ChapterIntro } from "./ChapterIntro";
+
+// ── Domain types ──────────────────────────────────────────────────────────────
+
+export interface SanityLayerContent {
   _key: string;
   headline: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   body?: any;
   layerType: "content" | "interaction" | "video" | "quiz";
   media?: { asset?: { url?: string } };
   photos?: { asset?: { url?: string } }[];
   hotspots?: SanityHotspot[];
   textOverlay?: { x?: number; y?: number; width?: string };
-  videoUrl?: string;
   videoFile?: { asset?: { url?: string } };
+  videoAspectRatio?: string;
 }
 
-interface SanityHotspot {
+export interface SanityHotspot {
   _key: string;
   label: string;
   topic: string;
@@ -36,33 +49,55 @@ interface SanityHotspot {
   y: number;
   contentMode?: "tooltip" | "layer";
   layerContent?: SanityLayerContent;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   body?: any;
   photos?: { asset?: { url?: string } }[];
 }
 
-interface SanityLesson {
+export interface SanityLesson {
   _key: string;
   headline: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   body?: any;
   lessonType: "content" | "interaction" | "stage" | "video" | "quiz";
   media?: { asset?: { url?: string } };
-  textOverlay?: {
-    x?: number;
-    y?: number;
-    width?: string;
-  };
+  textOverlay?: { x?: number; y?: number; width?: string };
   stageBackground?: { asset?: { url?: string } };
   completionTransition?: "spin" | "rise" | "fade";
   hotspots?: SanityHotspot[];
   textHotspots?: { _key: string; triggerWord: string; linkedLayer: string }[];
-  videoUrl?: string;
   videoFile?: { asset?: { url?: string } };
-  chapterTitle?: string;
+  videoAspectRatio?: string;
+  floatingGraphics?: { image?: { asset?: { url?: string } }; x?: number; y?: number; width?: string }[];
 }
+
+/** A lesson enriched with chapter metadata — this is what the sections array contains */
+export type LessonSection = SanityLesson & {
+  sectionType: "lesson";
+  chapterTitle: string;
+  chapterIndex: number;
+};
+
+/** Flat discriminated union of every section type in the course */
+export type CourseSection =
+  | LessonSection
+  | SanitySpecification
+  | SanityQuizDoc
+  | SanityDisclaimer;
+
+/** Phase-based state machine for course progression */
+export type CoursePhase =
+  | { phase: "cover" }
+  | { phase: "chapter"; chapterIndex: number; lessonIndex: number }
+  | { phase: "specifications"; specIndex: number }
+  | { phase: "quiz"; quizData: SanityQuizDoc }
+  | { phase: "disclaimer" }
+  | { phase: "complete" };
 
 interface SanityModule {
   _id: string;
   title: string;
+  description?: string;
   thumbnail?: { asset?: { url?: string } };
   coverImage?: { asset?: { url?: string } };
   coverHeadline?: string;
@@ -71,8 +106,24 @@ interface SanityModule {
   learningObjectives?: string[];
 }
 
-const TRANSITION_EXIT_MS  = 210;
-const TRANSITION_ENTER_MS = 380;
+// ── Framer Motion slide variants ─────────────────────────────────────────────
+
+const slideVariants = {
+  enter: (direction: number) => ({
+    x: direction > 0 ? "50%" : "-50%",
+    opacity: 0,
+  }),
+  center: {
+    x: 0,
+    opacity: 1,
+  },
+  exit: (direction: number) => ({
+    x: direction < 0 ? "50%" : "-50%",
+    opacity: 0,
+  }),
+};
+
+// ── Width helper ──────────────────────────────────────────────────────────────
 
 const getSemanticWidthClass = (width?: string) => {
   switch (width) {
@@ -84,38 +135,73 @@ const getSemanticWidthClass = (width?: string) => {
   }
 };
 
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export default function DeckViewer({
   module,
-  lessons,
+  sections,
+  course_title,
+  course_description,
 }: {
   module: SanityModule;
-  lessons: SanityLesson[];
+  sections: CourseSection[];
+  course_title: string;
+  course_description?: string;
 }) {
-  const [hasStarted, setHasStarted] = useState(false);
-  const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
-  const [activeLayer, setActiveLayer] = useState<{ topic: string; title: string; body?: string; x?: number; y?: number } | null>(null);
+  // ── Derived section arrays (stable within a single course player mount) ────
+  const lessonSections = sections.filter(
+    (s): s is LessonSection => s.sectionType === "lesson"
+  );
+  const specSections = sections.filter(
+    (s): s is SanitySpecification => s.sectionType === "specification"
+  );
+  const quizSection = sections.find(
+    (s): s is SanityQuizDoc => s.sectionType === "quiz"
+  );
+  const disclaimerSection = sections.find(
+    (s): s is SanityDisclaimer => s.sectionType === "disclaimer"
+  );
+
+  // Unique chapters in order (derived from lesson sections)
+  const chapters = (() => {
+    const seen = new Set<number>();
+    const result: Array<{ chapterIndex: number; chapterTitle: string }> = [];
+    for (const ls of lessonSections) {
+      if (!seen.has(ls.chapterIndex)) {
+        seen.add(ls.chapterIndex);
+        result.push({ chapterIndex: ls.chapterIndex, chapterTitle: ls.chapterTitle });
+      }
+    }
+    return result;
+  })();
+
+  // ── Course phase state machine ─────────────────────────────────────────────
+  const [coursePhase, setCoursePhase] = useState<CoursePhase>({ phase: "cover" });
+  const [navDirection, setNavDirection] = useState(1);
+  const [showNavMap, setShowNavMap] = useState(false);
+  const [showBurst, setShowBurst] = useState(false);
+  const [showChapterIntro, setShowChapterIntro] = useState(false);
+
+  // ── Layer / hotspot state ─────────────────────────────────────────────────
+  const [activeLayer, setActiveLayer] = useState<{
+    topic: string;
+    title: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    body?: any;
+    x?: number;
+    y?: number;
+    photos?: { asset?: { url?: string; originalFilename?: string } }[];
+  } | null>(null);
   const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
   const lastLayerIdRef = useRef<string | null>(null);
   if (activeLayerId && activeLayerId !== lastLayerIdRef.current) {
     lastLayerIdRef.current = activeLayerId;
   }
+
+  // ── Session ───────────────────────────────────────────────────────────────
   const [sessionId, setSessionId] = useState("");
   const { visited, markVisited: baseMarkVisited } = useLessonProgress(sessionId);
 
-  // Phase 10 — transitions + completion
-  const [animClass, setAnimClass] = useState("");
-  const [isComplete, setIsComplete] = useState(false);
-  const timerRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
-
-  const [showNavMap, setShowNavMap] = useState(false);
-  const toggleNavMap = () => setShowNavMap((v) => !v);
-
-  function clearTimers() {
-    timerRefs.current.forEach(clearTimeout);
-    timerRefs.current = [];
-  }
-
-  // Generate or restore anonymous session ID
   useEffect(() => {
     let sid = localStorage.getItem("decktutor_session");
     if (!sid) {
@@ -125,292 +211,826 @@ export default function DeckViewer({
     setSessionId(sid);
   }, []);
 
-  // Cleanup timers on unmount
-  useEffect(() => clearTimers, []);
+  // ── Current lesson (only relevant in chapter phase) ───────────────────────
+  const currentLesson: LessonSection | undefined = (() => {
+    if (coursePhase.phase !== "chapter") return undefined;
+    const { chapterIndex, lessonIndex } = coursePhase;
+    const chapterLessons = lessonSections.filter((ls) => ls.chapterIndex === chapterIndex);
+    return chapterLessons[lessonIndex];
+  })();
 
-  const currentLesson = lessons[currentLessonIndex];
   const lessonKey = currentLesson?._key ?? "";
-  const hotspots = currentLesson?.hotspots ?? [];
-  
-  // A lesson is locked until all hotspots are visited
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const safeString = (val: any): string =>
+    typeof val === "string"
+      ? val
+      : Array.isArray(val)
+      ? val
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .map((b: any) => b.children?.map((c: any) => c.text).join(""))
+          .join("")
+      : String(val || "");
+
+  const safeHeadline = currentLesson ? safeString(currentLesson.headline) : "";
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const hotspots = (currentLesson?.hotspots ?? []).map((h: any) => ({
+    ...h,
+    label: safeString(h.label),
+    layerContent: h.layerContent
+      ? { ...h.layerContent, headline: safeString(h.layerContent.headline) }
+      : undefined,
+  }));
+
   const visitedOnLesson = visited[lessonKey]?.size ?? 0;
-  const missingHotspots = hotspots.filter(h => !(visited[lessonKey]?.has(h.label)));
-  const nextLocked = (hotspots.length > 0 && missingHotspots.length > 0);
-  
+  const missingHotspots = hotspots.filter(
+    (h: { label: string }) => !(visited[lessonKey]?.has(h.label))
+  );
+  const nextLocked = hotspots.length > 0 && missingHotspots.length > 0;
+
   const imageUrl = currentLesson?.media?.asset?.url;
 
-  // Stats for completion screen
+  // ── Stats for completion screen ───────────────────────────────────────────
   const totalHotspotsVisited = Object.values(visited).reduce((sum, s) => sum + s.size, 0);
-  const totalHotspots = lessons.reduce((sum, s) => sum + (s.hotspots?.length ?? 0), 0);
+  const totalHotspots = lessonSections.reduce((sum, s) => sum + (s.hotspots?.length ?? 0), 0);
 
   function markVisited(label: string) {
     baseMarkVisited(lessonKey, label, hotspots.length);
   }
 
+  // ── PortableText components ───────────────────────────────────────────────
   const portableTextComponents = {
     marks: {
-      layerLink: ({ children, value }: any) => {
-        return (
-          <button
-            onClick={() => {
-              const hotspot = hotspots.find(h => h.label === value?.linkedLayer && h.contentMode === "layer");
-              if (hotspot) {
-                baseMarkVisited(lessonKey, hotspot.label, hotspots.length);
-                setActiveLayerId(hotspot._key);
-              } else {
-                console.warn(`Layer link failed: No layer found with headline "${value?.linkedLayer}"`);
-                alert(`Content missing: Could not find layer "${value?.linkedLayer}"`);
-              }
-            }}
-            className="text-accent font-medium underline underline-offset-4 decoration-accent/40 hover:decoration-accent transition-colors mx-1"
-          >
-            {children}
-          </button>
-        );
-      }
-    }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      layerLink: ({ children, value }: any) => (
+        <button
+          onClick={() => {
+            const hotspot = hotspots.find(
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (h: any) => h.label === value?.linkedLayer && h.contentMode === "layer"
+            );
+            if (hotspot) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              baseMarkVisited(lessonKey, hotspot.label, hotspots.length);
+              setActiveLayerId(hotspot._key);
+            }
+          }}
+          className="text-accent font-medium underline underline-offset-4 decoration-accent/40 hover:decoration-accent transition-colors mx-1"
+        >
+          {children}
+        </button>
+      ),
+    },
   };
 
-  // ── Transition helper ──────────────────────────────────────────────────────
-  function transitionTo(action: () => void, dir: "forward" | "backward") {
-    clearTimers();
-    setAnimClass(`lesson-exit-${dir}`);
-    const t1 = setTimeout(() => {
-      action();
-      setAnimClass(`lesson-enter-${dir}`);
-      const t2 = setTimeout(() => setAnimClass(""), TRANSITION_ENTER_MS);
-      timerRefs.current = [t2];
-    }, TRANSITION_EXIT_MS);
-    timerRefs.current = [t1];
+  // ── Absolute section index (for progress bar and NavMap active highlight) ─
+  function getCurrentSectionIndex(): number {
+    switch (coursePhase.phase) {
+      case "cover": return -1;
+      case "chapter": {
+        const { chapterIndex, lessonIndex } = coursePhase;
+        const lessonsBeforeThisChapter = lessonSections.filter(
+          (ls) => ls.chapterIndex < chapterIndex
+        ).length;
+        return lessonsBeforeThisChapter + lessonIndex;
+      }
+      case "specifications":
+        return lessonSections.length + coursePhase.specIndex;
+      case "quiz":
+        return lessonSections.length + specSections.length;
+      case "disclaimer":
+        return lessonSections.length + specSections.length + (quizSection ? 1 : 0);
+      case "complete":
+        return sections.length;
+    }
   }
 
-  function navigate(targetIndex: number) {
-    const dir = targetIndex > currentLessonIndex ? "forward" : "backward";
-    transitionTo(() => {
-      setCurrentLessonIndex(targetIndex);
-      setActiveLayer(null);
-    }, dir);
+  // ── Completion burst helper ───────────────────────────────────────────────
+  const burstTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function triggerComplete() {
+    setCoursePhase({ phase: "complete" });
+    setShowBurst(true);
+    if (burstTimerRef.current) clearTimeout(burstTimerRef.current);
+    burstTimerRef.current = setTimeout(() => setShowBurst(false), 1200);
   }
 
+  useEffect(() => () => {
+    if (burstTimerRef.current) clearTimeout(burstTimerRef.current);
+  }, []);
+
+  // ── Navigation: goNext ────────────────────────────────────────────────────
   function goNext() {
-    if (nextLocked) return;
-    if (currentLessonIndex >= lessons.length - 1) {
-      transitionTo(() => setIsComplete(true), "forward");
+    if (coursePhase.phase === "cover") {
+      setNavDirection(1);
+      if (lessonSections.length > 0) {
+        setCoursePhase({ phase: "chapter", chapterIndex: 0, lessonIndex: 0 });
+      } else if (specSections.length > 0) {
+        setCoursePhase({ phase: "specifications", specIndex: 0 });
+      } else if (quizSection) {
+        setCoursePhase({ phase: "quiz", quizData: quizSection });
+      } else if (disclaimerSection) {
+        setCoursePhase({ phase: "disclaimer" });
+      } else {
+        triggerComplete();
+      }
       return;
     }
-    navigate(currentLessonIndex + 1);
+
+    if (coursePhase.phase === "chapter") {
+      if (nextLocked) return;
+      const { chapterIndex, lessonIndex } = coursePhase;
+      const chapterLessons = lessonSections.filter((ls) => ls.chapterIndex === chapterIndex);
+      setNavDirection(1);
+
+      if (lessonIndex < chapterLessons.length - 1) {
+        // Next lesson in same chapter
+        setCoursePhase({ phase: "chapter", chapterIndex, lessonIndex: lessonIndex + 1 });
+        return;
+      }
+
+      // Last lesson of this chapter — find next chapter
+      const nextChapterIndex = chapterIndex + 1;
+      const nextChapterLessons = lessonSections.filter((ls) => ls.chapterIndex === nextChapterIndex);
+
+      if (nextChapterLessons.length > 0) {
+        // Cross chapter boundary — show chapter intro overlay, then start next chapter
+        setCoursePhase({ phase: "chapter", chapterIndex: nextChapterIndex, lessonIndex: 0 });
+        setShowChapterIntro(true);
+        return;
+      }
+
+      // No more chapters — advance to specifications, quiz, disclaimer, or complete
+      if (specSections.length > 0) {
+        setCoursePhase({ phase: "specifications", specIndex: 0 });
+      } else if (quizSection) {
+        setCoursePhase({ phase: "quiz", quizData: quizSection });
+      } else if (disclaimerSection) {
+        setCoursePhase({ phase: "disclaimer" });
+      } else {
+        triggerComplete();
+      }
+      return;
+    }
+
+    if (coursePhase.phase === "specifications") {
+      setNavDirection(1);
+      const { specIndex } = coursePhase;
+      if (specIndex < specSections.length - 1) {
+        setCoursePhase({ phase: "specifications", specIndex: specIndex + 1 });
+      } else if (quizSection) {
+        setCoursePhase({ phase: "quiz", quizData: quizSection });
+      } else if (disclaimerSection) {
+        setCoursePhase({ phase: "disclaimer" });
+      } else {
+        triggerComplete();
+      }
+      return;
+    }
+
+    // "quiz" phase — navigation is driven by onPass/onFail from QuizLesson, not by goNext
+    // "disclaimer" phase
+    if (coursePhase.phase === "disclaimer") {
+      setNavDirection(1);
+      triggerComplete();
+      return;
+    }
+
+    // "complete" — stay
   }
 
+  // ── Navigation: goPrev ────────────────────────────────────────────────────
   function goPrev() {
-    if (isComplete) {
-      transitionTo(() => {
-        setIsComplete(false);
-        setCurrentLessonIndex(lessons.length - 1);
-        setActiveLayer(null);
-      }, "backward");
+    if (coursePhase.phase === "chapter") {
+      const { chapterIndex, lessonIndex } = coursePhase;
+      setNavDirection(-1);
+
+      if (lessonIndex > 0) {
+        setCoursePhase({ phase: "chapter", chapterIndex, lessonIndex: lessonIndex - 1 });
+        return;
+      }
+
+      if (chapterIndex > 0) {
+        const prevChapterIndex = chapterIndex - 1;
+        const prevChapterLessons = lessonSections.filter(
+          (ls) => ls.chapterIndex === prevChapterIndex
+        );
+        setCoursePhase({
+          phase: "chapter",
+          chapterIndex: prevChapterIndex,
+          lessonIndex: Math.max(0, prevChapterLessons.length - 1),
+        });
+        return;
+      }
+
+      // First lesson of first chapter — go to cover
+      setCoursePhase({ phase: "cover" });
       return;
     }
-    if (currentLessonIndex <= 0) return;
-    navigate(currentLessonIndex - 1);
+
+    if (coursePhase.phase === "specifications") {
+      setNavDirection(-1);
+      const { specIndex } = coursePhase;
+      if (specIndex > 0) {
+        setCoursePhase({ phase: "specifications", specIndex: specIndex - 1 });
+        return;
+      }
+      // First spec — go to last lesson of last chapter (or cover)
+      const lastChapter = chapters[chapters.length - 1];
+      if (lastChapter) {
+        const lastChapterLessons = lessonSections.filter(
+          (ls) => ls.chapterIndex === lastChapter.chapterIndex
+        );
+        setCoursePhase({
+          phase: "chapter",
+          chapterIndex: lastChapter.chapterIndex,
+          lessonIndex: Math.max(0, lastChapterLessons.length - 1),
+        });
+      } else {
+        setCoursePhase({ phase: "cover" });
+      }
+      return;
+    }
+
+    if (coursePhase.phase === "quiz") {
+      setNavDirection(-1);
+      if (specSections.length > 0) {
+        setCoursePhase({ phase: "specifications", specIndex: specSections.length - 1 });
+      } else {
+        const lastChapter = chapters[chapters.length - 1];
+        if (lastChapter) {
+          const lastChapterLessons = lessonSections.filter(
+            (ls) => ls.chapterIndex === lastChapter.chapterIndex
+          );
+          setCoursePhase({
+            phase: "chapter",
+            chapterIndex: lastChapter.chapterIndex,
+            lessonIndex: Math.max(0, lastChapterLessons.length - 1),
+          });
+        } else {
+          setCoursePhase({ phase: "cover" });
+        }
+      }
+      return;
+    }
+
+    if (coursePhase.phase === "disclaimer") {
+      setNavDirection(-1);
+      if (quizSection) {
+        setCoursePhase({ phase: "quiz", quizData: quizSection });
+      } else if (specSections.length > 0) {
+        setCoursePhase({ phase: "specifications", specIndex: specSections.length - 1 });
+      } else {
+        const lastChapter = chapters[chapters.length - 1];
+        if (lastChapter) {
+          const lastChapterLessons = lessonSections.filter(
+            (ls) => ls.chapterIndex === lastChapter.chapterIndex
+          );
+          setCoursePhase({
+            phase: "chapter",
+            chapterIndex: lastChapter.chapterIndex,
+            lessonIndex: Math.max(0, lastChapterLessons.length - 1),
+          });
+        } else {
+          setCoursePhase({ phase: "cover" });
+        }
+      }
+      return;
+    }
+
+    if (coursePhase.phase === "complete") {
+      setNavDirection(-1);
+      if (disclaimerSection) {
+        setCoursePhase({ phase: "disclaimer" });
+      } else if (quizSection) {
+        setCoursePhase({ phase: "quiz", quizData: quizSection });
+      } else if (specSections.length > 0) {
+        setCoursePhase({ phase: "specifications", specIndex: specSections.length - 1 });
+      } else {
+        const lastChapter = chapters[chapters.length - 1];
+        if (lastChapter) {
+          const lastChapterLessons = lessonSections.filter(
+            (ls) => ls.chapterIndex === lastChapter.chapterIndex
+          );
+          setCoursePhase({
+            phase: "chapter",
+            chapterIndex: lastChapter.chapterIndex,
+            lessonIndex: Math.max(0, lastChapterLessons.length - 1),
+          });
+        } else {
+          setCoursePhase({ phase: "cover" });
+        }
+      }
+      return;
+    }
   }
 
-  // ── Nav map overlay (rendered inside each post-cover LessonFrame) ──────────
+  // ── Quiz pass/fail handlers ───────────────────────────────────────────────
+  function handleQuizPass(_score: number) {
+    setNavDirection(1);
+    if (disclaimerSection) {
+      setCoursePhase({ phase: "disclaimer" });
+    } else {
+      triggerComplete();
+    }
+  }
+
+  function handleQuizFail() {
+    // onFail is called only when allowRetry is false;
+    // treat as advancing past the quiz gate (learner must continue)
+    setNavDirection(1);
+    if (disclaimerSection) {
+      setCoursePhase({ phase: "disclaimer" });
+    } else {
+      triggerComplete();
+    }
+  }
+
+  // ── Navigate to an arbitrary section (from NavMap) ────────────────────────
+  function navigateToSection(i: number) {
+    const section = sections[i];
+    if (!section) return;
+
+    const currentIdx = getCurrentSectionIndex();
+    setNavDirection(i > currentIdx ? 1 : -1);
+    setShowNavMap(false);
+    setActiveLayer(null);
+    setActiveLayerId(null);
+    setShowChapterIntro(false);
+
+    if (section.sectionType === "lesson") {
+      const ls = section as LessonSection;
+      const chapterLessons = lessonSections.filter((l) => l.chapterIndex === ls.chapterIndex);
+      const lessonIdx = chapterLessons.indexOf(ls);
+      setCoursePhase({
+        phase: "chapter",
+        chapterIndex: ls.chapterIndex,
+        lessonIndex: lessonIdx >= 0 ? lessonIdx : 0,
+      });
+    } else if (section.sectionType === "specification") {
+      const specIdx = i - lessonSections.length;
+      setCoursePhase({ phase: "specifications", specIndex: specIdx >= 0 ? specIdx : 0 });
+    } else if (section.sectionType === "quiz") {
+      setCoursePhase({ phase: "quiz", quizData: section as SanityQuizDoc });
+    } else if (section.sectionType === "disclaimer") {
+      setCoursePhase({ phase: "disclaimer" });
+    }
+  }
+
+  // ── NavMap element ────────────────────────────────────────────────────────
+  const toggleNavMap = () => setShowNavMap((v) => !v);
+
+  const currentSectionIndex = getCurrentSectionIndex();
+
   const navMapEl = showNavMap ? (
     <NavMap
-      lessons={lessons}
-      currentIndex={isComplete ? lessons.length : currentLessonIndex}
+      sections={sections}
+      currentSectionIndex={currentSectionIndex}
       visited={visited}
-      onNavigate={(i) => {
-        setShowNavMap(false);
-        if (isComplete) {
-          transitionTo(() => {
-            setIsComplete(false);
-            setCurrentLessonIndex(i);
-            setActiveLayer(null);
-          }, "backward");
-        } else {
-          navigate(i);
-        }
-      }}
+      onNavigate={navigateToSection}
       onClose={() => setShowNavMap(false)}
     />
   ) : null;
 
-  // ── Cover ──────────────────────────────────────────────────────────────────
-  if (!hasStarted) {
-    const finalImageUrl = module.coverImage?.asset?.url || module.thumbnail?.asset?.url || lessons[0]?.media?.asset?.url;
-    const finalHeadline = module.coverHeadline || module.title;
-    const buttonText = module.coverButtonText || "start course";
-    
-    // Map button colors — Motorola 2026 brand palette only
-    let btnClass = "bg-background text-foreground hover:bg-background/90";
-    if (module.coverButtonColor === "moto-indigo") btnClass = "bg-accent text-foreground hover:bg-accent/90";
-    else if (module.coverButtonColor === "moto-frost") btnClass = "bg-background text-foreground hover:bg-background/90";
-    else if (module.coverButtonColor === "moto-pearl") btnClass = "bg-card text-foreground hover:bg-card/90";
+  // ── Shared LayerFrame (hotspot layer panel) ────────────────────────────────
+  const targetId = activeLayerId || lastLayerIdRef.current;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const activeHotspot = targetId ? hotspots.find((h: any) => h._key === targetId) : null;
+  const layerContent = activeHotspot?.layerContent;
 
-    return (
-      <LessonFrame moduleTitle={module.title}>
-        {finalImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={finalImageUrl} alt="Course cover" className="absolute inset-0 w-full h-full object-cover" />
-        ) : (
-          <div className="absolute inset-0 bg-background flex items-center justify-center" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
-        
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-8 z-10 pointer-events-none dark">
-          <h1 className="text-4xl md:text-6xl font-bold text-foreground text-center drop-shadow-2xl max-w-4xl tracking-tight">
-            {finalHeadline}
-          </h1>
-          
-          {module.learningObjectives && module.learningObjectives.length > 0 && (
-            <div className="mt-8 w-full max-w-2xl relative">
-              {/* Ambient indigo glow — floats the card off the hero */}
-              <div className="absolute inset-0 rounded-3xl bg-accent/10 blur-2xl pointer-events-none" />
+  const renderLayerFrame = () => (
+    <LayerFrame
+      open={activeLayerId !== null}
+      onClose={() => setActiveLayerId(null)}
+      parentLessonTitle={safeHeadline}
+      layerTitle={layerContent?.headline ?? ""}
+    >
+      {layerContent && (
+        <>
+          {(layerContent.media?.asset?.url || (layerContent.photos && layerContent.photos.length > 0)) ? (
+            <div className="relative mb-6">
+              {layerContent.media?.asset?.url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={layerContent.media.asset.url}
+                  alt={layerContent.headline}
+                  className="w-full rounded-2xl object-cover max-h-[60vh] shadow-2xl ring-1 ring-white/10"
+                />
+              ) : layerContent.photos ? (
+                <FullWidthCarousel photos={layerContent.photos} className="!mb-0" />
+              ) : null}
 
-              <div className="relative bg-gradient-to-br from-white/5 via-background/55 to-background/70 backdrop-blur-xl p-6 sm:p-8 rounded-3xl shadow-2xl overflow-hidden">
-                {/* Top edge accent line */}
-                <div className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-accent/55 to-transparent" />
-
-                {/* Label row with flanking lines */}
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="flex-1 h-px bg-gradient-to-r from-transparent to-accent/35" />
-                  <h3 className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground font-semibold shrink-0 select-none">
-                    What you will learn
-                  </h3>
-                  <div className="flex-1 h-px bg-gradient-to-l from-transparent to-accent/35" />
+              {layerContent.textOverlay && layerContent.body && (
+                <div
+                  className="absolute z-10"
+                  style={{
+                    left: `${layerContent.textOverlay.x ?? 6}%`,
+                    top: `${layerContent.textOverlay.y ?? 15}%`,
+                  }}
+                >
+                  <div
+                    className={`pointer-events-auto bg-card/60 backdrop-blur-2xl p-5 md:p-6 rounded-2xl border border-white/10 shadow-xl ${getSemanticWidthClass(layerContent.textOverlay.width)}`}
+                  >
+                    <div className="text-sm md:text-base leading-relaxed text-foreground prose prose-sm prose-invert max-w-none">
+                      {typeof layerContent.body === "string" ? (
+                        layerContent.body
+                      ) : (
+                        <PortableText value={layerContent.body} />
+                      )}
+                    </div>
+                  </div>
                 </div>
+              )}
+            </div>
+          ) : null}
 
-                {/* Objectives list */}
-                <ul className="space-y-3.5">
-                  {module.learningObjectives.map((obj, i) => (
-                    <li
-                      key={i}
-                      className="flex items-start gap-3.5 text-left stage-rise"
-                      style={{ animationDelay: `${0.08 + i * 0.07}s`, animationFillMode: "both" }}
-                    >
-                      <span className="mt-0.5 shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full bg-accent/20 ring-1 ring-inset ring-accent/45 text-accent text-[9px] font-bold leading-none select-none">
-                        ✓
-                      </span>
-                      <span className="text-foreground/90 text-base md:text-lg font-medium leading-snug">
-                        {obj}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+          {(!layerContent.textOverlay ||
+            (!layerContent.media?.asset?.url &&
+              !(layerContent.photos && layerContent.photos.length > 0))) &&
+            layerContent.body && (
+              <div className="text-base leading-relaxed text-foreground prose prose-invert max-w-none">
+                {typeof layerContent.body === "string" ? (
+                  layerContent.body
+                ) : (
+                  <PortableText value={layerContent.body} />
+                )}
               </div>
+            )}
+
+          {layerContent.layerType === "video" && layerContent.videoFile?.asset?.url && (
+            <div
+              className="mt-6 bg-black rounded-2xl overflow-hidden border border-white/10 relative shadow-2xl flex items-center justify-center"
+              style={{
+                aspectRatio:
+                  layerContent.videoAspectRatio === "1:1"
+                    ? "1 / 1"
+                    : layerContent.videoAspectRatio === "4:5"
+                    ? "4 / 5"
+                    : layerContent.videoAspectRatio === "9:16"
+                    ? "9 / 16"
+                    : "16 / 9",
+              }}
+            >
+              <video
+                src={layerContent.videoFile.asset.url}
+                controls
+                className="absolute inset-0 w-full h-full object-contain"
+              />
             </div>
           )}
-        </div>
 
-        <button
-          onClick={() => setHasStarted(true)}
-          className={`absolute bottom-8 md:bottom-12 right-8 md:right-12 flex items-center gap-2 font-semibold text-base px-6 py-3 rounded-full shadow-2xl transition-all active:scale-95 z-20 hover:shadow-[0_0_24px_rgba(104,91,199,0.75)] border-none outline-none ${btnClass}`}
-        >
-          {buttonText} <ChevronRight className="h-5 w-5" />
-        </button>
-      </LessonFrame>
-    );
-  }
+          {layerContent.layerType === "interaction" &&
+            layerContent.hotspots &&
+            layerContent.hotspots.length > 0 && (
+              <div className="mt-8">
+                <h3 className="text-sm uppercase tracking-widest text-accent/80 font-bold mb-4">
+                  Interactive Features
+                </h3>
+                <div className="space-y-4">
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  {layerContent.hotspots.map((h: any, idx: number) => (
+                    <div key={idx} className="bg-white/5 rounded-2xl p-5 border border-white/10">
+                      <h4 className="font-semibold text-foreground text-lg mb-2">{h.label}</h4>
+                      <div className="text-foreground/70 text-sm leading-relaxed prose prose-invert">
+                        {typeof h.body === "string" ? (
+                          h.body
+                        ) : (
+                          <PortableText value={h.body} />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+        </>
+      )}
+    </LayerFrame>
+  );
 
-  // ── Course completion ──────────────────────────────────────────────────────
-  if (isComplete) {
-    return (
-      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={module.title}>
-        <div className={`absolute inset-0 ${animClass}`}>
-          <CourseComplete
-            moduleTitle={module.title}
-            totalLessons={lessons.length}
-            totalHotspotsVisited={totalHotspotsVisited}
-            totalHotspots={totalHotspots}
-            onRestart={() => {
-              transitionTo(() => {
-                setIsComplete(false);
-                setCurrentLessonIndex(0);
-                setActiveLayer(null);
-              }, "forward");
-            }}
-          />
-        </div>
-        {navMapEl}
-      </LessonFrame>
-    );
-  }
+  // ── Lesson text overlay positioning ───────────────────────────────────────
+  const lessonTextOverlayX = currentLesson?.textOverlay?.x ?? 6;
+  const lessonTextOverlayY = currentLesson?.textOverlay?.y ?? 15;
+  const lessonTextOverlayWidth = getSemanticWidthClass(currentLesson?.textOverlay?.width);
 
-  // ── Product Stage lesson ────────────────────────────────────────────────────
-  if (currentLesson?.lessonType === "stage") {
-    return (
-      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={module.title}>
-        <div className={`absolute inset-0 ${animClass}`}>
-          <ProductStage
-            headline={currentLesson.headline}
-            productImage={currentLesson.media?.asset?.url}
-            stageBackground={currentLesson.stageBackground?.asset?.url}
-            completionTransition={currentLesson.completionTransition}
-            hotspots={hotspots}
-            visited={visited[lessonKey] ?? new Set()}
-            onVisit={markVisited}
-            onNext={goNext}
-          />
-        </div>
-        {navMapEl}
-      </LessonFrame>
-    );
-  }
+  // ── Progress values for LessonFrame (used in chapter phase) ───────────────
+  // Use sections.length + 1 as totalLessons to prevent LessonFrame from
+  // disabling the "Next" button at the very last section (goNext handles that).
+  const absoluteSectionIndex = currentSectionIndex;
+  const progressCurrent = absoluteSectionIndex >= 0 ? absoluteSectionIndex + 1 : 1;
+  const progressTotal = sections.length + 1;
 
-  // ── Video lesson ────────────────────────────────────────────────────────────
-  if (currentLesson?.lessonType === "video") {
-    return (
-      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={module.title}>
-        <div className={`absolute inset-0 ${animClass}`}>
-          <VideoLesson
-            headline={currentLesson.headline}
-            videoUrl={currentLesson.videoUrl}
-            videoFileUrl={currentLesson.videoFile?.asset?.url}
-            onNext={goNext}
-          />
-        </div>
-        {navMapEl}
-      </LessonFrame>
-    );
-  }
-
-  // ── Quiz lesson ─────────────────────────────────────────────────────────────
-  if (currentLesson?.lessonType === "quiz") {
-    const quizContext = [
+  // ── Build quiz context for lesson-type AI quizzes ─────────────────────────
+  const buildQuizContext = () =>
+    [
       `Product: ${module.title}`,
-      `Features: ${lessons
+      `Features: ${lessonSections
         .flatMap((s) => s.hotspots ?? [])
         .map((h) => h.topic || h.label)
         .filter(Boolean)
         .join(", ")}`,
-      `Explored by learner: ${Object.values(visited)
-        .flatMap((labels) => Array.from(labels))
-        .join(", ") || "none yet"}`,
+      `Explored by learner: ${
+        Object.values(visited)
+          .flatMap((labels) => Array.from(labels))
+          .join(", ") || "none yet"
+      }`,
     ].join("\n");
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // RENDER — branch on coursePhase.phase
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // ── Cover ─────────────────────────────────────────────────────────────────
+  if (coursePhase.phase === "cover") {
+    const finalImageUrl =
+      module.coverImage?.asset?.url ||
+      module.thumbnail?.asset?.url ||
+      lessonSections[0]?.media?.asset?.url;
+
     return (
-      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={module.title}>
-        <div className={`absolute inset-0 ${animClass}`}>
-          <QuizLesson context={quizContext} onNext={goNext} sessionId={sessionId} moduleId={module._id} />
-        </div>
+      <LessonFrame moduleTitle={module.title}>
+        <AnimatePresence mode="wait" custom={navDirection}>
+          <motion.div
+            key="cover"
+            custom={navDirection}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute inset-0"
+          >
+            <CourseCover
+              title={module.title}
+              coverHeadline={module.coverHeadline}
+              coverImage={finalImageUrl}
+              buttonText={module.coverButtonText}
+              buttonColor={module.coverButtonColor}
+              onStart={() => {
+                setNavDirection(1);
+                goNext();
+              }}
+            />
+          </motion.div>
+        </AnimatePresence>
         {navMapEl}
       </LessonFrame>
     );
   }
 
-  // ── Regular lessons ─────────────────────────────────────────────────────────
-  const targetId = activeLayerId || lastLayerIdRef.current;
-  const activeHotspot = targetId ? hotspots.find(h => h._key === targetId) : null;
-  const layerContent = activeHotspot?.layerContent;
-  const lessonTextOverlayX = currentLesson.textOverlay?.x ?? 6;
-  const lessonTextOverlayY = currentLesson.textOverlay?.y ?? 15;
-  const lessonTextOverlayWidth = getSemanticWidthClass(currentLesson.textOverlay?.width);
+  // ── Specifications ────────────────────────────────────────────────────────
+  if (coursePhase.phase === "specifications") {
+    const spec = specSections[coursePhase.specIndex];
+    if (!spec) return null;
 
+    return (
+      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={module.title}>
+        <AnimatePresence mode="wait" custom={navDirection}>
+          <motion.div
+            key={`spec-${coursePhase.specIndex}`}
+            custom={navDirection}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute inset-0"
+          >
+            <SpecificationPage
+              spec={spec}
+              onNext={goNext}
+              onPrev={goPrev}
+              showPrev={true}
+            />
+          </motion.div>
+        </AnimatePresence>
+        {navMapEl}
+      </LessonFrame>
+    );
+  }
+
+  // ── Quiz ──────────────────────────────────────────────────────────────────
+  if (coursePhase.phase === "quiz") {
+    return (
+      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={module.title}>
+        <AnimatePresence mode="wait" custom={navDirection}>
+          <motion.div
+            key="quiz"
+            custom={navDirection}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute inset-0"
+          >
+            <QuizLesson
+              sanityQuiz={coursePhase.quizData}
+              onPass={handleQuizPass}
+              onFail={handleQuizFail}
+              passingScore={coursePhase.quizData.passingScore}
+              sessionId={sessionId}
+              moduleId={module._id}
+            />
+          </motion.div>
+        </AnimatePresence>
+        {navMapEl}
+        <CompletionBurst active={showBurst} />
+      </LessonFrame>
+    );
+  }
+
+  // ── Disclaimer ────────────────────────────────────────────────────────────
+  if (coursePhase.phase === "disclaimer") {
+    if (!disclaimerSection) return null;
+
+    return (
+      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={module.title}>
+        <AnimatePresence mode="wait" custom={navDirection}>
+          <motion.div
+            key="disclaimer"
+            custom={navDirection}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute inset-0"
+          >
+            <DisclaimerPage
+              disclaimer={disclaimerSection}
+              onNext={goNext}
+              onPrev={goPrev}
+              showPrev={true}
+            />
+          </motion.div>
+        </AnimatePresence>
+        {navMapEl}
+      </LessonFrame>
+    );
+  }
+
+  // ── Complete ──────────────────────────────────────────────────────────────
+  if (coursePhase.phase === "complete") {
+    return (
+      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={module.title}>
+        <AnimatePresence mode="wait" custom={navDirection}>
+          <motion.div
+            key="complete"
+            custom={navDirection}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute inset-0"
+          >
+            <CourseComplete
+              moduleTitle={module.title}
+              totalLessons={lessonSections.length}
+              totalHotspotsVisited={totalHotspotsVisited}
+              totalHotspots={totalHotspots}
+              onRestart={() => {
+                setNavDirection(1);
+                setActiveLayer(null);
+                setActiveLayerId(null);
+                setShowChapterIntro(false);
+                setCoursePhase({ phase: "cover" });
+              }}
+            />
+          </motion.div>
+        </AnimatePresence>
+        {navMapEl}
+        <CompletionBurst active={showBurst} />
+      </LessonFrame>
+    );
+  }
+
+  // ── Chapter phase — lesson rendering ─────────────────────────────────────
+  // All lesson types (stage, video, in-lesson quiz, content) live here.
+
+  if (!currentLesson) return null;
+
+  // ── Chapter intro overlay (cross-chapter boundary) ───────────────────────
+  if (showChapterIntro) {
+    const chapterEntry = chapters.find((c) => c.chapterIndex === coursePhase.chapterIndex);
+    return (
+      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={module.title}>
+        <ChapterIntro
+          chapterTitle={chapterEntry?.chapterTitle ?? ""}
+          chapterNumber={(coursePhase.chapterIndex) + 1}
+          totalChapters={chapters.length}
+          onContinue={() => setShowChapterIntro(false)}
+        />
+        {navMapEl}
+      </LessonFrame>
+    );
+  }
+
+  // ── Stage lesson ──────────────────────────────────────────────────────────
+  if (currentLesson.lessonType === "stage") {
+    return (
+      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={module.title}>
+        <AnimatePresence mode="wait" custom={navDirection}>
+          <motion.div
+            key={`stage-${currentLesson._key}`}
+            custom={navDirection}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute inset-0"
+          >
+            <ProductStage
+              headline={safeHeadline}
+              productImage={currentLesson.media?.asset?.url}
+              stageBackground={currentLesson.stageBackground?.asset?.url}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              enableCompletionAnimation={(currentLesson as any).enableCompletionAnimation}
+              completionTransition={currentLesson.completionTransition}
+              hotspots={hotspots}
+              visited={visited[lessonKey] ?? new Set()}
+              onVisit={markVisited}
+              onNext={goNext}
+              onOpenLayer={(id: string) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                baseMarkVisited(lessonKey, hotspots.find((h: any) => h._key === id)?.label || "", hotspots.length);
+                setActiveLayerId(id);
+              }}
+            />
+          </motion.div>
+        </AnimatePresence>
+        {navMapEl}
+        {renderLayerFrame()}
+      </LessonFrame>
+    );
+  }
+
+  // ── Video lesson ──────────────────────────────────────────────────────────
+  if (currentLesson.lessonType === "video") {
+    return (
+      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={module.title}>
+        <AnimatePresence mode="wait" custom={navDirection}>
+          <motion.div
+            key={`video-${currentLesson._key}`}
+            custom={navDirection}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute inset-0"
+          >
+            <VideoLesson
+              headline={safeHeadline}
+              videoFileUrl={currentLesson.videoFile?.asset?.url}
+              videoAspectRatio={currentLesson.videoAspectRatio}
+              onNext={goNext}
+            />
+          </motion.div>
+        </AnimatePresence>
+        {navMapEl}
+      </LessonFrame>
+    );
+  }
+
+  // ── In-lesson AI quiz ─────────────────────────────────────────────────────
+  if (currentLesson.lessonType === "quiz") {
+    return (
+      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={module.title}>
+        <AnimatePresence mode="wait" custom={navDirection}>
+          <motion.div
+            key={`quiz-lesson-${currentLesson._key}`}
+            custom={navDirection}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute inset-0"
+          >
+            <QuizLesson
+              context={buildQuizContext()}
+              onPass={goNext}   // lesson-type quiz always advances on pass
+              onFail={goNext}   // lesson-type quiz also advances on fail (no gate)
+              passingScore={80}
+              sessionId={sessionId}
+              moduleId={module._id}
+            />
+          </motion.div>
+        </AnimatePresence>
+        {navMapEl}
+      </LessonFrame>
+    );
+  }
+
+  // ── Regular content lesson ────────────────────────────────────────────────
   return (
     <LessonFrame
-      currentLesson={currentLessonIndex + 1}
-      totalLessons={lessons.length}
+      currentLesson={progressCurrent}
+      totalLessons={progressTotal}
       onPrev={goPrev}
       onNext={goNext}
       nextDisabled={nextLocked}
@@ -422,157 +1042,153 @@ export default function DeckViewer({
           : undefined
       }
     >
-      <div className={`absolute inset-0 ${animClass}`}>
-        {/* Background Image or Solid Color */}
-        {imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt={currentLesson.headline} className="absolute inset-0 w-full h-full object-cover" />
-        ) : (
-          <div className="absolute inset-0 bg-background" />
-        )}
-        
-        {/* Lesson Content */}
-        {(!imageUrl || currentLesson.body) && (
-          <div 
-            className={`absolute pointer-events-none z-10 flex flex-col ${
-              imageUrl 
-                ? 'left-[6%] right-[6%] bottom-[12%] md:left-[var(--desktop-x)] md:right-auto md:top-[var(--desktop-y)] md:bottom-auto'
-                : ''
-            }`}
-            style={imageUrl ? { 
-              '--desktop-x': `max(6%, ${lessonTextOverlayX}%)`,
-              '--desktop-y': `${lessonTextOverlayY}%`,
-            } as React.CSSProperties : { inset: 0, padding: '6%', justifyContent: 'center' }}
-          >
-            <div className={`pointer-events-auto w-full ${imageUrl ? lessonTextOverlayWidth : 'max-w-xl flex flex-col gap-4'}
-              ${imageUrl ? 'bg-card/60 backdrop-blur-2xl p-6 md:p-8 rounded-[2rem] border border-white/10 shadow-2xl' : ''}
-            `}>
-              <h2 className={`text-foreground text-2xl font-semibold leading-tight`}>{currentLesson?.headline}</h2>
-              {currentLesson?.body && (
-                <div className={`prose dark:prose-invert max-w-none text-muted-foreground mt-4 text-base font-light leading-relaxed whitespace-pre-wrap`}>
-                  {typeof currentLesson.body === 'string' ? currentLesson.body : <PortableText value={currentLesson.body} components={portableTextComponents} />}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-        
-        {/* Hotspots */}
-        {hotspots.map((h, i) => {
-          let Icon = null;
-          if (h.contentMode === "layer" && h.layerContent) {
-            if (h.layerContent.layerType === "video") Icon = PlayCircle;
-            else if (h.layerContent.layerType === "interaction") Icon = MousePointer2;
-            else Icon = Layers;
-          }
-
-          return (
-            <Hotspot
-              key={i}
-              x={h.x}
-              y={h.y}
-              label={h.label}
-              visited={visited[lessonKey]?.has(h.label) ?? false}
-              className={h.contentMode === "layer" ? "w-8 h-8 bg-black/50 backdrop-blur-md border border-white/20 text-white rounded-full flex items-center justify-center hover:bg-black/70 hover:scale-110 transition-all shadow-xl" : ""}
-              pulseClassName={h.contentMode === "layer" ? "bg-white" : ""}
-              icon={Icon ? <Icon className="w-4 h-4" /> : (h.contentMode === "layer" ? <Plus className="w-4 h-4" /> : undefined)}
-              onVisit={() => markVisited(h.label)}
-              onOpen={() => {
-                if (h.contentMode === "layer" && h.layerContent) {
-                  baseMarkVisited(lessonKey, h.label, hotspots.length);
-                  setActiveLayerId(h._key);
-                  return;
-                }
-                setActiveLayer({ topic: h.topic, title: h.label, body: h.body, x: h.x, y: h.y });
-              }}
+      <AnimatePresence mode="wait" custom={navDirection}>
+        <motion.div
+          key={`lesson-${currentLesson._key}`}
+          custom={navDirection}
+          variants={slideVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
+          className="absolute inset-0"
+        >
+          {/* Background image or solid color */}
+          {imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={imageUrl}
+              alt={safeHeadline}
+              className="absolute inset-0 w-full h-full object-cover"
             />
-          );
-        })}
+          ) : (
+            <div className="absolute inset-0 bg-background" />
+          )}
 
-        <DiscoveryPanel
-          open={activeLayer !== null}
-          onClose={() => setActiveLayer(null)}
-          label={activeLayer?.title ?? ""}
-          topic={activeLayer?.topic}
-          body={activeLayer?.body}
-          x={activeLayer?.x}
-          y={activeLayer?.y}
-          mode="popover"
-        />
-
-        {/* Layer Sub-content */}
-        {layerContent && (
-          <LayerFrame
-            open={activeLayerId !== null}
-            onClose={() => setActiveLayerId(null)}
-            parentLessonTitle={currentLesson.headline}
-            layerTitle={layerContent.headline}
-          >
-            {/* Layer Media with Text Overlay */}
-            {(layerContent.media?.asset?.url || (layerContent.photos && layerContent.photos.length > 0)) ? (
-              <div className="relative mb-6">
-                {layerContent.media?.asset?.url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={layerContent.media.asset.url} alt={layerContent.headline} className="w-full rounded-2xl object-cover max-h-[60vh] shadow-2xl ring-1 ring-white/10" />
-                ) : layerContent.photos ? (
-                  <FullWidthCarousel photos={layerContent.photos} className="!mb-0" />
-                ) : null}
-
-                {/* Text Overlay Box */}
-                {layerContent.textOverlay && layerContent.body && (
-                  <div 
-                    className="absolute z-10 pointer-events-none flex flex-col p-4 md:p-0"
-                    style={{ 
-                      left: `${layerContent.textOverlay.x ?? 6}%`,
-                      top: `${layerContent.textOverlay.y ?? 15}%`,
-                    }}
-                  >
-                    <div className={`pointer-events-auto bg-card/60 backdrop-blur-2xl p-5 md:p-6 rounded-2xl border border-white/10 shadow-xl ${getSemanticWidthClass(layerContent.textOverlay.width)}`}>
-                      <div className="prose prose-invert max-w-none text-foreground/90 leading-relaxed text-sm md:text-base line-clamp-6 hover:line-clamp-none transition-all">
-                        {typeof layerContent.body === 'string' ? layerContent.body : <PortableText value={layerContent.body} />}
-                      </div>
-                    </div>
+          {/* Text content */}
+          {(!imageUrl || currentLesson.body) && (
+            <div
+              className={`absolute pointer-events-none z-10 flex flex-col ${
+                imageUrl
+                  ? "left-[6%] right-[6%] bottom-[12%] md:left-[var(--desktop-x)] md:right-auto md:top-[var(--desktop-y)] md:bottom-auto"
+                  : ""
+              }`}
+              style={
+                imageUrl
+                  ? ({
+                      "--desktop-x": `max(6%, ${lessonTextOverlayX}%)`,
+                      "--desktop-y": `${lessonTextOverlayY}%`,
+                    } as React.CSSProperties)
+                  : { inset: 0, padding: "6%", justifyContent: "center" }
+              }
+            >
+              <div
+                className={`pointer-events-auto w-full ${imageUrl ? lessonTextOverlayWidth : "max-w-xl flex flex-col gap-4"} ${
+                  imageUrl
+                    ? "bg-card/60 backdrop-blur-2xl p-6 md:p-8 rounded-[2rem] border border-white/10 shadow-2xl"
+                    : ""
+                }`}
+              >
+                <h2 className="text-foreground text-2xl font-semibold leading-tight">
+                  {currentLesson.headline}
+                </h2>
+                {currentLesson.body && (
+                  <div className="prose dark:prose-invert max-w-none text-muted-foreground mt-4 text-base font-light leading-relaxed whitespace-pre-wrap">
+                    {typeof currentLesson.body === "string" ? (
+                      currentLesson.body
+                    ) : (
+                      <PortableText
+                        value={currentLesson.body}
+                        components={portableTextComponents}
+                      />
+                    )}
                   </div>
                 )}
               </div>
-            ) : null}
+            </div>
+          )}
 
-            {/* Normal Body (if no text overlay configuration) */}
-            {(!layerContent.textOverlay || (!layerContent.media?.asset?.url && !(layerContent.photos && layerContent.photos.length > 0))) && layerContent.body && (
-              <div className="prose prose-invert max-w-none text-foreground/80 whitespace-pre-wrap leading-relaxed mb-6">
-                {typeof layerContent.body === 'string' ? layerContent.body : <PortableText value={layerContent.body} />}
-              </div>
-            )}
-            
-            {layerContent.layerType === "video" && (layerContent.videoUrl || layerContent.videoFile?.asset?.url) && (
-              <div className="mt-6 aspect-video bg-black rounded-2xl overflow-hidden border border-white/10 relative shadow-2xl">
-                <video
-                  src={layerContent.videoFile?.asset?.url || layerContent.videoUrl}
-                  controls
-                  className="absolute inset-0 w-full h-full object-contain"
-                />
-              </div>
-            )}
-            
-            {/* If layer has hotspots, render them relatively */}
-            {layerContent.layerType === "interaction" && layerContent.hotspots && layerContent.hotspots.length > 0 && (
-              <div className="mt-8">
-                <h3 className="text-sm uppercase tracking-widest text-accent/80 font-bold mb-4">Interactive Features</h3>
-                <div className="space-y-4">
-                  {layerContent.hotspots.map((h, i) => (
-                    <div key={i} className="bg-white/5 rounded-2xl p-5 border border-white/10">
-                      <h4 className="font-semibold text-foreground text-lg mb-2">{h.label}</h4>
-                      <div className="text-foreground/70 text-sm leading-relaxed prose prose-invert">
-                        {typeof h.body === 'string' ? h.body : <PortableText value={h.body} />}
-                      </div>
-                    </div>
-                  ))}
+          {/* Floating graphics */}
+          {currentLesson.floatingGraphics?.map(
+            (fg, i) =>
+              fg.image?.asset?.url && (
+                <div
+                  key={i}
+                  className={`absolute pointer-events-none z-10 ${getSemanticWidthClass(fg.width)}`}
+                  style={{ left: `${fg.x ?? 0}%`, top: `${fg.y ?? 0}%` }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={fg.image.asset.url}
+                    alt="Floating Graphic"
+                    className="w-full h-auto drop-shadow-2xl"
+                  />
                 </div>
-              </div>
-            )}
-          </LayerFrame>
-        )}
-      </div>
+              )
+          )}
+
+          {/* Hotspots */}
+          {hotspots.map(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (h: any, i: number) => {
+              let Icon = null;
+              if (h.contentMode === "layer" && h.layerContent) {
+                if (h.layerContent.layerType === "video") Icon = PlayCircle;
+                else if (h.layerContent.layerType === "interaction") Icon = MousePointer2;
+                else Icon = Layers;
+              }
+
+              return (
+                <Hotspot
+                  key={i}
+                  x={h.x}
+                  y={h.y}
+                  label={h.label}
+                  visited={visited[lessonKey]?.has(h.label) ?? false}
+                  icon={
+                    Icon ? (
+                      <Icon className="w-5 h-5 text-white" />
+                    ) : h.contentMode === "layer" ? (
+                      <Plus className="w-5 h-5 text-white" />
+                    ) : undefined
+                  }
+                  onVisit={() => markVisited(h.label)}
+                  onOpen={() => {
+                    if (h.contentMode === "layer" && h.layerContent) {
+                      baseMarkVisited(lessonKey, h.label, hotspots.length);
+                      setActiveLayerId(h._key);
+                      return;
+                    }
+                    setActiveLayer({
+                      topic: h.topic,
+                      title: h.label,
+                      body: h.body,
+                      x: h.x,
+                      y: h.y,
+                      photos: h.photos,
+                    });
+                  }}
+                />
+              );
+            }
+          )}
+
+          <DiscoveryPanel
+            open={activeLayer !== null}
+            onClose={() => setActiveLayer(null)}
+            label={activeLayer?.title ?? ""}
+            topic={activeLayer?.topic}
+            body={activeLayer?.body}
+            x={activeLayer?.x}
+            y={activeLayer?.y}
+            photos={activeLayer?.photos}
+            mode="popover"
+          />
+
+          {renderLayerFrame()}
+        </motion.div>
+      </AnimatePresence>
+
       {navMapEl}
     </LessonFrame>
   );

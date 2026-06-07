@@ -65,10 +65,12 @@ model QuizAttempt {
   moduleId  String
   score     Int
   total     Int
+  passed    Boolean  @default(false)
   answers   String   // JSON
   createdAt DateTime @default(now())
 
   session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   @@index([sessionId])
+  @@index([sessionId, passed])
   @@index([createdAt])
 }

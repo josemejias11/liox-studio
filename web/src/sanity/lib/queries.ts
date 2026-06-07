@@ -1,5 +1,95 @@
 import { groq } from "next-sanity";
 
+// ── Shared fragments ──────────────────────────────────────────────────────────
+
+const LESSON_FIELDS = groq`
+  "sectionType": "lesson",
+  "_key": _id,
+  headline,
+  body,
+  lessonType,
+  media { asset->{ url } },
+  textOverlay { x, y, width },
+  hotspots[] {
+    _key,
+    label,
+    topic,
+    x,
+    y,
+    contentMode,
+    layerContent {
+      headline,
+      body,
+      layerType,
+      media { asset->{ url } },
+      photos[] { asset->{ url, originalFilename } },
+      videoAspectRatio,
+      videoFile { asset->{ url } },
+      textOverlay { x, y, width }
+    },
+    body,
+    photos[] { asset->{ url, originalFilename } },
+  },
+  videoAspectRatio,
+  videoFile { asset->{ url } },
+  floatingGraphics[] { image { asset->{ url } }, x, y, width },
+  stageBackground { asset->{ url } },
+  enableCompletionAnimation,
+  completionTransition,
+`;
+
+const SPEC_FIELDS = groq`
+  "sectionType": "specification",
+  "_key": _id,
+  title,
+  subtitle,
+  heroImage { asset->{ url } },
+  specGroups[] {
+    groupName,
+    specs[] { label, value, highlight }
+  },
+  footnotes,
+`;
+
+const QUIZ_FIELDS = groq`
+  "sectionType": "quiz",
+  "_key": _id,
+  title,
+  instructions,
+  questions[] {
+    _key,
+    questionText,
+    questionType,
+    answers[] { _key, text, isCorrect, feedback },
+    explanation,
+  },
+  passingScore,
+  allowRetry,
+  showCorrectAnswers,
+`;
+
+const DISCLAIMER_FIELDS = groq`
+  "sectionType": "disclaimer",
+  "_key": _id,
+  title,
+  category,
+  body,
+  acknowledgementRequired,
+  acknowledgementLabel,
+`;
+
+const CHAPTER_FIELDS = groq`
+  _id,
+  title,
+  slug,
+  estimatedDuration,
+  "lessons": lessons[]->{
+    ${LESSON_FIELDS}
+  },
+`;
+
+// ── Queries ───────────────────────────────────────────────────────────────────
+
 // All published modules — used for the course library grid
 export const MODULES_QUERY = groq`
   *[_type == "module" && published == true] | order(_createdAt desc) {
@@ -13,7 +103,7 @@ export const MODULES_QUERY = groq`
   }
 `;
 
-// Single module with all chapters and lessons fully resolved
+// Single module with all chapters and sections fully resolved
 export const MODULE_BY_SLUG_QUERY = groq`
   *[_type == "module" && slug.current == $slug && published == true][0] {
     _id,
@@ -26,44 +116,12 @@ export const MODULE_BY_SLUG_QUERY = groq`
     coverButtonText,
     coverButtonColor,
     learningObjectives,
-    "chapters": chapters[]-> {
-      _id,
-      title,
-      slug,
-      estimatedDuration,
-      lessons[]-> {
-        "_key": _id,
-        headline,
-        body,
-        lessonType,
-        media { asset->{ url } },
-        textOverlay { x, y, width },
-        hotspots[] {
-          _key,
-          label,
-          topic,
-          x,
-          y,
-          contentMode,
-          layerContent {
-            headline,
-            body,
-            layerType,
-            media { asset->{ url } },
-            photos[] { asset->{ url } },
-            videoUrl,
-            videoFile { asset->{ url } },
-            textOverlay { x, y, width }
-          },
-          body,
-          photos[] { asset->{ url } },
-        },
-        videoUrl,
-        videoFile { asset->{ url } },
-        stageBackground { asset->{ url } },
-        completionTransition,
-      },
+    "chapters": chapters[]->{
+      ${CHAPTER_FIELDS}
     },
+    "specifications": specifications[]->{${SPEC_FIELDS}},
+    "quiz": quiz->{${QUIZ_FIELDS}},
+    "disclaimer": disclaimer->{${DISCLAIMER_FIELDS}},
   }
 `;
 
@@ -76,43 +134,11 @@ export const FIRST_MODULE_QUERY = groq`
     description,
     thumbnail,
     learningObjectives,
-    "chapters": chapters[]-> {
-      _id,
-      title,
-      slug,
-      estimatedDuration,
-      lessons[]-> {
-        "_key": _id,
-        headline,
-        body,
-        lessonType,
-        media { asset->{ url } },
-        textOverlay { x, y, width },
-        hotspots[] {
-          _key,
-          label,
-          topic,
-          x,
-          y,
-          contentMode,
-          layerContent {
-            headline,
-            body,
-            layerType,
-            media { asset->{ url } },
-            photos[] { asset->{ url } },
-            videoUrl,
-            videoFile { asset->{ url } },
-            textOverlay { x, y, width }
-          },
-          body,
-          photos[] { asset->{ url } },
-        },
-        videoUrl,
-        videoFile { asset->{ url } },
-        stageBackground { asset->{ url } },
-        completionTransition,
-      },
+    "chapters": chapters[]->{
+      ${CHAPTER_FIELDS}
     },
+    "specifications": specifications[]->{${SPEC_FIELDS}},
+    "quiz": quiz->{${QUIZ_FIELDS}},
+    "disclaimer": disclaimer->{${DISCLAIMER_FIELDS}},
   }
 `;

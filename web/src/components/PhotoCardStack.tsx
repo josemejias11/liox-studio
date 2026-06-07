@@ -4,17 +4,17 @@ import { useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Photo {
-  asset?: { url?: string };
+  asset?: { url?: string; originalFilename?: string };
 }
 
 interface PhotoCardStackProps {
   photos: Photo[];
 }
 
-export function PhotoCardStack({ photos }: PhotoCardStackProps) {
+export function PhotoCardStack({ photos = [] }: PhotoCardStackProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const validPhotos = photos.filter((p) => p.asset?.url);
+  const validPhotos = (photos || []).filter((p) => p.asset?.url);
   if (!validPhotos.length) return null;
 
   function scroll(dir: "left" | "right") {
@@ -22,6 +22,13 @@ export function PhotoCardStack({ photos }: PhotoCardStackProps) {
     const card = scrollRef.current.querySelector("[data-card]") as HTMLElement | null;
     const step = card ? card.offsetWidth + 12 : 220;
     scrollRef.current.scrollBy({ left: dir === "right" ? step : -step, behavior: "smooth" });
+  }
+
+  function parseTitle(filename?: string) {
+    if (!filename) return "";
+    let name = filename.replace(/\.[^/.]+$/, "");
+    name = name.replace(/[-_]/g, " ");
+    return name.charAt(0).toUpperCase() + name.slice(1);
   }
 
   return (
@@ -33,23 +40,32 @@ export function PhotoCardStack({ photos }: PhotoCardStackProps) {
           pb-2 scrollbar-none"
         style={{ scrollbarWidth: "none" }}
       >
-        {validPhotos.map((p, i) => (
-          <div
-            key={i}
-            data-card
-            className="shrink-0 snap-start w-[78%] aspect-[4/3] rounded-xl overflow-hidden
-              shadow-lg shadow-black/50 ring-1 ring-white/10
-              transition-transform duration-200 hover:scale-[1.02]"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={p.asset!.url!}
-              alt=""
-              className="w-full h-full object-cover"
-              draggable={false}
-            />
-          </div>
-        ))}
+        {validPhotos.map((p, i) => {
+          const title = parseTitle(p.asset?.originalFilename);
+          return (
+            <div
+              key={i}
+              data-card
+              className={`shrink-0 snap-start aspect-[4/3] rounded-xl overflow-hidden relative
+                shadow-lg shadow-black/50 ring-1 ring-white/10
+                transition-transform duration-200 hover:scale-[1.02]
+                ${validPhotos.length === 1 ? "w-full" : "w-[78%]"}`}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={p.asset!.url!}
+                alt={title}
+                className="w-full h-full object-cover"
+                draggable={false}
+              />
+              {title && (
+                <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+                  <p className="text-white text-xs md:text-sm font-medium drop-shadow-md">{title}</p>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Scroll arrows — appear on hover when multiple photos */}

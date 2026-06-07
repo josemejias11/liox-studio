@@ -3,6 +3,8 @@
 import { ReactNode } from "react";
 import { ChevronLeft, ChevronRight, LayoutGrid } from "lucide-react";
 
+type SectionType = "lesson" | "specification" | "quiz" | "disclaimer";
+
 interface LessonFrameProps {
   children: ReactNode;
   // Nav — omit all three to hide the nav bar entirely (e.g. cover / stage / quiz lessons)
@@ -18,9 +20,18 @@ interface LessonFrameProps {
   onToggleNavMap?: () => void;
   // Device banner — shown as a fixed bottom bar below the fullscreen frame
   moduleTitle?: string;
+  // Section type controls the banner sub-label and hides the numeric nav counter for non-lesson types
+  sectionType?: SectionType;
 }
 
 
+
+const SECTION_LABELS: Record<SectionType, string | null> = {
+  lesson: null,
+  specification: "Specifications",
+  quiz: "Knowledge Check",
+  disclaimer: "Disclaimer",
+};
 
 export function LessonFrame({
   children,
@@ -33,11 +44,14 @@ export function LessonFrame({
   className = "",
   onToggleNavMap,
   moduleTitle,
+  sectionType = "lesson",
 }: LessonFrameProps) {
   const showNav = currentLesson !== undefined && totalLessons !== undefined;
   const navGradient = "bg-gradient-to-t from-background via-background/80 to-transparent";
 
   const showProgress = currentLesson !== undefined && totalLessons !== undefined && totalLessons > 0;
+  const sectionLabel = SECTION_LABELS[sectionType];
+  const isLessonType = sectionType === "lesson";
 
   return (
     // Outer shell — flex-col so the device banner stacks below the frame.
@@ -105,13 +119,17 @@ export function LessonFrame({
                 <ChevronLeft className="h-6 w-6" />
               </button>
 
-              <span className="text-sm font-medium text-foreground/80 min-w-[3rem] text-center tabular-nums select-none" aria-hidden="true">
-                {currentLesson} / {totalLessons}
-              </span>
-              {/* Announced to screen readers on each lesson change */}
-              <span aria-live="polite" aria-atomic="true" className="sr-only">
-                Lesson {currentLesson} of {totalLessons}
-              </span>
+              {/* Counter — visible only for lesson sections */}
+              {isLessonType && (
+                <>
+                  <span className="text-sm font-medium text-foreground/80 min-w-[3rem] text-center tabular-nums select-none" aria-hidden="true">
+                    {currentLesson} / {totalLessons}
+                  </span>
+                  <span aria-live="polite" aria-atomic="true" className="sr-only">
+                    Lesson {currentLesson} of {totalLessons}
+                  </span>
+                </>
+              )}
 
               <button
                 onClick={onNext}
@@ -153,17 +171,23 @@ export function LessonFrame({
           </p>
 
           {/* Device / module name — the hero text */}
-          <p className="text-3xl font-bold tracking-tight text-foreground leading-none text-center">
+          <p className="text-3xl font-bold text-foreground leading-none text-center">
             {moduleTitle}
           </p>
 
           {/* Indigo underline accent */}
           <span className="block mt-1 h-[2px] w-10 rounded-full bg-accent" />
 
-          {/* Progress indicator — always rendered to keep banner height constant */}
-          <p className={`mt-1 text-xs tabular-nums text-muted-foreground/70 leading-none ${showProgress ? "" : "invisible"}`}>
-            lesson {currentLesson}&thinsp;/&thinsp;{totalLessons}
-          </p>
+          {/* Progress / section label — always rendered to keep banner height constant */}
+          {sectionLabel ? (
+            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-accent leading-none">
+              {sectionLabel}
+            </p>
+          ) : (
+            <p className={`mt-1 text-xs tabular-nums text-muted-foreground/70 leading-none ${showProgress ? "" : "invisible"}`}>
+              lesson {currentLesson}&thinsp;/&thinsp;{totalLessons}
+            </p>
+          )}
         </div>
       )}
     </div>

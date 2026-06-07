@@ -1,13 +1,15 @@
 "use client";
 
-import { ChevronLeft, GraduationCap } from "lucide-react";
+import Link from "next/link";
+import { GraduationCap, Home } from "lucide-react";
 
 interface CourseCompleteProps {
   moduleTitle: string;
   totalLessons: number;
   totalHotspotsVisited: number;
   totalHotspots: number;
-  onRestart: () => void;
+  /** @deprecated Use the "Return to Library" link instead. Kept for backwards compatibility. */
+  onRestart?: () => void;
 }
 
 export function CourseComplete({
@@ -15,7 +17,6 @@ export function CourseComplete({
   totalLessons,
   totalHotspotsVisited,
   totalHotspots,
-  onRestart,
 }: CourseCompleteProps) {
   const exploredPct =
     totalHotspots > 0
@@ -42,13 +43,17 @@ export function CourseComplete({
             bg-accent
             shadow-[0_0_48px_rgba(104,91,199,0.32),0_0_80px_rgba(104,91,199,0.18)]"
         >
-          <GraduationCap className="h-[34px] w-[34px] text-foreground stroke-[1.5]" />
+          <GraduationCap className="h-[34px] w-[34px] text-accent-foreground stroke-[1.5]" />
         </div>
 
         {/* Eyebrow + title */}
-        <div className="cc-rise flex flex-col gap-1.5" style={{ animationDelay: "160ms" }}>
-          <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-foreground/30">
+        <div className="cc-rise flex flex-col items-center gap-1.5" style={{ animationDelay: "160ms" }}>
+          {/* Prominent "Course Complete" banner chip */}
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/15 border border-accent/25 text-accent text-[9px] font-bold uppercase tracking-[0.22em]">
             Course Complete
+          </span>
+          <p className="text-foreground/40 text-[11px] font-semibold uppercase tracking-[0.18em] mt-0.5">
+            Course Approved
           </p>
           <h2 className="text-foreground text-[20px] font-bold leading-tight">{moduleTitle}</h2>
         </div>
@@ -92,18 +97,18 @@ export function CourseComplete({
           </div>
         </div>
 
-        {/* Review button */}
+        {/* Return to Library */}
         <div className="cc-rise" style={{ animationDelay: "360ms" }}>
-          <button
-            onClick={onRestart}
+          <Link
+            href="/"
             className="flex items-center gap-1.5 text-foreground/50 hover:text-foreground/90
               text-[11px] font-medium px-5 py-2 rounded-full
-              border border-border/10 hover:border-border/25 hover:bg-background/[0.04]
-              transition-all duration-200 active:scale-95"
+              border border-border/10 hover:border-border/25 hover:bg-foreground/[0.04]
+              transition-all duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2"
           >
-            <ChevronLeft className="h-3 w-3" />
-            Review Course
-          </button>
+            <Home className="h-3 w-3" />
+            Return to Library
+          </Link>
         </div>
       </div>
     </div>

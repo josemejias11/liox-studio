@@ -1,25 +1,53 @@
 import { NextRequest } from "next/server";
 
-const API_KEY = process.env.ANTHROPIC_API_KEY ?? "";
+const API_KEY = process.env.GOOGLE_AI_STUDIO_API_KEY ?? "";
 
-interface ChatMessage {
-  role: "user" | "assistant";
-  content: string;
+import { z } from "zod";
+
+const ChatRequestSchema = z.object({
+  query: z.string().optional(),
+  messages: z.array(
+    z.object({
+      role: z.enum(["user", "assistant"]),
+      content: z.string(),
+    })
+  ).optional(),
+  context_hint: z.boolean().optional(),
+  lesson_content: z.string().optional(),
+  course_title: z.string().optional(),
+  course_description: z.string().optional(),
+});
+
+type ChatRequestBody = z.infer<typeof ChatRequestSchema>;
+
+function buildSystemPrompt(
+  course_title: string | undefined,
+  course_description: string | undefined,
+  lesson_content: string | undefined
+): string {
+  const title = course_title?.trim() || "this course";
+
+  let prompt =
+    `You are a learning assistant for the course: ${title}.\n\n` +
+    `Your role is strictly limited to answering questions that are directly related to the content of this course. ` +
+    `You must NOT discuss other products, other courses, current events, or any general knowledge that falls outside the scope of this course.\n\n` +
+    `If a user asks a question that is off-topic or unrelated to the course or the provided lesson content, ` +
+    `you must respond with this exact message: ` +
+    `"I can only help with questions about ${title}. Please ask me something related to the course content!"\n\n` +
+    `Base all of your answers exclusively on the lesson content provided below. ` +
+    `Do not draw on outside knowledge beyond what is described in this course.`;
+
+  if (course_description?.trim()) {
+    prompt += `\n\nCourse overview: ${course_description.trim()}`;
+  }
+
+  if (lesson_content?.trim()) {
+    prompt +=
+      `\n\nOfficial lesson content for this section (use as your primary reference):\n"""\n${lesson_content.trim()}\n"""`;
+  }
+
+  return prompt;
 }
-
-interface ChatRequestBody {
-  query?: string;
-  messages?: ChatMessage[];
-  context_hint?: boolean;
-  lesson_content?: string;
-}
-
-const ASSET_SCOPE =
-  "You are a sales training assistant for the motorola edge 70 max. " +
-  "You may ONLY answer questions about this device's specifications, features, and capabilities " +
-  "as described in the course material. " +
-  "If the question is unrelated to this device, politely redirect: " +
-  "'I can only help with questions about the motorola edge 70 max specs and features.'";
 
 // ── Mock responses for development without an API key ─────────────────────────
 const MOCK_RESPONSES: Record<string, string> = {
@@ -76,12 +104,18 @@ function mockStream(text: string): ReadableStream {
 }
 
 export async function POST(req: NextRequest) {
-  const {
-    query,
-    messages: msgHistory,
-    context_hint,
-    lesson_content,
-  } = (await req.json()) as ChatRequestBody;
+  let body: ChatRequestBody;
+  try {
+    const json = await req.json();
+    body = ChatRequestSchema.parse(json);
+  } catch (err: any) {
+    return new Response(JSON.stringify({ error: "Invalid request payload", details: err.errors }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const { query, messages: msgHistory, lesson_content, course_title, course_description } = body;
 
   const headers = {
     "Content-Type": "text/event-stream",
@@ -98,36 +132,32 @@ export async function POST(req: NextRequest) {
     return new Response(mockStream(getMockResponse(lastQuery)), { headers });
   }
 
-  // Real mode — stream from Claude
-  const { default: Anthropic } = await import("@anthropic-ai/sdk");
-  const client = new Anthropic({ apiKey: API_KEY });
+  // Real mode — stream from Gemini
+  const { GoogleGenerativeAI } = await import("@google/generative-ai");
+  const genAI = new GoogleGenerativeAI(API_KEY);
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.0-flash",
+    systemInstruction: buildSystemPrompt(course_title, course_description, lesson_content),
+  });
 
-  // Build system prompt — include lesson body content when available
-  let systemPrompt = context_hint
-    ? ASSET_SCOPE
-    : "You are a helpful AI tutor. Answer based on the course content provided.";
-  if (lesson_content) {
-    systemPrompt +=
-      `\n\nOfficial content for this feature (use as your primary reference):\n"""\n${lesson_content}\n"""`;
-  }
+  // Google uses "model" for assistant role, "user" for user role
+  const history = (msgHistory ?? []).slice(0, -1).map((m) => ({
+    role: m.role === "assistant" ? "model" : "user",
+    parts: [{ text: m.content }],
+  }));
 
-  // Support multi-turn: use full messages array when provided, else wrap single query
-  const claudeMessages: ChatMessage[] =
-    msgHistory ?? [{ role: "user", content: query ?? "" }];
+  const lastMessage = msgHistory?.at(-1)?.content ?? query ?? "";
+
+  const chat = model.startChat({ history });
+  const result = await chat.sendMessageStream(lastMessage);
 
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        const stream = client.messages.stream({
-          model: "claude-sonnet-4-6",
-          max_tokens: 1024,
-          system: systemPrompt,
-          messages: claudeMessages,
-        });
-
-        for await (const event of stream) {
-          if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
-            controller.enqueue(`data: ${JSON.stringify({ text: event.delta.text })}\n\n`);
+        for await (const chunk of result.stream) {
+          const text = chunk.text();
+          if (text) {
+            controller.enqueue(`data: ${JSON.stringify({ text })}\n\n`);
           }
         }
         controller.enqueue("data: [DONE]\n\n");

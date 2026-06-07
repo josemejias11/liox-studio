@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const API_KEY = process.env.ANTHROPIC_API_KEY ?? "";
+const API_KEY = process.env.GOOGLE_AI_STUDIO_API_KEY ?? "";
 
-interface QuizRequestBody {
-  context?: string;
-  num_questions?: number;
-}
+import { z } from "zod";
+
+const QuizRequestSchema = z.object({
+  context: z.string().optional(),
+  num_questions: z.number().int().min(1).max(20).optional().default(5),
+});
+
+type QuizRequestBody = z.infer<typeof QuizRequestSchema>;
 
 const MOCK_QUIZ = {
   title: "motorola edge 70 max — Knowledge Check",
@@ -44,40 +48,44 @@ const MOCK_QUIZ = {
 };
 
 export async function POST(req: NextRequest) {
-  const { context, num_questions = 5 } = (await req.json()) as QuizRequestBody;
+  let body: QuizRequestBody;
+  try {
+    const json = await req.json();
+    body = QuizRequestSchema.parse(json);
+  } catch (err: any) {
+    return NextResponse.json({ error: "Invalid request payload", details: err.errors }, { status: 400 });
+  }
+
+  const { context, num_questions } = body;
 
   if (!API_KEY) {
     return NextResponse.json(MOCK_QUIZ);
   }
 
-  const { default: Anthropic } = await import("@anthropic-ai/sdk");
-  const client = new Anthropic({ apiKey: API_KEY });
+  const { GoogleGenerativeAI } = await import("@google/generative-ai");
+  const genAI = new GoogleGenerativeAI(API_KEY);
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.0-flash",
+    systemInstruction: "You are an expert curriculum designer. Output strictly raw JSON, no markdown, no code fences.",
+    generationConfig: { responseMimeType: "application/json" },
+  });
 
   const prompt =
     `Based on the following course content, generate a ${num_questions}-question multiple-choice quiz.\n` +
-    `Context:\n${context ?? "motorola edge 70 max product features"}\n\n` +
-    "Return ONLY a JSON object:\n" +
-    '{"title":"...","questions":[{"question":"...","options":["A","B","C","D"],"correct_answer":"...","explanation":"..."}]}';
+    `Context:\n${context ?? "course content"}\n\n` +
+    `Return a JSON object with this exact shape:\n` +
+    `{"title":"...","questions":[{"question":"...","options":["A","B","C","D"],"correct_answer":"...","explanation":"..."}]}`;
 
   try {
-    const message = await client.messages.create({
-      model: "claude-opus-4-8",
-      max_tokens: 2048,
-      system: "You are an expert curriculum designer. Output strictly raw JSON, no markdown.",
-      messages: [{ role: "user", content: prompt }],
-    });
+    const result = await model.generateContent(prompt);
+    const raw = result.response.text();
 
-    const firstContentBlock = message.content[0];
-    if (firstContentBlock?.type !== "text") {
-      throw new Error("Unexpected response format from Anthropic");
-    }
-
-    const raw = firstContentBlock.text;
+    // Strip any accidental markdown fences
     const cleaned = raw.includes("```json")
       ? raw.split("```json")[1].split("```")[0].trim()
       : raw.includes("```")
         ? raw.split("```")[1].split("```")[0].trim()
-        : raw;
+        : raw.trim();
 
     return NextResponse.json(JSON.parse(cleaned));
   } catch (e: unknown) {

@@ -4,8 +4,11 @@ import { ProgressRequestSchema } from "@/lib/contracts/progress";
 
 export async function GET(req: NextRequest) {
   const sessionId = new URL(req.url).searchParams.get("sessionId");
-  if (!sessionId) {
-    return NextResponse.json({ error: "sessionId required" }, { status: 400 });
+  // Simple UUID v4 regex validation
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  
+  if (!sessionId || !uuidRegex.test(sessionId)) {
+    return NextResponse.json({ error: "Valid sessionId required" }, { status: 400 });
   }
 
   const progressRecords = await prisma.lessonProgress.findMany({
@@ -85,7 +88,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (visitedHotspots && visitedHotspots.length > 0) {
-      await Promise.all(
+      await prisma.$transaction(
         visitedHotspots.map((label) =>
           prisma.hotspotVisit.upsert({
             where: { sessionId_lessonId_layerId_label: { sessionId, lessonId, layerId: "", label } },
@@ -109,7 +112,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (visitedHotspots && visitedHotspots.length > 0) {
-      await Promise.all(
+      await prisma.$transaction(
         visitedHotspots.map((label) =>
           prisma.hotspotVisit.upsert({
             where: { sessionId_lessonId_layerId_label: { sessionId, lessonId, layerId, label } },
@@ -124,7 +127,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (body.type === "quiz") {
-    const { sessionId, moduleId, score, total, answers } = body;
+    const { sessionId, moduleId, score, total, passed, answers } = body;
 
     await prisma.quizAttempt.create({
       data: {
@@ -132,6 +135,7 @@ export async function POST(req: NextRequest) {
         moduleId,
         score,
         total,
+        passed,
         answers: JSON.stringify(answers ?? []),
       },
     });
