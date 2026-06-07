@@ -430,18 +430,29 @@ export default function DeckViewer({
       }
     >
       <div className={`absolute inset-0 ${animClass}`}>
-        {/* Lesson content — image from Sanity CDN or text fallback */}
+        {/* Background Image or Solid Color */}
         {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={imageUrl} alt={currentLesson.headline} className="absolute inset-0 w-full h-full object-cover" />
         ) : (
-          <div className={`absolute inset-0 ${tc.bg} flex flex-col items-start justify-center p-[6%] overflow-auto gap-4`}>
-            <h2 className={`${tc.headline} text-2xl font-semibold leading-tight`}>{currentLesson?.headline}</h2>
-            {currentLesson?.body && (
-              <div className={`prose prose-invert max-w-none ${tc.body} text-base font-light leading-relaxed whitespace-pre-wrap`}>
-                {typeof currentLesson.body === 'string' ? currentLesson.body : <PortableText value={currentLesson.body} components={portableTextComponents} />}
-              </div>
-            )}
+          <div className={`absolute inset-0 ${tc.bg}`} />
+        )}
+        
+        {/* Lesson Content */}
+        {(!imageUrl || currentLesson.body) && (
+          <div className={`absolute inset-0 flex flex-col p-[6%] overflow-auto pointer-events-none z-10
+            ${imageUrl ? 'justify-start pt-[15%]' : 'justify-center'}
+          `}>
+            <div className={`pointer-events-auto max-w-xl
+              ${imageUrl ? 'bg-black/60 backdrop-blur-2xl p-8 rounded-[2rem] border border-white/10 shadow-2xl' : 'flex flex-col gap-4'}
+            `}>
+              <h2 className={`${imageUrl ? 'text-white' : tc.headline} text-2xl font-semibold leading-tight`}>{currentLesson?.headline}</h2>
+              {currentLesson?.body && (
+                <div className={`prose prose-invert max-w-none ${imageUrl ? 'text-white/80 mt-4' : tc.body} text-base font-light leading-relaxed whitespace-pre-wrap`}>
+                  {typeof currentLesson.body === 'string' ? currentLesson.body : <PortableText value={currentLesson.body} components={portableTextComponents} />}
+                </div>
+              )}
+            </div>
           </div>
         )}
         
