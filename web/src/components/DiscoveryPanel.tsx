@@ -87,6 +87,14 @@ export function DiscoveryPanel({
   const bottomRef       = useRef<HTMLDivElement>(null);
   const inputRef        = useRef<HTMLInputElement>(null);
   const swipeTouchStartX = useRef(0);
+  const lastPosRef      = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      if (x !== undefined && y !== undefined) lastPosRef.current = { x, y };
+      else lastPosRef.current = null;
+    }
+  }, [open, x, y]);
 
   useFocusTrap(panelRef, open);
 
@@ -244,19 +252,21 @@ export function DiscoveryPanel({
 
       {/* Panel — lessons in from the right or popover */}
       {(() => {
-        const isFloating = x !== undefined && y !== undefined;
+        const posX = x !== undefined ? x : lastPosRef.current?.x;
+        const posY = y !== undefined ? y : lastPosRef.current?.y;
+        const isFloating = posX !== undefined && posY !== undefined;
         let floatingStyle: React.CSSProperties = {};
         let originClass = "";
         
         if (isFloating) {
-          const isLeft = x! < 50;
-          const isTop = y! < 50;
+          const isLeft = posX! < 50;
+          const isTop = posY! < 50;
           
-          if (isLeft) floatingStyle.left = `${x! + 2}%`;
-          else floatingStyle.right = `${100 - x! + 2}%`;
+          if (isLeft) floatingStyle.left = `${posX! + 2}%`;
+          else floatingStyle.right = `${100 - posX! + 2}%`;
           
-          if (isTop) floatingStyle.top = `${y!}%`;
-          else floatingStyle.bottom = `${100 - y!}%`;
+          if (isTop) floatingStyle.top = `${posY!}%`;
+          else floatingStyle.bottom = `${100 - posY!}%`;
           
           if (isLeft && isTop) originClass = "origin-top-left";
           else if (isLeft && !isTop) originClass = "origin-bottom-left";
