@@ -59,12 +59,6 @@ export const layerType = defineType({
       ]
     }),
     defineField({
-      name: "speakerNotes",
-      title: "Speaker Notes",
-      type: "text",
-      rows: 3,
-    }),
-    defineField({
       name: "layerType",
       title: "Layer Type",
       type: "string",

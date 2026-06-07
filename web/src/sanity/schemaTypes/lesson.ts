@@ -74,12 +74,6 @@ export const lessonType = defineType({
       ]
     }),
     defineField({
-      name: "speakerNotes",
-      title: "Speaker Notes",
-      type: "text",
-      rows: 3,
-    }),
-    defineField({
       name: "lessonType",
       title: "Lesson Type",
       type: "string",

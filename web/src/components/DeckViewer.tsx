@@ -37,7 +37,6 @@ interface SanityLayer {
   textOverlay?: { x?: number; y?: number; width?: string };
   videoUrl?: string;
   videoFile?: { asset?: { url?: string } };
-  speakerNotes?: string;
 }
 
 interface SanityLesson {
@@ -58,7 +57,6 @@ interface SanityLesson {
   layers?: SanityLayer[];
   videoUrl?: string;
   videoFile?: { asset?: { url?: string } };
-  speakerNotes?: string;
   chapterTitle?: string;
 }
 
@@ -99,13 +97,8 @@ export default function DeckViewer({
   const [isComplete, setIsComplete] = useState(false);
   const timerRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  // Phase 11 — navigation map
   const [showNavMap, setShowNavMap] = useState(false);
   const toggleNavMap = () => setShowNavMap((v) => !v);
-
-  // Phase 14 — speaker notes
-  const [showNotes, setShowNotes] = useState(false);
-  const toggleNotes = () => setShowNotes((v) => !v);
 
   function clearTimers() {
     timerRefs.current.forEach(clearTimeout);
@@ -124,16 +117,6 @@ export default function DeckViewer({
 
   // Cleanup timers on unmount
   useEffect(() => clearTimers, []);
-
-  // Phase 14 — N key toggles speaker notes (when no text input is focused)
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (e.key === "n" || e.key === "N") setShowNotes((v) => !v);
-    }
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, []);
 
   const currentLesson = lessons[currentLessonIndex];
   const lessonKey = currentLesson?._key ?? "";
@@ -325,7 +308,7 @@ export default function DeckViewer({
   // ── Course completion ──────────────────────────────────────────────────────
   if (isComplete) {
     return (
-      <LessonFrame onToggleNavMap={toggleNavMap} onToggleNotes={toggleNotes} notesOpen={showNotes} moduleTitle={module.title}>
+      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={module.title}>
         <div className={`absolute inset-0 ${animClass}`}>
           <CourseComplete
             moduleTitle={module.title}
@@ -349,7 +332,7 @@ export default function DeckViewer({
   // ── Product Stage lesson ────────────────────────────────────────────────────
   if (currentLesson?.lessonType === "stage") {
     return (
-      <LessonFrame onToggleNavMap={toggleNavMap} onToggleNotes={toggleNotes} notesOpen={showNotes} speakerNotes={currentLesson.speakerNotes} moduleTitle={module.title}>
+      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={module.title}>
         <div className={`absolute inset-0 ${animClass}`}>
           <ProductStage
             headline={currentLesson.headline}
@@ -370,7 +353,7 @@ export default function DeckViewer({
   // ── Video lesson ────────────────────────────────────────────────────────────
   if (currentLesson?.lessonType === "video") {
     return (
-      <LessonFrame onToggleNavMap={toggleNavMap} onToggleNotes={toggleNotes} notesOpen={showNotes} speakerNotes={currentLesson.speakerNotes} moduleTitle={module.title}>
+      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={module.title}>
         <div className={`absolute inset-0 ${animClass}`}>
           <VideoLesson
             headline={currentLesson.headline}
@@ -399,7 +382,7 @@ export default function DeckViewer({
     ].join("\n");
 
     return (
-      <LessonFrame onToggleNavMap={toggleNavMap} onToggleNotes={toggleNotes} notesOpen={showNotes} speakerNotes={currentLesson.speakerNotes} moduleTitle={module.title}>
+      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={module.title}>
         <div className={`absolute inset-0 ${animClass}`}>
           <QuizLesson context={quizContext} onNext={goNext} sessionId={sessionId} moduleId={module._id} />
         </div>
@@ -417,9 +400,6 @@ export default function DeckViewer({
       onNext={goNext}
       nextDisabled={nextLocked}
       onToggleNavMap={toggleNavMap}
-      onToggleNotes={toggleNotes}
-      notesOpen={showNotes}
-      speakerNotes={currentLesson?.speakerNotes}
       moduleTitle={module.title}
       completionHint={
         nextLocked

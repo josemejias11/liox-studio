@@ -36,7 +36,6 @@ export const MODULE_BY_SLUG_QUERY = groq`
         headline,
         body,
         lessonType,
-        speakerNotes,
         media { asset->{ url } },
         textOverlay { x, y, width },
         hotspots[] {
@@ -58,7 +57,6 @@ export const MODULE_BY_SLUG_QUERY = groq`
           headline,
           body,
           layerType,
-          speakerNotes,
           media { asset->{ url } },
           photos[] { asset->{ url } },
           hotspots[] {
@@ -97,7 +95,6 @@ export const FIRST_MODULE_QUERY = groq`
         headline,
         body,
         lessonType,
-        speakerNotes,
         media { asset->{ url } },
         textOverlay { x, y, width },
         hotspots[] {
@@ -119,7 +116,6 @@ export const FIRST_MODULE_QUERY = groq`
           headline,
           body,
           layerType,
-          speakerNotes,
           media { asset->{ url } },
           photos[] { asset->{ url } },
           hotspots[] {
