@@ -467,7 +467,7 @@ export default function DeckViewer({
           );
         })()}
         
-        {/* Dig Deep Layers overlaid at the bottom */}
+        {/* Layers overlaid at the bottom */}
         {layers.length > 0 && (
           <div className={`absolute ${imageUrl ? 'bottom-[12%] left-[6%] right-[6%] max-w-xl mx-auto' : 'bottom-12 left-[6%] w-[88%]'} space-y-3 z-10`}>
             {layers.map(layer => {
