@@ -54,7 +54,7 @@ interface SanityLesson {
   videoFile?: { asset?: { url?: string } };
   speakerNotes?: string;
   chapterTitle?: string;
-  theme?: "frost-black" | "black-frost" | "pearl-black" | "black-pearl" | "indigo-frost";
+  theme?: "frost-black" | "black-frost" | "pearl-black" | "black-pearl" | "indigo-frost" | "white-black" | "slate-white" | "sandstone-white";
 }
 
 interface SanityModule {
@@ -74,6 +74,9 @@ const LESSON_THEMES = {
   "pearl-black":  { bg: "bg-moto-pearl",  headline: "text-moto-black",  body: "text-moto-sandstone" },
   "black-pearl":  { bg: "bg-moto-black",  headline: "text-moto-pearl",  body: "text-moto-sandstone" },
   "indigo-frost": { bg: "bg-moto-indigo", headline: "text-moto-frost",  body: "text-moto-frost"     },
+  "white-black":  { bg: "bg-moto-white",  headline: "text-moto-black",  body: "text-moto-slate"     },
+  "slate-white":  { bg: "bg-moto-slate",  headline: "text-moto-white",  body: "text-moto-frost"     },
+  "sandstone-white":{ bg: "bg-moto-sandstone",headline:"text-moto-white", body: "text-moto-pearl"   },
 } as const;
 
 type LessonTheme = keyof typeof LESSON_THEMES;
@@ -452,7 +455,7 @@ export default function DeckViewer({
           const oy = currentLesson.textOverlay?.y ?? 15;
           const oWidth = currentLesson.textOverlay?.width ?? 'max-w-xl';
           
-          const isDarkTheme = currentLesson.theme !== "frost-black" && currentLesson.theme !== "pearl-black";
+          const isDarkTheme = currentLesson.theme !== "frost-black" && currentLesson.theme !== "pearl-black" && currentLesson.theme !== "white-black";
           const needsInvert = imageUrl || isDarkTheme;
           
           return (
