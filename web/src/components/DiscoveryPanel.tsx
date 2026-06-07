@@ -246,18 +246,28 @@ export function DiscoveryPanel({
       {(() => {
         const isFloating = x !== undefined && y !== undefined;
         let floatingStyle: React.CSSProperties = {};
+        let originClass = "";
+        
         if (isFloating) {
-          if (x! < 50) floatingStyle.left = `${x! + 2}%`;
+          const isLeft = x! < 50;
+          const isTop = y! < 50;
+          
+          if (isLeft) floatingStyle.left = `${x! + 2}%`;
           else floatingStyle.right = `${100 - x! + 2}%`;
           
-          if (y! < 50) floatingStyle.top = `${y!}%`;
+          if (isTop) floatingStyle.top = `${y!}%`;
           else floatingStyle.bottom = `${100 - y!}%`;
+          
+          if (isLeft && isTop) originClass = "origin-top-left";
+          else if (isLeft && !isTop) originClass = "origin-bottom-left";
+          else if (!isLeft && isTop) originClass = "origin-top-right";
+          else if (!isLeft && !isTop) originClass = "origin-bottom-right";
         }
 
         const floatingClasses = `absolute w-[360px] max-h-[80vh] rounded-2xl flex flex-col
           bg-background/96 backdrop-blur-2xl border border-border/10
-          shadow-2xl transition-all duration-200 ease-out
-          ${open ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`;
+          shadow-2xl transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${originClass}
+          ${open ? "opacity-100 scale-100" : "opacity-0 scale-[0.3] pointer-events-none"}`;
 
         const sidebarClasses = `absolute top-0 right-0 bottom-0 w-[42%] flex flex-col
           bg-background/96 backdrop-blur-2xl border-l border-border/10
