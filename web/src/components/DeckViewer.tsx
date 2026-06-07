@@ -54,7 +54,7 @@ interface SanityLesson {
   videoFile?: { asset?: { url?: string } };
   speakerNotes?: string;
   chapterTitle?: string;
-  theme?: "frost-black" | "black-frost" | "pearl-black" | "black-pearl" | "indigo-frost" | "white-black" | "slate-white" | "sandstone-white";
+  chapterTitle?: string;
 }
 
 interface SanityModule {
@@ -67,19 +67,6 @@ interface SanityModule {
   coverButtonColor?: string;
   learningObjectives?: string[];
 }
-
-const LESSON_THEMES = {
-  "frost-black":  { bg: "bg-moto-frost",  headline: "text-moto-black",  body: "text-moto-slate"     },
-  "black-frost":  { bg: "bg-moto-black",  headline: "text-moto-frost",  body: "text-moto-slate"     },
-  "pearl-black":  { bg: "bg-moto-pearl",  headline: "text-moto-black",  body: "text-moto-sandstone" },
-  "black-pearl":  { bg: "bg-moto-black",  headline: "text-moto-pearl",  body: "text-moto-sandstone" },
-  "indigo-frost": { bg: "bg-moto-indigo", headline: "text-moto-frost",  body: "text-moto-frost"     },
-  "white-black":  { bg: "bg-moto-white",  headline: "text-moto-black",  body: "text-moto-slate"     },
-  "slate-white":  { bg: "bg-moto-slate",  headline: "text-moto-white",  body: "text-moto-frost"     },
-  "sandstone-white":{ bg: "bg-moto-sandstone",headline:"text-moto-white", body: "text-moto-pearl"   },
-} as const;
-
-type LessonTheme = keyof typeof LESSON_THEMES;
 
 const TRANSITION_EXIT_MS  = 210;
 const TRANSITION_ENTER_MS = 380;
@@ -417,10 +404,6 @@ export default function DeckViewer({
   }
 
   // ── Regular lessons ─────────────────────────────────────────────────────────
-  const rawTheme = currentLesson?.theme;
-  const lessonTheme: LessonTheme = rawTheme && rawTheme in LESSON_THEMES ? rawTheme as LessonTheme : "frost-black";
-  const tc = LESSON_THEMES[lessonTheme];
-
   return (
     <LessonFrame
       currentLesson={currentLessonIndex + 1}
@@ -432,7 +415,6 @@ export default function DeckViewer({
       onToggleNotes={toggleNotes}
       notesOpen={showNotes}
       speakerNotes={currentLesson?.speakerNotes}
-      theme={lessonTheme}
       moduleTitle={module.title}
       completionHint={
         nextLocked
@@ -446,7 +428,7 @@ export default function DeckViewer({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={imageUrl} alt={currentLesson.headline} className="absolute inset-0 w-full h-full object-cover" />
         ) : (
-          <div className={`absolute inset-0 ${tc.bg}`} />
+          <div className="absolute inset-0 bg-background" />
         )}
         
         {/* Lesson Content */}
@@ -454,10 +436,6 @@ export default function DeckViewer({
           const ox = currentLesson.textOverlay?.x ?? 6;
           const oy = currentLesson.textOverlay?.y ?? 15;
           const oWidth = currentLesson.textOverlay?.width ?? 'max-w-xl';
-          
-          const isDarkTheme = currentLesson.theme !== "frost-black" && currentLesson.theme !== "pearl-black" && currentLesson.theme !== "white-black";
-          const needsInvert = imageUrl || isDarkTheme;
-          
           return (
             <div 
               className={`absolute pointer-events-none z-10 flex flex-col ${
@@ -473,9 +451,9 @@ export default function DeckViewer({
               <div className={`pointer-events-auto w-full ${imageUrl ? oWidth : 'max-w-xl flex flex-col gap-4'}
                 ${imageUrl ? 'bg-black/60 backdrop-blur-2xl p-6 md:p-8 rounded-[2rem] border border-white/10 shadow-2xl' : ''}
               `}>
-                <h2 className={`${imageUrl ? 'text-white' : tc.headline} text-2xl font-semibold leading-tight`}>{currentLesson?.headline}</h2>
+                <h2 className={`${imageUrl ? 'text-white' : 'text-foreground'} text-2xl font-semibold leading-tight`}>{currentLesson?.headline}</h2>
                 {currentLesson?.body && (
-                  <div className={`prose ${needsInvert ? 'prose-invert' : ''} max-w-none ${imageUrl ? 'text-white/80 mt-4' : tc.body} text-base font-light leading-relaxed whitespace-pre-wrap`}>
+                  <div className={`prose dark:prose-invert max-w-none ${imageUrl ? 'text-white/80 mt-4 prose-invert' : 'text-muted-foreground'} text-base font-light leading-relaxed whitespace-pre-wrap`}>
                     {typeof currentLesson.body === 'string' ? currentLesson.body : <PortableText value={currentLesson.body} components={portableTextComponents} />}
                   </div>
                 )}
@@ -488,9 +466,9 @@ export default function DeckViewer({
         {layers.length > 0 && (
           <div className={`absolute ${imageUrl ? 'bottom-[12%] left-[6%] right-[6%] max-w-xl mx-auto' : 'bottom-12 left-[6%] w-[88%]'} space-y-3 z-10`}>
             <div className="flex items-center gap-3 mb-2">
-              <div className={`h-px flex-1 ${imageUrl ? 'bg-moto-frost opacity-30' : tc.headline + ' opacity-20'}`} />
-              <span className={`text-[10px] uppercase tracking-widest font-bold ${imageUrl ? 'text-moto-frost drop-shadow-md opacity-80' : tc.headline + ' opacity-60'}`}>Dive Deeper</span>
-              <div className={`h-px flex-1 ${imageUrl ? 'bg-moto-frost opacity-30' : tc.headline + ' opacity-20'}`} />
+              <div className={`h-px flex-1 ${imageUrl ? 'bg-moto-frost opacity-30' : 'bg-foreground opacity-20'}`} />
+              <span className={`text-[10px] uppercase tracking-widest font-bold ${imageUrl ? 'text-moto-frost drop-shadow-md opacity-80' : 'text-foreground opacity-60'}`}>Dive Deeper</span>
+              <div className={`h-px flex-1 ${imageUrl ? 'bg-moto-frost opacity-30' : 'bg-foreground opacity-20'}`} />
             </div>
             {layers.map(layer => {
               const isLayerVisited = visited[lessonKey]?.has(layer._key);
@@ -508,15 +486,15 @@ export default function DeckViewer({
                     }`}
                 >
                   <div className="flex flex-col">
-                    <span className={`${imageUrl ? 'text-moto-frost' : tc.headline} font-medium`}>{layer.headline}</span>
-                    <span className={`${imageUrl ? 'text-moto-slate' : tc.body} text-xs mt-1`}>
+                    <h4 className={`text-base font-medium ${imageUrl ? 'text-white' : 'text-foreground'} line-clamp-1`}>{layer.headline}</h4>
+                    <span className={`text-xs ${imageUrl ? 'text-white/60' : 'text-muted-foreground'} uppercase tracking-wider font-bold`}>
                       {layer.layerType === "video" && "Watch Video"}
                       {layer.layerType === "interaction" && "Interactive Explorer"}
                       {layer.layerType === "quiz" && "Knowledge Check"}
                       {layer.layerType === "content" && "Learn More"}
                     </span>
                   </div>
-                  <ChevronRight className={`w-5 h-5 ${imageUrl ? 'text-moto-frost opacity-60' : tc.headline + ' opacity-40'} group-hover:opacity-100 group-hover:translate-x-1 transition-all`} />
+                  <ChevronRight className={`w-5 h-5 ${imageUrl ? 'text-moto-frost opacity-60' : 'text-foreground opacity-40'} group-hover:opacity-100 group-hover:translate-x-1 transition-all`} />
                 </button>
               );
             })}

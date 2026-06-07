@@ -93,27 +93,7 @@ export const lessonType = defineType({
       },
       initialValue: "content",
     }),
-    defineField({
-      name: "theme",
-      title: "Lesson Color Theme",
-      description: "Controls the lesson background and text color pairing. Motorola 2026 approved pairings only.",
-      type: "string",
-      options: {
-        list: [
-          { title: "Frost / Black (Cool — default)", value: "frost-black" },
-          { title: "Black / Frost (Dark Cool)", value: "black-frost" },
-          { title: "Pearl / Black (Warm)", value: "pearl-black" },
-          { title: "Black / Pearl (Dark Warm)", value: "black-pearl" },
-          { title: "Moto Indigo / Frost (Brand)", value: "indigo-frost" },
-          { title: "White / Black (Pure)", value: "white-black" },
-          { title: "Slate / White (Midtone Cool)", value: "slate-white" },
-          { title: "Sandstone / White (Midtone Warm)", value: "sandstone-white" },
-        ],
-        layout: "radio",
-      },
-      initialValue: "frost-black",
-      hidden: ({ parent }) => parent?.lessonType === "video",
-    }),
+
     defineField({
       name: "videoUrl",
       title: "Video URL",

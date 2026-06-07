@@ -13,10 +13,7 @@ interface LessonFrameProps {
   nextDisabled?: boolean;
   // Completion hint shown above nav when nextDisabled
   completionHint?: string;
-  // Applied to the frame div itself
   className?: string;
-  // Brand theme — drives frame background and nav scrim opacity
-  theme?: string;
   // Navigation map toggle
   onToggleNavMap?: () => void;
   // Speaker notes
@@ -27,13 +24,7 @@ interface LessonFrameProps {
   moduleTitle?: string;
 }
 
-const FRAME_BG: Record<string, string> = {
-  "frost-black":  "bg-moto-frost",
-  "black-frost":  "bg-moto-black",
-  "pearl-black":  "bg-moto-pearl",
-  "black-pearl":  "bg-moto-black",
-  "indigo-frost": "bg-moto-indigo",
-};
+
 
 export function LessonFrame({
   children,
@@ -44,7 +35,6 @@ export function LessonFrame({
   nextDisabled = false,
   completionHint,
   className = "",
-  theme,
   onToggleNavMap,
   onToggleNotes,
   notesOpen = false,
@@ -52,26 +42,22 @@ export function LessonFrame({
   moduleTitle,
 }: LessonFrameProps) {
   const showNav = currentLesson !== undefined && totalLessons !== undefined;
-  const frameBg = theme && theme in FRAME_BG ? FRAME_BG[theme] : "bg-moto-black";
-  const isLightTheme = theme === "frost-black" || theme === "pearl-black";
-  const navGradient = isLightTheme
-    ? "bg-gradient-to-t from-moto-black via-moto-black/50 to-transparent"
-    : "bg-gradient-to-t from-moto-black via-moto-black/60 to-transparent";
+  const navGradient = "bg-gradient-to-t from-background via-background/80 to-transparent";
 
   const showProgress = currentLesson !== undefined && totalLessons !== undefined && totalLessons > 0;
   const progressPct = showProgress ? (currentLesson / totalLessons) * 100 : 0;
 
   return (
     // Outer shell — flex-col so the device banner stacks below the frame.
-    <div className="w-full h-dvh bg-moto-black flex flex-col items-center justify-start overflow-hidden">
+    <div className="w-full h-dvh bg-background flex flex-col items-center justify-start overflow-hidden">
       {/* Fullscreen frame — fills all remaining vertical space after the banner */}
       <div
-        className={`relative overflow-clip bg-moto-black rounded-none flex-1 w-full ${className}`}
+        className={`relative overflow-clip bg-background rounded-none flex-1 w-full ${className}`}
       >
         {children}
 
         {/* ── Bottom vignette — blends lesson content into the black banner below ── */}
-        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-moto-black to-transparent pointer-events-none z-10" />
+        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-background to-transparent pointer-events-none z-10" />
 
         {/* ── Click-Outside Overlay ── */}
         {notesOpen && (
@@ -86,7 +72,7 @@ export function LessonFrame({
         {onToggleNotes && (
           <div
             className={`absolute left-0 right-0 z-40 flex flex-col
-              bg-moto-black/95 backdrop-blur-2xl border-t border-moto-indigo/40
+              bg-background/95 backdrop-blur-2xl border-t border-border
               shadow-[0_-8px_30px_rgba(0,0,0,0.5)]
               transition-all duration-300 ease-out
               ${showNav ? "bottom-14" : "bottom-0"}
@@ -107,12 +93,12 @@ export function LessonFrame({
 
               {/* Controls */}
               <div className="flex items-center gap-3">
-                <kbd className="hidden sm:inline-block text-[10px] text-moto-frost/60 font-mono border border-moto-slate/50 rounded px-1.5 py-0.5 bg-moto-slate/20">
+                <kbd className="hidden sm:inline-block text-[10px] text-muted-foreground font-mono border border-border rounded px-1.5 py-0.5 bg-muted">
                   N
                 </kbd>
                 <button
                   onClick={() => onToggleNotes && onToggleNotes()}
-                  className="text-moto-frost/60 hover:text-moto-white transition-colors p-1 -mr-1 rounded-md hover:bg-moto-white/10"
+                  className="text-muted-foreground hover:text-foreground transition-colors p-1 -mr-1 rounded-md hover:bg-foreground/10"
                   aria-label="Close speaker notes"
                 >
                   <X className="h-4 w-4" />
@@ -126,11 +112,11 @@ export function LessonFrame({
               style={{ scrollbarWidth: "thin", scrollbarColor: "var(--color-moto-slate) transparent" }}
             >
               {speakerNotes ? (
-                <p className="text-moto-frost text-base leading-relaxed whitespace-pre-wrap">
+                <p className="text-foreground text-base leading-relaxed whitespace-pre-wrap">
                   {speakerNotes}
                 </p>
               ) : (
-                <p className="text-moto-slate text-sm italic">
+                <p className="text-muted-foreground text-sm italic">
                   No speaker notes for this lesson.
                 </p>
               )}
@@ -160,8 +146,8 @@ export function LessonFrame({
             className={`absolute bottom-4 right-4 z-50 h-10 w-10 rounded-full flex items-center justify-center
               transition-all duration-150 shadow-md
               ${notesOpen
-                ? "bg-moto-indigo/20 text-moto-indigo"
-                : "bg-moto-black/50 backdrop-blur-sm text-moto-white/40 hover:text-moto-white hover:bg-moto-black/80"
+                ? "bg-accent/20 text-accent"
+                : "bg-background/50 backdrop-blur-sm text-foreground/40 hover:text-foreground hover:bg-background/80"
               }`}
           >
             <StickyNote className="h-5 w-5" />
@@ -174,7 +160,7 @@ export function LessonFrame({
             {/* Completion hint */}
             {nextDisabled && completionHint && (
               <div className="absolute bottom-16 left-0 right-0 flex justify-center pointer-events-none z-10">
-                <span className="bg-moto-black/80 backdrop-blur-md text-moto-white shadow-md text-sm font-medium px-5 py-2 rounded-full border border-moto-slate/30">
+                <span className="bg-background/80 backdrop-blur-md text-foreground shadow-md text-sm font-medium px-5 py-2 rounded-full border border-border/30">
                   {completionHint}
                 </span>
               </div>
@@ -187,7 +173,7 @@ export function LessonFrame({
                   onClick={onToggleNavMap}
                   aria-label="Open course navigation"
                   title="Course map"
-                  className="h-10 w-10 rounded-full flex items-center justify-center text-moto-white/40 hover:text-moto-white hover:bg-moto-white/10 transition-all"
+                  className="h-10 w-10 rounded-full flex items-center justify-center text-foreground/40 hover:text-foreground hover:bg-foreground/10 transition-all"
                 >
                   <LayoutGrid className="h-5 w-5" />
                 </button>
@@ -200,8 +186,8 @@ export function LessonFrame({
                   title="Speaker notes (N)"
                   className={`h-10 w-10 rounded-full flex items-center justify-center transition-all
                     ${notesOpen
-                      ? "text-moto-indigo bg-moto-indigo/15"
-                      : "text-moto-white/40 hover:text-moto-white hover:bg-moto-white/10"
+                      ? "text-accent bg-accent/15"
+                      : "text-foreground/40 hover:text-foreground hover:bg-foreground/10"
                     }`}
                 >
                   <StickyNote className="h-5 w-5" />
@@ -214,13 +200,13 @@ export function LessonFrame({
               <button
                 onClick={onPrev}
                 disabled={currentLesson === 1}
-                className="h-10 w-10 rounded-full flex items-center justify-center text-moto-white/60 hover:text-moto-white hover:bg-moto-white/10 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
+                className="h-10 w-10 rounded-full flex items-center justify-center text-foreground/60 hover:text-foreground hover:bg-foreground/10 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
                 aria-label="Previous lesson"
               >
                 <ChevronLeft className="h-6 w-6" />
               </button>
 
-              <span className="text-sm font-medium text-moto-white/80 min-w-[3rem] text-center tabular-nums select-none" aria-hidden="true">
+              <span className="text-sm font-medium text-foreground/80 min-w-[3rem] text-center tabular-nums select-none" aria-hidden="true">
                 {currentLesson} / {totalLessons}
               </span>
               {/* Announced to screen readers on each lesson change */}
@@ -231,7 +217,7 @@ export function LessonFrame({
               <button
                 onClick={onNext}
                 disabled={currentLesson === totalLessons || nextDisabled}
-                className="h-10 w-10 rounded-full flex items-center justify-center text-moto-white/60 hover:text-moto-white hover:bg-moto-white/10 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
+                className="h-10 w-10 rounded-full flex items-center justify-center text-foreground/60 hover:text-foreground hover:bg-foreground/10 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
                 aria-label="Next lesson"
               >
                 <ChevronRight className="h-6 w-6" />
@@ -245,10 +231,10 @@ export function LessonFrame({
               aria-valuemin={1}
               aria-valuemax={totalLessons}
               aria-label="Course progress"
-              className="absolute bottom-0 left-0 right-0 h-px bg-moto-white/10 z-30"
+              className="absolute bottom-0 left-0 right-0 h-px bg-foreground/10 z-30"
             >
               <div
-                className="h-full bg-moto-indigo transition-[width] duration-500 ease-out"
+                className="h-full bg-accent transition-[width] duration-500 ease-out"
                 style={{ width: `${(currentLesson / totalLessons) * 100}%` }}
               />
             </div>
@@ -260,23 +246,23 @@ export function LessonFrame({
       {moduleTitle && (
         <div
           aria-hidden="true"
-          className="shrink-0 w-full flex flex-col items-center justify-center py-3 gap-1 bg-moto-black"
+          className="shrink-0 w-full flex flex-col items-center justify-center py-3 gap-1 bg-background"
         >
           {/* "You are learning about" label */}
-          <p className="text-[11px] uppercase tracking-[0.22em] font-medium text-moto-slate leading-none">
+          <p className="text-[11px] uppercase tracking-[0.22em] font-medium text-muted-foreground leading-none">
             You are learning about
           </p>
 
           {/* Device / module name — the hero text */}
-          <p className="text-3xl font-bold tracking-tight text-moto-frost leading-none text-center">
+          <p className="text-3xl font-bold tracking-tight text-foreground leading-none text-center">
             {moduleTitle}
           </p>
 
           {/* Indigo underline accent */}
-          <span className="block mt-1 h-[2px] w-10 rounded-full bg-moto-indigo" />
+          <span className="block mt-1 h-[2px] w-10 rounded-full bg-accent" />
 
           {/* Progress indicator — always rendered to keep banner height constant */}
-          <p className={`mt-1 text-xs tabular-nums text-moto-slate/70 leading-none ${showProgress ? "" : "invisible"}`}>
+          <p className={`mt-1 text-xs tabular-nums text-muted-foreground/70 leading-none ${showProgress ? "" : "invisible"}`}>
             lesson {currentLesson}&thinsp;/&thinsp;{totalLessons}
           </p>
         </div>
