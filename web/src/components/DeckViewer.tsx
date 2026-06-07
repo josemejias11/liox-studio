@@ -247,10 +247,10 @@ export default function DeckViewer({
     const buttonText = module.coverButtonText || "start course";
     
     // Map button colors — Motorola 2026 brand palette only
-    let btnClass = "bg-background text-foreground hover:bg-background/90 border-transparent";
-    if (module.coverButtonColor === "moto-indigo") btnClass = "bg-accent text-foreground hover:bg-accent/90 border-transparent";
-    else if (module.coverButtonColor === "moto-frost") btnClass = "bg-background text-foreground hover:bg-background/90 border-transparent";
-    else if (module.coverButtonColor === "moto-pearl") btnClass = "bg-card text-foreground hover:bg-card/90 border-transparent";
+    let btnClass = "bg-background text-foreground hover:bg-background/90";
+    if (module.coverButtonColor === "moto-indigo") btnClass = "bg-accent text-foreground hover:bg-accent/90";
+    else if (module.coverButtonColor === "moto-frost") btnClass = "bg-background text-foreground hover:bg-background/90";
+    else if (module.coverButtonColor === "moto-pearl") btnClass = "bg-card text-foreground hover:bg-card/90";
 
     return (
       <LessonFrame moduleTitle={module.title}>
@@ -272,7 +272,7 @@ export default function DeckViewer({
               {/* Ambient indigo glow — floats the card off the hero */}
               <div className="absolute inset-0 rounded-3xl bg-accent/10 blur-2xl pointer-events-none" />
 
-              <div className="relative bg-gradient-to-br from-white/5 via-background/55 to-background/70 backdrop-blur-xl p-6 sm:p-8 rounded-3xl border border-border/10 shadow-2xl overflow-hidden">
+              <div className="relative bg-gradient-to-br from-white/5 via-background/55 to-background/70 backdrop-blur-xl p-6 sm:p-8 rounded-3xl shadow-2xl overflow-hidden">
                 {/* Top edge accent line */}
                 <div className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-accent/55 to-transparent" />
 
@@ -309,7 +309,7 @@ export default function DeckViewer({
 
         <button
           onClick={() => setHasStarted(true)}
-          className={`absolute bottom-8 md:bottom-12 right-8 md:right-12 flex items-center gap-2 font-semibold text-base px-6 py-3 rounded-full shadow-2xl transition-all active:scale-95 z-20 hover:shadow-[0_0_24px_rgba(104,91,199,0.75)] ${btnClass}`}
+          className={`absolute bottom-8 md:bottom-12 right-8 md:right-12 flex items-center gap-2 font-semibold text-base px-6 py-3 rounded-full shadow-2xl transition-all active:scale-95 z-20 hover:shadow-[0_0_24px_rgba(104,91,199,0.75)] border-none outline-none ${btnClass}`}
         >
           {buttonText} <ChevronRight className="h-5 w-5" />
         </button>
