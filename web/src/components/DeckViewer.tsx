@@ -465,11 +465,6 @@ export default function DeckViewer({
         {/* Deep Dive Layers overlaid at the bottom */}
         {layers.length > 0 && (
           <div className={`absolute dark ${imageUrl ? 'bottom-[12%] left-[6%] right-[6%] max-w-xl mx-auto' : 'bottom-12 left-[6%] w-[88%]'} space-y-3 z-10`}>
-            <div className="flex items-center gap-3 mb-2">
-              <div className={`h-px flex-1 bg-foreground opacity-20`} />
-              <span className={`text-[10px] uppercase tracking-widest font-bold text-foreground opacity-60`}>Dive Deeper</span>
-              <div className={`h-px flex-1 bg-foreground opacity-20`} />
-            </div>
             {layers.map(layer => {
               const isLayerVisited = visited[lessonKey]?.has(layer._key);
               return (
