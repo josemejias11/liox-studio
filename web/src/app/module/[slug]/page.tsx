@@ -21,7 +21,7 @@ export default async function ModulePage({ params }: { params: Promise<{ slug: s
   ) ?? [];
 
   return (
-    <div className="w-full h-dvh overflow-hidden bg-moto-black">
+    <div className="w-full h-dvh overflow-hidden bg-background">
       <DeckViewer module={module} lessons={lessons} />
     </div>
   );

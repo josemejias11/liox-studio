@@ -26,10 +26,10 @@ function StatCard({
   accent: string;
 }) {
   return (
-    <div className="bg-moto-black border border-moto-frost/8 rounded-2xl px-5 py-5 flex flex-col gap-2.5">
+    <div className="bg-background border border-border/8 rounded-2xl px-5 py-5 flex flex-col gap-2.5">
       <Icon className={`h-4 w-4 ${accent}`} aria-hidden="true" />
       <p className={`text-[32px] font-bold tabular-nums leading-none ${accent}`}>{value}</p>
-      <p className="text-[10px] text-moto-frost/30 font-semibold uppercase tracking-widest">{label}</p>
+      <p className="text-[10px] text-foreground/30 font-semibold uppercase tracking-widest">{label}</p>
     </div>
   );
 }
@@ -91,10 +91,10 @@ export default async function AnalyticsPage() {
             {/* ── Stat cards ── */}
             <section aria-label="Summary statistics">
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <StatCard icon={Users}    label="Sessions"          value={totalSessions}        accent="text-moto-indigo"    />
-                <StatCard icon={Zap}      label="Features Explored" value={totalHotspotsVisited} accent="text-moto-indigo"     />
-                <StatCard icon={Trophy}   label="Avg Quiz Score"    value={avgQuizPct !== null ? `${avgQuizPct}%` : "—"} accent="text-moto-sandstone" />
-                <StatCard icon={BookOpen} label="Quiz Attempts"     value={totalQuizzes}    accent="text-moto-slate"      />
+                <StatCard icon={Users}    label="Sessions"          value={totalSessions}        accent="text-accent"    />
+                <StatCard icon={Zap}      label="Features Explored" value={totalHotspotsVisited} accent="text-accent"     />
+                <StatCard icon={Trophy}   label="Avg Quiz Score"    value={avgQuizPct !== null ? `${avgQuizPct}%` : "—"} accent="text-muted-foreground" />
+                <StatCard icon={BookOpen} label="Quiz Attempts"     value={totalQuizzes}    accent="text-muted-foreground"      />
               </div>
             </section>
 
@@ -125,7 +125,7 @@ export default async function AnalyticsPage() {
                           aria-label={`${label}: ${count} visits`}
                         >
                           <div
-                            className="h-full bg-moto-indigo rounded-full transition-[width] duration-700"
+                            className="h-full bg-accent rounded-full transition-[width] duration-700"
                             style={{ width: `${Math.round((count / maxCount) * 100)}%` }}
                           />
                         </div>
@@ -152,7 +152,7 @@ export default async function AnalyticsPage() {
                 ) : (
                   <div className="flex flex-col gap-5">
                     <div>
-                      <p className="text-4xl font-bold text-moto-sandstone tabular-nums leading-none">
+                      <p className="text-4xl font-bold text-muted-foreground tabular-nums leading-none">
                         {avgQuizPct}%
                       </p>
                       <p className="text-muted-foreground text-xs mt-1">average score</p>
@@ -212,14 +212,14 @@ export default async function AnalyticsPage() {
                           <td className="px-6 py-3 text-sm text-muted-foreground tabular-nums">
                             {s.lessonCount}
                           </td>
-                          <td className="px-6 py-3 text-sm text-moto-indigo tabular-nums font-semibold">
+                          <td className="px-6 py-3 text-sm text-accent tabular-nums font-semibold">
                             {s.hotspotsVisited}
                           </td>
                           <td className="px-6 py-3">
                             <span
                               className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full border
                                 ${s.hasCompletion
-                                  ? "text-moto-indigo bg-moto-indigo/10 border-moto-indigo/25"
+                                  ? "text-accent bg-accent/10 border-accent/25"
                                   : "text-muted-foreground bg-accent border-border"
                                 }`}
                             >

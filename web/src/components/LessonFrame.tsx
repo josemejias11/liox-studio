@@ -85,8 +85,8 @@ export function LessonFrame({
             {/* Header row */}
             <div className="shrink-0 flex items-center justify-between px-6 pt-4 pb-3">
               <div className="flex items-center gap-3">
-                <StickyNote className="h-4 w-4 text-moto-indigo shrink-0" />
-                <h3 className="text-xs font-bold uppercase tracking-wider text-moto-indigo">
+                <StickyNote className="h-4 w-4 text-accent shrink-0" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-accent">
                   Speaker Notes
                 </h3>
               </div>
@@ -131,7 +131,7 @@ export function LessonFrame({
             aria-label="Open course navigation"
             title="Course map"
             className="absolute bottom-4 left-4 z-50 h-10 w-10 rounded-full flex items-center justify-center
-              bg-moto-black/50 backdrop-blur-sm text-moto-white/40 hover:text-moto-white hover:bg-moto-black/80
+              bg-background/50 backdrop-blur-sm text-foreground/40 hover:text-foreground hover:bg-background/80
               transition-all duration-150 shadow-md"
           >
             <LayoutGrid className="h-5 w-5" />

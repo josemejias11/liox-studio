@@ -43,10 +43,10 @@ function renderText(text: string) {
         const parts    = content.split(/(\*\*[^*]+\*\*)/g);
         return (
           <span key={i}>
-            {isBullet && <span className="mr-1.5 text-moto-indigo select-none" aria-hidden="true">•</span>}
+            {isBullet && <span className="mr-1.5 text-accent select-none" aria-hidden="true">•</span>}
             {parts.map((part, j) =>
               part.startsWith("**") && part.endsWith("**") ? (
-                <strong key={j} className="font-semibold text-moto-frost">{part.slice(2, -2)}</strong>
+                <strong key={j} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>
               ) : part
             )}
             {i < lines.length - 1 && <br />}
@@ -233,7 +233,7 @@ export function LessonLayer({
         aria-hidden="true"
         className={`absolute inset-0 transition-opacity duration-300 ${
           open ? "opacity-100" : "opacity-0"
-        } ${backdropClassName || "bg-moto-black/55 backdrop-blur-[2px]"}`}
+        } ${backdropClassName || "bg-background/55 backdrop-blur-[2px]"}`}
       />
 
       {/* Bottom sheet */}
@@ -248,21 +248,21 @@ export function LessonLayer({
         className={`absolute left-0 right-0 bottom-9 rounded-t-2xl overflow-hidden
           flex flex-col transition-all duration-300 ease-out
           ${open ? anim.open : anim.closed}
-          ${className || "bg-moto-black/97 backdrop-blur-xl max-h-[72%]"}`}
+          ${className || "bg-background/97 backdrop-blur-xl max-h-[72%]"}`}
       >
         {/* Header */}
         <div
-          className={`relative shrink-0 flex items-center gap-3 px-6 pt-5 pb-4 border-b border-moto-frost/8
-            ${headerClassName || "bg-moto-black/50"}`}
+          className={`relative shrink-0 flex items-center gap-3 px-6 pt-5 pb-4 border-b border-border/8
+            ${headerClassName || "bg-background/50"}`}
         >
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 bg-moto-frost/15 rounded-full pointer-events-none" aria-hidden="true" />
-          <div className="bg-moto-indigo/20 p-2 rounded-lg shrink-0" aria-hidden="true">
-            <Sparkles className="h-5 w-5 text-moto-indigo" />
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 bg-background/15 rounded-full pointer-events-none" aria-hidden="true" />
+          <div className="bg-accent/20 p-2 rounded-lg shrink-0" aria-hidden="true">
+            <Sparkles className="h-5 w-5 text-accent" />
           </div>
-          <h3 id={TITLE_ID} className="text-base font-semibold text-moto-frost flex-1 truncate">{title}</h3>
+          <h3 id={TITLE_ID} className="text-base font-semibold text-foreground flex-1 truncate">{title}</h3>
           <button
             onClick={onClose}
-            className="text-moto-slate hover:text-moto-frost transition-colors p-2 rounded-lg hover:bg-moto-frost/10 shrink-0"
+            className="text-muted-foreground hover:text-foreground transition-colors p-2 rounded-lg hover:bg-background/10 shrink-0"
             aria-label="Close panel"
           >
             <X className="h-5 w-5" />
@@ -283,15 +283,15 @@ export function LessonLayer({
                   className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   {msg.role === "assistant" && (
-                    <div className="shrink-0 mt-1 bg-moto-indigo/20 rounded-full p-1.5 h-fit" aria-hidden="true">
-                      <Bot className="h-4 w-4 text-moto-indigo" />
+                    <div className="shrink-0 mt-1 bg-accent/20 rounded-full p-1.5 h-fit" aria-hidden="true">
+                      <Bot className="h-4 w-4 text-accent" />
                     </div>
                   )}
                   <div
                     className={`text-sm leading-relaxed rounded-2xl px-4 py-3 max-w-[88%]
                       ${msg.role === "user"
-                        ? "bg-moto-indigo/20 text-moto-frost rounded-tr-sm"
-                        : "bg-moto-frost/10 text-moto-frost rounded-tl-sm"
+                        ? "bg-accent/20 text-foreground rounded-tr-sm"
+                        : "bg-background/10 text-foreground rounded-tl-sm"
                       }`}
                   >
                     {msg.text ? (
@@ -300,7 +300,7 @@ export function LessonLayer({
                       msg.streaming && (
                         <span className="flex gap-1 items-center py-0.5" aria-label="Loading response">
                           {[0, 150, 300].map((d) => (
-                            <span key={d} className="h-1 w-1 rounded-full bg-moto-indigo/60 animate-bounce" style={{ animationDelay: `${d}ms` }} aria-hidden="true" />
+                            <span key={d} className="h-1 w-1 rounded-full bg-accent/60 animate-bounce" style={{ animationDelay: `${d}ms` }} aria-hidden="true" />
                           ))}
                         </span>
                       )
@@ -316,7 +316,7 @@ export function LessonLayer({
         {/* Suggestions */}
         {topic && !children && showSuggestions && !streaming && (
           <div className="shrink-0 px-4 pb-3 flex flex-col gap-2">
-            <p className="text-xs text-moto-slate font-semibold uppercase tracking-widest" aria-hidden="true">
+            <p className="text-xs text-muted-foreground font-semibold uppercase tracking-widest" aria-hidden="true">
               Try asking
             </p>
             <div className="flex flex-wrap gap-2" role="group" aria-label="Suggested questions">
@@ -324,8 +324,8 @@ export function LessonLayer({
                 <button
                   key={s}
                   onClick={() => handleSend(s)}
-                  className="text-sm text-moto-frost bg-moto-indigo/10 border border-moto-indigo/25
-                    rounded-full px-4 py-1.5 hover:bg-moto-indigo/20 active:scale-95
+                  className="text-sm text-foreground bg-accent/10 border border-accent/25
+                    rounded-full px-4 py-1.5 hover:bg-accent/20 active:scale-95
                     transition-all duration-150 text-left"
                 >
                   {s}
@@ -337,7 +337,7 @@ export function LessonLayer({
 
         {/* Input */}
         {topic && !children && (
-          <div className="shrink-0 px-4 py-3 border-t border-moto-frost/8 flex gap-3 items-center bg-moto-black/60">
+          <div className="shrink-0 px-4 py-3 border-t border-border/8 flex gap-3 items-center bg-background/60">
             <label htmlFor="sl-input" className="sr-only">Ask about this feature</label>
             <input
               id="sl-input"
@@ -348,16 +348,16 @@ export function LessonLayer({
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
               placeholder="Ask about this feature…"
               disabled={streaming}
-              className="flex-1 bg-moto-frost/10 text-moto-frost text-sm placeholder:text-moto-slate
-                rounded-xl px-4 py-3 outline-none focus:ring-1 focus:ring-moto-indigo/50
+              className="flex-1 bg-background/10 text-foreground text-sm placeholder:text-muted-foreground
+                rounded-xl px-4 py-3 outline-none focus:ring-1 focus:ring-accent/50
                 disabled:opacity-40 transition-all"
             />
             <button
               onClick={() => handleSend()}
               disabled={!input.trim() || streaming}
               aria-label="Send message"
-              className="shrink-0 bg-moto-indigo/20 hover:bg-moto-indigo/35 disabled:opacity-30
-                disabled:cursor-not-allowed text-moto-indigo rounded-xl p-3 transition-all active:scale-95"
+              className="shrink-0 bg-accent/20 hover:bg-accent/35 disabled:opacity-30
+                disabled:cursor-not-allowed text-accent rounded-xl p-3 transition-all active:scale-95"
             >
               <Send className="h-5 w-5" aria-hidden="true" />
             </button>

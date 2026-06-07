@@ -52,9 +52,9 @@ export function Hotspot({
 
       {/* Core dot — swap className to change size, color, shape */}
       <span
-        className={`relative flex h-5 w-5 rounded-full border-[3px] border-moto-frost shadow-lg shadow-moto-black/40
+        className={`relative flex h-5 w-5 rounded-full border-[3px] border-border shadow-lg shadow-moto-black/40
           transition-transform duration-150 group-hover:scale-125 group-focus-visible:scale-125
-          ${visited ? "bg-moto-indigo border-moto-frost" : "bg-primary"}
+          ${visited ? "bg-accent border-border" : "bg-primary"}
           ${className}`}
       />
 
@@ -64,7 +64,7 @@ export function Hotspot({
           rounded-md px-3 py-1.5 text-xs font-semibold
           opacity-0 group-hover:opacity-100 transition-opacity duration-150
           pointer-events-none shadow-xl
-          ${labelClassName || "bg-moto-black/90 backdrop-blur-sm text-moto-frost border border-moto-frost/10"}`}
+          ${labelClassName || "bg-background/90 backdrop-blur-sm text-foreground border border-border/10"}`}
       >
         {label}
         {/* Arrow */}

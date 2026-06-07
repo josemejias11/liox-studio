@@ -47,7 +47,7 @@ export function LayerFrame({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-moto-black/60 backdrop-blur-sm pointer-events-auto"
+            className="absolute inset-0 bg-background/60 backdrop-blur-sm pointer-events-auto"
             onClick={onClose}
             aria-hidden="true"
           />
@@ -68,7 +68,7 @@ export function LayerFrame({
             role="dialog"
             aria-modal="true"
             aria-labelledby="layer-frame-title"
-            className="relative w-full h-full sm:h-auto sm:max-h-[90dvh] bg-moto-black/95 rounded-t-[2rem] shadow-2xl flex flex-col pointer-events-auto border border-white/10"
+            className="relative w-full h-full sm:h-auto sm:max-h-[90dvh] bg-background/95 rounded-t-[2rem] shadow-2xl flex flex-col pointer-events-auto border border-border"
           >
             {/* Drag Handle */}
             <div className="w-full flex justify-center py-3 shrink-0 cursor-grab active:cursor-grabbing">
@@ -80,26 +80,26 @@ export function LayerFrame({
               <div className="flex items-center gap-3 overflow-hidden">
                 <button 
                   onClick={onClose}
-                  className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors shrink-0"
+                  className="p-2 -ml-2 rounded-full hover:bg-muted transition-colors shrink-0"
                   aria-label={`Back to ${parentLessonTitle}`}
                 >
-                  <ChevronLeft className="w-5 h-5 text-moto-frost" />
+                  <ChevronLeft className="w-5 h-5 text-foreground" />
                 </button>
                 <div className="flex flex-col truncate">
-                  <span className="text-[10px] uppercase tracking-widest text-moto-indigo/80 font-bold truncate">
+                  <span className="text-[10px] uppercase tracking-widest text-accent font-bold truncate">
                     {parentLessonTitle}
                   </span>
-                  <h2 id="layer-frame-title" className="text-lg font-semibold text-moto-frost truncate">
+                  <h2 id="layer-frame-title" className="text-lg font-semibold text-foreground truncate">
                     {layerTitle}
                   </h2>
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="p-2 -mr-2 rounded-full hover:bg-white/10 transition-colors shrink-0"
+                className="p-2 -mr-2 rounded-full hover:bg-muted transition-colors shrink-0"
                 aria-label="Close"
               >
-                <X className="w-5 h-5 text-moto-frost" />
+                <X className="w-5 h-5 text-foreground" />
               </button>
             </header>
 
@@ -107,7 +107,7 @@ export function LayerFrame({
             <div className="flex-1 overflow-y-auto p-6 relative">
               {children}
               {/* Bottom fade hint */}
-              <div className="sticky bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-moto-black/95 to-transparent pointer-events-none -mb-6" />
+              <div className="sticky bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background/95 to-transparent pointer-events-none -mb-6" />
             </div>
           </motion.div>
         </div>

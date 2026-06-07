@@ -26,10 +26,10 @@ interface QuizLessonProps {
 const OPTION_LABELS = ["A", "B", "C", "D"];
 
 const SCORE_TIERS = [
-  { min: 1.0,  icon: Trophy,    color: "text-moto-sandstone", label: "Perfect Score!",   message: "You're a certified product expert.",      emoji: "🏆" },
-  { min: 0.8,  icon: Star,      color: "text-moto-indigo",    label: "Excellent!",        message: "Almost flawless — great retention.",       emoji: "⭐" },
-  { min: 0.6,  icon: ThumbsUp,  color: "text-moto-indigo",    label: "Good Work!",        message: "Solid grasp of the key features.",         emoji: "👍" },
-  { min: 0,    icon: RefreshCw, color: "text-moto-slate",     label: "Keep Exploring!",   message: "Revisit the features and give it another go.", emoji: "🔁" },
+  { min: 1.0,  icon: Trophy,    color: "text-muted-foreground", label: "Perfect Score!",   message: "You're a certified product expert.",      emoji: "🏆" },
+  { min: 0.8,  icon: Star,      color: "text-accent",    label: "Excellent!",        message: "Almost flawless — great retention.",       emoji: "⭐" },
+  { min: 0.6,  icon: ThumbsUp,  color: "text-accent",    label: "Good Work!",        message: "Solid grasp of the key features.",         emoji: "👍" },
+  { min: 0,    icon: RefreshCw, color: "text-muted-foreground",     label: "Keep Exploring!",   message: "Revisit the features and give it another go.", emoji: "🔁" },
 ];
 
 export function QuizLesson({ context, numQuestions = 5, onNext, sessionId, moduleId }: QuizLessonProps) {
@@ -96,9 +96,9 @@ export function QuizLesson({ context, numQuestions = 5, onNext, sessionId, modul
   // ── Loading ──────────────────────────────────────────────────────────────
   if (!quiz && !loadErr) {
     return (
-      <div className="absolute inset-0 bg-moto-black flex flex-col items-center justify-center gap-4">
-        <Loader2 className="h-7 w-7 text-moto-indigo animate-spin" />
-        <p className="text-moto-frost/40 text-sm font-medium">Generating knowledge check…</p>
+      <div className="absolute inset-0 bg-background flex flex-col items-center justify-center gap-4">
+        <Loader2 className="h-7 w-7 text-accent animate-spin" />
+        <p className="text-foreground/40 text-sm font-medium">Generating knowledge check…</p>
       </div>
     );
   }
@@ -106,8 +106,8 @@ export function QuizLesson({ context, numQuestions = 5, onNext, sessionId, modul
   // ── Error ─────────────────────────────────────────────────────────────────
   if (loadErr) {
     return (
-      <div className="absolute inset-0 bg-moto-black flex items-center justify-center">
-        <p className="text-moto-sandstone/80 text-sm">{loadErr}</p>
+      <div className="absolute inset-0 bg-background flex items-center justify-center">
+        <p className="text-muted-foreground/80 text-sm">{loadErr}</p>
       </div>
     );
   }
@@ -120,7 +120,7 @@ export function QuizLesson({ context, numQuestions = 5, onNext, sessionId, modul
     const barColor = pct >= 0.8 ? "rgb(104 91 199)" : pct >= 0.6 ? "rgb(104 91 199)" : "rgb(122 118 112)";
 
     return (
-      <div role="status" aria-label={`${tier.label} You scored ${score} out of ${total}`} className="absolute inset-0 bg-moto-black flex flex-col items-center justify-center gap-5 px-8">
+      <div role="status" aria-label={`${tier.label} You scored ${score} out of ${total}`} className="absolute inset-0 bg-background flex flex-col items-center justify-center gap-5 px-8">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_55%_50%_at_50%_45%,rgba(104,91,199,0.07),transparent)] pointer-events-none" />
 
         {/* Icon */}
@@ -131,16 +131,16 @@ export function QuizLesson({ context, numQuestions = 5, onNext, sessionId, modul
 
         {/* Score number */}
         <div className="quiz-score-in text-center" style={{ animationDelay: "90ms" }}>
-          <p className="text-[64px] font-bold text-moto-frost leading-none tabular-nums">
+          <p className="text-[64px] font-bold text-foreground leading-none tabular-nums">
             {score}
-            <span className="text-moto-frost/25 text-3xl font-normal">/{total}</span>
+            <span className="text-foreground/25 text-3xl font-normal">/{total}</span>
           </p>
           <p className={`text-base font-semibold mt-1.5 ${tier.color}`}>{tier.label}</p>
-          <p className="text-moto-frost/35 text-[12px] mt-0.5">{tier.message}</p>
+          <p className="text-foreground/35 text-[12px] mt-0.5">{tier.message}</p>
         </div>
 
         {/* Score bar */}
-        <div className="quiz-score-in w-36 h-1.5 bg-moto-frost/8 rounded-full overflow-hidden" style={{ animationDelay: "180ms" }}>
+        <div className="quiz-score-in w-36 h-1.5 bg-background/8 rounded-full overflow-hidden" style={{ animationDelay: "180ms" }}>
           <div
             className="h-full rounded-full"
             style={{ width: `${pct * 100}%`, background: barColor, transition: "width 0.8s cubic-bezier(0.34, 1.2, 0.64, 1) 0.4s" }}
@@ -151,9 +151,9 @@ export function QuizLesson({ context, numQuestions = 5, onNext, sessionId, modul
         <div className="quiz-score-in" style={{ animationDelay: "270ms" }}>
           <button
             onClick={onNext}
-            className="flex items-center gap-2 bg-moto-black text-moto-frost font-bold text-sm
+            className="flex items-center gap-2 bg-background text-foreground font-bold text-sm
               px-6 py-2.5 rounded-full shadow-2xl shadow-moto-black/50
-              hover:bg-moto-black/90 active:scale-95 transition-transform duration-150"
+              hover:bg-background/90 active:scale-95 transition-transform duration-150"
           >
             Continue <ChevronRight className="h-4 w-4" />
           </button>
@@ -166,23 +166,23 @@ export function QuizLesson({ context, numQuestions = 5, onNext, sessionId, modul
   const q = quiz!.questions[currentQ];
 
   return (
-    <div className="absolute inset-0 bg-moto-black flex flex-col select-none">
+    <div className="absolute inset-0 bg-background flex flex-col select-none">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_35%,rgba(104,91,199,0.07),transparent)] pointer-events-none" />
 
       {/* ── Header ── */}
       <div className="shrink-0 px-6 pt-5 pb-2">
-        <div className="h-[2px] bg-moto-frost/8 rounded-full overflow-hidden mb-3">
+        <div className="h-[2px] bg-background/8 rounded-full overflow-hidden mb-3">
           <div
-            className="h-full bg-moto-indigo rounded-full transition-all duration-500 ease-out"
+            className="h-full bg-accent rounded-full transition-all duration-500 ease-out"
             style={{ width: `${(currentQ / total) * 100}%` }}
           />
         </div>
         <div className="flex items-center justify-between">
-          <p className="text-moto-frost/25 text-[10px] font-semibold uppercase tracking-widest">
+          <p className="text-foreground/25 text-[10px] font-semibold uppercase tracking-widest">
             Knowledge Check
           </p>
-          <p className="text-moto-frost/25 text-[10px] font-medium tabular-nums">
-            {currentQ + 1} <span className="text-moto-frost/15">/ {total}</span>
+          <p className="text-foreground/25 text-[10px] font-medium tabular-nums">
+            {currentQ + 1} <span className="text-foreground/15">/ {total}</span>
           </p>
         </div>
       </div>
@@ -191,7 +191,7 @@ export function QuizLesson({ context, numQuestions = 5, onNext, sessionId, modul
       <div key={currentQ} className="flex-1 flex flex-col px-6 pb-5 gap-4 overflow-hidden min-h-0">
 
         {/* Question text */}
-        <p className="quiz-enter text-moto-frost text-[17px] font-semibold leading-snug pt-1 shrink-0">
+        <p className="quiz-enter text-foreground text-[17px] font-semibold leading-snug pt-1 shrink-0">
           {q.question}
         </p>
 
@@ -210,15 +210,15 @@ export function QuizLesson({ context, numQuestions = 5, onNext, sessionId, modul
 
             const stateClass = !revealed
               ? isSelected
-                ? "border-moto-indigo/50 bg-moto-indigo/12"
-                : "border-moto-frost/10 bg-moto-frost/5 hover:border-moto-indigo/25 hover:bg-moto-indigo/8"
+                ? "border-accent/50 bg-accent/12"
+                : "border-border/10 bg-background/5 hover:border-accent/25 hover:bg-accent/8"
               : showGreen
-                ? "border-moto-indigo/65 bg-moto-indigo/12 quiz-option-correct"
+                ? "border-accent/65 bg-accent/12 quiz-option-correct"
                 : showRed
-                  ? "border-moto-sandstone/65 bg-moto-sandstone/12 quiz-option-wrong"
+                  ? "border-border/65 bg-muted/12 quiz-option-wrong"
                   : dimmed
-                    ? "border-moto-frost/5 bg-moto-frost/3 opacity-40"
-                    : "border-moto-frost/10 bg-moto-frost/5";
+                    ? "border-border/5 bg-background/3 opacity-40"
+                    : "border-border/10 bg-background/5";
 
             return (
               <button
@@ -233,9 +233,9 @@ export function QuizLesson({ context, numQuestions = 5, onNext, sessionId, modul
                 {/* Letter badge */}
                 <span
                   className={`shrink-0 h-[18px] w-[18px] rounded-full flex items-center justify-center text-[9px] font-bold border mt-[1px]
-                    ${showGreen ? "border-moto-indigo    text-moto-indigo"
-                    : showRed   ? "border-moto-sandstone text-moto-sandstone"
-                    :             "border-moto-frost/20  text-moto-frost/35"}`}
+                    ${showGreen ? "border-accent    text-accent"
+                    : showRed   ? "border-border text-muted-foreground"
+                    :             "border-border/20  text-foreground/35"}`}
                 >
                   {OPTION_LABELS[i]}
                 </span>
@@ -243,9 +243,9 @@ export function QuizLesson({ context, numQuestions = 5, onNext, sessionId, modul
                 {/* Option text */}
                 <span
                   className={`text-[12px] leading-snug font-medium
-                    ${showGreen ? "text-moto-frost"
-                    : showRed   ? "text-moto-sandstone"
-                    :             "text-moto-frost/75"}`}
+                    ${showGreen ? "text-foreground"
+                    : showRed   ? "text-muted-foreground"
+                    :             "text-foreground/75"}`}
                 >
                   {option}
                 </span>
@@ -254,8 +254,8 @@ export function QuizLesson({ context, numQuestions = 5, onNext, sessionId, modul
                 {revealed && isSelected && (
                   <span className="absolute top-2 right-2">
                     {isCorrect
-                      ? <CheckCircle2 className="h-3.5 w-3.5 text-moto-indigo"    />
-                      : <XCircle      className="h-3.5 w-3.5 text-moto-sandstone" />
+                      ? <CheckCircle2 className="h-3.5 w-3.5 text-accent"    />
+                      : <XCircle      className="h-3.5 w-3.5 text-muted-foreground" />
                     }
                   </span>
                 )}
@@ -266,9 +266,9 @@ export function QuizLesson({ context, numQuestions = 5, onNext, sessionId, modul
 
         {/* Explanation — lessons in after reveal */}
         {revealed && (
-          <div className="quiz-enter shrink-0 bg-moto-frost/5 border border-moto-frost/8 rounded-xl px-4 py-3">
-            <p className="text-[9.5px] text-moto-frost/25 font-semibold uppercase tracking-widest mb-1">Why</p>
-            <p className="text-moto-frost/55 text-[11.5px] leading-relaxed">{q.explanation}</p>
+          <div className="quiz-enter shrink-0 bg-background/5 border border-border/8 rounded-xl px-4 py-3">
+            <p className="text-[9.5px] text-foreground/25 font-semibold uppercase tracking-widest mb-1">Why</p>
+            <p className="text-foreground/55 text-[11.5px] leading-relaxed">{q.explanation}</p>
           </div>
         )}
       </div>

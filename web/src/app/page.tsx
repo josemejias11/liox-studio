@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { sanityClient } from "@/sanity/lib/client";
 import { MODULES_QUERY } from "@/sanity/lib/queries";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export interface ModuleSummary {
   _id: string;
@@ -32,6 +33,7 @@ export default async function Home() {
             <BarChart2 className="h-3.5 w-3.5" aria-hidden="true" />
             Analytics
           </Link>
+          <ThemeToggle />
           <Avatar className="h-8 w-8">
             <AvatarImage src="https://github.com/shadcn.png" alt="@user" />
             <AvatarFallback>U</AvatarFallback>
@@ -73,12 +75,12 @@ export default async function Home() {
                         className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105" 
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-moto-frost">
+                      <div className="w-full h-full flex items-center justify-center bg-background">
                         <BookOpen className="h-10 w-10 text-muted-foreground/30" />
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-moto-black/0 group-hover:bg-moto-black/20 transition-colors duration-300 flex items-center justify-center">
-                      <div className="bg-moto-frost text-moto-black rounded-full p-3 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 shadow-lg">
+                    <div className="absolute inset-0 bg-background/0 group-hover:bg-background/20 transition-colors duration-300 flex items-center justify-center">
+                      <div className="bg-background text-foreground rounded-full p-3 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 shadow-lg">
                         <PlayCircle className="h-6 w-6" />
                       </div>
                     </div>

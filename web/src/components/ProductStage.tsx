@@ -196,7 +196,7 @@ export function ProductStage({
           }}
         />
       ) : (
-        <div className="absolute inset-0 bg-moto-black stage-enter-bg" />
+        <div className="absolute inset-0 bg-background stage-enter-bg" />
       )}
 
       {/* ── Cursor-reactive ambient glow ── */}
@@ -280,7 +280,7 @@ export function ProductStage({
       <div className="absolute top-3 right-3 flex items-center gap-1.5 z-20 stage-enter-top">
         <span
           className={`text-[10px] font-medium tabular-nums select-none transition-colors duration-500
-            ${allDiscovered ? "text-moto-indigo/80" : "text-moto-frost/40"}`}
+            ${allDiscovered ? "text-accent/80" : "text-foreground/40"}`}
         >
           {discoveredCount} / {total}
         </span>
@@ -305,7 +305,7 @@ export function ProductStage({
           </svg>
           {allDiscovered && (
             <div className="absolute inset-0 flex items-center justify-center stage-check-pop">
-              <Check className="h-3.5 w-3.5 text-moto-indigo stroke-[3]" />
+              <Check className="h-3.5 w-3.5 text-accent stroke-[3]" />
             </div>
           )}
         </div>
@@ -314,7 +314,7 @@ export function ProductStage({
       {/* ── Keyboard hint — bottom left of arc ── */}
       {!activePanel && hotspots.length > 1 && (
         <div className="absolute top-[52px] right-3 z-20 pointer-events-none stage-enter-top" style={{ animationDelay: "200ms" }}>
-          <p className="text-moto-frost/20 text-[8px] text-right tracking-wide select-none">
+          <p className="text-foreground/20 text-[8px] text-right tracking-wide select-none">
             ← → to explore
           </p>
         </div>
@@ -325,10 +325,10 @@ export function ProductStage({
         className="absolute bottom-10 left-5 z-20 pointer-events-none stage-enter-bottom"
         style={{ animationDelay: "380ms" }}
       >
-        <p className="text-moto-frost/25 text-[8px] font-semibold uppercase tracking-[0.15em] mb-0.5">
+        <p className="text-foreground/25 text-[8px] font-semibold uppercase tracking-[0.15em] mb-0.5">
           Discover
         </p>
-        <h2 className="text-moto-frost/70 text-xs font-medium leading-tight max-w-[40%]">
+        <h2 className="text-foreground/70 text-xs font-medium leading-tight max-w-[40%]">
           {headline}
         </h2>
       </div>
@@ -336,17 +336,17 @@ export function ProductStage({
       {/* ── Continue ── */}
       {allDiscovered && (
         <div className="absolute bottom-8 right-4 z-20 stage-rise flex flex-col items-end gap-2">
-          <div className="completion-badge flex items-center gap-1.5 bg-moto-indigo/15 border border-moto-indigo/35 rounded-full px-3 py-1">
-            <CheckCircle2 className="h-3 w-3 text-moto-indigo shrink-0" />
-            <span className="text-moto-frost text-[10px] font-semibold tracking-wide whitespace-nowrap">
+          <div className="completion-badge flex items-center gap-1.5 bg-accent/15 border border-accent/35 rounded-full px-3 py-1">
+            <CheckCircle2 className="h-3 w-3 text-accent shrink-0" />
+            <span className="text-foreground text-[10px] font-semibold tracking-wide whitespace-nowrap">
               All {total} features discovered
             </span>
           </div>
           <button
             onClick={onNext}
-            className="completion-button-glow flex items-center gap-1.5 bg-moto-black text-moto-frost text-[11px] font-bold
+            className="completion-button-glow flex items-center gap-1.5 bg-background text-foreground text-[11px] font-bold
               px-5 py-2.5 rounded-full shadow-2xl shadow-moto-black/40
-              hover:bg-moto-black/90 active:scale-95 transition-transform duration-150"
+              hover:bg-background/90 active:scale-95 transition-transform duration-150"
           >
             Continue
             <ChevronRight className="h-3.5 w-3.5" />
@@ -360,7 +360,7 @@ export function ProductStage({
           className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 pointer-events-none stage-enter-bottom"
           style={{ animationDelay: "700ms" }}
         >
-          <span className="text-moto-frost/30 text-[10px] font-medium tracking-wide">
+          <span className="text-foreground/30 text-[10px] font-medium tracking-wide">
             Tap a hotspot to explore
           </span>
         </div>

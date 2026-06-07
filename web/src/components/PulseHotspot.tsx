@@ -49,26 +49,26 @@ export function PulseHotspot({ x, y, label, visited, onVisit, onOpen, keyFocused
 
       {/* Visited glow halo */}
       {visited && (
-        <span className="absolute inset-[-6px] rounded-full bg-moto-indigo/20 blur-sm pointer-events-none" />
+        <span className="absolute inset-[-6px] rounded-full bg-accent/20 blur-sm pointer-events-none" />
       )}
 
       {/* Keyboard focus ring */}
       {keyFocused && (
-        <span className="absolute inset-[-12px] rounded-full border-2 border-moto-frost/70 animate-pulse pointer-events-none" />
+        <span className="absolute inset-[-12px] rounded-full border-2 border-border/70 animate-pulse pointer-events-none" />
       )}
 
       {/* Core dot */}
       <span
-        className={`relative flex h-5 w-5 items-center justify-center rounded-full border-2 border-moto-frost/90 shadow-lg
+        className={`relative flex h-5 w-5 items-center justify-center rounded-full border-2 border-border/90 shadow-lg
           transition-all duration-300 group-hover:scale-125
           ${visited
-            ? "bg-moto-indigo shadow-moto-indigo/60"
-            : "bg-moto-indigo shadow-moto-indigo/50 group-hover:bg-moto-slate"
+            ? "bg-accent shadow-moto-indigo/60"
+            : "bg-accent shadow-moto-indigo/50 group-hover:bg-muted"
           }`}
       >
         {visited && (
           <Check
-            className={`h-2.5 w-2.5 text-moto-frost stroke-[3] ${justVisited ? "stage-check-pop" : ""}`}
+            className={`h-2.5 w-2.5 text-foreground stroke-[3] ${justVisited ? "stage-check-pop" : ""}`}
           />
         )}
       </span>
@@ -80,7 +80,7 @@ export function PulseHotspot({ x, y, label, visited, onVisit, onOpen, keyFocused
           opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0
           transition-all duration-200 ease-out
           pointer-events-none shadow-2xl
-          bg-moto-frost/10 backdrop-blur-md text-moto-frost border border-moto-frost/20"
+          bg-background/10 backdrop-blur-md text-foreground border border-border/20"
       >
         {label}
         <span className="absolute left-1/2 -translate-x-1/2 top-full border-[5px] border-transparent border-t-moto-frost/15" />

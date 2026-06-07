@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { X, FileText, MousePointer2, Layers, PlayCircle, HelpCircle } from "lucide-react";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface NavMapLesson {
   _key: string;
@@ -20,11 +21,11 @@ interface NavMapProps {
 }
 
 const TYPE_META: Record<string, { icon: React.ElementType; color: string; label: string }> = {
-  content:     { icon: FileText,      color: "text-moto-frost/35",   label: "Content"     },
-  interaction: { icon: MousePointer2, color: "text-moto-frost/35",   label: "Interaction" },
-  stage:       { icon: Layers,        color: "text-moto-indigo",     label: "Stage"       },
-  video:       { icon: PlayCircle,    color: "text-moto-slate",      label: "Video"       },
-  quiz:        { icon: HelpCircle,    color: "text-moto-sandstone",  label: "Quiz"        },
+  content:     { icon: FileText,      color: "text-foreground/35",   label: "Content"     },
+  interaction: { icon: MousePointer2, color: "text-foreground/35",   label: "Interaction" },
+  stage:       { icon: Layers,        color: "text-accent",     label: "Stage"       },
+  video:       { icon: PlayCircle,    color: "text-muted-foreground",      label: "Video"       },
+  quiz:        { icon: HelpCircle,    color: "text-muted-foreground",  label: "Quiz"        },
 };
 
 function lessonCompletion(lesson: NavMapLesson, visited: Record<string, Set<string>>) {
@@ -63,21 +64,24 @@ export function NavMap({ lessons, currentIndex, visited, onNavigate, onClose }: 
       <nav
         ref={panelRef as React.RefObject<HTMLElement>}
         aria-label="Course navigation"
-        className="nav-map-in relative h-full w-[260px] flex flex-col bg-moto-black/96 backdrop-blur-2xl border-r border-moto-frost/[0.07] shadow-2xl"
+        className="nav-map-in relative h-full w-[260px] flex flex-col bg-background/96 backdrop-blur-2xl border-r border-border/[0.07] shadow-2xl"
       >
 
         {/* Header */}
-        <div className="shrink-0 flex items-center justify-between px-4 pt-3.5 pb-3 border-b border-moto-frost/[0.07]">
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-moto-frost/35">
+        <div className="shrink-0 flex items-center justify-between px-4 pt-3.5 pb-3 border-b border-border/[0.07]">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-foreground/35">
             Course Map
           </p>
-          <button
-            onClick={onClose}
-            aria-label="Close navigation map"
-            className="h-5 w-5 rounded-full flex items-center justify-center text-moto-frost/25 hover:text-moto-frost/80 hover:bg-moto-frost/10 transition-all"
-          >
-            <X className="h-3 w-3" />
-          </button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <button
+              onClick={onClose}
+              aria-label="Close navigation map"
+              className="h-5 w-5 rounded-full flex items-center justify-center text-foreground/25 hover:text-foreground/80 hover:bg-background/10 transition-all"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
         </div>
 
         {/* Lesson list */}
@@ -99,13 +103,13 @@ export function NavMap({ lessons, currentIndex, visited, onNavigate, onClose }: 
                   w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg
                   transition-all duration-150 active:scale-[0.97]
                   ${isCurrent
-                    ? "bg-moto-indigo/14 ring-1 ring-inset ring-moto-indigo/35"
-                    : "hover:bg-moto-frost/[0.045]"}
+                    ? "bg-accent/14 ring-1 ring-inset ring-accent/35"
+                    : "hover:bg-background/[0.045]"}
                 `}
               >
                 {/* Lesson number */}
                 <span className={`shrink-0 text-xs font-bold tabular-nums w-4 text-right
-                  ${isCurrent ? "text-moto-indigo" : "text-moto-frost/25"}`}>
+                  ${isCurrent ? "text-accent" : "text-foreground/25"}`}>
                   {i + 1}
                 </span>
 
@@ -114,16 +118,16 @@ export function NavMap({ lessons, currentIndex, visited, onNavigate, onClose }: 
 
                 {/* Headline */}
                 <span className={`flex-1 text-sm font-medium leading-tight truncate
-                  ${isCurrent ? "text-moto-frost" : "text-moto-frost/50"}`}>
+                  ${isCurrent ? "text-foreground" : "text-foreground/50"}`}>
                   {lesson.headline}
                 </span>
 
                 {/* Completion dot */}
                 <span className={`shrink-0 h-2 w-2 rounded-full
-                  ${completion === "full"    ? "bg-moto-indigo"
-                  : completion === "partial" ? "bg-moto-slate"
-                  : completion === "auto"    ? "bg-moto-frost/18"
-                  :                           "border border-moto-slate"}`}
+                  ${completion === "full"    ? "bg-accent"
+                  : completion === "partial" ? "bg-muted"
+                  : completion === "auto"    ? "bg-background/18"
+                  :                           "border border-border"}`}
                 />
               </button>
             );
@@ -131,9 +135,9 @@ export function NavMap({ lessons, currentIndex, visited, onNavigate, onClose }: 
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 border-t border-moto-frost/[0.07] px-4 py-2.5">
-          <p className="text-xs text-moto-frost/30">
-            <span className="text-moto-frost/55 font-semibold">{exploredCount}</span>
+        <div className="shrink-0 border-t border-border/[0.07] px-4 py-2.5">
+          <p className="text-xs text-foreground/30">
+            <span className="text-foreground/55 font-semibold">{exploredCount}</span>
             {" "}of {lessons.length} lessons explored
           </p>
         </div>
@@ -141,7 +145,7 @@ export function NavMap({ lessons, currentIndex, visited, onNavigate, onClose }: 
 
       {/* ── Backdrop — click to close ── */}
       <div
-        className="flex-1 bg-moto-black/35 backdrop-blur-[2px] cursor-pointer"
+        className="flex-1 bg-background/35 backdrop-blur-[2px] cursor-pointer"
         onClick={onClose}
         aria-hidden="true"
       />

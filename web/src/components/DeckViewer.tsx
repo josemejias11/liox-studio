@@ -166,7 +166,7 @@ export default function DeckViewer({
                 alert(`Content missing: Could not find layer "${value?.linkedLayer}"`);
               }
             }}
-            className="text-moto-indigo font-medium underline underline-offset-4 decoration-moto-indigo/40 hover:decoration-moto-indigo transition-colors mx-1"
+            className="text-accent font-medium underline underline-offset-4 decoration-accent/40 hover:decoration-accent transition-colors mx-1"
           >
             {children}
           </button>
@@ -247,10 +247,10 @@ export default function DeckViewer({
     const buttonText = module.coverButtonText || "start course";
     
     // Map button colors — Motorola 2026 brand palette only
-    let btnClass = "bg-moto-black text-moto-frost hover:bg-moto-black/90 border-transparent";
-    if (module.coverButtonColor === "moto-indigo") btnClass = "bg-moto-indigo text-moto-frost hover:bg-moto-indigo/90 border-transparent";
-    else if (module.coverButtonColor === "moto-frost") btnClass = "bg-moto-frost text-moto-black hover:bg-moto-frost/90 border-transparent";
-    else if (module.coverButtonColor === "moto-pearl") btnClass = "bg-moto-pearl text-moto-black hover:bg-moto-pearl/90 border-transparent";
+    let btnClass = "bg-background text-foreground hover:bg-background/90 border-transparent";
+    if (module.coverButtonColor === "moto-indigo") btnClass = "bg-accent text-foreground hover:bg-accent/90 border-transparent";
+    else if (module.coverButtonColor === "moto-frost") btnClass = "bg-background text-foreground hover:bg-background/90 border-transparent";
+    else if (module.coverButtonColor === "moto-pearl") btnClass = "bg-card text-foreground hover:bg-card/90 border-transparent";
 
     return (
       <LessonFrame moduleTitle={module.title}>
@@ -258,31 +258,31 @@ export default function DeckViewer({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={finalImageUrl} alt="Course cover" className="absolute inset-0 w-full h-full object-cover" />
         ) : (
-          <div className="absolute inset-0 bg-moto-black flex items-center justify-center" />
+          <div className="absolute inset-0 bg-background flex items-center justify-center" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
         
         <div className="absolute inset-0 flex flex-col items-center justify-center p-8 z-10 pointer-events-none">
-          <h1 className="text-4xl md:text-6xl font-bold text-moto-frost text-center drop-shadow-2xl max-w-4xl tracking-tight">
+          <h1 className="text-4xl md:text-6xl font-bold text-foreground text-center drop-shadow-2xl max-w-4xl tracking-tight">
             {finalHeadline}
           </h1>
           
           {module.learningObjectives && module.learningObjectives.length > 0 && (
             <div className="mt-8 w-full max-w-2xl relative">
               {/* Ambient indigo glow — floats the card off the hero */}
-              <div className="absolute inset-0 rounded-3xl bg-moto-indigo/10 blur-2xl pointer-events-none" />
+              <div className="absolute inset-0 rounded-3xl bg-accent/10 blur-2xl pointer-events-none" />
 
-              <div className="relative bg-gradient-to-br from-white/5 via-moto-black/55 to-moto-black/70 backdrop-blur-xl p-6 sm:p-8 rounded-3xl border border-moto-white/10 shadow-2xl overflow-hidden">
+              <div className="relative bg-gradient-to-br from-white/5 via-background/55 to-background/70 backdrop-blur-xl p-6 sm:p-8 rounded-3xl border border-border/10 shadow-2xl overflow-hidden">
                 {/* Top edge accent line */}
-                <div className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-moto-indigo/55 to-transparent" />
+                <div className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-accent/55 to-transparent" />
 
                 {/* Label row with flanking lines */}
                 <div className="flex items-center gap-3 mb-5">
-                  <div className="flex-1 h-px bg-gradient-to-r from-transparent to-moto-indigo/35" />
-                  <h3 className="text-[10px] uppercase tracking-[0.28em] text-moto-slate font-semibold shrink-0 select-none">
+                  <div className="flex-1 h-px bg-gradient-to-r from-transparent to-accent/35" />
+                  <h3 className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground font-semibold shrink-0 select-none">
                     What you will learn
                   </h3>
-                  <div className="flex-1 h-px bg-gradient-to-l from-transparent to-moto-indigo/35" />
+                  <div className="flex-1 h-px bg-gradient-to-l from-transparent to-accent/35" />
                 </div>
 
                 {/* Objectives list */}
@@ -293,10 +293,10 @@ export default function DeckViewer({
                       className="flex items-start gap-3.5 text-left stage-rise"
                       style={{ animationDelay: `${0.08 + i * 0.07}s`, animationFillMode: "both" }}
                     >
-                      <span className="mt-0.5 shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full bg-moto-indigo/20 ring-1 ring-inset ring-moto-indigo/45 text-moto-indigo text-[9px] font-bold leading-none select-none">
+                      <span className="mt-0.5 shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full bg-accent/20 ring-1 ring-inset ring-accent/45 text-accent text-[9px] font-bold leading-none select-none">
                         ✓
                       </span>
-                      <span className="text-moto-frost/90 text-base md:text-lg font-medium leading-snug">
+                      <span className="text-foreground/90 text-base md:text-lg font-medium leading-snug">
                         {obj}
                       </span>
                     </li>
@@ -466,9 +466,9 @@ export default function DeckViewer({
         {layers.length > 0 && (
           <div className={`absolute ${imageUrl ? 'bottom-[12%] left-[6%] right-[6%] max-w-xl mx-auto' : 'bottom-12 left-[6%] w-[88%]'} space-y-3 z-10`}>
             <div className="flex items-center gap-3 mb-2">
-              <div className={`h-px flex-1 ${imageUrl ? 'bg-moto-frost opacity-30' : 'bg-foreground opacity-20'}`} />
-              <span className={`text-[10px] uppercase tracking-widest font-bold ${imageUrl ? 'text-moto-frost drop-shadow-md opacity-80' : 'text-foreground opacity-60'}`}>Dive Deeper</span>
-              <div className={`h-px flex-1 ${imageUrl ? 'bg-moto-frost opacity-30' : 'bg-foreground opacity-20'}`} />
+              <div className={`h-px flex-1 ${imageUrl ? 'bg-background opacity-30' : 'bg-foreground opacity-20'}`} />
+              <span className={`text-[10px] uppercase tracking-widest font-bold ${imageUrl ? 'text-foreground drop-shadow-md opacity-80' : 'text-foreground opacity-60'}`}>Dive Deeper</span>
+              <div className={`h-px flex-1 ${imageUrl ? 'bg-background opacity-30' : 'bg-foreground opacity-20'}`} />
             </div>
             {layers.map(layer => {
               const isLayerVisited = visited[lessonKey]?.has(layer._key);
@@ -481,8 +481,8 @@ export default function DeckViewer({
                   }}
                   className={`w-full text-left p-4 rounded-2xl flex items-center justify-between group transition-all shadow-xl backdrop-blur-md
                     ${imageUrl 
-                      ? (isLayerVisited ? 'bg-moto-black/40 opacity-90 border border-white/10' : 'bg-moto-black/60 hover:bg-moto-black/80 ring-1 ring-moto-indigo/50 hover:ring-moto-indigo')
-                      : (isLayerVisited ? 'bg-moto-black/10 opacity-70' : 'bg-moto-black/5 hover:bg-moto-black/10 ring-1 ring-moto-indigo/30 hover:ring-moto-indigo')
+                      ? (isLayerVisited ? 'bg-background/40 opacity-90 border border-white/10' : 'bg-background/60 hover:bg-background/80 ring-1 ring-accent/50 hover:ring-accent')
+                      : (isLayerVisited ? 'bg-background/10 opacity-70' : 'bg-background/5 hover:bg-background/10 ring-1 ring-accent/30 hover:ring-accent')
                     }`}
                 >
                   <div className="flex flex-col">
@@ -494,7 +494,7 @@ export default function DeckViewer({
                       {layer.layerType === "content" && "Learn More"}
                     </span>
                   </div>
-                  <ChevronRight className={`w-5 h-5 ${imageUrl ? 'text-moto-frost opacity-60' : 'text-foreground opacity-40'} group-hover:opacity-100 group-hover:translate-x-1 transition-all`} />
+                  <ChevronRight className={`w-5 h-5 ${imageUrl ? 'text-foreground opacity-60' : 'text-foreground opacity-40'} group-hover:opacity-100 group-hover:translate-x-1 transition-all`} />
                 </button>
               );
             })}
@@ -571,7 +571,7 @@ export default function DeckViewer({
                 </div>
               )}
               {layer.body && (
-                <div className="prose prose-invert max-w-none text-moto-frost/80 whitespace-pre-wrap leading-relaxed">
+                <div className="prose prose-invert max-w-none text-foreground/80 whitespace-pre-wrap leading-relaxed">
                   {typeof layer.body === 'string' ? layer.body : <PortableText value={layer.body} />}
                 </div>
               )}
@@ -589,12 +589,12 @@ export default function DeckViewer({
               {/* If layer has hotspots, render them relatively */}
               {layer.layerType === "interaction" && layer.hotspots && layer.hotspots.length > 0 && (
                 <div className="mt-8">
-                  <h3 className="text-sm uppercase tracking-widest text-moto-indigo/80 font-bold mb-4">Interactive Features</h3>
+                  <h3 className="text-sm uppercase tracking-widest text-accent/80 font-bold mb-4">Interactive Features</h3>
                   <div className="space-y-4">
                     {layer.hotspots.map((h, i) => (
                       <div key={i} className="bg-white/5 rounded-2xl p-5 border border-white/10">
-                        <h4 className="font-semibold text-moto-frost text-lg mb-2">{h.label}</h4>
-                        <div className="text-moto-frost/70 text-sm leading-relaxed prose prose-invert">
+                        <h4 className="font-semibold text-foreground text-lg mb-2">{h.label}</h4>
+                        <div className="text-foreground/70 text-sm leading-relaxed prose prose-invert">
                           {typeof h.body === 'string' ? h.body : <PortableText value={h.body} />}
                         </div>
                       </div>
