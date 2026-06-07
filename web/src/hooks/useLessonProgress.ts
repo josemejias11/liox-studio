@@ -4,10 +4,19 @@ import { ProgressRequestBody } from "@/lib/contracts/progress";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
+interface LessonData {
+  visitedHotspots?: string[];
+  completed?: boolean;
+}
+
+interface ProgressData {
+  lessons?: Record<string, LessonData>;
+}
+
 export function useLessonProgress(sessionId: string) {
   const [visited, setVisited] = useState<Record<string, Set<string>>>({});
   
-  const { data, error, isLoading, mutate } = useSWR(
+  const { data, error, isLoading, mutate } = useSWR<ProgressData>(
     sessionId ? `/api/progress?sessionId=${sessionId}` : null,
     fetcher,
     {
@@ -19,7 +28,7 @@ export function useLessonProgress(sessionId: string) {
     if (data?.lessons) {
       const restored: Record<string, Set<string>> = {};
       for (const [sid, prog] of Object.entries(data.lessons)) {
-        restored[sid] = new Set((prog as any).visitedHotspots);
+        restored[sid] = new Set(prog.visitedHotspots ?? []);
       }
       setVisited(restored);
     }
@@ -52,7 +61,7 @@ export function useLessonProgress(sessionId: string) {
       }).catch(() => {});
       
       // Optimistically mutate local SWR cache
-      mutate((currentData: any) => {
+      mutate((currentData?: ProgressData) => {
         if (!currentData) return currentData;
         return {
           ...currentData,

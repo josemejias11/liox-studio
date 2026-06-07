@@ -12,7 +12,6 @@ export function FullWidthCarousel({ photos, className = "" }: { photos: Photo[],
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const validPhotos = photos.filter((p) => p.asset?.url);
-  if (!validPhotos.length) return null;
 
   function scroll(dir: "left" | "right") {
     if (!scrollRef.current) return;
@@ -38,6 +37,8 @@ export function FullWidthCarousel({ photos, className = "" }: { photos: Photo[],
       cancelAnimationFrame(frame);
     };
   }, []);
+
+  if (!validPhotos.length) return null;
 
   return (
     <div className={`rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10 relative group/carousel bg-black/20 ${className}`}>

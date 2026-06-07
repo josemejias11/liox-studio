@@ -74,6 +74,16 @@ interface SanityModule {
 const TRANSITION_EXIT_MS  = 210;
 const TRANSITION_ENTER_MS = 380;
 
+const getSemanticWidthClass = (width?: string) => {
+  switch (width) {
+    case "small": return "max-w-sm";
+    case "medium": return "max-w-md";
+    case "large": return "max-w-lg";
+    case "full": return "max-w-full";
+    default: return width || "max-w-xl";
+  }
+};
+
 export default function DeckViewer({
   module,
   lessons,
@@ -390,6 +400,13 @@ export default function DeckViewer({
   }
 
   // ── Regular lessons ─────────────────────────────────────────────────────────
+  const targetId = activeLayerId || lastLayerIdRef.current;
+  const activeHotspot = targetId ? hotspots.find(h => h._key === targetId) : null;
+  const layerContent = activeHotspot?.layerContent;
+  const lessonTextOverlayX = currentLesson.textOverlay?.x ?? 6;
+  const lessonTextOverlayY = currentLesson.textOverlay?.y ?? 15;
+  const lessonTextOverlayWidth = getSemanticWidthClass(currentLesson.textOverlay?.width);
+
   return (
     <LessonFrame
       currentLesson={currentLessonIndex + 1}
@@ -415,35 +432,30 @@ export default function DeckViewer({
         )}
         
         {/* Lesson Content */}
-        {(!imageUrl || currentLesson.body) && (() => {
-          const ox = currentLesson.textOverlay?.x ?? 6;
-          const oy = currentLesson.textOverlay?.y ?? 15;
-          const oWidth = currentLesson.textOverlay?.width ?? 'max-w-xl';
-          return (
-            <div 
-              className={`absolute pointer-events-none z-10 flex flex-col ${
-                imageUrl 
-                  ? 'left-[6%] right-[6%] bottom-[12%] md:left-[var(--desktop-x)] md:right-auto md:top-[var(--desktop-y)] md:bottom-auto'
-                  : ''
-              }`}
-              style={imageUrl ? { 
-                '--desktop-x': `max(6%, ${ox}%)`,
-                '--desktop-y': `${oy}%`,
-              } as React.CSSProperties : { inset: 0, padding: '6%', justifyContent: 'center' }}
-            >
-              <div className={`pointer-events-auto w-full ${imageUrl ? oWidth : 'max-w-xl flex flex-col gap-4'}
-                ${imageUrl ? 'bg-card/60 backdrop-blur-2xl p-6 md:p-8 rounded-[2rem] border border-white/10 shadow-2xl' : ''}
-              `}>
-                <h2 className={`text-foreground text-2xl font-semibold leading-tight`}>{currentLesson?.headline}</h2>
-                {currentLesson?.body && (
-                  <div className={`prose dark:prose-invert max-w-none text-muted-foreground mt-4 text-base font-light leading-relaxed whitespace-pre-wrap`}>
-                    {typeof currentLesson.body === 'string' ? currentLesson.body : <PortableText value={currentLesson.body} components={portableTextComponents} />}
-                  </div>
-                )}
-              </div>
+        {(!imageUrl || currentLesson.body) && (
+          <div 
+            className={`absolute pointer-events-none z-10 flex flex-col ${
+              imageUrl 
+                ? 'left-[6%] right-[6%] bottom-[12%] md:left-[var(--desktop-x)] md:right-auto md:top-[var(--desktop-y)] md:bottom-auto'
+                : ''
+            }`}
+            style={imageUrl ? { 
+              '--desktop-x': `max(6%, ${lessonTextOverlayX}%)`,
+              '--desktop-y': `${lessonTextOverlayY}%`,
+            } as React.CSSProperties : { inset: 0, padding: '6%', justifyContent: 'center' }}
+          >
+            <div className={`pointer-events-auto w-full ${imageUrl ? lessonTextOverlayWidth : 'max-w-xl flex flex-col gap-4'}
+              ${imageUrl ? 'bg-card/60 backdrop-blur-2xl p-6 md:p-8 rounded-[2rem] border border-white/10 shadow-2xl' : ''}
+            `}>
+              <h2 className={`text-foreground text-2xl font-semibold leading-tight`}>{currentLesson?.headline}</h2>
+              {currentLesson?.body && (
+                <div className={`prose dark:prose-invert max-w-none text-muted-foreground mt-4 text-base font-light leading-relaxed whitespace-pre-wrap`}>
+                  {typeof currentLesson.body === 'string' ? currentLesson.body : <PortableText value={currentLesson.body} components={portableTextComponents} />}
+                </div>
+              )}
             </div>
-          );
-        })()}
+          </div>
+        )}
         
         {/* Hotspots */}
         {hotspots.map((h, i) => {
@@ -477,8 +489,6 @@ export default function DeckViewer({
           );
         })}
 
-        {/* AI Layer */}
-        {/* AI Panel */}
         <DiscoveryPanel
           open={activeLayer !== null}
           onClose={() => setActiveLayer(null)}
@@ -491,86 +501,77 @@ export default function DeckViewer({
         />
 
         {/* Layer Sub-content */}
-        {(() => {
-          const targetId = activeLayerId || lastLayerIdRef.current;
-          if (!targetId) return null;
-          
-          const hotspot = hotspots.find(h => h._key === targetId);
-          const layer = hotspot?.layerContent;
-          if (!layer) return null;
-          
-          return (
-            <LayerFrame
-              open={activeLayerId !== null}
-              onClose={() => setActiveLayerId(null)}
-              parentLessonTitle={currentLesson.headline}
-              layerTitle={layer.headline}
-            >
-              {/* Layer Media with Text Overlay */}
-              {(layer.media?.asset?.url || (layer.photos && layer.photos.length > 0)) ? (
-                <div className="relative mb-6">
-                  {layer.media?.asset?.url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={layer.media.asset.url} alt={layer.headline} className="w-full rounded-2xl object-cover max-h-[60vh] shadow-2xl ring-1 ring-white/10" />
-                  ) : layer.photos ? (
-                    <FullWidthCarousel photos={layer.photos} className="!mb-0" />
-                  ) : null}
+        {layerContent && (
+          <LayerFrame
+            open={activeLayerId !== null}
+            onClose={() => setActiveLayerId(null)}
+            parentLessonTitle={currentLesson.headline}
+            layerTitle={layerContent.headline}
+          >
+            {/* Layer Media with Text Overlay */}
+            {(layerContent.media?.asset?.url || (layerContent.photos && layerContent.photos.length > 0)) ? (
+              <div className="relative mb-6">
+                {layerContent.media?.asset?.url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={layerContent.media.asset.url} alt={layerContent.headline} className="w-full rounded-2xl object-cover max-h-[60vh] shadow-2xl ring-1 ring-white/10" />
+                ) : layerContent.photos ? (
+                  <FullWidthCarousel photos={layerContent.photos} className="!mb-0" />
+                ) : null}
 
-                  {/* Text Overlay Box */}
-                  {layer.textOverlay && layer.body && (
-                    <div 
-                      className="absolute z-10 pointer-events-none flex flex-col p-4 md:p-0"
-                      style={{ 
-                        left: `${layer.textOverlay.x ?? 6}%`,
-                        top: `${layer.textOverlay.y ?? 15}%`,
-                      }}
-                    >
-                      <div className={`pointer-events-auto bg-card/60 backdrop-blur-2xl p-5 md:p-6 rounded-2xl border border-white/10 shadow-xl ${layer.textOverlay.width ?? 'max-w-xl'}`}>
-                        <div className="prose prose-invert max-w-none text-foreground/90 leading-relaxed text-sm md:text-base line-clamp-6 hover:line-clamp-none transition-all">
-                          {typeof layer.body === 'string' ? layer.body : <PortableText value={layer.body} />}
-                        </div>
+                {/* Text Overlay Box */}
+                {layerContent.textOverlay && layerContent.body && (
+                  <div 
+                    className="absolute z-10 pointer-events-none flex flex-col p-4 md:p-0"
+                    style={{ 
+                      left: `${layerContent.textOverlay.x ?? 6}%`,
+                      top: `${layerContent.textOverlay.y ?? 15}%`,
+                    }}
+                  >
+                    <div className={`pointer-events-auto bg-card/60 backdrop-blur-2xl p-5 md:p-6 rounded-2xl border border-white/10 shadow-xl ${getSemanticWidthClass(layerContent.textOverlay.width)}`}>
+                      <div className="prose prose-invert max-w-none text-foreground/90 leading-relaxed text-sm md:text-base line-clamp-6 hover:line-clamp-none transition-all">
+                        {typeof layerContent.body === 'string' ? layerContent.body : <PortableText value={layerContent.body} />}
                       </div>
                     </div>
-                  )}
-                </div>
-              ) : null}
-
-              {/* Normal Body (if no text overlay configuration) */}
-              {(!layer.textOverlay || (!layer.media?.asset?.url && !(layer.photos && layer.photos.length > 0))) && layer.body && (
-                <div className="prose prose-invert max-w-none text-foreground/80 whitespace-pre-wrap leading-relaxed mb-6">
-                  {typeof layer.body === 'string' ? layer.body : <PortableText value={layer.body} />}
-                </div>
-              )}
-              
-              {layer.layerType === "video" && (layer.videoUrl || layer.videoFile?.asset?.url) && (
-                <div className="mt-6 aspect-video bg-black rounded-2xl overflow-hidden border border-white/10 relative shadow-2xl">
-                  <video
-                    src={layer.videoFile?.asset?.url || layer.videoUrl}
-                    controls
-                    className="absolute inset-0 w-full h-full object-contain"
-                  />
-                </div>
-              )}
-              
-              {/* If layer has hotspots, render them relatively */}
-              {layer.layerType === "interaction" && layer.hotspots && layer.hotspots.length > 0 && (
-                <div className="mt-8">
-                  <h3 className="text-sm uppercase tracking-widest text-accent/80 font-bold mb-4">Interactive Features</h3>
-                  <div className="space-y-4">
-                    {layer.hotspots.map((h, i) => (
-                      <div key={i} className="bg-white/5 rounded-2xl p-5 border border-white/10">
-                        <h4 className="font-semibold text-foreground text-lg mb-2">{h.label}</h4>
-                        <div className="text-foreground/70 text-sm leading-relaxed prose prose-invert">
-                          {typeof h.body === 'string' ? h.body : <PortableText value={h.body} />}
-                        </div>
-                      </div>
-                    ))}
                   </div>
+                )}
+              </div>
+            ) : null}
+
+            {/* Normal Body (if no text overlay configuration) */}
+            {(!layerContent.textOverlay || (!layerContent.media?.asset?.url && !(layerContent.photos && layerContent.photos.length > 0))) && layerContent.body && (
+              <div className="prose prose-invert max-w-none text-foreground/80 whitespace-pre-wrap leading-relaxed mb-6">
+                {typeof layerContent.body === 'string' ? layerContent.body : <PortableText value={layerContent.body} />}
+              </div>
+            )}
+            
+            {layerContent.layerType === "video" && (layerContent.videoUrl || layerContent.videoFile?.asset?.url) && (
+              <div className="mt-6 aspect-video bg-black rounded-2xl overflow-hidden border border-white/10 relative shadow-2xl">
+                <video
+                  src={layerContent.videoFile?.asset?.url || layerContent.videoUrl}
+                  controls
+                  className="absolute inset-0 w-full h-full object-contain"
+                />
+              </div>
+            )}
+            
+            {/* If layer has hotspots, render them relatively */}
+            {layerContent.layerType === "interaction" && layerContent.hotspots && layerContent.hotspots.length > 0 && (
+              <div className="mt-8">
+                <h3 className="text-sm uppercase tracking-widest text-accent/80 font-bold mb-4">Interactive Features</h3>
+                <div className="space-y-4">
+                  {layerContent.hotspots.map((h, i) => (
+                    <div key={i} className="bg-white/5 rounded-2xl p-5 border border-white/10">
+                      <h4 className="font-semibold text-foreground text-lg mb-2">{h.label}</h4>
+                      <div className="text-foreground/70 text-sm leading-relaxed prose prose-invert">
+                        {typeof h.body === 'string' ? h.body : <PortableText value={h.body} />}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              )}
-            </LayerFrame>
-          );
-        })()}
+              </div>
+            )}
+          </LayerFrame>
+        )}
       </div>
       {navMapEl}
     </LessonFrame>

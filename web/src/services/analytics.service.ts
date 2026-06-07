@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 
-export type SessionData = {
+type SessionData = {
   id: string;
   lessonCount: number;
   hotspotsVisited: number;

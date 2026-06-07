@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const LessonProgressSchema = z.object({
+const LessonProgressSchema = z.object({
   type: z.literal("lesson"),
   sessionId: z.string().min(1),
   lessonId: z.string().min(1),
@@ -8,7 +8,7 @@ export const LessonProgressSchema = z.object({
   completed: z.boolean().optional(),
 });
 
-export const QuizProgressSchema = z.object({
+const QuizProgressSchema = z.object({
   type: z.literal("quiz"),
   sessionId: z.string().min(1),
   moduleId: z.string().min(1),
@@ -23,7 +23,7 @@ export const QuizProgressSchema = z.object({
   ).optional(),
 });
 
-export const LayerProgressSchema = z.object({
+const LayerProgressSchema = z.object({
   type: z.literal("layer"),
   sessionId: z.string().min(1),
   lessonId: z.string().min(1),

@@ -31,8 +31,8 @@ export const MODULE_BY_SLUG_QUERY = groq`
       title,
       slug,
       estimatedDuration,
-      lessons[] {
-        _key,
+      lessons[]-> {
+        "_key": _id,
         headline,
         body,
         lessonType,
@@ -81,8 +81,8 @@ export const FIRST_MODULE_QUERY = groq`
       title,
       slug,
       estimatedDuration,
-      lessons[] {
-        _key,
+      lessons[]-> {
+        "_key": _id,
         headline,
         body,
         lessonType,

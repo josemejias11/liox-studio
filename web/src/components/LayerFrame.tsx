@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { X, ChevronLeft } from "lucide-react";
 import { useFocusTrap } from "@/lib/useFocusTrap";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, PanInfo } from "framer-motion";
 
 interface LayerFrameProps {
   open: boolean;
@@ -54,11 +54,11 @@ export function LayerFrame({
 
           {/* Panel */}
           <motion.div
-            ref={panelRef as any}
+            ref={panelRef}
             drag="y"
             dragConstraints={{ top: 0 }}
             dragElastic={0.2}
-            onDragEnd={(e: any, info: any) => {
+            onDragEnd={(_, info: PanInfo) => {
               if (info.offset.y > 100 || info.velocity.y > 500) onCloseRef.current();
             }}
             initial={{ y: "100%" }}

@@ -22,6 +22,7 @@ export const layerType = defineType({
     defineField({
       name: "media",
       title: "Media / Product Image",
+      description: "Upload a 16:9 image",
       type: "image",
       options: { hotspot: true },
     }),
@@ -48,13 +49,13 @@ export const layerType = defineType({
           type: "string", 
           options: { 
             list: [
-              { title: "Small (max 384px)", value: "max-w-sm" },
-              { title: "Medium (max 576px)", value: "max-w-xl" },
-              { title: "Large (max 768px)", value: "max-w-3xl" },
-              { title: "Full Width", value: "w-[88vw] max-w-none" },
+              { title: "Small", value: "small" },
+              { title: "Medium", value: "medium" },
+              { title: "Large", value: "large" },
+              { title: "Full Width", value: "full" },
             ]
           },
-          initialValue: "max-w-xl"
+          initialValue: "medium"
         })
       ]
     }),

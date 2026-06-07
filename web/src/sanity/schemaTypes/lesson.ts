@@ -1,22 +1,31 @@
 import { defineType, defineField } from "sanity";
 import { HotspotMapInput } from "../components/HotspotMapInput";
 import { TextOverlayMapInput } from "../components/TextOverlayMapInput";
+import { Presentation } from "lucide-react";
 
 export const lessonType = defineType({
   name: "lesson",
   title: "Lesson",
-  type: "object",
+  type: "document",
+  icon: Presentation,
+  groups: [
+    { name: "content", title: "Content" },
+    { name: "interactions", title: "Interactions" },
+    { name: "media", title: "Media" },
+  ],
   fields: [
     defineField({
       name: "headline",
       title: "Headline",
       type: "string",
+      group: "content",
       validation: (r) => r.required(),
     }),
     defineField({
       name: "body",
       title: "Body Copy",
       type: "array",
+      group: "content",
       of: [
         {
           type: "block",
@@ -44,7 +53,9 @@ export const lessonType = defineType({
     defineField({
       name: "media",
       title: "Media / Product Image",
+      description: "Upload a 16:9 image",
       type: "image",
+      group: "media",
       options: { hotspot: true },
     }),
     defineField({
@@ -52,8 +63,9 @@ export const lessonType = defineType({
       title: "Text Overlay Config",
       description: "Control the size and position of the frosted glass text card when an image is present.",
       type: "object",
+      group: "media",
       components: { input: TextOverlayMapInput },
-      hidden: ({ parent }) => !parent?.media, // Only show if image exists
+      hidden: ({ parent }) => !parent?.media,
       fields: [
         defineField({ name: "x", title: "X Position (%)", description: "Left offset", type: "number", initialValue: 6, validation: r => r.min(0).max(100) }),
         defineField({ name: "y", title: "Y Position (%)", description: "Top offset", type: "number", initialValue: 15, validation: r => r.min(0).max(100) }),
@@ -63,13 +75,13 @@ export const lessonType = defineType({
           type: "string", 
           options: { 
             list: [
-              { title: "Small (max 384px)", value: "max-w-sm" },
-              { title: "Medium (max 576px)", value: "max-w-xl" },
-              { title: "Large (max 768px)", value: "max-w-3xl" },
-              { title: "Full Width", value: "w-[88vw] max-w-none" },
+              { title: "Small", value: "small" },
+              { title: "Medium", value: "medium" },
+              { title: "Large", value: "large" },
+              { title: "Full Width", value: "full" },
             ]
           },
-          initialValue: "max-w-xl"
+          initialValue: "medium"
         })
       ]
     }),
@@ -77,6 +89,7 @@ export const lessonType = defineType({
       name: "lessonType",
       title: "Lesson Type",
       type: "string",
+      group: "content",
       options: {
         list: [
           { title: "Content", value: "content" },
@@ -89,12 +102,12 @@ export const lessonType = defineType({
       },
       initialValue: "content",
     }),
-
     defineField({
       name: "videoUrl",
       title: "Video URL",
       description: "YouTube, Vimeo, or direct .mp4 URL.",
       type: "url",
+      group: "media",
       hidden: ({ parent }) => parent?.lessonType !== "video",
     }),
     defineField({
@@ -102,14 +115,16 @@ export const lessonType = defineType({
       title: "Video File",
       description: "Upload an MP4 to Sanity CDN. Used when Video URL is empty.",
       type: "file",
+      group: "media",
       options: { accept: "video/*" },
       hidden: ({ parent }) => parent?.lessonType !== "video",
     }),
     defineField({
       name: "stageBackground",
       title: "Stage Background Image",
-      description: "Optional full-bleed background for Product Stage lessons. If omitted, a gradient is used.",
+      description: "Upload a 16:9 image. Optional full-bleed background for Product Stage lessons. If omitted, a gradient is used.",
       type: "image",
+      group: "media",
       options: { hotspot: true },
       hidden: ({ parent }) => parent?.lessonType !== "stage",
     }),
@@ -118,6 +133,7 @@ export const lessonType = defineType({
       title: "Completion Animation",
       description: "Animation played after all hotspots are discovered.",
       type: "string",
+      group: "interactions",
       options: {
         list: [
           { title: "Spin (360° product rotate)", value: "spin" },
@@ -133,6 +149,7 @@ export const lessonType = defineType({
       name: "hotspots",
       title: "Hotspot Definitions",
       type: "array",
+      group: "interactions",
       components: { input: HotspotMapInput },
       hidden: ({ parent }) => parent?.lessonType !== "interaction" && parent?.lessonType !== "stage",
       of: [

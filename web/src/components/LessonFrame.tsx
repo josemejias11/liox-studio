@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
-import { ChevronLeft, ChevronRight, LayoutGrid, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, LayoutGrid } from "lucide-react";
 
 interface LessonFrameProps {
   children: ReactNode;
@@ -38,7 +38,6 @@ export function LessonFrame({
   const navGradient = "bg-gradient-to-t from-background via-background/80 to-transparent";
 
   const showProgress = currentLesson !== undefined && totalLessons !== undefined && totalLessons > 0;
-  const progressPct = showProgress ? (currentLesson / totalLessons) * 100 : 0;
 
   return (
     // Outer shell — flex-col so the device banner stacks below the frame.

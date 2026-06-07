@@ -6,15 +6,15 @@ import DeckViewer from "@/components/DeckViewer";
 export default async function ModulePage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = await params;
   
-  const module = await sanityClient.fetch(MODULE_BY_SLUG_QUERY, { slug: resolvedParams.slug });
+  const courseModule = await sanityClient.fetch(MODULE_BY_SLUG_QUERY, { slug: resolvedParams.slug });
 
-  if (!module) {
+  if (!courseModule) {
     notFound();
   }
 
   // Flatten lessons across all chapters
-  const lessons = module.chapters?.flatMap((chapter: any) =>
-    (chapter.lessons ?? []).map((lesson: any) => ({
+  const lessons = courseModule.chapters?.flatMap((chapter: Record<string, unknown>) =>
+    ((chapter.lessons as Record<string, unknown>[]) ?? []).map((lesson: Record<string, unknown>) => ({
       ...lesson,
       chapterTitle: chapter.title,
     }))
@@ -22,7 +22,7 @@ export default async function ModulePage({ params }: { params: Promise<{ slug: s
 
   return (
     <div className="w-full h-dvh overflow-hidden bg-background">
-      <DeckViewer module={module} lessons={lessons} />
+      <DeckViewer module={courseModule} lessons={lessons} />
     </div>
   );
 }

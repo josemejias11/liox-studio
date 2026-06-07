@@ -4,61 +4,80 @@ export const moduleType = defineType({
   name: "module",
   title: "Module",
   type: "document",
+  groups: [
+    { name: "content", title: "Content" },
+    { name: "coverUi", title: "Cover UI" },
+    { name: "settings", title: "Settings" },
+  ],
   fields: [
     defineField({
       name: "title",
       title: "Title",
       type: "string",
+      group: "content",
       validation: (r) => r.required(),
     }),
     defineField({
       name: "slug",
       title: "Slug",
       type: "slug",
-      options: { source: "title" },
+      group: "content",
+      options: { 
+        source: "title",
+        maxLength: 96,
+        isUnique: (value, context) => context.defaultIsUnique(value, context)
+      },
       validation: (r) => r.required(),
     }),
     defineField({
       name: "description",
       title: "Description",
       type: "text",
+      group: "content",
       rows: 3,
     }),
     defineField({
       name: "thumbnail",
       title: "Thumbnail",
+      description: "Upload a 16:9 image",
       type: "image",
+      group: "content",
       options: { hotspot: true },
     }),
     defineField({
       name: "learningObjectives",
       title: "Learning Objectives",
       type: "array",
+      group: "content",
       of: [{ type: "string" }],
     }),
     defineField({
       name: "chapters",
       title: "Chapters",
       type: "array",
+      group: "content",
       of: [{ type: "reference", to: [{ type: "chapter" }] }],
       validation: (r) => r.required().min(1),
     }),
     defineField({
       name: "coverImage",
       title: "Cover Screen Image (optional)",
-      description: "If not provided, the Thumbnail will be used.",
+      description: "Upload a 16:9 image. If not provided, the Thumbnail will be used.",
       type: "image",
+      group: "coverUi",
       options: { hotspot: true },
     }),
     defineField({
       name: "coverHeadline",
       title: "Cover Headline (optional)",
       type: "string",
+      group: "coverUi",
     }),
     defineField({
       name: "coverButtonText",
       title: "Start Button Text",
       type: "string",
+      group: "coverUi",
       initialValue: "start course",
     }),
     defineField({
@@ -66,6 +85,7 @@ export const moduleType = defineType({
       title: "Start Button Color",
       description: "Motorola 2026 brand-compliant button colors only.",
       type: "string",
+      group: "coverUi",
       options: {
         list: [
           { title: "Black (Primary)", value: "moto-black" },
@@ -81,6 +101,7 @@ export const moduleType = defineType({
       name: "published",
       title: "Published",
       type: "boolean",
+      group: "settings",
       initialValue: false,
     }),
   ],

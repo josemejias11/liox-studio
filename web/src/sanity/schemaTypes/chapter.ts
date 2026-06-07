@@ -15,7 +15,11 @@ export const chapterType = defineType({
       name: "slug",
       title: "Slug",
       type: "slug",
-      options: { source: "title" },
+      options: { 
+        source: "title",
+        maxLength: 96,
+        isUnique: (value, context) => context.defaultIsUnique(value, context)
+      },
       validation: (r) => r.required(),
     }),
     defineField({
@@ -27,7 +31,7 @@ export const chapterType = defineType({
       name: "lessons",
       title: "Lessons",
       type: "array",
-      of: [{ type: "lesson" }],
+      of: [{ type: "reference", to: [{ type: "lesson" }] }],
       validation: (r) => r.required().min(1),
     }),
   ],
