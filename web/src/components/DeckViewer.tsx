@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { LessonFrame } from "./LessonFrame";
 import { Hotspot } from "./Hotspot";
-import { LessonLayer } from "./LessonLayer";
+import { DiscoveryPanel } from "./DiscoveryPanel";
 import { ProductStage } from "./ProductStage";
 import { QuizLesson } from "./QuizLesson";
 import { CourseComplete } from "./CourseComplete";
@@ -438,7 +438,7 @@ export default function DeckViewer({
           const oWidth = currentLesson.textOverlay?.width ?? 'max-w-xl';
           return (
             <div 
-              className={`absolute pointer-events-none z-10 flex flex-col ${
+              className={`absolute pointer-events-none z-10 flex flex-col dark ${
                 imageUrl 
                   ? 'left-[6%] right-[6%] bottom-[12%] md:left-[var(--desktop-x)] md:right-auto md:top-[var(--desktop-y)] md:bottom-auto'
                   : ''
@@ -449,11 +449,11 @@ export default function DeckViewer({
               } as React.CSSProperties : { inset: 0, padding: '6%', justifyContent: 'center' }}
             >
               <div className={`pointer-events-auto w-full ${imageUrl ? oWidth : 'max-w-xl flex flex-col gap-4'}
-                ${imageUrl ? 'bg-black/60 backdrop-blur-2xl p-6 md:p-8 rounded-[2rem] border border-white/10 shadow-2xl' : ''}
+                ${imageUrl ? 'bg-card/60 backdrop-blur-2xl p-6 md:p-8 rounded-[2rem] border border-white/10 shadow-2xl' : ''}
               `}>
-                <h2 className={`${imageUrl ? 'text-white' : 'text-foreground'} text-2xl font-semibold leading-tight`}>{currentLesson?.headline}</h2>
+                <h2 className={`text-foreground text-2xl font-semibold leading-tight`}>{currentLesson?.headline}</h2>
                 {currentLesson?.body && (
-                  <div className={`prose dark:prose-invert max-w-none ${imageUrl ? 'text-white/80 mt-4 prose-invert' : 'text-muted-foreground'} text-base font-light leading-relaxed whitespace-pre-wrap`}>
+                  <div className={`prose dark:prose-invert max-w-none text-muted-foreground mt-4 text-base font-light leading-relaxed whitespace-pre-wrap`}>
                     {typeof currentLesson.body === 'string' ? currentLesson.body : <PortableText value={currentLesson.body} components={portableTextComponents} />}
                   </div>
                 )}
@@ -464,11 +464,11 @@ export default function DeckViewer({
         
         {/* Deep Dive Layers overlaid at the bottom */}
         {layers.length > 0 && (
-          <div className={`absolute ${imageUrl ? 'bottom-[12%] left-[6%] right-[6%] max-w-xl mx-auto' : 'bottom-12 left-[6%] w-[88%]'} space-y-3 z-10`}>
+          <div className={`absolute dark ${imageUrl ? 'bottom-[12%] left-[6%] right-[6%] max-w-xl mx-auto' : 'bottom-12 left-[6%] w-[88%]'} space-y-3 z-10`}>
             <div className="flex items-center gap-3 mb-2">
-              <div className={`h-px flex-1 ${imageUrl ? 'bg-background opacity-30' : 'bg-foreground opacity-20'}`} />
-              <span className={`text-[10px] uppercase tracking-widest font-bold ${imageUrl ? 'text-foreground drop-shadow-md opacity-80' : 'text-foreground opacity-60'}`}>Dive Deeper</span>
-              <div className={`h-px flex-1 ${imageUrl ? 'bg-background opacity-30' : 'bg-foreground opacity-20'}`} />
+              <div className={`h-px flex-1 bg-foreground opacity-20`} />
+              <span className={`text-[10px] uppercase tracking-widest font-bold text-foreground opacity-60`}>Dive Deeper</span>
+              <div className={`h-px flex-1 bg-foreground opacity-20`} />
             </div>
             {layers.map(layer => {
               const isLayerVisited = visited[lessonKey]?.has(layer._key);
@@ -481,20 +481,20 @@ export default function DeckViewer({
                   }}
                   className={`w-full text-left p-4 rounded-2xl flex items-center justify-between group transition-all shadow-xl backdrop-blur-md
                     ${imageUrl 
-                      ? (isLayerVisited ? 'bg-background/40 opacity-90 border border-white/10' : 'bg-background/60 hover:bg-background/80 ring-1 ring-accent/50 hover:ring-accent')
+                      ? (isLayerVisited ? 'bg-card/40 opacity-90 border border-white/10' : 'bg-card/60 hover:bg-card/80 ring-1 ring-accent/50 hover:ring-accent')
                       : (isLayerVisited ? 'bg-background/10 opacity-70' : 'bg-background/5 hover:bg-background/10 ring-1 ring-accent/30 hover:ring-accent')
                     }`}
                 >
                   <div className="flex flex-col">
-                    <h4 className={`text-base font-medium ${imageUrl ? 'text-white' : 'text-foreground'} line-clamp-1`}>{layer.headline}</h4>
-                    <span className={`text-xs ${imageUrl ? 'text-white/60' : 'text-muted-foreground'} uppercase tracking-wider font-bold`}>
+                    <h4 className={`text-base font-medium text-foreground line-clamp-1`}>{layer.headline}</h4>
+                    <span className={`text-xs text-muted-foreground uppercase tracking-wider font-bold`}>
                       {layer.layerType === "video" && "Watch Video"}
                       {layer.layerType === "interaction" && "Interactive Explorer"}
                       {layer.layerType === "quiz" && "Knowledge Check"}
                       {layer.layerType === "content" && "Learn More"}
                     </span>
                   </div>
-                  <ChevronRight className={`w-5 h-5 ${imageUrl ? 'text-foreground opacity-60' : 'text-foreground opacity-40'} group-hover:opacity-100 group-hover:translate-x-1 transition-all`} />
+                  <ChevronRight className={`w-5 h-5 text-foreground opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all`} />
                 </button>
               );
             })}
@@ -526,10 +526,10 @@ export default function DeckViewer({
 
         {/* AI Layer */}
         {/* AI Panel */}
-        <LessonLayer
+        <DiscoveryPanel
           open={activeLayer !== null}
           onClose={() => setActiveLayer(null)}
-          title={activeLayer?.title ?? ""}
+          label={activeLayer?.title ?? ""}
           topic={activeLayer?.topic}
           body={activeLayer?.body}
         />
