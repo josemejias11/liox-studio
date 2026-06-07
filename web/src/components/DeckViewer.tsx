@@ -33,6 +33,7 @@ interface SanityLayer {
   media?: { asset?: { url?: string } };
   photos?: { asset?: { url?: string } }[];
   hotspots?: SanityHotspot[];
+  textOverlay?: { x?: number; y?: number; width?: string };
   videoUrl?: string;
   videoFile?: { asset?: { url?: string } };
   speakerNotes?: string;
@@ -439,22 +440,29 @@ export default function DeckViewer({
         )}
         
         {/* Lesson Content */}
-        {(!imageUrl || currentLesson.body) && (
-          <div className={`absolute inset-0 flex flex-col p-[6%] overflow-auto pointer-events-none z-10
-            ${imageUrl ? 'justify-start pt-[15%]' : 'justify-center'}
-          `}>
-            <div className={`pointer-events-auto max-w-xl
-              ${imageUrl ? 'bg-black/60 backdrop-blur-2xl p-8 rounded-[2rem] border border-white/10 shadow-2xl' : 'flex flex-col gap-4'}
-            `}>
-              <h2 className={`${imageUrl ? 'text-white' : tc.headline} text-2xl font-semibold leading-tight`}>{currentLesson?.headline}</h2>
-              {currentLesson?.body && (
-                <div className={`prose prose-invert max-w-none ${imageUrl ? 'text-white/80 mt-4' : tc.body} text-base font-light leading-relaxed whitespace-pre-wrap`}>
-                  {typeof currentLesson.body === 'string' ? currentLesson.body : <PortableText value={currentLesson.body} components={portableTextComponents} />}
-                </div>
-              )}
+        {(!imageUrl || currentLesson.body) && (() => {
+          const ox = currentLesson.textOverlay?.x ?? 6;
+          const oy = currentLesson.textOverlay?.y ?? 15;
+          const oWidth = currentLesson.textOverlay?.width ?? 'max-w-xl';
+          
+          return (
+            <div 
+              className="absolute pointer-events-none z-10 flex flex-col"
+              style={imageUrl ? { left: `${ox}%`, top: `${oy}%` } : { inset: 0, padding: '6%', justifyContent: 'center' }}
+            >
+              <div className={`pointer-events-auto w-full ${imageUrl ? oWidth : 'max-w-xl flex flex-col gap-4'}
+                ${imageUrl ? 'bg-black/60 backdrop-blur-2xl p-8 rounded-[2rem] border border-white/10 shadow-2xl' : ''}
+              `}>
+                <h2 className={`${imageUrl ? 'text-white' : tc.headline} text-2xl font-semibold leading-tight`}>{currentLesson?.headline}</h2>
+                {currentLesson?.body && (
+                  <div className={`prose prose-invert max-w-none ${imageUrl ? 'text-white/80 mt-4' : tc.body} text-base font-light leading-relaxed whitespace-pre-wrap`}>
+                    {typeof currentLesson.body === 'string' ? currentLesson.body : <PortableText value={currentLesson.body} components={portableTextComponents} />}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
         
         {/* Deep Dive Layers overlaid at the bottom */}
         {layers.length > 0 && (

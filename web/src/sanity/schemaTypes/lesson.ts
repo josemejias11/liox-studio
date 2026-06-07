@@ -47,6 +47,31 @@ export const lessonType = defineType({
       options: { hotspot: true },
     }),
     defineField({
+      name: "textOverlay",
+      title: "Text Overlay Config",
+      description: "Control the size and position of the frosted glass text card when an image is present.",
+      type: "object",
+      hidden: ({ parent }) => !parent?.media, // Only show if image exists
+      fields: [
+        defineField({ name: "x", title: "X Position (%)", description: "Left offset", type: "number", initialValue: 6, validation: r => r.min(0).max(100) }),
+        defineField({ name: "y", title: "Y Position (%)", description: "Top offset", type: "number", initialValue: 15, validation: r => r.min(0).max(100) }),
+        defineField({ 
+          name: "width", 
+          title: "Card Width", 
+          type: "string", 
+          options: { 
+            list: [
+              { title: "Small (max 384px)", value: "max-w-sm" },
+              { title: "Medium (max 576px)", value: "max-w-xl" },
+              { title: "Large (max 768px)", value: "max-w-3xl" },
+              { title: "Full Width", value: "w-[88vw] max-w-none" },
+            ]
+          },
+          initialValue: "max-w-xl"
+        })
+      ]
+    }),
+    defineField({
       name: "speakerNotes",
       title: "Speaker Notes",
       type: "text",

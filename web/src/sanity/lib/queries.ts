@@ -38,6 +38,7 @@ export const MODULE_BY_SLUG_QUERY = groq`
         lessonType,
         speakerNotes,
         media { asset->{ url } },
+        textOverlay { x, y, width },
         hotspots[] {
           _key,
           label,
@@ -98,6 +99,7 @@ export const FIRST_MODULE_QUERY = groq`
         lessonType,
         speakerNotes,
         media { asset->{ url } },
+        textOverlay { x, y, width },
         hotspots[] {
           _key,
           label,
