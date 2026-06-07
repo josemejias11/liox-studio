@@ -142,40 +142,48 @@ export const lessonType = defineType({
           fields: [
             defineField({ name: "label", title: "Label", type: "string", validation: (r) => r.required() }),
             defineField({ name: "topic", title: "AI Topic Query", type: "string" }),
-            defineField({ 
-              name: "linkedLayer", 
-              title: "Linked Layer Headline", 
-              description: "If provided, tapping this hotspot opens the matching layer instead of the inline panel.",
-              type: "string" 
+            defineField({ name: "x", title: "X Position (%)", type: "number", validation: (r) => r.min(0).max(100) }),
+            defineField({ name: "y", title: "Y Position (%)", type: "number", validation: (r) => r.min(0).max(100) }),
+            defineField({
+              name: "contentMode",
+              title: "Content Mode",
+              type: "string",
+              options: {
+                list: [
+                  { title: "Tooltip (Inline text panel)", value: "tooltip" },
+                  { title: "Rich Layer (Full Screen)", value: "layer" }
+                ],
+                layout: "radio"
+              },
+              initialValue: "tooltip"
             }),
             defineField({
-      name: "body",
-      title: "Panel Body",
-      type: "array",
-      of: [{ type: "block" }]
-    }),
+              name: "layerContent",
+              title: "Layer Content",
+              type: "layer",
+              hidden: ({ parent }) => parent?.contentMode === "tooltip"
+            }),
+            defineField({
+              name: "body",
+              title: "Panel Body",
+              type: "array",
+              of: [{ type: "block" }],
+              hidden: ({ parent }) => parent?.contentMode === "layer"
+            }),
             defineField({
               name: "photos",
               title: "Photo Gallery",
               description: "Images shown as a swipeable card stack inside the panel.",
               type: "array",
               of: [{ type: "image", options: { hotspot: true } }],
+              hidden: ({ parent }) => parent?.contentMode === "layer"
             }),
-            defineField({ name: "x", title: "X Position (%)", type: "number", validation: (r) => r.min(0).max(100) }),
-            defineField({ name: "y", title: "Y Position (%)", type: "number", validation: (r) => r.min(0).max(100) }),
           ],
           preview: {
             select: { title: "label", subtitle: "topic" },
           },
         },
       ],
-    }),
-    defineField({
-      name: "layers",
-      title: "Layers",
-      type: "array",
-      of: [{ type: "layer" }],
-      description: "Optional topics that exist on the Z-axis inside this lesson.",
     }),
   ],
   preview: {

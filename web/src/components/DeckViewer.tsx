@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, PlayCircle, MousePointer2, Layers, Plus } from "lucide-react";
 import { LessonFrame } from "./LessonFrame";
 import { Hotspot } from "./Hotspot";
 import { DiscoveryPanel } from "./DiscoveryPanel";
@@ -15,18 +15,7 @@ import { useLessonProgress } from "@/hooks/useLessonProgress";
 import { LayerFrame } from "./LayerFrame";
 import { PortableText } from "@portabletext/react";
 
-interface SanityHotspot {
-  _key: string;
-  label: string;
-  topic: string;
-  linkedLayer?: string;
-  body?: any;
-  photos?: { asset?: { url?: string } }[];
-  x: number;
-  y: number;
-}
-
-interface SanityLayer {
+interface SanityLayerContent {
   _key: string;
   headline: string;
   body?: any;
@@ -37,6 +26,18 @@ interface SanityLayer {
   textOverlay?: { x?: number; y?: number; width?: string };
   videoUrl?: string;
   videoFile?: { asset?: { url?: string } };
+}
+
+interface SanityHotspot {
+  _key: string;
+  label: string;
+  topic: string;
+  x: number;
+  y: number;
+  contentMode?: "tooltip" | "layer";
+  layerContent?: SanityLayerContent;
+  body?: any;
+  photos?: { asset?: { url?: string } }[];
 }
 
 interface SanityLesson {
@@ -54,7 +55,6 @@ interface SanityLesson {
   completionTransition?: "spin" | "rise" | "fade";
   hotspots?: SanityHotspot[];
   textHotspots?: { _key: string; triggerWord: string; linkedLayer: string }[];
-  layers?: SanityLayer[];
   videoUrl?: string;
   videoFile?: { asset?: { url?: string } };
   chapterTitle?: string;
@@ -121,13 +121,11 @@ export default function DeckViewer({
   const currentLesson = lessons[currentLessonIndex];
   const lessonKey = currentLesson?._key ?? "";
   const hotspots = currentLesson?.hotspots ?? [];
-  const layers = currentLesson?.layers ?? [];
   
-  // A lesson is locked until all hotspots AND all layers are visited
+  // A lesson is locked until all hotspots are visited
   const visitedOnLesson = visited[lessonKey]?.size ?? 0;
   const missingHotspots = hotspots.filter(h => !(visited[lessonKey]?.has(h.label)));
-  const missingLayers = layers.filter(l => !(visited[lessonKey]?.has(l._key)));
-  const nextLocked = (hotspots.length > 0 && missingHotspots.length > 0) || (layers.length > 0 && missingLayers.length > 0);
+  const nextLocked = (hotspots.length > 0 && missingHotspots.length > 0);
   
   const imageUrl = currentLesson?.media?.asset?.url;
 
@@ -136,7 +134,7 @@ export default function DeckViewer({
   const totalHotspots = lessons.reduce((sum, s) => sum + (s.hotspots?.length ?? 0), 0);
 
   function markVisited(label: string) {
-    baseMarkVisited(lessonKey, label, hotspots.length + layers.length);
+    baseMarkVisited(lessonKey, label, hotspots.length);
   }
 
   const portableTextComponents = {
@@ -145,10 +143,10 @@ export default function DeckViewer({
         return (
           <button
             onClick={() => {
-              const layer = layers.find(l => l.headline === value?.linkedLayer);
-              if (layer) {
-                baseMarkVisited(lessonKey, layer._key, hotspots.length + layers.length);
-                setActiveLayerId(layer._key);
+              const hotspot = hotspots.find(h => h.label === value?.linkedLayer && h.contentMode === "layer");
+              if (hotspot) {
+                baseMarkVisited(lessonKey, hotspot.label, hotspots.length);
+                setActiveLayerId(hotspot._key);
               } else {
                 console.warn(`Layer link failed: No layer found with headline "${value?.linkedLayer}"`);
                 alert(`Content missing: Could not find layer "${value?.linkedLayer}"`);
@@ -447,62 +445,37 @@ export default function DeckViewer({
           );
         })()}
         
-        {/* Layers overlaid at the bottom */}
-        {layers.length > 0 && (
-          <div className={`absolute ${imageUrl ? 'bottom-[12%] left-[6%] right-[6%] max-w-xl mx-auto' : 'bottom-12 left-[6%] w-[88%]'} space-y-3 z-10`}>
-            {layers.map(layer => {
-              const isLayerVisited = visited[lessonKey]?.has(layer._key);
-              return (
-                <button
-                  key={layer._key}
-                  onClick={() => {
-                    baseMarkVisited(lessonKey, layer._key, hotspots.length + layers.length);
-                    setActiveLayerId(layer._key);
-                  }}
-                  className={`w-full text-left p-4 rounded-2xl flex items-center justify-between group transition-all shadow-xl backdrop-blur-md
-                    ${imageUrl 
-                      ? (isLayerVisited ? 'bg-card/40 opacity-90 border border-white/10' : 'bg-card/60 hover:bg-card/80 ring-1 ring-accent/50 hover:ring-accent')
-                      : (isLayerVisited ? 'bg-background/10 opacity-70' : 'bg-background/5 hover:bg-background/10 ring-1 ring-accent/30 hover:ring-accent')
-                    }`}
-                >
-                  <div className="flex flex-col">
-                    <h4 className={`text-base font-medium text-foreground line-clamp-1`}>{layer.headline}</h4>
-                    <span className={`text-xs text-muted-foreground uppercase tracking-wider font-bold`}>
-                      {layer.layerType === "video" && "Watch Video"}
-                      {layer.layerType === "interaction" && "Interactive Explorer"}
-                      {layer.layerType === "quiz" && "Knowledge Check"}
-                      {layer.layerType === "content" && "Learn More"}
-                    </span>
-                  </div>
-                  <ChevronRight className={`w-5 h-5 text-foreground opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all`} />
-                </button>
-              );
-            })}
-          </div>
-        )}
-
         {/* Hotspots */}
-        {hotspots.map((h, i) => (
-          <Hotspot
-            key={i}
-            x={h.x}
-            y={h.y}
-            label={h.label}
-            visited={visited[lessonKey]?.has(h.label) ?? false}
-            onVisit={() => markVisited(h.label)}
-            onOpen={() => {
-              if (h.linkedLayer) {
-                const targetLayer = layers.find(l => l.headline === h.linkedLayer);
-                if (targetLayer) {
-                  baseMarkVisited(lessonKey, targetLayer._key, hotspots.length + layers.length);
-                  setActiveLayerId(targetLayer._key);
+        {hotspots.map((h, i) => {
+          let Icon = null;
+          if (h.contentMode === "layer" && h.layerContent) {
+            if (h.layerContent.layerType === "video") Icon = PlayCircle;
+            else if (h.layerContent.layerType === "interaction") Icon = MousePointer2;
+            else Icon = Layers;
+          }
+
+          return (
+            <Hotspot
+              key={i}
+              x={h.x}
+              y={h.y}
+              label={h.label}
+              visited={visited[lessonKey]?.has(h.label) ?? false}
+              className={h.contentMode === "layer" ? "w-8 h-8 bg-black/50 backdrop-blur-md border border-white/20 text-white rounded-full flex items-center justify-center hover:bg-black/70 hover:scale-110 transition-all shadow-xl" : ""}
+              pulseClassName={h.contentMode === "layer" ? "bg-white" : ""}
+              icon={Icon ? <Icon className="w-4 h-4" /> : (h.contentMode === "layer" ? <Plus className="w-4 h-4" /> : undefined)}
+              onVisit={() => markVisited(h.label)}
+              onOpen={() => {
+                if (h.contentMode === "layer" && h.layerContent) {
+                  baseMarkVisited(lessonKey, h.label, hotspots.length);
+                  setActiveLayerId(h._key);
                   return;
                 }
-              }
-              setActiveLayer({ topic: h.topic, title: h.label, body: h.body, x: h.x, y: h.y });
-            }}
-          />
-        ))}
+                setActiveLayer({ topic: h.topic, title: h.label, body: h.body, x: h.x, y: h.y });
+              }}
+            />
+          );
+        })}
 
         {/* AI Layer */}
         {/* AI Panel */}
@@ -522,7 +495,8 @@ export default function DeckViewer({
           const targetId = activeLayerId || lastLayerIdRef.current;
           if (!targetId) return null;
           
-          const layer = layers.find(l => l._key === targetId);
+          const hotspot = hotspots.find(h => h._key === targetId);
+          const layer = hotspot?.layerContent;
           if (!layer) return null;
           
           return (

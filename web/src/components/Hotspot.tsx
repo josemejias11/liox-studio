@@ -16,6 +16,7 @@ interface HotspotProps {
   pulseClassName?: string;
   // Override the label tooltip bubble
   labelClassName?: string;
+  icon?: React.ReactNode;
 }
 
 export function Hotspot({
@@ -28,6 +29,7 @@ export function Hotspot({
   className = "",
   pulseClassName = "",
   labelClassName = "",
+  icon,
 }: HotspotProps) {
   function handleClick() {
     if (!visited) onVisit?.();
@@ -50,13 +52,15 @@ export function Hotspot({
         />
       )}
 
-      {/* Core dot — swap className to change size, color, shape */}
+      {/* Core dot — swap className to change appearance */}
       <span
-        className={`relative flex h-5 w-5 rounded-full border-[3px] border-border shadow-lg shadow-moto-black/40
+        className={`relative flex items-center justify-center rounded-full shadow-lg shadow-black/40
           transition-transform duration-150 group-hover:scale-125 group-focus-visible:scale-125
-          ${visited ? "bg-accent border-border" : "bg-primary"}
-          ${className}`}
-      />
+          ${className ? className : `h-5 w-5 border-[3px] border-border ${visited ? "bg-accent border-border" : "bg-primary"}`}
+        `}
+      >
+        {icon}
+      </span>
 
       {/* Label tooltip — shows on hover above the dot */}
       <span
