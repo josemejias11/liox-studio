@@ -1,5 +1,6 @@
 import { defineType, defineField } from "sanity";
 import { HotspotMapInput } from "../components/HotspotMapInput";
+import { TextOverlayMapInput } from "../components/TextOverlayMapInput";
 
 export const lessonType = defineType({
   name: "lesson",
@@ -51,6 +52,7 @@ export const lessonType = defineType({
       title: "Text Overlay Config",
       description: "Control the size and position of the frosted glass text card when an image is present.",
       type: "object",
+      components: { input: TextOverlayMapInput },
       hidden: ({ parent }) => !parent?.media, // Only show if image exists
       fields: [
         defineField({ name: "x", title: "X Position (%)", description: "Left offset", type: "number", initialValue: 6, validation: r => r.min(0).max(100) }),

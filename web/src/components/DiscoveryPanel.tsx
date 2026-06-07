@@ -18,6 +18,7 @@ interface DiscoveryPanelProps {
   onClose: () => void;
   label: string;
   topic?: string;
+  body?: string;
   photos?: Photo[];
   x?: number;
   y?: number;

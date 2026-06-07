@@ -45,6 +45,11 @@ interface SanityLesson {
   body?: any;
   lessonType: "content" | "interaction" | "stage" | "video" | "quiz";
   media?: { asset?: { url?: string } };
+  textOverlay?: {
+    x?: number;
+    y?: number;
+    width?: string;
+  };
   stageBackground?: { asset?: { url?: string } };
   completionTransition?: "spin" | "rise" | "fade";
   hotspots?: SanityHotspot[];
