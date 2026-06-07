@@ -15,8 +15,8 @@ export const layerType = defineType({
     defineField({
       name: "body",
       title: "Body Copy",
-      type: "text",
-      rows: 4,
+      type: "array",
+      of: [{ type: "block" }]
     }),
     defineField({
       name: "media",

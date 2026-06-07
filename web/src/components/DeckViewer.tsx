@@ -12,13 +12,14 @@ import { NavMap } from "./NavMap";
 import { VideoLesson } from "./VideoLesson";
 import { useLessonProgress } from "@/hooks/useLessonProgress";
 import { LayerFrame } from "./LayerFrame";
+import { PortableText } from "@portabletext/react";
 
 interface SanityHotspot {
   _key: string;
   label: string;
   topic: string;
   linkedLayer?: string;
-  body?: string;
+  body?: any;
   photos?: { asset?: { url?: string } }[];
   x: number;
   y: number;
@@ -27,7 +28,7 @@ interface SanityHotspot {
 interface SanityLayer {
   _key: string;
   headline: string;
-  body?: string;
+  body?: any;
   layerType: "content" | "interaction" | "video" | "quiz";
   media?: { asset?: { url?: string } };
   photos?: { asset?: { url?: string } }[];
@@ -40,7 +41,7 @@ interface SanityLayer {
 interface SanityLesson {
   _key: string;
   headline: string;
-  body?: string;
+  body?: any;
   lessonType: "content" | "interaction" | "stage" | "video" | "quiz";
   media?: { asset?: { url?: string } };
   stageBackground?: { asset?: { url?: string } };
@@ -78,42 +79,6 @@ type LessonTheme = keyof typeof LESSON_THEMES;
 
 const TRANSITION_EXIT_MS  = 210;
 const TRANSITION_ENTER_MS = 380;
-
-function renderBodyWithTextHotspots(body: string, textHotspots: SanityLesson['textHotspots'], tc: any, onTrigger: (linkedLayer: string) => void) {
-  if (!textHotspots || textHotspots.length === 0) return <p className={`${tc.body} text-base font-light leading-relaxed whitespace-pre-wrap`}>{body}</p>;
-
-  let elements: (string | JSX.Element)[] = [body];
-
-  textHotspots.forEach(th => {
-    if (!th.triggerWord || !th.linkedLayer) return;
-    
-    elements = elements.flatMap(el => {
-      if (typeof el !== 'string') return [el];
-      
-      const parts = el.split(new RegExp(`(${th.triggerWord})`, 'gi'));
-      return parts.map((part, i) => {
-        if (part.toLowerCase() === th.triggerWord.toLowerCase()) {
-          return (
-            <button
-              key={`${th._key}-${i}`}
-              onClick={() => onTrigger(th.linkedLayer)}
-              className="text-moto-indigo font-medium underline underline-offset-4 decoration-moto-indigo/40 hover:decoration-moto-indigo transition-colors mx-1"
-            >
-              {part}
-            </button>
-          );
-        }
-        return part;
-      });
-    });
-  });
-
-  return (
-    <p className={`${tc.body} text-base font-light leading-relaxed whitespace-pre-wrap`}>
-      {elements.map((el, i) => <span key={i}>{el}</span>)}
-    </p>
-  );
-}
 
 export default function DeckViewer({
   module,
@@ -173,7 +138,6 @@ export default function DeckViewer({
   const currentLesson = lessons[currentLessonIndex];
   const lessonKey = currentLesson?._key ?? "";
   const hotspots = currentLesson?.hotspots ?? [];
-  const textHotspots = currentLesson?.textHotspots ?? [];
   const layers = currentLesson?.layers ?? [];
   
   // A lesson is locked until all hotspots AND all layers are visited
@@ -189,8 +153,29 @@ export default function DeckViewer({
   const totalHotspots = lessons.reduce((sum, s) => sum + (s.hotspots?.length ?? 0), 0);
 
   function markVisited(label: string) {
-    baseMarkVisited(lessonKey, label, hotspots.length);
+    baseMarkVisited(lessonKey, label, hotspots.length + layers.length);
   }
+
+  const portableTextComponents = {
+    marks: {
+      layerLink: ({ children, value }: any) => {
+        return (
+          <button
+            onClick={() => {
+              const layer = layers.find(l => l.headline === value?.linkedLayer);
+              if (layer) {
+                baseMarkVisited(lessonKey, layer._key, hotspots.length + layers.length);
+                setActiveLayerId(layer._key);
+              }
+            }}
+            className="text-moto-indigo font-medium underline underline-offset-4 decoration-moto-indigo/40 hover:decoration-moto-indigo transition-colors mx-1"
+          >
+            {children}
+          </button>
+        );
+      }
+    }
+  };
 
   // ── Transition helper ──────────────────────────────────────────────────────
   function transitionTo(action: () => void, dir: "forward" | "backward") {
@@ -452,13 +437,11 @@ export default function DeckViewer({
         ) : (
           <div className={`absolute inset-0 ${tc.bg} flex flex-col items-start justify-center p-[6%] overflow-auto gap-4`}>
             <h2 className={`${tc.headline} text-2xl font-semibold leading-tight`}>{currentLesson?.headline}</h2>
-            {currentLesson?.body && renderBodyWithTextHotspots(currentLesson.body, textHotspots, tc, (linkedLayerHeadline) => {
-              const layer = layers.find(l => l.headline === linkedLayerHeadline);
-              if (layer) {
-                baseMarkVisited(lessonKey, layer._key, hotspots.length + layers.length);
-                setActiveLayerId(layer._key);
-              }
-            })}
+            {currentLesson?.body && (
+              <div className={`prose prose-invert max-w-none ${tc.body} text-base font-light leading-relaxed whitespace-pre-wrap`}>
+                {typeof currentLesson.body === 'string' ? currentLesson.body : <PortableText value={currentLesson.body} components={portableTextComponents} />}
+              </div>
+            )}
           </div>
         )}
         
@@ -569,7 +552,7 @@ export default function DeckViewer({
               )}
               {layer.body && (
                 <div className="prose prose-invert max-w-none text-moto-frost/80 whitespace-pre-wrap leading-relaxed">
-                  {layer.body}
+                  {typeof layer.body === 'string' ? layer.body : <PortableText value={layer.body} />}
                 </div>
               )}
               
@@ -591,7 +574,9 @@ export default function DeckViewer({
                     {layer.hotspots.map((h, i) => (
                       <div key={i} className="bg-white/5 rounded-2xl p-5 border border-white/10">
                         <h4 className="font-semibold text-moto-frost text-lg mb-2">{h.label}</h4>
-                        <p className="text-moto-frost/70 text-sm leading-relaxed">{h.body}</p>
+                        <div className="text-moto-frost/70 text-sm leading-relaxed prose prose-invert">
+                          {typeof h.body === 'string' ? h.body : <PortableText value={h.body} />}
+                        </div>
                       </div>
                     ))}
                   </div>

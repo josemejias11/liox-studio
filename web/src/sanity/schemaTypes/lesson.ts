@@ -15,8 +15,30 @@ export const lessonType = defineType({
     defineField({
       name: "body",
       title: "Body Copy",
-      type: "text",
-      rows: 4,
+      type: "array",
+      of: [
+        {
+          type: "block",
+          marks: {
+            annotations: [
+              {
+                name: "layerLink",
+                type: "object",
+                title: "Layer Link",
+                fields: [
+                  {
+                    name: "linkedLayer",
+                    type: "string",
+                    title: "Linked Layer Headline",
+                    description: "The headline of the layer to open.",
+                    validation: (r) => r.required()
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
     }),
     defineField({
       name: "media",
@@ -123,12 +145,11 @@ export const lessonType = defineType({
               type: "string" 
             }),
             defineField({
-              name: "body",
-              title: "Panel Body",
-              description: "Content shown in the discovery panel when this hotspot is opened.",
-              type: "text",
-              rows: 5,
-            }),
+      name: "body",
+      title: "Panel Body",
+      type: "array",
+      of: [{ type: "block" }]
+    }),
             defineField({
               name: "photos",
               title: "Photo Gallery",
@@ -144,33 +165,6 @@ export const lessonType = defineType({
           },
         },
       ],
-    }),
-    defineField({
-      name: "textHotspots",
-      title: "Text Interactions",
-      description: "Words or phrases in the Body Copy that should act as clickable links to open Deep Dive Layers.",
-      type: "array",
-      of: [
-        {
-          type: "object",
-          fields: [
-            defineField({ 
-              name: "triggerWord", 
-              title: "Word or Phrase", 
-              description: "Exact text snippet to make interactive (e.g., 'telephoto lenses').",
-              type: "string", 
-              validation: (r) => r.required() 
-            }),
-            defineField({ 
-              name: "linkedLayer", 
-              title: "Linked Layer Headline", 
-              description: "The headline of the layer to open when this text is tapped.",
-              type: "string", 
-              validation: (r) => r.required() 
-            }),
-          ]
-        }
-      ]
     }),
     defineField({
       name: "layers",

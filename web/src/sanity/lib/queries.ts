@@ -48,11 +48,6 @@ export const MODULE_BY_SLUG_QUERY = groq`
           x,
           y,
         },
-        textHotspots[] {
-          _key,
-          triggerWord,
-          linkedLayer
-        },
         videoUrl,
         videoFile { asset->{ url } },
         stageBackground { asset->{ url } },
@@ -112,11 +107,6 @@ export const FIRST_MODULE_QUERY = groq`
           photos[] { asset->{ url } },
           x,
           y,
-        },
-        textHotspots[] {
-          _key,
-          triggerWord,
-          linkedLayer
         },
         videoUrl,
         videoFile { asset->{ url } },
