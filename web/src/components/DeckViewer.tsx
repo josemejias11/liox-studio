@@ -552,15 +552,38 @@ export default function DeckViewer({
               parentLessonTitle={currentLesson.headline}
               layerTitle={layer.headline}
             >
-              {layer.media?.asset?.url && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={layer.media.asset.url} alt={layer.headline} className="w-full rounded-2xl mb-6 object-cover max-h-[40vh]" />
-              )}
-              {layer.photos && layer.photos.length > 0 && (
-                <FullWidthCarousel photos={layer.photos} />
-              )}
-              {layer.body && (
-                <div className="prose prose-invert max-w-none text-foreground/80 whitespace-pre-wrap leading-relaxed">
+              {/* Layer Media with Text Overlay */}
+              {(layer.media?.asset?.url || (layer.photos && layer.photos.length > 0)) ? (
+                <div className="relative mb-6">
+                  {layer.media?.asset?.url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={layer.media.asset.url} alt={layer.headline} className="w-full rounded-2xl object-cover max-h-[60vh] shadow-2xl ring-1 ring-white/10" />
+                  ) : layer.photos ? (
+                    <FullWidthCarousel photos={layer.photos} className="!mb-0" />
+                  ) : null}
+
+                  {/* Text Overlay Box */}
+                  {layer.textOverlay && layer.body && (
+                    <div 
+                      className="absolute z-10 pointer-events-none flex flex-col p-4 md:p-0"
+                      style={{ 
+                        left: `${layer.textOverlay.x ?? 6}%`,
+                        top: `${layer.textOverlay.y ?? 15}%`,
+                      }}
+                    >
+                      <div className={`pointer-events-auto bg-card/60 backdrop-blur-2xl p-5 md:p-6 rounded-2xl border border-white/10 shadow-xl ${layer.textOverlay.width ?? 'max-w-xl'}`}>
+                        <div className="prose prose-invert max-w-none text-foreground/90 leading-relaxed text-sm md:text-base line-clamp-6 hover:line-clamp-none transition-all">
+                          {typeof layer.body === 'string' ? layer.body : <PortableText value={layer.body} />}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+
+              {/* Normal Body (if no text overlay configuration) */}
+              {(!layer.textOverlay || (!layer.media?.asset?.url && !(layer.photos && layer.photos.length > 0))) && layer.body && (
+                <div className="prose prose-invert max-w-none text-foreground/80 whitespace-pre-wrap leading-relaxed mb-6">
                   {typeof layer.body === 'string' ? layer.body : <PortableText value={layer.body} />}
                 </div>
               )}

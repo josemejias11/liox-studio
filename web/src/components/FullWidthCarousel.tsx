@@ -7,7 +7,7 @@ interface Photo {
   asset?: { url?: string };
 }
 
-export function FullWidthCarousel({ photos }: { photos: Photo[] }) {
+export function FullWidthCarousel({ photos, className = "" }: { photos: Photo[], className?: string }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -40,7 +40,7 @@ export function FullWidthCarousel({ photos }: { photos: Photo[] }) {
   }, []);
 
   return (
-    <div className="mb-6 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10 relative group/carousel bg-black/20">
+    <div className={`rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10 relative group/carousel bg-black/20 ${className}`}>
       <div 
         ref={scrollRef}
         className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth hide-scrollbar"

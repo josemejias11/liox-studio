@@ -1,5 +1,6 @@
 import { defineType, defineField } from "sanity";
 import { HotspotMapInput } from "../components/HotspotMapInput";
+import { TextOverlayMapInput } from "../components/TextOverlayMapInput";
 
 export const layerType = defineType({
   name: "layer",
@@ -30,6 +31,32 @@ export const layerType = defineType({
       description: "Optional image carousel to display in the layer.",
       type: "array",
       of: [{ type: "image", options: { hotspot: true } }],
+    }),
+    defineField({
+      name: "textOverlay",
+      title: "Text Overlay Config",
+      description: "Control the size and position of the frosted glass text card when an image or carousel is present.",
+      type: "object",
+      components: { input: TextOverlayMapInput },
+      hidden: ({ parent }) => !parent?.media && !(parent?.photos?.length > 0),
+      fields: [
+        defineField({ name: "x", title: "X Position (%)", description: "Left offset", type: "number", initialValue: 6, validation: r => r.min(0).max(100) }),
+        defineField({ name: "y", title: "Y Position (%)", description: "Top offset", type: "number", initialValue: 15, validation: r => r.min(0).max(100) }),
+        defineField({ 
+          name: "width", 
+          title: "Card Width", 
+          type: "string", 
+          options: { 
+            list: [
+              { title: "Small (max 384px)", value: "max-w-sm" },
+              { title: "Medium (max 576px)", value: "max-w-xl" },
+              { title: "Large (max 768px)", value: "max-w-3xl" },
+              { title: "Full Width", value: "w-[88vw] max-w-none" },
+            ]
+          },
+          initialValue: "max-w-xl"
+        })
+      ]
     }),
     defineField({
       name: "speakerNotes",
