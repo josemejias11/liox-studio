@@ -528,6 +528,7 @@ export default function DeckViewer({
           body={activeLayer?.body}
           x={activeLayer?.x}
           y={activeLayer?.y}
+          mode="popover"
         />
 
         {/* Layer Sub-content */}

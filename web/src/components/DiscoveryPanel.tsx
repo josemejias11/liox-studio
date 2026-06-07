@@ -18,10 +18,10 @@ interface DiscoveryPanelProps {
   onClose: () => void;
   label: string;
   topic?: string;
-  body?: string;
   photos?: Photo[];
   x?: number;
   y?: number;
+  mode?: "sidebar" | "popover";
 }
 
 const SUGGESTIONS = [
@@ -70,6 +70,7 @@ export function DiscoveryPanel({
   photos = [],
   x,
   y,
+  mode,
 }: DiscoveryPanelProps) {
   const hasLearnContent = !!(body || photos.length);
   const [tab, setTab] = useState<Tab>(hasLearnContent ? "learn" : "ask");
@@ -254,13 +255,17 @@ export function DiscoveryPanel({
       {(() => {
         const posX = x !== undefined ? x : lastPosRef.current?.x;
         const posY = y !== undefined ? y : lastPosRef.current?.y;
-        const isFloating = posX !== undefined && posY !== undefined;
-        let floatingStyle: React.CSSProperties = {};
-        let originClass = "";
         
-        if (isFloating) {
-          const isLeft = posX! < 50;
-          const isTop = posY! < 50;
+        // If mode is explicitly popover, always treat as floating (even if x/y are not fully resolved yet)
+        // If mode isn't set, guess based on whether we have coordinates.
+        const isFloating = mode === "popover" || (mode === undefined && posX !== undefined && posY !== undefined);
+        
+        let floatingStyle: React.CSSProperties = {};
+        let originClass = "origin-center";
+        
+        if (isFloating && posX !== undefined && posY !== undefined) {
+          const isLeft = posX < 50;
+          const isTop = posY < 50;
           
           if (isLeft) floatingStyle.left = `${posX! + 2}%`;
           else floatingStyle.right = `${100 - posX! + 2}%`;
@@ -272,6 +277,9 @@ export function DiscoveryPanel({
           else if (isLeft && !isTop) originClass = "origin-bottom-left";
           else if (!isLeft && isTop) originClass = "origin-top-right";
           else if (!isLeft && !isTop) originClass = "origin-bottom-right";
+        } else if (isFloating) {
+          // Fallback if we are in popover mode but x/y aren't known yet (prevents jumping from sidebar)
+          floatingStyle = { top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
         }
 
         const floatingClasses = `absolute w-[360px] max-h-[80vh] rounded-2xl flex flex-col
