@@ -443,7 +443,7 @@ export default function DeckViewer({
           const oWidth = currentLesson.textOverlay?.width ?? 'max-w-xl';
           return (
             <div 
-              className={`absolute pointer-events-none z-10 flex flex-col dark ${
+              className={`absolute pointer-events-none z-10 flex flex-col ${
                 imageUrl 
                   ? 'left-[6%] right-[6%] bottom-[12%] md:left-[var(--desktop-x)] md:right-auto md:top-[var(--desktop-y)] md:bottom-auto'
                   : ''
@@ -469,7 +469,7 @@ export default function DeckViewer({
         
         {/* Dig Deep Layers overlaid at the bottom */}
         {layers.length > 0 && (
-          <div className={`absolute dark ${imageUrl ? 'bottom-[12%] left-[6%] right-[6%] max-w-xl mx-auto' : 'bottom-12 left-[6%] w-[88%]'} space-y-3 z-10`}>
+          <div className={`absolute ${imageUrl ? 'bottom-[12%] left-[6%] right-[6%] max-w-xl mx-auto' : 'bottom-12 left-[6%] w-[88%]'} space-y-3 z-10`}>
             {layers.map(layer => {
               const isLayerVisited = visited[lessonKey]?.has(layer._key);
               return (

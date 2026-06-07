@@ -41,7 +41,7 @@ export function LayerFrame({
   return (
     <AnimatePresence>
       {open && (
-        <div className="absolute inset-0 z-50 overflow-hidden pointer-events-none flex flex-col justify-end dark">
+        <div className="absolute inset-0 z-50 overflow-hidden pointer-events-none flex flex-col justify-end">
           {/* Scrim */}
           <motion.div 
             initial={{ opacity: 0 }}

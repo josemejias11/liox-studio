@@ -52,24 +52,7 @@ export const layerType = defineType({
       },
       initialValue: "content",
     }),
-    defineField({
-      name: "theme",
-      title: "Layer Color Theme",
-      description: "Controls the layer background and text color pairing.",
-      type: "string",
-      options: {
-        list: [
-          { title: "Frost / Black (Cool — default)", value: "frost-black" },
-          { title: "Black / Frost (Dark Cool)", value: "black-frost" },
-          { title: "Pearl / Black (Warm)", value: "pearl-black" },
-          { title: "Black / Pearl (Dark Warm)", value: "black-pearl" },
-          { title: "Moto Indigo / Frost (Brand)", value: "indigo-frost" },
-        ],
-        layout: "radio",
-      },
-      initialValue: "frost-black",
-      hidden: ({ parent }) => parent?.layerType === "video",
-    }),
+
     defineField({
       name: "videoUrl",
       title: "Video URL",

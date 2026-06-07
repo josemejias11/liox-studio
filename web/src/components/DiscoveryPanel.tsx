@@ -235,7 +235,7 @@ export function DiscoveryPanel({
 
   return (
     <div
-      className={`absolute inset-0 z-30 transition-all duration-300 ease-out dark ${
+      className={`absolute inset-0 z-30 transition-all duration-300 ease-out ${
         open ? "pointer-events-auto" : "pointer-events-none"
       }`}
     >
