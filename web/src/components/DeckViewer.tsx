@@ -262,7 +262,7 @@ export default function DeckViewer({
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
         
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-8 z-10 pointer-events-none">
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-8 z-10 pointer-events-none dark">
           <h1 className="text-4xl md:text-6xl font-bold text-foreground text-center drop-shadow-2xl max-w-4xl tracking-tight">
             {finalHeadline}
           </h1>
