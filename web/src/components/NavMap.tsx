@@ -292,7 +292,6 @@ export function NavMap({
             const isCurrent = absoluteIndex === currentSectionIndex;
             const meta = SECTION_TYPE_META.quiz;
             const Icon = meta.icon;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const title = (quizSection as any).title ?? "Knowledge Check";
 
             return (
@@ -332,7 +331,6 @@ export function NavMap({
             const isCurrent = absoluteIndex === currentSectionIndex;
             const meta = SECTION_TYPE_META.disclaimer;
             const Icon = meta.icon;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const title = (disclaimerSection as any).title ?? "Disclaimer";
 
             return (

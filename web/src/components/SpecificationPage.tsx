@@ -49,6 +49,7 @@ export function SpecificationPage({
         {/* Hero image — full-bleed within the content area */}
         {heroUrl && (
           <div className="w-full aspect-[4/3] overflow-hidden shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={heroUrl}
               alt={spec.title}

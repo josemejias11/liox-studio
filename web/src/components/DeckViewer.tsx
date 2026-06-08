@@ -30,7 +30,6 @@ import { ChapterIntro } from "./ChapterIntro";
 export interface SanityLayerContent {
   _key: string;
   headline: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   body?: any;
   layerType: "content" | "interaction" | "video" | "quiz";
   media?: { asset?: { url?: string } };
@@ -49,7 +48,6 @@ export interface SanityHotspot {
   y: number;
   contentMode?: "tooltip" | "layer";
   layerContent?: SanityLayerContent;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   body?: any;
   photos?: { asset?: { url?: string } }[];
 }
@@ -57,7 +55,6 @@ export interface SanityHotspot {
 export interface SanityLesson {
   _key: string;
   headline: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   body?: any;
   lessonType: "content" | "interaction" | "stage" | "video" | "quiz";
   media?: { asset?: { url?: string } };
@@ -140,8 +137,8 @@ const getSemanticWidthClass = (width?: string) => {
 export default function DeckViewer({
   course,
   sections,
-  course_title,
-  course_description,
+  course_title: _course_title,
+  course_description: _course_description,
 }: {
   course: SanityCourse;
   sections: CourseSection[];
@@ -186,30 +183,29 @@ export default function DeckViewer({
   const [activeLayer, setActiveLayer] = useState<{
     topic: string;
     title: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     body?: any;
     x?: number;
     y?: number;
     photos?: { asset?: { url?: string; originalFilename?: string } }[];
   } | null>(null);
   const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
-  const lastLayerIdRef = useRef<string | null>(null);
-  if (activeLayerId && activeLayerId !== lastLayerIdRef.current) {
-    lastLayerIdRef.current = activeLayerId;
-  }
+  const [lastLayerId, setLastLayerId] = useState<string | null>(null);
 
   // ── Session ───────────────────────────────────────────────────────────────
-  const [sessionId, setSessionId] = useState("");
+  const [sessionId] = useState<string>(() => {
+    const existing = localStorage.getItem("decktutor_session");
+    if (existing) return existing;
+    const sid = crypto.randomUUID();
+    localStorage.setItem("decktutor_session", sid);
+    return sid;
+  });
   const { visited, markVisited: baseMarkVisited } = useLessonProgress(sessionId);
 
-  useEffect(() => {
-    let sid = localStorage.getItem("decktutor_session");
-    if (!sid) {
-      sid = crypto.randomUUID();
-      localStorage.setItem("decktutor_session", sid);
-    }
-    setSessionId(sid);
-  }, []);
+  // Opens a layer and snapshots its ID so LayerFrame can animate out gracefully
+  function openLayer(id: string) {
+    setLastLayerId(id);
+    setActiveLayerId(id);
+  }
 
   // ── Current lesson (only relevant in chapter phase) ───────────────────────
   const currentLesson: LessonSection | undefined = (() => {
@@ -221,20 +217,17 @@ export default function DeckViewer({
 
   const lessonKey = currentLesson?._key ?? "";
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const safeString = (val: any): string =>
     typeof val === "string"
       ? val
       : Array.isArray(val)
       ? val
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .map((b: any) => b.children?.map((c: any) => c.text).join(""))
           .join("")
       : String(val || "");
 
   const safeHeadline = currentLesson ? safeString(currentLesson.headline) : "";
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const hotspots = (currentLesson?.hotspots ?? []).map((h: any) => ({
     ...h,
     label: safeString(h.label),
@@ -262,18 +255,15 @@ export default function DeckViewer({
   // ── PortableText components ───────────────────────────────────────────────
   const portableTextComponents = {
     marks: {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       layerLink: ({ children, value }: any) => (
         <button
           onClick={() => {
             const hotspot = hotspots.find(
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (h: any) => h.label === value?.linkedLayer && h.contentMode === "layer"
             );
             if (hotspot) {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               baseMarkVisited(lessonKey, hotspot.label, hotspots.length);
-              setActiveLayerId(hotspot._key);
+              openLayer(hotspot._key);
             }
           }}
           className="text-accent font-medium underline underline-offset-4 decoration-accent/40 hover:decoration-accent transition-colors mx-1"
@@ -594,8 +584,7 @@ export default function DeckViewer({
   ) : null;
 
   // ── Shared LayerFrame (hotspot layer panel) ────────────────────────────────
-  const targetId = activeLayerId || lastLayerIdRef.current;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const targetId = activeLayerId ?? lastLayerId;
   const activeHotspot = targetId ? hotspots.find((h: any) => h._key === targetId) : null;
   const layerContent = activeHotspot?.layerContent;
 
@@ -688,7 +677,6 @@ export default function DeckViewer({
                   Interactive Features
                 </h3>
                 <div className="space-y-4">
-                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   {layerContent.hotspots.map((h: any, idx: number) => (
                     <div key={idx} className="bg-white/5 rounded-2xl p-5 border border-white/10">
                       <h4 className="font-semibold text-foreground text-lg mb-2">{h.label}</h4>
@@ -947,7 +935,6 @@ export default function DeckViewer({
               headline={safeHeadline}
               productImage={currentLesson.media?.asset?.url}
               stageBackground={currentLesson.stageBackground?.asset?.url}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               enableCompletionAnimation={(currentLesson as any).enableCompletionAnimation}
               completionTransition={currentLesson.completionTransition}
               hotspots={hotspots}
@@ -955,9 +942,8 @@ export default function DeckViewer({
               onVisit={markVisited}
               onNext={goNext}
               onOpenLayer={(id: string) => {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 baseMarkVisited(lessonKey, hotspots.find((h: any) => h._key === id)?.label || "", hotspots.length);
-                setActiveLayerId(id);
+                openLayer(id);
               }}
             />
           </motion.div>
@@ -1129,7 +1115,6 @@ export default function DeckViewer({
 
           {/* Hotspots */}
           {hotspots.map(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (h: any, i: number) => {
               let Icon = null;
               if (h.contentMode === "layer" && h.layerContent) {
@@ -1156,7 +1141,7 @@ export default function DeckViewer({
                   onOpen={() => {
                     if (h.contentMode === "layer" && h.layerContent) {
                       baseMarkVisited(lessonKey, h.label, hotspots.length);
-                      setActiveLayerId(h._key);
+                      openLayer(h._key);
                       return;
                     }
                     setActiveLayer({
