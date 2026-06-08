@@ -65,7 +65,36 @@ export const moduleType = defineType({
       description: "Tech spec sheets shown after all chapters complete. Course-level — not per chapter.",
       type: "array",
       group: "content",
-      of: [{ type: "reference", to: [{ type: "specification" }] }],
+      of: [
+        {
+          type: "reference",
+          to: [{ type: "specification" }],
+          validation: (r) =>
+            r.custom(async (ref, context) => {
+              const typedRef = ref as { _ref?: string } | undefined;
+              if (!typedRef?._ref) return true;
+
+              const currentDocId = context.document?._id?.replace(
+                /^drafts\./,
+                ""
+              );
+
+              const client = context.getClient({ apiVersion: "2024-01-01" });
+              const count = await client.fetch<number>(
+                `count(*[
+                  _type == "module" &&
+                  _id != $currentDocId &&
+                  $specRef in specifications[]._ref
+                ])`,
+                { currentDocId, specRef: typedRef._ref }
+              );
+
+              return count > 0
+                ? "This specification is already assigned to another course."
+                : true;
+            }),
+        },
+      ],
     }),
     defineField({
       name: "quiz",
@@ -74,6 +103,30 @@ export const moduleType = defineType({
       type: "reference",
       group: "content",
       to: [{ type: "quiz" }],
+      validation: (r) =>
+        r.custom(async (ref, context) => {
+          const typedRef = ref as { _ref?: string } | undefined;
+          if (!typedRef?._ref) return true;
+
+          const currentDocId = context.document?._id?.replace(
+            /^drafts\./,
+            ""
+          );
+
+          const client = context.getClient({ apiVersion: "2024-01-01" });
+          const count = await client.fetch<number>(
+            `count(*[
+              _type == "module" &&
+              _id != $currentDocId &&
+              quiz._ref == $quizRef
+            ])`,
+            { currentDocId, quizRef: typedRef._ref }
+          );
+
+          return count > 0
+            ? "This quiz is already assigned to another course."
+            : true;
+        }),
     }),
     defineField({
       name: "disclaimer",
@@ -82,6 +135,30 @@ export const moduleType = defineType({
       type: "reference",
       group: "content",
       to: [{ type: "disclaimer" }],
+      validation: (r) =>
+        r.custom(async (ref, context) => {
+          const typedRef = ref as { _ref?: string } | undefined;
+          if (!typedRef?._ref) return true;
+
+          const currentDocId = context.document?._id?.replace(
+            /^drafts\./,
+            ""
+          );
+
+          const client = context.getClient({ apiVersion: "2024-01-01" });
+          const count = await client.fetch<number>(
+            `count(*[
+              _type == "module" &&
+              _id != $currentDocId &&
+              disclaimer._ref == $disclaimerRef
+            ])`,
+            { currentDocId, disclaimerRef: typedRef._ref }
+          );
+
+          return count > 0
+            ? "This disclaimer is already assigned to another course."
+            : true;
+        }),
     }),
     defineField({
       name: "coverImage",

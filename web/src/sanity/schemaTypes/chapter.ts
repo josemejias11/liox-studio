@@ -45,7 +45,36 @@ export const chapterType = defineType({
       description: "Interactive learning slides for this chapter.",
       type: "array",
       group: "lessons",
-      of: [{ type: "reference", to: [{ type: "lesson" }] }],
+      of: [
+        {
+          type: "reference",
+          to: [{ type: "lesson" }],
+          validation: (r) =>
+            r.custom(async (ref, context) => {
+              const typedRef = ref as { _ref?: string } | undefined;
+              if (!typedRef?._ref) return true;
+
+              const currentDocId = context.document?._id?.replace(
+                /^drafts\./,
+                ""
+              );
+
+              const client = context.getClient({ apiVersion: "2024-01-01" });
+              const count = await client.fetch<number>(
+                `count(*[
+                  _type == "chapter" &&
+                  _id != $currentDocId &&
+                  $lessonRef in lessons[]._ref
+                ])`,
+                { currentDocId, lessonRef: typedRef._ref }
+              );
+
+              return count > 0
+                ? "This lesson is already assigned to another chapter."
+                : true;
+            }),
+        },
+      ],
     }),
 
   ],
