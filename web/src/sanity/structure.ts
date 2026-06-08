@@ -38,6 +38,7 @@ export function structure(S: StructureBuilder) {
                     .child(
                       S.documentList()
                         .title("Chapters")
+                        .apiVersion("2024-01-01")
                         .filter(
                           '_type == "chapter" && _id in *[_type == "course" && _id == $courseId][0].chapters[]._ref'
                         )
@@ -61,6 +62,7 @@ export function structure(S: StructureBuilder) {
                                 .child(
                                   S.documentList()
                                     .title("Lessons")
+                                    .apiVersion("2024-01-01")
                                     .filter(
                                       '_type == "lesson" && _id in *[_type == "chapter" && _id == $chapterId][0].lessons[]._ref'
                                     )
@@ -79,6 +81,7 @@ export function structure(S: StructureBuilder) {
                     .child(
                       S.documentList()
                         .title("Quiz")
+                        .apiVersion("2024-01-01")
                         .filter(
                           '_type == "quiz" && _id == *[_type == "course" && _id == $courseId][0].quiz._ref'
                         )
@@ -92,6 +95,7 @@ export function structure(S: StructureBuilder) {
                     .child(
                       S.documentList()
                         .title("Specifications")
+                        .apiVersion("2024-01-01")
                         .filter(
                           '_type == "specification" && _id in *[_type == "course" && _id == $courseId][0].specifications[]._ref'
                         )
@@ -105,6 +109,7 @@ export function structure(S: StructureBuilder) {
                     .child(
                       S.documentList()
                         .title("Disclaimer")
+                        .apiVersion("2024-01-01")
                         .filter(
                           '_type == "disclaimer" && _id == *[_type == "course" && _id == $courseId][0].disclaimer._ref'
                         )
