@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
+import OpenAI from "openai";
 
-const API_KEY = process.env.GOOGLE_AI_STUDIO_API_KEY ?? "";
+const XAI_API_KEY = process.env.XAI_API_KEY ?? "";
 
 import { z } from "zod";
 
@@ -136,34 +137,41 @@ export async function POST(req: NextRequest) {
     msgHistory?.findLast((m) => m.role === "user")?.content ?? query ?? "";
 
   // Mock mode — no API key needed
-  if (!API_KEY) {
+  if (!XAI_API_KEY) {
     return new Response(mockStream(getMockResponse(lastQuery)), { headers });
   }
 
-  // Real mode — stream from Gemini
-  const { GoogleGenerativeAI } = await import("@google/generative-ai");
-  const genAI = new GoogleGenerativeAI(API_KEY);
-  const model = genAI.getGenerativeModel({
-    model: "gemini-2.0-flash",
-    systemInstruction: buildSystemPrompt(course_title, course_description, lesson_content),
+  // Real mode — stream from Grok via xAI's OpenAI-compatible API
+  const client = new OpenAI({
+    baseURL: "https://api.x.ai/v1",
+    apiKey: XAI_API_KEY,
   });
 
-  // Google uses "model" for assistant role, "user" for user role
-  const history = (msgHistory ?? []).slice(0, -1).map((m) => ({
-    role: m.role === "assistant" ? "model" : "user",
-    parts: [{ text: m.content }],
-  }));
-
+  const systemPrompt = buildSystemPrompt(course_title, course_description, lesson_content);
   const lastMessage = msgHistory?.at(-1)?.content ?? query ?? "";
 
-  const chat = model.startChat({ history });
-  const result = await chat.sendMessageStream(lastMessage);
+  // OpenAI/xAI use "user" / "assistant" natively — pass roles through as-is.
+  // Drop the last message from history since it is sent as the user turn below.
+  const history: OpenAI.Chat.ChatCompletionMessageParam[] = (msgHistory ?? [])
+    .slice(0, -1)
+    .map((m) => ({ role: m.role, content: m.content }));
+
+  const grokStream = await client.chat.completions.create({
+    model: "grok-3-mini",
+    max_tokens: 300,
+    stream: true,
+    messages: [
+      { role: "system", content: systemPrompt },
+      ...history,
+      { role: "user", content: lastMessage },
+    ],
+  });
 
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        for await (const chunk of result.stream) {
-          const text = chunk.text();
+        for await (const chunk of grokStream) {
+          const text = chunk.choices[0]?.delta?.content ?? "";
           if (text) {
             controller.enqueue(`data: ${JSON.stringify({ text })}\n\n`);
           }

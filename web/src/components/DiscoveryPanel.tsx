@@ -26,9 +26,9 @@ interface DiscoveryPanelProps {
 }
 
 const SUGGESTIONS = [
-  "How do I pitch this to a customer?",
-  "What makes this stand out from competitors?",
-  "Give me a quick 30-second demo tip.",
+  "How would I demo this to a customer?",
+  "What problem does this solve?",
+  "How does this compare to competitors?",
 ];
 
 // Lightweight markdown: **bold**, bullet lines, line breaks — no external library
