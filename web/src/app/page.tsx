@@ -43,7 +43,7 @@ export default async function Home() {
 
       <main className="flex-1 container mx-auto px-6 py-12 md:py-16">
         <div className="max-w-2xl mb-12 space-y-3">
-          <h1 className="text-4xl font-semibold tracking-tight text-foreground">Explore Courses</h1>
+          <h1 className="text-4xl font-semibold text-foreground">Explore Courses</h1>
           <p className="text-lg text-muted-foreground font-light">
             Select a module to begin your learning journey.
           </p>

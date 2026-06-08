@@ -11,7 +11,7 @@ export function FullWidthCarousel({ photos, className = "" }: { photos: Photo[],
   const scrollRef = useRef<HTMLDivElement>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const validPhotos = photos.filter((p) => p.asset?.url);
+  const validPhotos = (photos || []).filter((p) => p.asset?.url);
 
   function scroll(dir: "left" | "right") {
     if (!scrollRef.current) return;
@@ -47,17 +47,31 @@ export function FullWidthCarousel({ photos, className = "" }: { photos: Photo[],
         className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth hide-scrollbar"
         style={{ scrollbarWidth: 'none' }}
       >
-        {validPhotos.map((p, i) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img 
-            key={i} 
-            src={p.asset!.url!} 
-            alt={`Gallery image ${i + 1}`} 
-            className="w-full h-auto object-cover snap-center shrink-0" 
-            style={{ maxHeight: '50vh' }} 
-            draggable={false}
-          />
-        ))}
+        {validPhotos.map((p, i) => {
+          const filename = (p.asset as any)?.originalFilename;
+          let title = "";
+          if (filename) {
+            title = filename.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+            title = title.charAt(0).toUpperCase() + title.slice(1);
+          }
+          return (
+            <div key={i} className="relative w-full shrink-0 snap-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img 
+                src={p.asset!.url!} 
+                alt={title || `Gallery image ${i + 1}`} 
+                className="w-full h-auto object-cover" 
+                style={{ maxHeight: '50vh' }} 
+                draggable={false}
+              />
+              {title && (
+                <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+                  <p className="text-white text-sm md:text-base font-medium drop-shadow-md text-center">{title}</p>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
       
       {validPhotos.length > 1 && (

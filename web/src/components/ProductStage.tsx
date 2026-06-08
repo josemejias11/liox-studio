@@ -14,28 +14,33 @@ interface StageHotspot {
   photos?: { asset?: { url?: string } }[];
   x: number;
   y: number;
+  contentMode?: "tooltip" | "layer";
 }
 
 interface ProductStageProps {
   headline: string;
   productImage?: string;
   stageBackground?: string;
+  enableCompletionAnimation?: boolean;
   completionTransition?: "spin" | "rise" | "fade";
   hotspots: StageHotspot[];
   visited: Set<string>;
   onVisit: (label: string) => void;
   onNext: () => void;
+  onOpenLayer?: (id: string) => void;
 }
 
 export function ProductStage({
   headline,
   productImage,
   stageBackground,
+  enableCompletionAnimation = false,
   completionTransition = "spin",
   hotspots,
   visited,
   onVisit,
   onNext,
+  onOpenLayer,
 }: ProductStageProps) {
   const [activePanel, setActivePanel] = useState<{
     label: string;
@@ -57,14 +62,15 @@ export function ProductStage({
   const [focusedHotspotIndex, setFocusedHotspotIndex] = useState<number | null>(null);
 
   // Ref bundle for event handlers to avoid stale closures
-  const stateRef = useRef({ activePanel, focusedHotspotIndex, hotspots, visited, onVisit });
+  const stateRef = useRef({ activePanel, focusedHotspotIndex, hotspots, visited, onVisit, onOpenLayer });
   useEffect(() => {
-    stateRef.current = { activePanel, focusedHotspotIndex, hotspots, visited, onVisit };
+    stateRef.current = { activePanel, focusedHotspotIndex, hotspots, visited, onVisit, onOpenLayer };
   });
 
   const discoveredCount = visited.size;
   const total = hotspots.length;
   const allDiscovered = total > 0 && discoveredCount >= total;
+  const shouldAnimateCompletion = allDiscovered && enableCompletionAnimation;
 
   const radius = 18;
   const circumference = 2 * Math.PI * radius;
@@ -80,14 +86,14 @@ export function ProductStage({
   // ── Completion burst ───────────────────────────────────────────────────────
 
   useEffect(() => {
-    if (allDiscovered && !prevAllDiscovered.current) {
+    if (shouldAnimateCompletion && !prevAllDiscovered.current) {
       setShowBurst(true);
       const t = setTimeout(() => setShowBurst(false), 1800);
       prevAllDiscovered.current = true;
       return () => clearTimeout(t);
     }
-    if (!allDiscovered) prevAllDiscovered.current = false;
-  }, [allDiscovered]);
+    if (!shouldAnimateCompletion) prevAllDiscovered.current = false;
+  }, [shouldAnimateCompletion]);
 
   // ── Phase 7: Keyboard navigation ──────────────────────────────────────────
 
@@ -96,7 +102,7 @@ export function ProductStage({
       // Never intercept while focus is inside a text field
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
-      const { activePanel: ap, focusedHotspotIndex: fi, hotspots: hs, visited: vs, onVisit: ov } =
+      const { activePanel: ap, focusedHotspotIndex: fi, hotspots: hs, visited: vs, onVisit: ov, onOpenLayer: ool } =
         stateRef.current;
 
       if (e.key === "Escape") {
@@ -120,7 +126,11 @@ export function ProductStage({
           const h = hs[fi];
           if (!h) return;
           if (!vs.has(h.label)) ov(h.label);
-          setActivePanel({ label: h.label, topic: h.topic, body: h.body, photos: h.photos });
+          if (h.contentMode === "layer") {
+            ool?.(h._key);
+          } else {
+            setActivePanel({ label: h.label, topic: h.topic, body: h.body, photos: h.photos });
+          }
         }
       }
     }
@@ -131,6 +141,7 @@ export function ProductStage({
 
   // Clear keyboard focus when panel opens (so re-focus cycles cleanly on close)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (activePanel) setFocusedHotspotIndex(null);
   }, [activePanel]);
 
@@ -214,7 +225,7 @@ export function ProductStage({
         <div
           className={`absolute top-0 left-0 bottom-0 flex items-center justify-center stage-enter-product
             transition-[right,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]
-            ${allDiscovered && completionTransition === "fade" ? "opacity-80" : ""}
+            ${shouldAnimateCompletion && completionTransition === "fade" ? "opacity-80" : ""}
           `}
           style={{ right: activePanel ? "42%" : "0%" }}
         >
@@ -233,8 +244,10 @@ export function ProductStage({
             {/* Breathe / spin layer */}
             <div
               className={
-                allDiscovered && completionTransition === "spin"
+                shouldAnimateCompletion && completionTransition === "spin"
                   ? "stage-spin-anim"
+                  : shouldAnimateCompletion && completionTransition === "rise"
+                  ? "stage-rise-anim"
                   : "stage-product-breathe"
               }
             >

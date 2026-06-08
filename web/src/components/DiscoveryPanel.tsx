@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { X, Bot, Send, BookOpen, Sparkles } from "lucide-react";
 import { PhotoCardStack } from "./PhotoCardStack";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import { PortableText } from "@portabletext/react";
 
 type Tab = "learn" | "ask";
 type Message = { role: "assistant" | "user"; text: string; streaming?: boolean };
@@ -18,7 +19,8 @@ interface DiscoveryPanelProps {
   onClose: () => void;
   label: string;
   topic?: string;
-  body?: string;
+   
+  body?: any;
   photos?: Photo[];
   x?: number;
   y?: number;
@@ -73,7 +75,7 @@ export function DiscoveryPanel({
   y,
   mode,
 }: DiscoveryPanelProps) {
-  const hasLearnContent = !!(body || photos.length);
+  const hasLearnContent = !!(body || (photos?.length ?? 0) > 0);
   const [tab, setTab] = useState<Tab>(hasLearnContent ? "learn" : "ask");
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -95,22 +97,31 @@ export function DiscoveryPanel({
     if (open) {
       if (x !== undefined && y !== undefined) lastPosRef.current = { x, y };
       else lastPosRef.current = null;
+      
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTab(hasLearnContent ? "learn" : "ask");
+      setLiveAnnouncement(`Opened ${label}. ${hasLearnContent ? "Learn content available." : ""}`);
+    } else {
+      setLiveAnnouncement(`Closed ${label}.`);
     }
-  }, [open, x, y]);
+     
+  }, [open, label, hasLearnContent, x, y]);
 
   useFocusTrap(panelRef, open);
 
   // Reset all state when a new hotspot opens
   useEffect(() => {
     if (open) {
-      setTab(hasLearnContent ? "learn" : "ask");
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMessages([]);
+       
       setInput("");
+       
       setShowSuggestions(false);
       conversationRef.current = [];
       firstResponseRef.current = false;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [open, label]);
 
   // Auto-fire AI summary when switching to Ask tab with no messages yet
@@ -154,6 +165,15 @@ export function DiscoveryPanel({
     setMessages((prev) => [...prev, { role: "assistant", text: "", streaming: true }]);
 
     let fullResponse = "";
+    
+    // Extract plain text from PortableText array for the AI
+    const plainTextBody = typeof body === "string" 
+      ? body 
+      : Array.isArray(body) 
+         
+        ? body.map((b: any) => b.children?.map((c: any) => c.text).join("") || "").join("\n") 
+        : "";
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -161,7 +181,7 @@ export function DiscoveryPanel({
         body: JSON.stringify({
           messages: conversationRef.current,
           context_hint: topic,
-          lesson_content: body,
+          lesson_content: plainTextBody,
         }),
         signal: abortRef.current.signal,
       });
@@ -283,8 +303,8 @@ export function DiscoveryPanel({
           floatingStyle = { top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
         }
 
-        const floatingClasses = `absolute w-[360px] max-h-[80vh] rounded-2xl flex flex-col
-          bg-background/96 backdrop-blur-2xl border border-border/10
+        const floatingClasses = `absolute w-[400px] md:w-[460px] max-h-[85vh] rounded-3xl flex flex-col
+          bg-background/96 backdrop-blur-3xl border border-border/10
           shadow-2xl transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${originClass}
           ${open ? "opacity-100 scale-100" : "opacity-0 scale-[0.3] pointer-events-none"}`;
 
@@ -310,7 +330,7 @@ export function DiscoveryPanel({
         {/* ── Header ── */}
         <div className="shrink-0 px-4 pt-4 pb-3 border-b border-border/8">
           <div className="flex items-center justify-between mb-2">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide bg-accent/20 text-foreground border border-accent/30">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-accent/20 text-foreground border border-accent/30">
               {label}
             </span>
             <button
@@ -325,7 +345,7 @@ export function DiscoveryPanel({
           <div className="flex gap-1 bg-background/5 p-0.5 rounded-lg">
             <button
               onClick={() => setTab("learn")}
-              className={`flex-1 flex items-center justify-center gap-1.5 text-[11px] font-semibold py-1.5 rounded-md transition-all duration-150
+              className={`flex-1 flex items-center justify-center gap-1.5 text-[12.5px] font-semibold py-1.5 rounded-md transition-all duration-150
                 ${tab === "learn" ? "bg-background/12 text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
             >
               <BookOpen className="h-3 w-3" />
@@ -333,7 +353,7 @@ export function DiscoveryPanel({
             </button>
             <button
               onClick={() => setTab("ask")}
-              className={`flex-1 flex items-center justify-center gap-1.5 text-[11px] font-semibold py-1.5 rounded-md transition-all duration-150
+              className={`flex-1 flex items-center justify-center gap-1.5 text-[12.5px] font-semibold py-1.5 rounded-md transition-all duration-150
                 ${tab === "ask" ? "bg-background/12 text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
             >
               <Sparkles className="h-3 w-3" />
@@ -348,11 +368,13 @@ export function DiscoveryPanel({
             className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4 scrollbar-none"
             style={{ scrollbarWidth: "none" }}
           >
-            {photos.length > 0 && <PhotoCardStack photos={photos} />}
+            {(photos?.length ?? 0) > 0 && <PhotoCardStack photos={photos} />}
             {body ? (
-              <p className="text-foreground text-[12px] leading-relaxed">{body}</p>
+              <div className="text-foreground text-[13.5px] leading-relaxed prose prose-base prose-invert max-w-none">
+                {typeof body === "string" ? body : <PortableText value={body} />}
+              </div>
             ) : (
-              !photos.length && (
+              !(photos?.length ?? 0) && (
                 <p className="text-muted-foreground text-[11px] italic text-center mt-6">
                   No content yet. Switch to Ask AI to learn about this feature.
                 </p>
