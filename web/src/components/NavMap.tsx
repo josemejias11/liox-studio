@@ -168,14 +168,12 @@ export function NavMap({
           style={{ scrollbarWidth: "none" }}
         >
           {/* ── Chapter groups ── */}
-          {chapterGroups.map((group, groupIdx) => (
+          {chapterGroups.map((group) => (
             <div key={group.chapterIndex}>
               {/* Chapter label — non-interactive header row */}
               <div className="px-3 pt-3 pb-1">
                 <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-foreground/30 truncate">
-                  {chapterGroups.length > 1
-                    ? `Chapter ${groupIdx + 1}: ${group.chapterTitle}`
-                    : group.chapterTitle}
+                  {group.chapterTitle}
                 </p>
               </div>
 

@@ -37,8 +37,8 @@ const itemVariants: Variants = {
 
 export function ChapterIntro({
   chapterTitle,
-  chapterNumber,
-  totalChapters,
+  chapterNumber: _chapterNumber,
+  totalChapters: _totalChapters,
   onContinue,
 }: ChapterIntroProps) {
   // Auto-advance after 4 seconds — users can also tap "Begin" immediately.
@@ -82,12 +82,12 @@ export function ChapterIntro({
         initial="hidden"
         animate="visible"
       >
-        {/* Chapter counter eyebrow */}
+        {/* Course eyebrow */}
         <motion.p
           variants={itemVariants}
           className="text-[10px] font-bold uppercase tracking-[0.26em] text-primary-foreground/40"
         >
-          Chapter {chapterNumber}&thinsp;of&thinsp;{totalChapters}
+          Course
         </motion.p>
 
         {/* Chapter title */}
