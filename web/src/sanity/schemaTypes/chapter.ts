@@ -1,5 +1,6 @@
 import { defineType, defineField } from "sanity";
 import { BookOpen } from "lucide-react";
+import { OrderableLessonsInput } from "../components/OrderableLessonsInput";
 
 export const chapterType = defineType({
   name: "chapter",
@@ -45,6 +46,7 @@ export const chapterType = defineType({
       description: "Interactive learning slides for this chapter.",
       type: "array",
       group: "lessons",
+      components: { input: OrderableLessonsInput },
       of: [
         {
           type: "reference",
@@ -58,15 +60,17 @@ export const chapterType = defineType({
                 /^drafts\./,
                 ""
               );
+              const draftId = `drafts.${currentDocId}`;
 
               const client = context.getClient({ apiVersion: "2024-01-01" });
               const count = await client.fetch<number>(
                 `count(*[
                   _type == "chapter" &&
                   _id != $currentDocId &&
+                  _id != $draftId &&
                   $lessonRef in lessons[]._ref
                 ])`,
-                { currentDocId, lessonRef: typedRef._ref }
+                { currentDocId, draftId, lessonRef: typedRef._ref }
               );
 
               return count > 0

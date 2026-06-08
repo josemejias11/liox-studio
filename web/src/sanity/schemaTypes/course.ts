@@ -75,14 +75,16 @@ export const courseType = defineType({
               if (!typedRef?._ref) return true;
 
               const currentDocId = context.document?._id?.replace(/^drafts\./, "");
+              const draftId = `drafts.${currentDocId}`;
               const client = context.getClient({ apiVersion: "2024-01-01" });
               const count = await client.fetch<number>(
                 `count(*[
                   _type == "course" &&
                   _id != $currentDocId &&
+                  _id != $draftId &&
                   $specRef in specifications[]._ref
                 ])`,
-                { currentDocId, specRef: typedRef._ref }
+                { currentDocId, draftId, specRef: typedRef._ref }
               );
 
               return count > 0
@@ -105,14 +107,16 @@ export const courseType = defineType({
           if (!typedRef?._ref) return true;
 
           const currentDocId = context.document?._id?.replace(/^drafts\./, "");
+          const draftId = `drafts.${currentDocId}`;
           const client = context.getClient({ apiVersion: "2024-01-01" });
           const count = await client.fetch<number>(
             `count(*[
               _type == "course" &&
               _id != $currentDocId &&
+              _id != $draftId &&
               quiz._ref == $quizRef
             ])`,
-            { currentDocId, quizRef: typedRef._ref }
+            { currentDocId, draftId, quizRef: typedRef._ref }
           );
 
           return count > 0
@@ -133,14 +137,16 @@ export const courseType = defineType({
           if (!typedRef?._ref) return true;
 
           const currentDocId = context.document?._id?.replace(/^drafts\./, "");
+          const draftId = `drafts.${currentDocId}`;
           const client = context.getClient({ apiVersion: "2024-01-01" });
           const count = await client.fetch<number>(
             `count(*[
               _type == "course" &&
               _id != $currentDocId &&
+              _id != $draftId &&
               disclaimer._ref == $disclaimerRef
             ])`,
-            { currentDocId, disclaimerRef: typedRef._ref }
+            { currentDocId, draftId, disclaimerRef: typedRef._ref }
           );
 
           return count > 0
