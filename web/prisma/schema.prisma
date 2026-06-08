@@ -62,7 +62,7 @@ model HotspotVisit {
 model QuizAttempt {
   id        String   @id @default(cuid())
   sessionId String
-  moduleId  String
+  courseId  String
   score     Int
   total     Int
   passed    Boolean  @default(false)

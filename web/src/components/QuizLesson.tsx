@@ -59,7 +59,7 @@ export interface QuizLessonProps {
   /** Passing threshold percentage; defaults to 80 */
   passingScore?: number;
   sessionId?: string;
-  moduleId?: string;
+  courseId?: string;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -99,7 +99,7 @@ export function QuizLesson({
   onFail,
   passingScore = 80,
   sessionId,
-  moduleId,
+  courseId,
 }: QuizLessonProps) {
   // Sanity mode: populate quiz immediately; AI mode: populate after fetch
   const [quiz, setQuiz] = useState<QuizData | null>(() =>
@@ -118,7 +118,7 @@ export function QuizLesson({
 
   // ── Persist result when quiz completes ────────────────────────────────────
   useEffect(() => {
-    if (!done || !sessionId || !moduleId) return;
+    if (!done || !sessionId || !courseId) return;
     const total = quiz?.questions.length ?? 0;
     const pctScore = total > 0 ? (score / total) * 100 : 0;
     fetch("/api/progress", {
@@ -127,7 +127,7 @@ export function QuizLesson({
       body: JSON.stringify({
         type: "quiz",
         sessionId,
-        moduleId,
+        courseId,
         score,
         total,
         passed: pctScore >= passingScore,

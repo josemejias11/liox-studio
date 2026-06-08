@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { sanityClient } from "@/sanity/lib/client";
-import { MODULE_BY_SLUG_QUERY } from "@/sanity/lib/queries";
+import { COURSE_BY_SLUG_QUERY } from "@/sanity/lib/queries";
 import DeckViewer from "@/components/DeckViewer";
 import type { CourseSection, LessonSection } from "@/components/DeckViewer";
 import type { SanitySpecification } from "@/components/SpecificationPage";
@@ -17,46 +17,45 @@ type RawChapter = {
   lessons?: RawLesson[];
 };
 
-export default async function ModulePage({
+export default async function CoursePage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const resolvedParams = await params;
 
-  const courseModule = await sanityClient.fetch(MODULE_BY_SLUG_QUERY, {
+  const course = await sanityClient.fetch(COURSE_BY_SLUG_QUERY, {
     slug: resolvedParams.slug,
   });
 
-  if (!courseModule) {
+  if (!course) {
     notFound();
   }
 
   // ── 1. Lessons from all chapters (enriched with chapterTitle + chapterIndex) ──
-  const lessonSections: LessonSection[] = (courseModule.chapters ?? []).flatMap(
+  const lessonSections: LessonSection[] = (course.chapters ?? []).flatMap(
     (chapter: RawChapter, chapterIndex: number) =>
       (chapter.lessons ?? []).map((lesson: RawLesson) => ({
         ...(lesson as object),
-        // sectionType: "lesson" is already projected by GROQ (LESSON_FIELDS)
         sectionType: "lesson" as const,
         chapterTitle: String(chapter.title ?? ""),
         chapterIndex,
       })) as LessonSection[]
   );
 
-  // ── 2. Module-level specifications (CMS agent adds this field to module) ──
+  // ── 2. Course-level specifications ────────────────────────────────────────────
   const specSections: SanitySpecification[] = (
-    courseModule.specifications ?? []
+    course.specifications ?? []
   ) as SanitySpecification[];
 
-  // ── 3. Module-level quiz ───────────────────────────────────────────────────
-  const quizSections: SanityQuizDoc[] = courseModule.quiz
-    ? [courseModule.quiz as SanityQuizDoc]
+  // ── 3. Course-level quiz ──────────────────────────────────────────────────────
+  const quizSections: SanityQuizDoc[] = course.quiz
+    ? [course.quiz as SanityQuizDoc]
     : [];
 
-  // ── 4. Module-level disclaimer ─────────────────────────────────────────────
-  const disclaimerSections: SanityDisclaimer[] = courseModule.disclaimer
-    ? [courseModule.disclaimer as SanityDisclaimer]
+  // ── 4. Course-level disclaimer ────────────────────────────────────────────────
+  const disclaimerSections: SanityDisclaimer[] = course.disclaimer
+    ? [course.disclaimer as SanityDisclaimer]
     : [];
 
   // ── Flat sections array — order defines course flow ────────────────────────
@@ -70,11 +69,11 @@ export default async function ModulePage({
   return (
     <div className="w-full h-dvh overflow-hidden bg-background">
       <DeckViewer
-        module={courseModule}
+        course={course}
         sections={sections}
-        course_title={String(courseModule.title ?? "")}
+        course_title={String(course.title ?? "")}
         course_description={
-          courseModule.description ? String(courseModule.description) : undefined
+          course.description ? String(course.description) : undefined
         }
       />
     </div>

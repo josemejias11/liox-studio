@@ -94,7 +94,7 @@ export type CoursePhase =
   | { phase: "disclaimer" }
   | { phase: "complete" };
 
-interface SanityModule {
+interface SanityCourse {
   _id: string;
   title: string;
   description?: string;
@@ -138,12 +138,12 @@ const getSemanticWidthClass = (width?: string) => {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function DeckViewer({
-  module,
+  course,
   sections,
   course_title,
   course_description,
 }: {
-  module: SanityModule;
+  course: SanityCourse;
   sections: CourseSection[];
   course_title: string;
   course_description?: string;
@@ -724,7 +724,7 @@ export default function DeckViewer({
   // ── Build quiz context for lesson-type AI quizzes ─────────────────────────
   const buildQuizContext = () =>
     [
-      `Product: ${module.title}`,
+      `Product: ${course.title}`,
       `Features: ${lessonSections
         .flatMap((s) => s.hotspots ?? [])
         .map((h) => h.topic || h.label)
@@ -744,12 +744,12 @@ export default function DeckViewer({
   // ── Cover ─────────────────────────────────────────────────────────────────
   if (coursePhase.phase === "cover") {
     const finalImageUrl =
-      module.coverImage?.asset?.url ||
-      module.thumbnail?.asset?.url ||
+      course.coverImage?.asset?.url ||
+      course.thumbnail?.asset?.url ||
       lessonSections[0]?.media?.asset?.url;
 
     return (
-      <LessonFrame moduleTitle={module.title}>
+      <LessonFrame moduleTitle={course.title}>
         <AnimatePresence mode="wait" custom={navDirection}>
           <motion.div
             key="cover"
@@ -762,11 +762,11 @@ export default function DeckViewer({
             className="absolute inset-0"
           >
             <CourseCover
-              title={module.title}
-              coverHeadline={module.coverHeadline}
+              title={course.title}
+              coverHeadline={course.coverHeadline}
               coverImage={finalImageUrl}
-              buttonText={module.coverButtonText}
-              buttonColor={module.coverButtonColor}
+              buttonText={course.coverButtonText}
+              buttonColor={course.coverButtonColor}
               onStart={() => {
                 setNavDirection(1);
                 goNext();
@@ -785,7 +785,7 @@ export default function DeckViewer({
     if (!spec) return null;
 
     return (
-      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={module.title}>
+      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={course.title}>
         <AnimatePresence mode="wait" custom={navDirection}>
           <motion.div
             key={`spec-${coursePhase.specIndex}`}
@@ -813,7 +813,7 @@ export default function DeckViewer({
   // ── Quiz ──────────────────────────────────────────────────────────────────
   if (coursePhase.phase === "quiz") {
     return (
-      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={module.title}>
+      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={course.title}>
         <AnimatePresence mode="wait" custom={navDirection}>
           <motion.div
             key="quiz"
@@ -831,7 +831,7 @@ export default function DeckViewer({
               onFail={handleQuizFail}
               passingScore={coursePhase.quizData.passingScore}
               sessionId={sessionId}
-              moduleId={module._id}
+              courseId={course._id}
             />
           </motion.div>
         </AnimatePresence>
@@ -846,7 +846,7 @@ export default function DeckViewer({
     if (!disclaimerSection) return null;
 
     return (
-      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={module.title}>
+      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={course.title}>
         <AnimatePresence mode="wait" custom={navDirection}>
           <motion.div
             key="disclaimer"
@@ -874,7 +874,7 @@ export default function DeckViewer({
   // ── Complete ──────────────────────────────────────────────────────────────
   if (coursePhase.phase === "complete") {
     return (
-      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={module.title}>
+      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={course.title}>
         <AnimatePresence mode="wait" custom={navDirection}>
           <motion.div
             key="complete"
@@ -887,7 +887,7 @@ export default function DeckViewer({
             className="absolute inset-0"
           >
             <CourseComplete
-              moduleTitle={module.title}
+              moduleTitle={course.title}
               totalLessons={lessonSections.length}
               totalHotspotsVisited={totalHotspotsVisited}
               totalHotspots={totalHotspots}
@@ -916,7 +916,7 @@ export default function DeckViewer({
   if (showChapterIntro) {
     const chapterEntry = chapters.find((c) => c.chapterIndex === coursePhase.chapterIndex);
     return (
-      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={module.title}>
+      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={course.title}>
         <ChapterIntro
           chapterTitle={chapterEntry?.chapterTitle ?? ""}
           chapterNumber={(coursePhase.chapterIndex) + 1}
@@ -931,7 +931,7 @@ export default function DeckViewer({
   // ── Stage lesson ──────────────────────────────────────────────────────────
   if (currentLesson.lessonType === "stage") {
     return (
-      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={module.title}>
+      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={course.title}>
         <AnimatePresence mode="wait" custom={navDirection}>
           <motion.div
             key={`stage-${currentLesson._key}`}
@@ -971,7 +971,7 @@ export default function DeckViewer({
   // ── Video lesson ──────────────────────────────────────────────────────────
   if (currentLesson.lessonType === "video") {
     return (
-      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={module.title}>
+      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={course.title}>
         <AnimatePresence mode="wait" custom={navDirection}>
           <motion.div
             key={`video-${currentLesson._key}`}
@@ -999,7 +999,7 @@ export default function DeckViewer({
   // ── In-lesson AI quiz ─────────────────────────────────────────────────────
   if (currentLesson.lessonType === "quiz") {
     return (
-      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={module.title}>
+      <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={course.title}>
         <AnimatePresence mode="wait" custom={navDirection}>
           <motion.div
             key={`quiz-lesson-${currentLesson._key}`}
@@ -1017,7 +1017,7 @@ export default function DeckViewer({
               onFail={goNext}   // lesson-type quiz also advances on fail (no gate)
               passingScore={80}
               sessionId={sessionId}
-              moduleId={module._id}
+              courseId={course._id}
             />
           </motion.div>
         </AnimatePresence>
@@ -1035,7 +1035,7 @@ export default function DeckViewer({
       onNext={goNext}
       nextDisabled={nextLocked}
       onToggleNavMap={toggleNavMap}
-      moduleTitle={module.title}
+      moduleTitle={course.title}
       completionHint={
         nextLocked
           ? `Tap all ${hotspots.length} features to continue (${visitedOnLesson} / ${hotspots.length})`

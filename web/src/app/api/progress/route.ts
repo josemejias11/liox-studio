@@ -127,12 +127,12 @@ export async function POST(req: NextRequest) {
   }
 
   if (body.type === "quiz") {
-    const { sessionId, moduleId, score, total, passed, answers } = body;
+    const { sessionId, courseId, score, total, passed, answers } = body;
 
     await prisma.quizAttempt.create({
       data: {
         sessionId,
-        moduleId,
+        courseId,
         score,
         total,
         passed,

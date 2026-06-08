@@ -91,8 +91,8 @@ const CHAPTER_FIELDS = groq`
 // ── Queries ───────────────────────────────────────────────────────────────────
 
 // All published modules — used for the course library grid
-export const MODULES_QUERY = groq`
-  *[_type == "module" && published == true] | order(_createdAt desc) {
+export const COURSES_QUERY = groq`
+  *[_type == "course" && published == true] | order(_createdAt desc) {
     _id,
     title,
     slug,
@@ -104,8 +104,8 @@ export const MODULES_QUERY = groq`
 `;
 
 // Single module with all chapters and sections fully resolved
-export const MODULE_BY_SLUG_QUERY = groq`
-  *[_type == "module" && slug.current == $slug && published == true][0] {
+export const COURSE_BY_SLUG_QUERY = groq`
+  *[_type == "course" && slug.current == $slug && published == true][0] {
     _id,
     title,
     slug,
@@ -126,8 +126,8 @@ export const MODULE_BY_SLUG_QUERY = groq`
 `;
 
 // First published module — used on the homepage while we have no routing
-export const FIRST_MODULE_QUERY = groq`
-  *[_type == "module" && published == true] | order(_createdAt desc) [0] {
+export const FIRST_COURSE_QUERY = groq`
+  *[_type == "course" && published == true] | order(_createdAt desc) [0] {
     _id,
     title,
     slug,

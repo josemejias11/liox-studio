@@ -1,8 +1,8 @@
 import { defineType, defineField } from "sanity";
 
-export const moduleType = defineType({
-  name: "module",
-  title: "Module",
+export const courseType = defineType({
+  name: "course",
+  title: "Course",
   type: "document",
   groups: [
     { name: "content", title: "Content" },
@@ -22,10 +22,10 @@ export const moduleType = defineType({
       title: "Slug",
       type: "slug",
       group: "content",
-      options: { 
+      options: {
         source: "title",
         maxLength: 96,
-        isUnique: (value, context) => context.defaultIsUnique(value, context)
+        isUnique: (value, context) => context.defaultIsUnique(value, context),
       },
       validation: (r) => r.required(),
     }),
@@ -74,15 +74,11 @@ export const moduleType = defineType({
               const typedRef = ref as { _ref?: string } | undefined;
               if (!typedRef?._ref) return true;
 
-              const currentDocId = context.document?._id?.replace(
-                /^drafts\./,
-                ""
-              );
-
+              const currentDocId = context.document?._id?.replace(/^drafts\./, "");
               const client = context.getClient({ apiVersion: "2024-01-01" });
               const count = await client.fetch<number>(
                 `count(*[
-                  _type == "module" &&
+                  _type == "course" &&
                   _id != $currentDocId &&
                   $specRef in specifications[]._ref
                 ])`,
@@ -108,15 +104,11 @@ export const moduleType = defineType({
           const typedRef = ref as { _ref?: string } | undefined;
           if (!typedRef?._ref) return true;
 
-          const currentDocId = context.document?._id?.replace(
-            /^drafts\./,
-            ""
-          );
-
+          const currentDocId = context.document?._id?.replace(/^drafts\./, "");
           const client = context.getClient({ apiVersion: "2024-01-01" });
           const count = await client.fetch<number>(
             `count(*[
-              _type == "module" &&
+              _type == "course" &&
               _id != $currentDocId &&
               quiz._ref == $quizRef
             ])`,
@@ -140,15 +132,11 @@ export const moduleType = defineType({
           const typedRef = ref as { _ref?: string } | undefined;
           if (!typedRef?._ref) return true;
 
-          const currentDocId = context.document?._id?.replace(
-            /^drafts\./,
-            ""
-          );
-
+          const currentDocId = context.document?._id?.replace(/^drafts\./, "");
           const client = context.getClient({ apiVersion: "2024-01-01" });
           const count = await client.fetch<number>(
             `count(*[
-              _type == "module" &&
+              _type == "course" &&
               _id != $currentDocId &&
               disclaimer._ref == $disclaimerRef
             ])`,

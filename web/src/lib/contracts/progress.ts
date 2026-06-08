@@ -11,7 +11,7 @@ const LessonProgressSchema = z.object({
 const QuizProgressSchema = z.object({
   type: z.literal("quiz"),
   sessionId: z.string().uuid("Invalid session ID format"),
-  moduleId: z.string().min(1),
+  courseId: z.string().min(1),
   score: z.number().int().min(0),
   total: z.number().int().min(1),
   passed: z.boolean(),

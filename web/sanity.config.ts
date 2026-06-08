@@ -2,6 +2,7 @@ import { defineConfig } from "sanity";
 import { structureTool } from "sanity/structure";
 import { visionTool } from "@sanity/vision";
 import { schemaTypes } from "./src/sanity/schemaTypes";
+import { structure } from "./src/sanity/structure";
 
 export default defineConfig({
   basePath: "/studio",
@@ -10,7 +11,7 @@ export default defineConfig({
   title: "DeckTutor AI — Studio",
   schema: { types: schemaTypes },
   plugins: [
-    structureTool(),
+    structureTool({ structure }),
     visionTool(), // GROQ query explorer at /studio/vision
   ],
 });

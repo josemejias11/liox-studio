@@ -3,10 +3,10 @@ import { Bot, BarChart2, BookOpen, PlayCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { sanityClient } from "@/sanity/lib/client";
-import { MODULES_QUERY } from "@/sanity/lib/queries";
+import { COURSES_QUERY } from "@/sanity/lib/queries";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
-export interface ModuleSummary {
+export interface CourseSummary {
   _id: string;
   title: string;
   slug: { current: string };
@@ -16,7 +16,7 @@ export interface ModuleSummary {
 }
 
 export default async function Home() {
-  const modules = await sanityClient.fetch<ModuleSummary[]>(MODULES_QUERY);
+  const courses = await sanityClient.fetch<CourseSummary[]>(COURSES_QUERY);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -45,11 +45,11 @@ export default async function Home() {
         <div className="max-w-2xl mb-12 space-y-3">
           <h1 className="text-4xl font-semibold text-foreground">Explore Courses</h1>
           <p className="text-lg text-muted-foreground font-light">
-            Select a module to begin your learning journey.
+            Select a course to begin your learning journey.
           </p>
         </div>
 
-        {modules.length === 0 ? (
+        {courses.length === 0 ? (
           <div className="text-center text-muted-foreground py-24 border border-dashed rounded-xl border-border">
             <p className="text-lg font-light">No published courses yet.</p>
             <Link href="/studio" className="mt-4 inline-block text-primary underline text-sm hover:no-underline">
@@ -58,21 +58,21 @@ export default async function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {modules.map((module) => (
-              <Link 
-                key={module._id} 
-                href={`/module/${module.slug.current}`}
+            {courses.map((course) => (
+              <Link
+                key={course._id}
+                href={`/course/${course.slug.current}`}
                 className="group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl"
-                aria-label={`Start course: ${module.title}`}
+                aria-label={`Start course: ${course.title}`}
               >
                 <Card className="overflow-hidden border-border transition-all duration-300 hover:shadow-lg hover:-translate-y-1 h-full flex flex-col bg-card">
                   <div className="relative aspect-[16/9] w-full bg-muted overflow-hidden">
-                    {module.thumbnail?.asset?.url ? (
+                    {course.thumbnail?.asset?.url ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img 
-                        src={module.thumbnail.asset.url} 
-                        alt="" 
-                        className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105" 
+                      <img
+                        src={course.thumbnail.asset.url}
+                        alt=""
+                        className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-background">
@@ -87,18 +87,18 @@ export default async function Home() {
                   </div>
                   <CardHeader className="p-5 flex-1 space-y-2">
                     <h2 className="text-lg font-semibold leading-tight line-clamp-2 group-hover:text-primary transition-colors">
-                      {module.title}
+                      {course.title}
                     </h2>
-                    {module.description && (
+                    {course.description && (
                       <p className="text-sm text-muted-foreground line-clamp-2 font-light">
-                        {module.description}
+                        {course.description}
                       </p>
                     )}
                   </CardHeader>
                   <CardContent className="p-5 pt-0 mt-auto">
                     <div className="flex items-center text-xs font-medium text-muted-foreground gap-1.5">
                       <BookOpen className="h-3.5 w-3.5" />
-                      {module.chapterCount} {module.chapterCount === 1 ? 'Chapter' : 'Chapters'}
+                      {course.chapterCount} {course.chapterCount === 1 ? 'Chapter' : 'Chapters'}
                     </div>
                   </CardContent>
                 </Card>
