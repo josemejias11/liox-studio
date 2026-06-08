@@ -1168,6 +1168,8 @@ export default function DeckViewer({
             y={activeLayer?.y}
             photos={activeLayer?.photos}
             mode="popover"
+            course_title={course.title}
+            course_description={course.description}
           />
 
           {renderLayerFrame()}

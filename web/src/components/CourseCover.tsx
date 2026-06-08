@@ -83,7 +83,7 @@ export function CourseCover({
       >
         <button
           onClick={onStart}
-          className={`group relative flex items-center gap-3 font-semibold text-lg px-8 py-4 rounded-full shadow-2xl transition-all duration-300 active:scale-95 border border-white/10 overflow-hidden ${btnClass}`}
+          className={`group relative flex items-center gap-3 font-semibold text-lg px-8 py-4 rounded-full shadow-2xl transition-all duration-300 active:scale-95 border border-white/10 overflow-hidden completion-button-glow ${btnClass}`}
         >
           {/* Button inner glow effect */}
           <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out" />

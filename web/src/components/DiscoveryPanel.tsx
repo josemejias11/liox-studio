@@ -23,6 +23,8 @@ interface DiscoveryPanelProps {
   x?: number;
   y?: number;
   mode?: "sidebar" | "popover";
+  course_title?: string;
+  course_description?: string;
 }
 
 const SUGGESTIONS = [
@@ -72,6 +74,8 @@ export function DiscoveryPanel({
   x,
   y,
   mode,
+  course_title,
+  course_description,
 }: DiscoveryPanelProps) {
   const hasLearnContent = !!(body || (photos?.length ?? 0) > 0);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -177,6 +181,8 @@ export function DiscoveryPanel({
           messages: conversationRef.current,
           context_hint: topic,
           lesson_content: plainTextBody,
+          course_title,
+          course_description,
         }),
         signal: controller.signal,
       });
