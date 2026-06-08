@@ -93,6 +93,8 @@ export function DiscoveryPanel({
   const inputRef         = useRef<HTMLInputElement>(null);
   const swipeTouchStartX = useRef(0);
   const lastPosRef       = useRef<{ x: number; y: number } | null>(null);
+  const scrollBodyRef    = useRef<HTMLDivElement>(null);
+  const userHasSentRef   = useRef(false);
 
   useEffect(() => {
     if (open) {
@@ -116,6 +118,8 @@ export function DiscoveryPanel({
       setShowSuggestions(true); // show suggestion chips upfront before user sends
       conversationRef.current = [];
       firstResponseRef.current = false;
+      userHasSentRef.current = false;
+      if (scrollBodyRef.current) scrollBodyRef.current.scrollTop = 0;
     }
   }, [open, label]);
 
@@ -139,10 +143,13 @@ export function DiscoveryPanel({
     if (!open) abortRef.current?.abort();
   }, [open]);
 
-  // Scroll to bottom as messages grow
+  // Scroll to bottom only after the user explicitly sends a message,
+  // or when there is no learn content (pure AI chat — greeting should be visible).
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (userHasSentRef.current || !hasLearnContent) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, hasLearnContent]);
 
   async function sendQuery(queryText: string, hideFromUI = false) {
     abortRef.current?.abort();
@@ -266,6 +273,7 @@ export function DiscoveryPanel({
     if (!q || streaming) return;
     if (!text) setInput("");
     setShowSuggestions(false);
+    userHasSentRef.current = true;
     sendQuery(q);
     inputRef.current?.focus();
   }
@@ -374,6 +382,7 @@ export function DiscoveryPanel({
 
             {/* ── Single scrollable body ── */}
             <div
+              ref={scrollBodyRef}
               className="flex-1 overflow-y-auto scrollbar-none"
               style={{ scrollbarWidth: "none" }}
             >
