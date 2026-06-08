@@ -219,7 +219,7 @@ export function DiscoveryPanel({
       // Flush any remaining bytes the decoder was holding for multi-byte chars.
       dec.decode();
     } catch (e: unknown) {
-      if ((e as { name?: string }).name !== "AbortError") {
+      if ((e as { name?: string }).name !== "AbortError" && !controller.signal.aborted) {
         setMessages((prev) => {
           const msgs = [...prev];
           msgs[msgs.length - 1] = {
