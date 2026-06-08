@@ -47,6 +47,8 @@ export function ProductStage({
     topic: string;
     body?: string;
     photos?: { asset?: { url?: string } }[];
+    x?: number;
+    y?: number;
   } | null>(null);
 
   // Phase 4 — completion burst
@@ -129,7 +131,7 @@ export function ProductStage({
           if (h.contentMode === "layer") {
             ool?.(h._key);
           } else {
-            setActivePanel({ label: h.label, topic: h.topic, body: h.body, photos: h.photos });
+            setActivePanel({ label: h.label, topic: h.topic, body: h.body, photos: h.photos, x: h.x, y: h.y });
           }
         }
       }
@@ -227,7 +229,7 @@ export function ProductStage({
             transition-[right,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]
             ${shouldAnimateCompletion && completionTransition === "fade" ? "opacity-80" : ""}
           `}
-          style={{ right: activePanel ? "42%" : "0%" }}
+          style={{ right: "0%" }}
         >
           {/* Parallax layer */}
           <div
@@ -282,7 +284,7 @@ export function ProductStage({
             visited={visited.has(h.label)}
             onVisit={() => onVisit(h.label)}
             onOpen={() =>
-              setActivePanel({ label: h.label, topic: h.topic, body: h.body, photos: h.photos })
+              setActivePanel({ label: h.label, topic: h.topic, body: h.body, photos: h.photos, x: h.x, y: h.y })
             }
             keyFocused={focusedHotspotIndex === i}
           />
@@ -389,6 +391,9 @@ export function ProductStage({
         topic={activePanel?.topic}
         body={activePanel?.body}
         photos={activePanel?.photos ?? []}
+        x={activePanel?.x}
+        y={activePanel?.y}
+        mode="popover"
       />
     </div>
   );
