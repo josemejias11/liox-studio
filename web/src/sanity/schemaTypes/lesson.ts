@@ -9,9 +9,10 @@ export const lessonType = defineType({
   type: "document",
   icon: Presentation,
   groups: [
-    { name: "content", title: "Content" },
-    { name: "interactions", title: "Interactions" },
+    { name: "content", title: "Content", default: true },
     { name: "media", title: "Media" },
+    { name: "interactions", title: "Interactions" },
+    { name: "completion", title: "Completion Animation" },
   ],
   fields: [
     defineField({
@@ -96,27 +97,36 @@ export const lessonType = defineType({
           { title: "Interaction (Hotspots)", value: "interaction" },
           { title: "Product Stage", value: "stage" },
           { title: "Video", value: "video" },
-          { title: "Quiz", value: "quiz" },
+          { title: "Quiz (In-Lesson)", value: "quiz" },
         ],
         layout: "radio",
       },
       initialValue: "content",
     }),
     defineField({
-      name: "videoUrl",
-      title: "Video URL",
-      description: "YouTube, Vimeo, or direct .mp4 URL.",
-      type: "url",
+      name: "videoFile",
+      title: "Video File",
+      description: "Upload an MP4 to Sanity CDN.",
+      type: "file",
       group: "media",
+      options: { accept: "video/mp4" },
       hidden: ({ parent }) => parent?.lessonType !== "video",
     }),
     defineField({
-      name: "videoFile",
-      title: "Video File",
-      description: "Upload an MP4 to Sanity CDN. Used when Video URL is empty.",
-      type: "file",
+      name: "videoAspectRatio",
+      title: "Video Aspect Ratio",
+      type: "string",
       group: "media",
-      options: { accept: "video/*" },
+      options: {
+        list: [
+          { title: "16:9", value: "16:9" },
+          { title: "1:1 (Square)", value: "1:1" },
+          { title: "4:5 (Portrait)", value: "4:5" },
+          { title: "9:16 (Vertical)", value: "9:16" },
+        ],
+        layout: "radio"
+      },
+      initialValue: "16:9",
       hidden: ({ parent }) => parent?.lessonType !== "video",
     }),
     defineField({
@@ -128,23 +138,7 @@ export const lessonType = defineType({
       options: { hotspot: true },
       hidden: ({ parent }) => parent?.lessonType !== "stage",
     }),
-    defineField({
-      name: "completionTransition",
-      title: "Completion Animation",
-      description: "Animation played after all hotspots are discovered.",
-      type: "string",
-      group: "interactions",
-      options: {
-        list: [
-          { title: "Spin (360° product rotate)", value: "spin" },
-          { title: "Rise (content rises in)", value: "rise" },
-          { title: "Fade", value: "fade" },
-        ],
-        layout: "radio",
-      },
-      initialValue: "spin",
-      hidden: ({ parent }) => parent?.lessonType !== "stage",
-    }),
+
     defineField({
       name: "hotspots",
       title: "Hotspot Definitions",
@@ -201,6 +195,77 @@ export const lessonType = defineType({
           },
         },
       ],
+    }),
+    defineField({
+      name: "floatingGraphics",
+      title: "Floating Logos & Graphics",
+      description: "Add SVG or PNG logos that float above the lesson background.",
+      type: "array",
+      group: "media",
+      components: { input: HotspotMapInput }, // reusing HotspotMapInput since it provides x/y mapping
+      of: [
+        {
+          type: "object",
+          name: "graphic",
+          fields: [
+            defineField({ 
+              name: "image", 
+              title: "Graphic File (SVG/PNG)", 
+              type: "image", 
+              options: { accept: "image/png, image/svg+xml" },
+              validation: r => r.required() 
+            }),
+            defineField({ name: "x", title: "X Position (%)", type: "number", validation: (r) => r.min(0).max(100) }),
+            defineField({ name: "y", title: "Y Position (%)", type: "number", validation: (r) => r.min(0).max(100) }),
+            defineField({ 
+              name: "width", 
+              title: "Size", 
+              type: "string", 
+              options: { 
+                list: [
+                  { title: "Small", value: "small" },
+                  { title: "Medium", value: "medium" },
+                  { title: "Large", value: "large" },
+                  { title: "Full Width", value: "full" },
+                ]
+              },
+              initialValue: "medium"
+            })
+          ],
+          preview: {
+            select: { title: "width", media: "image" },
+            prepare({ title, media }) {
+              return { title: `Floating Graphic (${title})`, media };
+            }
+          }
+        }
+      ]
+    }),
+    defineField({
+      name: "enableCompletionAnimation",
+      title: "Enable Gamified Completion",
+      description: "Trigger a special gamification animation when all hotspots are discovered.",
+      type: "boolean",
+      group: "completion",
+      initialValue: false,
+      hidden: ({ parent }) => parent?.lessonType !== "stage",
+    }),
+    defineField({
+      name: "completionTransition",
+      title: "Completion Animation",
+      description: "Animation played after all hotspots are discovered.",
+      type: "string",
+      group: "completion",
+      options: {
+        list: [
+          { title: "Pulse & Glow (Premium product highlight)", value: "spin" },
+          { title: "Rise (Content rises with light shift)", value: "rise" },
+          { title: "Fade (Subtle fade out)", value: "fade" },
+        ],
+        layout: "radio",
+      },
+      initialValue: "spin",
+      hidden: ({ parent }) => parent?.lessonType !== "stage" || !parent?.enableCompletionAnimation,
     }),
   ],
   preview: {

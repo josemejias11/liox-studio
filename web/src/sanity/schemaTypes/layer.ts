@@ -76,18 +76,27 @@ export const layerType = defineType({
     }),
 
     defineField({
-      name: "videoUrl",
-      title: "Video URL",
-      description: "YouTube, Vimeo, or direct .mp4 URL.",
-      type: "url",
+      name: "videoFile",
+      title: "Video File",
+      description: "Upload an MP4 to Sanity CDN.",
+      type: "file",
+      options: { accept: "video/mp4" },
       hidden: ({ parent }) => parent?.layerType !== "video",
     }),
     defineField({
-      name: "videoFile",
-      title: "Video File",
-      description: "Upload an MP4 to Sanity CDN. Used when Video URL is empty.",
-      type: "file",
-      options: { accept: "video/*" },
+      name: "videoAspectRatio",
+      title: "Video Aspect Ratio",
+      type: "string",
+      options: {
+        list: [
+          { title: "16:9", value: "16:9" },
+          { title: "1:1 (Square)", value: "1:1" },
+          { title: "4:5 (Portrait)", value: "4:5" },
+          { title: "9:16 (Vertical)", value: "9:16" },
+        ],
+        layout: "radio"
+      },
+      initialValue: "16:9",
       hidden: ({ parent }) => parent?.layerType !== "video",
     }),
     defineField({

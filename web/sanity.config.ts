@@ -10,15 +10,7 @@ export default defineConfig({
   title: "DeckTutor AI — Studio",
   schema: { types: schemaTypes },
   plugins: [
-    structureTool({
-      structure: (S) =>
-        S.list()
-          .title("Content")
-          .items([
-            S.listItem().title("Modules").schemaType("module").child(S.documentTypeList("module")),
-            S.listItem().title("Chapters").schemaType("chapter").child(S.documentTypeList("chapter")),
-          ]),
-    }),
+    structureTool(),
     visionTool(), // GROQ query explorer at /studio/vision
   ],
 });
