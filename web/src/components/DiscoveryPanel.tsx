@@ -305,11 +305,14 @@ export function DiscoveryPanel({
           const isLeft = posX < 50;
           const isTop  = posY < 50;
 
-          if (isLeft) floatingStyle.left  = `${posX + 2}%`;
-          else        floatingStyle.right = `${100 - posX + 2}%`;
+          // Clamp so the panel never bleeds outside the player container.
+          // Horizontal: keep at least 4% margin from each edge.
+          // Vertical: keep at least 2% margin from each edge.
+          if (isLeft) floatingStyle.left  = `clamp(4%, ${posX + 2}%, 56%)`;
+          else        floatingStyle.right = `clamp(4%, ${100 - posX + 2}%, 56%)`;
 
-          if (isTop) floatingStyle.top    = `${posY}%`;
-          else       floatingStyle.bottom = `${100 - posY}%`;
+          if (isTop) floatingStyle.top    = `clamp(2%, ${posY}%, 55%)`;
+          else       floatingStyle.bottom = `clamp(2%, ${100 - posY}%, 55%)`;
 
           if  (isLeft &&  isTop)  originClass = "origin-top-left";
           else if (isLeft && !isTop)  originClass = "origin-bottom-left";
@@ -320,7 +323,7 @@ export function DiscoveryPanel({
           floatingStyle = { top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
         }
 
-        const floatingClasses = `absolute w-[400px] md:w-[460px] max-h-[85vh] rounded-3xl flex flex-col
+        const floatingClasses = `absolute w-[min(380px,88%)] max-h-[min(520px,82%)] rounded-3xl flex flex-col
           bg-card/80 backdrop-blur-3xl border border-white/10
           shadow-2xl transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${originClass}
           ${open ? "opacity-100 scale-100" : "opacity-0 scale-[0.3] pointer-events-none"}`;
