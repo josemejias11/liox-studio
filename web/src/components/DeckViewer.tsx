@@ -192,13 +192,18 @@ export default function DeckViewer({
   const [lastLayerId, setLastLayerId] = useState<string | null>(null);
 
   // ── Session ───────────────────────────────────────────────────────────────
-  const [sessionId] = useState<string>(() => {
-    const existing = localStorage.getItem("decktutor_session");
-    if (existing) return existing;
-    const sid = crypto.randomUUID();
-    localStorage.setItem("decktutor_session", sid);
-    return sid;
-  });
+  // Initialise as "" so SSR and the first client render agree (no hydration mismatch).
+  // The real UUID is read/created from localStorage inside useEffect, which only
+  // runs on the client — localStorage is not available during server rendering.
+  const [sessionId, setSessionId] = useState<string>("");
+  useEffect(() => {
+    let sid = localStorage.getItem("decktutor_session");
+    if (!sid) {
+      sid = crypto.randomUUID();
+      localStorage.setItem("decktutor_session", sid);
+    }
+    setSessionId(sid);
+  }, []);
   const { visited, markVisited: baseMarkVisited } = useLessonProgress(sessionId);
 
   // Opens a layer and snapshots its ID so LayerFrame can animate out gracefully
