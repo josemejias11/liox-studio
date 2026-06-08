@@ -12,7 +12,8 @@ const ChatRequestSchema = z.object({
       content: z.string(),
     })
   ).optional(),
-  context_hint: z.boolean().optional(),
+  // context_hint carries the hotspot topic string sent from DiscoveryPanel
+  context_hint: z.string().optional(),
   lesson_content: z.string().optional(),
   course_title: z.string().optional(),
   course_description: z.string().optional(),
@@ -93,12 +94,16 @@ function mockStream(text: string): ReadableStream {
   const words = text.split(" ");
   return new ReadableStream({
     async start(controller) {
-      for (const word of words) {
-        controller.enqueue(`data: ${JSON.stringify({ text: word + " " })}\n\n`);
-        await new Promise((r) => setTimeout(r, 30));
+      try {
+        for (const word of words) {
+          controller.enqueue(`data: ${JSON.stringify({ text: word + " " })}\n\n`);
+          await new Promise((r) => setTimeout(r, 30));
+        }
+        controller.enqueue("data: [DONE]\n\n");
+        controller.close();
+      } catch {
+        // Stream was cancelled (e.g. component unmounted mid-stream); nothing to do.
       }
-      controller.enqueue("data: [DONE]\n\n");
-      controller.close();
     },
   });
 }
@@ -108,8 +113,9 @@ export async function POST(req: NextRequest) {
   try {
     const json = await req.json();
     body = ChatRequestSchema.parse(json);
-  } catch (err: any) {
-    return new Response(JSON.stringify({ error: "Invalid request payload", details: err.errors }), {
+  } catch (err: unknown) {
+    const details = err instanceof z.ZodError ? err.issues : undefined;
+    return new Response(JSON.stringify({ error: "Invalid request payload", details }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
     });
@@ -117,10 +123,12 @@ export async function POST(req: NextRequest) {
 
   const { query, messages: msgHistory, lesson_content, course_title, course_description } = body;
 
-  const headers = {
+  // X-Accel-Buffering: no prevents Nginx/reverse-proxy from buffering the SSE stream.
+  const headers: Record<string, string> = {
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
     Connection: "keep-alive",
+    "X-Accel-Buffering": "no",
   };
 
   // Derive the last user query for mock-mode keyword matching

@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X, Bot, Send, BookOpen, Sparkles } from "lucide-react";
+import { X, Send, Sparkles } from "lucide-react";
 import { PhotoCardStack } from "./PhotoCardStack";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { PortableText } from "@portabletext/react";
 
-type Tab = "learn" | "ask";
 type Message = { role: "assistant" | "user"; text: string; streaming?: boolean };
 type Turn = { role: "user" | "assistant"; content: string };
 
@@ -19,7 +18,6 @@ interface DiscoveryPanelProps {
   onClose: () => void;
   label: string;
   topic?: string;
-   
   body?: any;
   photos?: Photo[];
   x?: number;
@@ -76,7 +74,6 @@ export function DiscoveryPanel({
   mode,
 }: DiscoveryPanelProps) {
   const hasLearnContent = !!(body || (photos?.length ?? 0) > 0);
-  const [tab, setTab] = useState<Tab>(hasLearnContent ? "learn" : "ask");
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -84,27 +81,24 @@ export function DiscoveryPanel({
 
   const [liveAnnouncement, setLiveAnnouncement] = useState("");
 
-  const panelRef        = useRef<HTMLDivElement>(null);
-  const abortRef        = useRef<AbortController | null>(null);
-  const conversationRef = useRef<Turn[]>([]);
+  const panelRef         = useRef<HTMLDivElement>(null);
+  const abortRef         = useRef<AbortController | null>(null);
+  const conversationRef  = useRef<Turn[]>([]);
   const firstResponseRef = useRef(false);
-  const bottomRef       = useRef<HTMLDivElement>(null);
-  const inputRef        = useRef<HTMLInputElement>(null);
+  const bottomRef        = useRef<HTMLDivElement>(null);
+  const inputRef         = useRef<HTMLInputElement>(null);
   const swipeTouchStartX = useRef(0);
-  const lastPosRef      = useRef<{ x: number; y: number } | null>(null);
+  const lastPosRef       = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     if (open) {
       if (x !== undefined && y !== undefined) lastPosRef.current = { x, y };
       else lastPosRef.current = null;
-      
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTab(hasLearnContent ? "learn" : "ask");
       setLiveAnnouncement(`Opened ${label}. ${hasLearnContent ? "Learn content available." : ""}`);
     } else {
       setLiveAnnouncement(`Closed ${label}.`);
     }
-     
   }, [open, label, hasLearnContent, x, y]);
 
   useFocusTrap(panelRef, open);
@@ -114,26 +108,27 @@ export function DiscoveryPanel({
     if (open) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setMessages([]);
-       
       setInput("");
-       
-      setShowSuggestions(false);
+      setShowSuggestions(true); // show suggestion chips upfront before user sends
       conversationRef.current = [];
       firstResponseRef.current = false;
     }
-     
   }, [open, label]);
 
-  // Auto-fire AI summary when switching to Ask tab with no messages yet
+  // Auto-fire AI greeting when the panel opens with a topic.
+  // Gated on firstResponseRef (reset synchronously by the [open, label] effect above)
+  // so it fires exactly once per hotspot open, even if open/topic change together.
   useEffect(() => {
-    if (tab === "ask" && open && messages.length === 0 && topic) {
+    if (open && !firstResponseRef.current && topic) {
       sendQuery(
         `Briefly explain the "${topic}" feature to a sales rep in 2-3 sentences. Be concise and sales-focused.`,
         true // hide the auto-fire prompt from the UI
       );
     }
+    // sendQuery is defined in the component body and reads `body`/`topic` via closure.
+    // topic is included so the effect re-fires if the hotspot topic changes while open.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, open]);
+  }, [open, label, topic]);
 
   // Abort in-flight request when panel closes
   useEffect(() => {
@@ -147,7 +142,8 @@ export function DiscoveryPanel({
 
   async function sendQuery(queryText: string, hideFromUI = false) {
     abortRef.current?.abort();
-    abortRef.current = new AbortController();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setStreaming(true);
 
     // Append user turn to conversation history
@@ -165,13 +161,12 @@ export function DiscoveryPanel({
     setMessages((prev) => [...prev, { role: "assistant", text: "", streaming: true }]);
 
     let fullResponse = "";
-    
+
     // Extract plain text from PortableText array for the AI
-    const plainTextBody = typeof body === "string" 
-      ? body 
-      : Array.isArray(body) 
-         
-        ? body.map((b: any) => b.children?.map((c: any) => c.text).join("") || "").join("\n") 
+    const plainTextBody = typeof body === "string"
+      ? body
+      : Array.isArray(body)
+        ? body.map((b: any) => b.children?.map((c: any) => c.text).join("") || "").join("\n")
         : "";
 
     try {
@@ -183,19 +178,28 @@ export function DiscoveryPanel({
           context_hint: topic,
           lesson_content: plainTextBody,
         }),
-        signal: abortRef.current.signal,
+        signal: controller.signal,
       });
 
       const reader = res.body!.getReader();
-      const dec = new TextDecoder();
+      // Use { stream: true } so the decoder doesn't flush its internal buffer on each call,
+      // allowing multi-byte characters split across chunks to be handled correctly.
+      const dec = new TextDecoder("utf-8", { fatal: false });
+      // Buffer accumulates text across read() calls so that a `data:` line straddling
+      // two chunks is never split and dropped.
+      let sseBuffer = "";
 
-      while (true) {
+      outer: while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        for (const line of dec.decode(value).split("\n")) {
+        sseBuffer += dec.decode(value, { stream: true });
+        const lines = sseBuffer.split("\n");
+        // The last element is an incomplete line (or ""); keep it for the next read.
+        sseBuffer = lines.pop() ?? "";
+        for (const line of lines) {
           if (!line.startsWith("data: ")) continue;
           const payload = line.slice(6).trim();
-          if (payload === "[DONE]") break;
+          if (payload === "[DONE]") break outer;
           try {
             fullResponse += JSON.parse(payload).text ?? "";
             setMessages((prev) => {
@@ -206,6 +210,8 @@ export function DiscoveryPanel({
           } catch {}
         }
       }
+      // Flush any remaining bytes the decoder was holding for multi-byte chars.
+      dec.decode();
     } catch (e: unknown) {
       if ((e as { name?: string }).name !== "AbortError") {
         setMessages((prev) => {
@@ -219,28 +225,33 @@ export function DiscoveryPanel({
         });
       }
     } finally {
-      // Finalize streaming bubble
-      setMessages((prev) => {
-        const msgs = [...prev];
-        if (msgs.length > 0)
-          msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], streaming: false };
-        return msgs;
-      });
+      // Only finalize state for the request that is still current.
+      // If another sendQuery was called while this one was in-flight, abortRef.current
+      // will have been replaced; the old request must not touch the new request's state.
+      if (abortRef.current === controller) {
+        // Finalize streaming bubble
+        setMessages((prev) => {
+          const msgs = [...prev];
+          if (msgs.length > 0)
+            msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], streaming: false };
+          return msgs;
+        });
 
-      // Record completed assistant turn for multi-turn context
-      if (fullResponse) {
-        conversationRef.current = [
-          ...conversationRef.current,
-          { role: "assistant", content: fullResponse },
-        ];
-        setLiveAnnouncement(fullResponse);
-        if (!firstResponseRef.current) {
-          firstResponseRef.current = true;
-          setShowSuggestions(true);
+        // Record completed assistant turn for multi-turn context
+        if (fullResponse) {
+          conversationRef.current = [
+            ...conversationRef.current,
+            { role: "assistant", content: fullResponse },
+          ];
+          setLiveAnnouncement(fullResponse);
+          if (!firstResponseRef.current) {
+            firstResponseRef.current = true;
+            // suggestions remain visible — they were shown upfront and hide only on user send
+          }
         }
-      }
 
-      setStreaming(false);
+        setStreaming(false);
+      }
     }
   }
 
@@ -272,44 +283,44 @@ export function DiscoveryPanel({
         {liveAnnouncement}
       </div>
 
-      {/* Panel — lessons in from the right or popover */}
+      {/* Panel — popover (floating) or sidebar */}
       {(() => {
         const posX = x !== undefined ? x : lastPosRef.current?.x;
         const posY = y !== undefined ? y : lastPosRef.current?.y;
-        
+
         // If mode is explicitly popover, always treat as floating (even if x/y are not fully resolved yet)
         // If mode isn't set, guess based on whether we have coordinates.
         const isFloating = mode === "popover" || (mode === undefined && posX !== undefined && posY !== undefined);
-        
+
         let floatingStyle: React.CSSProperties = {};
         let originClass = "origin-center";
-        
+
         if (isFloating && posX !== undefined && posY !== undefined) {
           const isLeft = posX < 50;
-          const isTop = posY < 50;
-          
-          if (isLeft) floatingStyle.left = `${posX! + 2}%`;
-          else floatingStyle.right = `${100 - posX! + 2}%`;
-          
-          if (isTop) floatingStyle.top = `${posY!}%`;
-          else floatingStyle.bottom = `${100 - posY!}%`;
-          
-          if (isLeft && isTop) originClass = "origin-top-left";
-          else if (isLeft && !isTop) originClass = "origin-bottom-left";
-          else if (!isLeft && isTop) originClass = "origin-top-right";
-          else if (!isLeft && !isTop) originClass = "origin-bottom-right";
+          const isTop  = posY < 50;
+
+          if (isLeft) floatingStyle.left  = `${posX + 2}%`;
+          else        floatingStyle.right = `${100 - posX + 2}%`;
+
+          if (isTop) floatingStyle.top    = `${posY}%`;
+          else       floatingStyle.bottom = `${100 - posY}%`;
+
+          if  (isLeft &&  isTop)  originClass = "origin-top-left";
+          else if (isLeft && !isTop)  originClass = "origin-bottom-left";
+          else if (!isLeft && isTop)  originClass = "origin-top-right";
+          else                        originClass = "origin-bottom-right";
         } else if (isFloating) {
           // Fallback if we are in popover mode but x/y aren't known yet (prevents jumping from sidebar)
           floatingStyle = { top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
         }
 
         const floatingClasses = `absolute w-[400px] md:w-[460px] max-h-[85vh] rounded-3xl flex flex-col
-          bg-background/96 backdrop-blur-3xl border border-border/10
+          bg-card/80 backdrop-blur-3xl border border-white/10
           shadow-2xl transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${originClass}
           ${open ? "opacity-100 scale-100" : "opacity-0 scale-[0.3] pointer-events-none"}`;
 
         const sidebarClasses = `absolute top-0 right-0 bottom-0 w-[42%] flex flex-col
-          bg-background/96 backdrop-blur-2xl border-l border-border/10
+          bg-card/80 backdrop-blur-2xl border-l border-white/10
           shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]
           ${open ? "translate-x-0" : "translate-x-full"}`;
 
@@ -327,156 +338,168 @@ export function DiscoveryPanel({
             style={isFloating ? floatingStyle : undefined}
             className={isFloating ? floatingClasses : sidebarClasses}
           >
-        {/* ── Header ── */}
-        <div className="shrink-0 px-4 pt-4 pb-3 border-b border-border/8">
-          <div className="flex items-center justify-between mb-2">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-accent/20 text-foreground border border-accent/30">
-              {label}
-            </span>
-            <button
-              onClick={onClose}
-              className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-background/10"
-              aria-label="Close panel"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
 
-          <div className="flex gap-1 bg-background/5 p-0.5 rounded-lg">
-            <button
-              onClick={() => setTab("learn")}
-              className={`flex-1 flex items-center justify-center gap-1.5 text-[12.5px] font-semibold py-1.5 rounded-md transition-all duration-150
-                ${tab === "learn" ? "bg-background/12 text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              <BookOpen className="h-3 w-3" />
-              Learn
-            </button>
-            <button
-              onClick={() => setTab("ask")}
-              className={`flex-1 flex items-center justify-center gap-1.5 text-[12.5px] font-semibold py-1.5 rounded-md transition-all duration-150
-                ${tab === "ask" ? "bg-background/12 text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              <Sparkles className="h-3 w-3" />
-              Ask AI
-            </button>
-          </div>
-        </div>
-
-        {/* ── Learn tab ── */}
-        {tab === "learn" && (
-          <div
-            className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4 scrollbar-none"
-            style={{ scrollbarWidth: "none" }}
-          >
-            {(photos?.length ?? 0) > 0 && <PhotoCardStack photos={photos} />}
-            {body ? (
-              <div className="text-foreground text-[13.5px] leading-relaxed prose prose-base prose-invert max-w-none">
-                {typeof body === "string" ? body : <PortableText value={body} />}
+            {/* ── Header ── */}
+            <div className="shrink-0 px-5 pt-4 pb-3.5 border-b border-white/8">
+              <div className="flex items-center justify-between">
+                {/* Left: AI indicator + label pill */}
+                <div className="flex items-center gap-2.5">
+                  <div className="bg-accent/20 rounded-full p-1.5 ring-1 ring-accent/30">
+                    <Sparkles className="h-3.5 w-3.5 text-accent" />
+                  </div>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide bg-accent/15 text-foreground border border-accent/25">
+                    {label}
+                  </span>
+                </div>
+                {/* Right: close */}
+                <button
+                  onClick={onClose}
+                  className="text-muted-foreground hover:text-foreground transition-colors p-2 rounded-xl
+                    hover:bg-foreground/8 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                  aria-label="Close panel"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
-            ) : (
-              !(photos?.length ?? 0) && (
-                <p className="text-muted-foreground text-[11px] italic text-center mt-6">
-                  No content yet. Switch to Ask AI to learn about this feature.
-                </p>
-              )
-            )}
-          </div>
-        )}
+            </div>
 
-        {/* ── Ask AI tab ── */}
-        {tab === "ask" && (
-          <>
-            {/* Message list */}
+            {/* ── Single scrollable body ── */}
             <div
-              className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-3 scrollbar-none"
+              className="flex-1 overflow-y-auto scrollbar-none"
               style={{ scrollbarWidth: "none" }}
             >
-              {messages.map((msg, i) => (
-                <div
-                  key={i}
-                  className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  {msg.role === "assistant" && (
-                    <div className="shrink-0 mt-0.5 bg-accent/20 rounded-full p-1 h-fit">
-                      <Bot className="h-2.5 w-2.5 text-accent" />
+
+              {/* Learn content — photos and rich text body, shown above AI chat if present */}
+              {hasLearnContent && (
+                <div className="px-4 pt-4 pb-2 flex flex-col gap-4">
+                  {(photos?.length ?? 0) > 0 && <PhotoCardStack photos={photos} />}
+                  {body && (
+                    <div className="text-foreground text-[13.5px] leading-relaxed prose prose-sm prose-invert max-w-none">
+                      {typeof body === "string" ? body : <PortableText value={body} />}
                     </div>
                   )}
-                  <div
-                    className={`text-[11.5px] leading-relaxed rounded-2xl px-3 py-2 max-w-[88%]
-                      ${msg.role === "user"
-                        ? "bg-accent/20 text-foreground rounded-tr-sm"
-                        : "bg-background/7 text-foreground rounded-tl-sm"
-                      }`}
-                  >
-                    {msg.text ? (
-                      msg.role === "assistant" ? renderText(msg.text) : msg.text
-                    ) : (
-                      msg.streaming && (
-                        <span className="flex gap-1 items-center py-0.5">
-                          {[0, 150, 300].map((d) => (
-                            <span
-                              key={d}
-                              className="h-1 w-1 rounded-full bg-accent/60 animate-bounce"
-                              style={{ animationDelay: `${d}ms` }}
-                            />
-                          ))}
-                        </span>
-                      )
-                    )}
+                  {/* Separator — visually bridges learn content and AI chat section */}
+                  <div className="flex items-center gap-3 mt-1 mb-1">
+                    <div className="h-px flex-1 bg-white/8" />
+                    <span className="flex items-center gap-1.5 text-[9px] uppercase tracking-widest text-muted-foreground font-semibold">
+                      <Sparkles className="h-2.5 w-2.5" />
+                      AI Assistant
+                    </span>
+                    <div className="h-px flex-1 bg-white/8" />
                   </div>
                 </div>
-              ))}
-              <div ref={bottomRef} />
-            </div>
+              )}
 
-            {/* Suggested question pills — appear after first AI response */}
-            {showSuggestions && !streaming && (
-              <div className="shrink-0 px-3 pb-2 flex flex-col gap-1.5">
-                <p className="text-[9px] text-muted-foreground font-semibold uppercase tracking-widest">
-                  Try asking
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {SUGGESTIONS.map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => handleSend(s)}
-                      className="text-[10.5px] text-foreground bg-accent/10 border border-accent/25
-                        rounded-full px-3 py-1 hover:bg-accent/20 active:scale-95
-                        transition-all duration-150 text-left"
+              {/* AI chat messages + suggestions */}
+              <div className="px-4 py-3 flex flex-col gap-3">
+
+                {/* Empty / welcome state when there is no topic to auto-fire */}
+                {messages.length === 0 && !streaming && !topic && (
+                  <div className="flex flex-col items-center py-8 gap-3 text-center">
+                    <div className="bg-accent/10 rounded-full p-3.5 ring-1 ring-accent/20">
+                      <Sparkles className="h-5 w-5 text-accent/70" />
+                    </div>
+                    <p className="text-sm text-muted-foreground leading-snug">
+                      Ask me anything about{" "}
+                      <span className="text-foreground font-medium">{label}</span>
+                    </p>
+                  </div>
+                )}
+
+                {/* Message bubbles */}
+                {messages.map((msg, i) => (
+                  <div
+                    key={i}
+                    className={`flex gap-2.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                  >
+                    {msg.role === "assistant" && (
+                      <div className="shrink-0 mt-1 bg-accent/15 rounded-full p-1.5 h-fit ring-1 ring-accent/20">
+                        <Sparkles className="h-3 w-3 text-accent" />
+                      </div>
+                    )}
+                    <div
+                      className={`text-sm leading-relaxed rounded-2xl px-3.5 py-2.5 max-w-[88%] ${
+                        msg.role === "user"
+                          ? "bg-foreground/8 text-foreground rounded-tr-sm"
+                          : "bg-accent/15 border border-accent/20 text-foreground rounded-tl-sm"
+                      }`}
                     >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+                      {msg.text ? (
+                        msg.role === "assistant" ? renderText(msg.text) : msg.text
+                      ) : (
+                        msg.streaming && (
+                          <span className="flex gap-1 items-center py-0.5">
+                            {[0, 150, 300].map((d) => (
+                              <span
+                                key={d}
+                                className="h-1.5 w-1.5 rounded-full bg-accent animate-bounce"
+                                style={{ animationDelay: `${d}ms` }}
+                              />
+                            ))}
+                          </span>
+                        )
+                      )}
+                    </div>
+                  </div>
+                ))}
 
-            {/* Input bar */}
-            <div className="shrink-0 px-3 py-2 border-t border-border/8 flex gap-2 items-center">
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                placeholder="Ask about this feature…"
-                disabled={streaming}
-                className="flex-1 bg-background/7 text-foreground text-[11.5px] placeholder:text-muted-foreground
-                  rounded-xl px-3 py-2 outline-none focus:ring-1 focus:ring-accent/50
-                  disabled:opacity-40 transition-all"
-              />
-              <button
-                onClick={() => handleSend()}
-                disabled={!input.trim() || streaming}
-                className="shrink-0 bg-accent/20 hover:bg-accent/35 disabled:opacity-30
-                  disabled:cursor-not-allowed text-accent rounded-xl p-2 transition-all active:scale-90"
-                aria-label="Send"
-              >
-                <Send className="h-3.5 w-3.5" />
-              </button>
+                {/* Suggestion chips — shown upfront on open, hidden after user sends */}
+                {showSuggestions && !streaming && (
+                  <div className="flex flex-col gap-2 pt-1 pb-1">
+                    <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-semibold">
+                      Try asking
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {SUGGESTIONS.map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => handleSend(s)}
+                          className="text-sm text-accent bg-accent/10 border border-accent/25
+                            rounded-full px-3.5 py-1.5 hover:bg-accent/20 active:scale-[0.97]
+                            transition-all duration-150 text-left"
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div ref={bottomRef} />
+              </div>
             </div>
-          </>
-        )}
+
+            {/* ── Input bar ── */}
+            <div className="shrink-0 px-4 py-3 border-t border-white/8">
+              <div className="flex gap-2 items-center">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                  placeholder="Ask about this feature…"
+                  disabled={streaming}
+                  className="flex-1 bg-foreground/6 text-foreground text-sm placeholder:text-muted-foreground
+                    rounded-full px-4 py-2.5 outline-none
+                    focus:ring-2 focus:ring-accent/60 focus:ring-offset-0
+                    disabled:opacity-40 transition-all duration-200"
+                />
+                <button
+                  onClick={() => handleSend()}
+                  disabled={!input.trim() || streaming}
+                  className="shrink-0 bg-accent text-accent-foreground
+                    hover:bg-accent/90
+                    disabled:bg-foreground/10 disabled:text-muted-foreground disabled:cursor-not-allowed
+                    rounded-full p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center
+                    transition-all duration-200 active:scale-90"
+                  aria-label="Send"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
           </div>
         );
       })()}
