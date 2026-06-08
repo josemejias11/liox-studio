@@ -29,23 +29,26 @@ function buildSystemPrompt(
 ): string {
   const title = course_title?.trim() || "this course";
 
-  let prompt =
-    `You are a learning assistant for the course: ${title}.\n\n` +
-    `Your role is strictly limited to answering questions that are directly related to the content of this course. ` +
-    `You must NOT discuss other products, other courses, current events, or any general knowledge that falls outside the scope of this course.\n\n` +
-    `If a user asks a question that is off-topic or unrelated to the course or the provided lesson content, ` +
-    `you must respond with this exact message: ` +
-    `"I can only help with questions about ${title}. Please ask me something related to the course content!"\n\n` +
-    `Base all of your answers exclusively on the lesson content provided below. ` +
-    `Do not draw on outside knowledge beyond what is described in this course.`;
+  let prompt = `You are a dedicated learning assistant for the course: ${title}.\n\n`;
 
   if (course_description?.trim()) {
-    prompt += `\n\nCourse overview: ${course_description.trim()}`;
+    prompt += `You are an expert on the subject matter covered by this course: ${course_description.trim()}\n\n`;
   }
+
+  prompt +=
+    `Answer questions about any aspect of this course — individual lessons, chapters, ` +
+    `specifications, disclaimers, or the subject matter in general. ` +
+    `You may draw on your broader knowledge of the course topic to provide thorough, accurate, and helpful answers.\n\n` +
+    `Only decline if a question is completely unrelated to ${title} and its subject domain ` +
+    `(for example: weather forecasts, sports scores, cooking recipes, or other topics with no ` +
+    `connection to this course). In that case, politely redirect the user to the course content — ` +
+    `keep the redirect brief and natural, not a canned phrase.\n\n` +
+    `When current lesson content is provided below, treat it as your primary, highest-confidence ` +
+    `reference. Supplement it with your broader subject-matter knowledge as needed.`;
 
   if (lesson_content?.trim()) {
     prompt +=
-      `\n\nOfficial lesson content for this section (use as your primary reference):\n"""\n${lesson_content.trim()}\n"""`;
+      `\n\nCurrent lesson content (primary reference):\n"""\n${lesson_content.trim()}\n"""`;
   }
 
   return prompt;

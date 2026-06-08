@@ -84,6 +84,9 @@ export function DiscoveryPanel({
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const [liveAnnouncement, setLiveAnnouncement] = useState("");
+  // Tracks whether the viewport is below the md breakpoint (768 px).
+  // Initialized false (SSR-safe); corrected on mount and kept in sync with resize.
+  const [isMobileView, setIsMobileView] = useState(false);
 
   const panelRef         = useRef<HTMLDivElement>(null);
   const abortRef         = useRef<AbortController | null>(null);
@@ -92,6 +95,7 @@ export function DiscoveryPanel({
   const bottomRef        = useRef<HTMLDivElement>(null);
   const inputRef         = useRef<HTMLInputElement>(null);
   const swipeTouchStartX = useRef(0);
+  const swipeTouchStartY = useRef(0);
   const lastPosRef       = useRef<{ x: number; y: number } | null>(null);
   const scrollBodyRef    = useRef<HTMLDivElement>(null);
   const userHasSentRef   = useRef(false);
@@ -108,6 +112,15 @@ export function DiscoveryPanel({
   }, [open, label, hasLearnContent, x, y]);
 
   useFocusTrap(panelRef, open);
+
+  // Sync isMobileView with the viewport width (md breakpoint = 768 px).
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    setIsMobileView(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobileView(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   // Reset all state when a new hotspot opens
   useEffect(() => {
@@ -319,8 +332,15 @@ export function DiscoveryPanel({
           if (isLeft) floatingStyle.left  = `clamp(4%, ${posX + 2}%, 56%)`;
           else        floatingStyle.right = `clamp(4%, ${100 - posX + 2}%, 56%)`;
 
-          if (isTop) floatingStyle.top    = `clamp(2%, ${posY}%, 55%)`;
-          else       floatingStyle.bottom = `clamp(2%, ${100 - posY}%, 55%)`;
+          if (isTop) {
+            floatingStyle.top = `clamp(2%, ${posY}%, 55%)`;
+            // Cap height to the space remaining below the hotspot so the panel never bleeds
+            // past the player's overflow-hidden boundary.
+            floatingStyle.maxHeight = `min(700px, ${Math.max(20, 98 - posY)}%)`;
+          } else {
+            floatingStyle.bottom = `clamp(2%, ${100 - posY}%, 55%)`;
+            floatingStyle.maxHeight = `min(700px, ${Math.max(20, posY - 2)}%)`;
+          }
 
           if  (isLeft &&  isTop)  originClass = "origin-top-left";
           else if (isLeft && !isTop)  originClass = "origin-bottom-left";
@@ -328,15 +348,23 @@ export function DiscoveryPanel({
           else                        originClass = "origin-bottom-right";
         } else if (isFloating) {
           // Fallback if we are in popover mode but x/y aren't known yet (prevents jumping from sidebar)
-          floatingStyle = { top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
+          floatingStyle = { top: "50%", left: "50%", transform: "translate(-50%, -50%)", maxHeight: "min(700px, 88%)" };
         }
 
-        const floatingClasses = `absolute w-[min(380px,88%)] max-h-[min(520px,82%)] rounded-3xl flex flex-col
+        // Desktop/tablet floating panel — maxHeight is set via floatingStyle (dynamic, based on hotspot position).
+        const floatingClasses = `absolute w-[min(500px,58%)] rounded-3xl flex flex-col
           bg-card/80 backdrop-blur-3xl border border-white/10
           shadow-2xl transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${originClass}
           ${open ? "opacity-100 scale-100" : "opacity-0 scale-[0.3] pointer-events-none"}`;
 
-        const sidebarClasses = `absolute top-0 right-0 bottom-0 w-[42%] flex flex-col
+        // Mobile bottom-sheet — slides up from the bottom, full width, ~72 % of viewport height.
+        const mobileClasses = `absolute bottom-0 left-0 right-0 w-full h-[72vh] rounded-t-3xl flex flex-col
+          bg-card/80 backdrop-blur-3xl border-t border-white/10
+          shadow-2xl transition-transform duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]
+          ${open ? "translate-y-0" : "translate-y-full pointer-events-none"}`;
+
+        // Sidebar (non-lesson / explicit sidebar mode) — slightly wider than before.
+        const sidebarClasses = `absolute top-0 right-0 bottom-0 w-[48%] flex flex-col
           bg-card/80 backdrop-blur-2xl border-l border-white/10
           shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]
           ${open ? "translate-x-0" : "translate-x-full"}`;
@@ -348,12 +376,21 @@ export function DiscoveryPanel({
             aria-modal="true"
             aria-label={label}
             onClick={(e) => e.stopPropagation()}
-            onTouchStart={(e) => { swipeTouchStartX.current = e.touches[0].clientX; }}
-            onTouchEnd={(e) => {
-              if (!isFloating && e.changedTouches[0].clientX - swipeTouchStartX.current > 56) onClose();
+            onTouchStart={(e) => {
+              swipeTouchStartX.current = e.touches[0].clientX;
+              swipeTouchStartY.current = e.touches[0].clientY;
             }}
-            style={isFloating ? floatingStyle : undefined}
-            className={isFloating ? floatingClasses : sidebarClasses}
+            onTouchEnd={(e) => {
+              // Sidebar: swipe right to close
+              if (!isFloating && e.changedTouches[0].clientX - swipeTouchStartX.current > 56) onClose();
+              // Mobile bottom-sheet: swipe down to close
+              if (isMobileView && e.changedTouches[0].clientY - swipeTouchStartY.current > 80) onClose();
+            }}
+            // On mobile: bottom-sheet positioning (no inline style — Tailwind classes handle it).
+            // On desktop floating: apply the clamp-based x/y inline style.
+            // On sidebar: no inline style.
+            style={(!isMobileView && isFloating) ? floatingStyle : undefined}
+            className={isMobileView ? mobileClasses : (isFloating ? floatingClasses : sidebarClasses)}
           >
 
             {/* ── Header ── */}
