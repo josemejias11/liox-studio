@@ -7,7 +7,6 @@ interface HotspotItem {
   _key: string;
   label?: string;
   topic?: string;
-  body?: string;
   photos?: unknown[];
   x?: number;
   y?: number;
@@ -36,10 +35,11 @@ function shortId(): string {
 interface HotspotMapProps {
   hotspots: HotspotItem[];
   imageUrl: string | null;
+  itemTypeName: string;
   onChange: (newHotspots: HotspotItem[]) => void;
 }
 
-function HotspotMap({ hotspots, imageUrl, onChange }: HotspotMapProps) {
+function HotspotMap({ hotspots, imageUrl, itemTypeName, onChange }: HotspotMapProps) {
   const [selected,  setSelected]  = useState<number | null>(null);
   const [dragging,  setDragging]  = useState<number | null>(null);
   const [dragPos,   setDragPos]   = useState<{ x: number; y: number } | null>(null);
@@ -73,11 +73,10 @@ function HotspotMap({ hotspots, imageUrl, onChange }: HotspotMapProps) {
     const y = Math.max(2, Math.min(98, Math.round(((e.clientY - rect.top)   / rect.height) * 1000) / 10));
 
     const newItem: HotspotItem = {
-      _type: "hotspot",
+      _type: itemTypeName,
       _key:  shortId(),
       label: `Feature ${hotspots.length + 1}`,
       topic: "",
-      body:  "",
       photos: [],
       x,
       y,
@@ -313,8 +312,11 @@ function HotspotMap({ hotspots, imageUrl, onChange }: HotspotMapProps) {
 // ── Main custom input ───────────────────────────────────────────────────────
 
 export function HotspotMapInput(props: ArrayOfObjectsInputProps) {
-  const { value, onChange, path, renderDefault } = props;
+  const { value, onChange, path, renderDefault, schemaType } = props;
   const hotspots = (value ?? []) as HotspotItem[];
+  // Derive the item _type from the schema so this component works for both
+  // hotspots (type: "hotspot") and floatingGraphics (type: "graphic").
+  const itemTypeName = (schemaType as { of?: Array<{ name?: string }> }).of?.[0]?.name ?? "hotspot";
 
   const client = useClient({ apiVersion: "2024-01-01" });
   const { projectId = "", dataset = "" } = client.config();
@@ -336,6 +338,7 @@ export function HotspotMapInput(props: ArrayOfObjectsInputProps) {
       <HotspotMap
         hotspots={hotspots}
         imageUrl={imageUrl}
+        itemTypeName={itemTypeName}
         onChange={handleChange}
       />
 

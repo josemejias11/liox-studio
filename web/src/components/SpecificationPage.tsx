@@ -74,7 +74,7 @@ export function SpecificationPage({
 
         {/* Spec groups */}
         <div className="px-5 pb-4 flex flex-col gap-5">
-          {spec.specGroups.map((group, groupIndex) => (
+          {(spec.specGroups ?? []).map((group, groupIndex) => (
             <section key={groupIndex} aria-label={group.groupName}>
               {/* Group header */}
               <h2 className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2 pb-2 border-b border-border/30">
@@ -83,7 +83,7 @@ export function SpecificationPage({
 
               {/* Spec rows */}
               <dl className="flex flex-col gap-px">
-                {group.specs.map((item, specIndex) => (
+                {(group.specs ?? []).map((item, specIndex) => (
                   <div
                     key={specIndex}
                     className={[
