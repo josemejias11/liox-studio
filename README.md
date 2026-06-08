@@ -12,13 +12,13 @@ Two services run concurrently:
 Sanity CMS (headless)
        │
        ▼
-Next.js 16 (web/)              FastAPI (api/)
-─────────────────              ──────────────
-/                 course player     /chat    RAG + streaming chat (SSE)
-/analytics        instructor dashboard /quiz    RAG + quiz generation
-/studio           authoring UI      /health  ChromaDB status
-/api/chat         AI tutor (SSE)
-/api/quiz         quiz generation
+Next.js 16 (web/)
+─────────────────
+/                 course player
+/analytics        instructor dashboard
+/studio           authoring UI
+/api/chat         AI tutor (Anthropic API route)
+/api/quiz         AI quiz generation
 /api/progress     lesson + quiz progress (SQLite)
 ```
 
