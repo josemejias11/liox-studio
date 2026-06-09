@@ -13,8 +13,6 @@ const ChatRequestSchema = z.object({
       content: z.string(),
     })
   ).optional(),
-  // context_hint carries the hotspot topic string sent from DiscoveryPanel
-  context_hint: z.string().optional(),
   lesson_content: z.string().optional(),
   course_title: z.string().optional(),
   course_description: z.string().optional(),
@@ -159,16 +157,25 @@ export async function POST(req: NextRequest) {
     .slice(0, -1)
     .map((m) => ({ role: m.role, content: m.content }));
 
-  const grokStream = await client.chat.completions.create({
-    model: "grok-3-mini",
-    max_tokens: 300,
-    stream: true,
-    messages: [
-      { role: "system", content: systemPrompt },
-      ...history,
-      { role: "user", content: lastMessage },
-    ],
-  });
+  let grokStream;
+  try {
+    grokStream = await client.chat.completions.create({
+      model: "grok-3-mini",
+      max_tokens: 1024,
+      stream: true,
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...history,
+        { role: "user", content: lastMessage },
+      ],
+    });
+  } catch (e: unknown) {
+    const errorMessage = e instanceof Error ? e.message : "xAI API error";
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: 502,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
   const stream = new ReadableStream({
     async start(controller) {

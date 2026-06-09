@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Bot, BarChart2, BookOpen, PlayCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { sanityClient } from "@/sanity/lib/client";
+import { readClient } from "@/sanity/lib/client";
 import { COURSES_QUERY } from "@/sanity/lib/queries";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -16,7 +16,7 @@ export interface CourseSummary {
 }
 
 export default async function Home() {
-  const courses = await sanityClient.fetch<CourseSummary[]>(COURSES_QUERY);
+  const courses = await readClient.fetch<CourseSummary[]>(COURSES_QUERY);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">

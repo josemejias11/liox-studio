@@ -1,3 +1,4 @@
+"use client";
 import { useCallback, useEffect, useState } from "react";
 import { set, useClient } from "sanity";
 import type { ArrayOfObjectsInputProps } from "sanity";

@@ -1,3 +1,4 @@
+"use client";
 import { useEffect, useRef, useState } from "react";
 import { set, useFormValue, useClient } from "sanity";
 import type { ArrayOfObjectsInputProps, Path } from "sanity";

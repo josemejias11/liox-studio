@@ -62,8 +62,7 @@ export interface SanityLesson {
   stageBackground?: { asset?: { url?: string } };
   completionTransition?: "spin" | "rise" | "fade";
   hotspots?: SanityHotspot[];
-  textHotspots?: { _key: string; triggerWord: string; linkedLayer: string }[];
-  videoFile?: { asset?: { url?: string } };
+videoFile?: { asset?: { url?: string } };
   videoAspectRatio?: string;
   floatingGraphics?: { image?: { asset?: { url?: string } }; x?: number; y?: number; width?: string }[];
 }

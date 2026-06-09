@@ -124,21 +124,3 @@ export const COURSE_BY_SLUG_QUERY = groq`
     "disclaimer": disclaimer->{${DISCLAIMER_FIELDS}},
   }
 `;
-
-// First published module — used on the homepage while we have no routing
-export const FIRST_COURSE_QUERY = groq`
-  *[_type == "course" && published == true] | order(_createdAt desc) [0] {
-    _id,
-    title,
-    slug,
-    description,
-    thumbnail,
-    learningObjectives,
-    "chapters": chapters[]->{
-      ${CHAPTER_FIELDS}
-    },
-    "specifications": specifications[]->{${SPEC_FIELDS}},
-    "quiz": quiz->{${QUIZ_FIELDS}},
-    "disclaimer": disclaimer->{${DISCLAIMER_FIELDS}},
-  }
-`;

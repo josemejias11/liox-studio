@@ -6,7 +6,7 @@ An AI-powered eLearning platform that replaces traditional authoring tools (Arti
 
 ## Architecture
 
-Two services run concurrently:
+A single Next.js 16 application — no separate backend service required.
 
 ```
 Sanity CMS (headless)
@@ -14,21 +14,21 @@ Sanity CMS (headless)
        ▼
 Next.js 16 (web/)
 ─────────────────
-/                 course player
+/                 course library
+/course/[slug]    16:9 interactive course player
 /analytics        instructor dashboard
-/studio           authoring UI
-/api/chat         AI tutor — Gemini 2.0 Flash streaming (SSE)
-/api/quiz         AI quiz generation — Claude Opus
-/api/progress     lesson + quiz progress (SQLite)
+/studio           Sanity authoring UI (embedded)
+/api/chat         AI tutor — xAI Grok streaming (SSE)
+/api/quiz         AI quiz generation — Google Gemini 2.0 Flash
+/api/progress     lesson + quiz progress (SQLite via Prisma)
 ```
 
 **Data flow:**
 1. Content is authored in Sanity Studio → published to the Sanity CDN
-2. `page.tsx` fetches course + lessons from Sanity at render time
-3. Learner asks a question → Next.js `/api/chat` → Gemini 2.0 Flash streaming response (SSE)
-4. Quiz request → Next.js `/api/quiz` → Claude Opus returns structured JSON
+2. `page.tsx` fetches course + lessons from Sanity at render time via the CDN read client
+3. Learner asks a question → `/api/chat` → xAI Grok streams a response (SSE)
+4. Quiz request → `/api/quiz` → Google Gemini 2.0 Flash returns structured JSON
 5. Hotspot visits and quiz results → `/api/progress` → SQLite via Prisma
-6. FastAPI `/chat` and `/quiz` are available for direct RAG queries against ChromaDB
 
 ---
 
@@ -36,13 +36,13 @@ Next.js 16 (web/)
 
 ### Prerequisites
 - Node.js 20+
-- Python 3.11+
 - A free [Sanity account](https://sanity.io)
-- A [Google AI Studio](https://aistudio.google.com) API key (optional — mock mode works without one)
+- An [xAI API key](https://x.ai) for the AI chat tutor (optional — mock mode works without one)
+- A [Google AI Studio](https://aistudio.google.com) API key for quiz generation (optional — mock mode works without one)
 
 ---
 
-### 1. Frontend (Next.js)
+### 1. Install and run
 
 ```bash
 cd web
@@ -56,30 +56,23 @@ npm run dev
 
 ---
 
-### 2. Backend (FastAPI)
-
-```bash
-cd api
-python -m venv venv
-source venv/bin/activate          # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-export ANTHROPIC_API_KEY="sk-ant-..."
-uvicorn main:app --reload
-# http://localhost:8000 — Swagger docs at /docs
-```
-
----
-
-### 3. Connect Sanity
+### 2. Connect Sanity
 
 1. Go to [sanity.io/manage](https://sanity.io/manage) → **Create new project** → copy the **Project ID**
-2. Update `NEXT_PUBLIC_SANITY_PROJECT_ID` in `web/.env` with your project ID
+2. Update `web/.env` with your project ID:
+
+```env
+NEXT_PUBLIC_SANITY_PROJECT_ID="your-project-id"
+NEXT_PUBLIC_SANITY_DATASET="production"
+DATABASE_URL="file:./prisma/dev.db"
+```
+
 3. Create `web/.env.local` with your secrets:
 
 ```env
 SANITY_API_TOKEN="your-editor-token"
+XAI_API_KEY="your-xai-key"
 GOOGLE_AI_STUDIO_API_KEY="your-gemini-key"
-ANTHROPIC_API_KEY="sk-ant-..."   # used by /api/quiz and the FastAPI backend
 ```
 
 #### CORS Origins
@@ -105,10 +98,10 @@ Strict 16:9 interactive player with animated lesson transitions, hotspot-gated n
 |-----------|-------------|
 | `LessonFrame` | 16:9 locked frame, nav bar, progress bar, course map toggle |
 | `Hotspot` / `PulseHotspot` | Pulsing dot positioned by %; turns emerald when visited |
-| `DiscoveryPanel` | Single-pane AI assistant — shows learn content + live Gemini chat with upfront prompt suggestions; auto-fires a sales briefing on open |
+| `DiscoveryPanel` | Single-pane AI assistant — shows learn content + live Grok chat with upfront prompt suggestions |
 | `ProductStage` | 3D-style product view with floating hotspots and a completion burst animation |
 | `VideoLesson` | Native `<video>` with continue-gating |
-| `QuizLesson` | Claude-generated multiple-choice quiz with animated score screen |
+| `QuizLesson` | Gemini-generated multiple-choice quiz with animated score screen |
 | `CourseComplete` | Completion screen with rotating rings and stats (lessons, hotspots, %) |
 | `NavMap` | Full-course map with type icons and completion dots |
 | `LayerFrame` | Slide-in panel for hotspot layer content (video, images, interactions) |
@@ -123,7 +116,7 @@ Where instructional designers create and publish course content.
 - **Chapter** — ordered collection of lessons
 - **Lesson** — atomic content unit with:
   - `headline`, `body`, `media`
-  - `lessonType`: `content` | `interaction` | `stage` | `video` | `quiz`
+  - `lessonType`: `content` | `interaction` | `stage` | `video`
   - `hotspots[]` — label, AI topic query, x/y position (%)
   - `videoFile` — uploaded video (video lessons)
 - **Specification** — product spec sheet attached to a course
@@ -162,28 +155,17 @@ Server-rendered dashboard reading directly from SQLite:
 | `interaction` | Hotspot-gated lesson — next locked until all hotspots visited |
 | `stage` | 3D product view with floating discovery hotspots |
 | `video` | Uploaded video file |
-| `quiz` | Claude generates questions from your course context at runtime |
 
 ---
 
 ## API Routes
 
-### Next.js (used by the frontend)
-
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/api/chat` | Streams Gemini 2.0 Flash tutor response (SSE). Body: `{ messages?, query?, context_hint?, lesson_content?, course_title?, course_description? }` |
-| `POST` | `/api/quiz` | Generates multiple-choice quiz JSON via Claude Opus. Body: `{ context?, num_questions? }` |
-| `GET`  | `/api/progress?sessionId=` | Returns lesson progress for a session |
-| `POST` | `/api/progress` | Upserts lesson progress or records a quiz attempt |
-
-### FastAPI (direct RAG access — `localhost:8000`)
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/chat` | RAG + Claude streaming chat (SSE) |
-| `POST` | `/quiz` | RAG + Claude JSON quiz generation |
-| `GET`  | `/health` | ChromaDB document count + status |
+| `POST` | `/api/chat` | Streams xAI Grok tutor response (SSE). Body: `{ messages?, query?, lesson_content?, course_title?, course_description? }` |
+| `POST` | `/api/quiz` | Generates multiple-choice quiz JSON via Gemini 2.0 Flash. Body: `{ context?, num_questions? }` |
+| `GET`  | `/api/progress?sessionId=` | Returns lesson and layer progress for a session |
+| `POST` | `/api/progress` | Upserts lesson/layer progress or records a quiz attempt |
 
 ---
 
@@ -193,8 +175,11 @@ Anonymous sessions are identified by a UUID stored in `localStorage` under the k
 
 | Table | Records |
 |-------|---------|
-| `LessonProgress` | Per-session, per-lesson: visited hotspots + completion flag |
-| `QuizAttempt` | Per-session, per-course: score, total, timestamp |
+| `Session` | One row per anonymous learner session |
+| `LessonProgress` | Per-session, per-lesson: completion flag |
+| `LayerProgress` | Per-session, per-layer: completion flag |
+| `HotspotVisit` | Per-session, per-hotspot: visited label |
+| `QuizAttempt` | Per-session, per-course: score, total, answers, timestamp |
 
 ---
 
@@ -202,12 +187,12 @@ Anonymous sessions are identified by a UUID stored in `localStorage` under the k
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `NEXT_PUBLIC_SANITY_PROJECT_ID` | Yes | From sanity.io/manage — set in `web/.env` |
+| `NEXT_PUBLIC_SANITY_PROJECT_ID` | Yes | Sanity project ID — set in `web/.env` |
 | `NEXT_PUBLIC_SANITY_DATASET` | No (default: `production`) | Sanity dataset name |
-| `SANITY_API_TOKEN` | Yes (for Studio mutations) | Editor-level Sanity token — set in `web/.env.local` |
-| `GOOGLE_AI_STUDIO_API_KEY` | No | Gemini API key for `/api/chat` — omit for mock mode |
-| `ANTHROPIC_API_KEY` | No | Claude API key for `/api/quiz` and FastAPI RAG backend |
-| `DATABASE_URL` | No (default: `file:./dev.db`) | SQLite path — pre-set in `web/.env` |
+| `SANITY_API_TOKEN` | Yes (for Studio) | Editor-level Sanity token — set in `web/.env.local` |
+| `XAI_API_KEY` | No | xAI API key for `/api/chat` — omit for mock mode |
+| `GOOGLE_AI_STUDIO_API_KEY` | No | Gemini API key for `/api/quiz` — omit for mock mode |
+| `DATABASE_URL` | No (default: `file:./prisma/dev.db`) | SQLite path — pre-set in `web/.env` |
 
 ---
 
@@ -216,10 +201,9 @@ Anonymous sessions are identified by a UUID stored in `localStorage` under the k
 | Layer | Technology |
 |-------|-----------|
 | CMS | Sanity (headless) + embedded Studio via `next-sanity` |
-| Frontend | Next.js 16, React 19, TypeScript |
+| Frontend | Next.js 16, React 19, TypeScript (strict) |
 | Styling | Tailwind CSS v4, `tw-animate-css`, shadcn/ui v4, MotoSans font |
-| AI — Chat | Google Gemini 2.0 Flash (`GOOGLE_AI_STUDIO_API_KEY`) |
-| AI — Quiz | Anthropic Claude (`claude-opus-4-8`, `ANTHROPIC_API_KEY`) |
-| AI — RAG | Anthropic Claude (`claude-3-5-sonnet`, FastAPI + ChromaDB) |
+| AI — Chat | xAI Grok (`grok-3-mini`) via OpenAI-compatible SDK |
+| AI — Quiz | Google Gemini 2.0 Flash (`@google/generative-ai`) |
 | Database | SQLite + Prisma ORM v5 (progress tracking, quiz attempts) |
-| Backend | Python FastAPI, ChromaDB (vector store / RAG) |
+| Animations | Framer Motion |

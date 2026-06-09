@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { sanityClient } from "@/sanity/lib/client";
+import { readClient } from "@/sanity/lib/client";
 import { COURSE_BY_SLUG_QUERY } from "@/sanity/lib/queries";
 import DeckViewer from "@/components/DeckViewer";
 import type { CourseSection, LessonSection } from "@/components/DeckViewer";
@@ -24,7 +24,7 @@ export default async function CoursePage({
 }) {
   const resolvedParams = await params;
 
-  const course = await sanityClient.fetch(COURSE_BY_SLUG_QUERY, {
+  const course = await readClient.fetch(COURSE_BY_SLUG_QUERY, {
     slug: resolvedParams.slug,
   });
 

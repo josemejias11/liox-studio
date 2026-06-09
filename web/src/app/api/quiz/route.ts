@@ -52,8 +52,9 @@ export async function POST(req: NextRequest) {
   try {
     const json = await req.json();
     body = QuizRequestSchema.parse(json);
-  } catch (err: any) {
-    return NextResponse.json({ error: "Invalid request payload", details: err.errors }, { status: 400 });
+  } catch (err: unknown) {
+    const details = err instanceof z.ZodError ? err.issues : undefined;
+    return NextResponse.json({ error: "Invalid request payload", details }, { status: 400 });
   }
 
   const { context, num_questions } = body;
@@ -77,7 +78,12 @@ export async function POST(req: NextRequest) {
     `{"title":"...","questions":[{"question":"...","options":["A","B","C","D"],"correct_answer":"...","explanation":"..."}]}`;
 
   try {
-    const result = await model.generateContent(prompt);
+    const result = await Promise.race([
+      model.generateContent(prompt),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Gemini response timed out after 30s")), 30_000)
+      ),
+    ]);
     const raw = result.response.text();
 
     // Strip any accidental markdown fences

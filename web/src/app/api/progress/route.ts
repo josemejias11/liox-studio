@@ -6,59 +6,48 @@ export async function GET(req: NextRequest) {
   const sessionId = new URL(req.url).searchParams.get("sessionId");
   // Simple UUID v4 regex validation
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  
+
   if (!sessionId || !uuidRegex.test(sessionId)) {
     return NextResponse.json({ error: "Valid sessionId required" }, { status: 400 });
   }
 
-  const progressRecords = await prisma.lessonProgress.findMany({
-    where: { sessionId },
-  });
+  try {
+    const [progressRecords, layerProgressRecords, hotspotRecords] = await Promise.all([
+      prisma.lessonProgress.findMany({ where: { sessionId } }),
+      prisma.layerProgress.findMany({ where: { sessionId } }),
+      prisma.hotspotVisit.findMany({ where: { sessionId } }),
+    ]);
 
-  const layerProgressRecords = await prisma.layerProgress.findMany({
-    where: { sessionId },
-  });
+    const lessons: Record<string, { visitedHotspots: string[]; completed: boolean }> = {};
+    const layers: Record<string, { visitedHotspots: string[]; completed: boolean }> = {};
 
-  const hotspotRecords = await prisma.hotspotVisit.findMany({
-    where: { sessionId },
-  });
+    for (const r of progressRecords) {
+      lessons[r.lessonId] = { visitedHotspots: [], completed: r.completed };
+    }
 
-  const lessons: Record<string, { visitedHotspots: string[]; completed: boolean }> = {};
-  const layers: Record<string, { visitedHotspots: string[]; completed: boolean }> = {};
+    for (const r of layerProgressRecords) {
+      layers[r.layerId] = { visitedHotspots: [], completed: r.completed };
+    }
 
-  for (const r of progressRecords) {
-    lessons[r.lessonId] = {
-      visitedHotspots: [],
-      completed: r.completed,
-    };
-  }
-
-  for (const r of layerProgressRecords) {
-    layers[r.layerId] = {
-      visitedHotspots: [],
-      completed: r.completed,
-    };
-  }
-
-  for (const h of hotspotRecords) {
-    if (h.layerId && h.layerId !== "") {
-      if (!layers[h.layerId]) {
-        layers[h.layerId] = { visitedHotspots: [], completed: false };
-      }
-      if (!layers[h.layerId].visitedHotspots.includes(h.label)) {
-        layers[h.layerId].visitedHotspots.push(h.label);
-      }
-    } else {
-      if (!lessons[h.lessonId]) {
-        lessons[h.lessonId] = { visitedHotspots: [], completed: false };
-      }
-      if (!lessons[h.lessonId].visitedHotspots.includes(h.label)) {
-        lessons[h.lessonId].visitedHotspots.push(h.label);
+    for (const h of hotspotRecords) {
+      if (h.layerId && h.layerId !== "") {
+        if (!layers[h.layerId]) layers[h.layerId] = { visitedHotspots: [], completed: false };
+        if (!layers[h.layerId].visitedHotspots.includes(h.label)) {
+          layers[h.layerId].visitedHotspots.push(h.label);
+        }
+      } else {
+        if (!lessons[h.lessonId]) lessons[h.lessonId] = { visitedHotspots: [], completed: false };
+        if (!lessons[h.lessonId].visitedHotspots.includes(h.label)) {
+          lessons[h.lessonId].visitedHotspots.push(h.label);
+        }
       }
     }
-  }
 
-  return NextResponse.json({ lessons, layers });
+    return NextResponse.json({ lessons, layers });
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Database error";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -71,77 +60,81 @@ export async function POST(req: NextRequest) {
 
   const body = parsed.data;
 
-  // Ensure session exists
-  await prisma.session.upsert({
-    where: { id: body.sessionId },
-    update: { updatedAt: new Date() },
-    create: { id: body.sessionId },
-  });
-
-  if (body.type === "lesson") {
-    const { sessionId, lessonId, visitedHotspots, completed } = body;
-
-    await prisma.lessonProgress.upsert({
-      where: { sessionId_lessonId: { sessionId, lessonId } },
-      update: { completed: completed ?? false },
-      create: { sessionId, lessonId, completed: completed ?? false },
+  try {
+    await prisma.session.upsert({
+      where: { id: body.sessionId },
+      update: { updatedAt: new Date() },
+      create: { id: body.sessionId },
     });
 
-    if (visitedHotspots && visitedHotspots.length > 0) {
-      await prisma.$transaction(
-        visitedHotspots.map((label) =>
-          prisma.hotspotVisit.upsert({
-            where: { sessionId_lessonId_layerId_label: { sessionId, lessonId, layerId: "", label } },
-            update: {},
-            create: { sessionId, lessonId, layerId: "", label },
-          })
-        )
-      );
+    if (body.type === "lesson") {
+      const { sessionId, lessonId, visitedHotspots, completed } = body;
+
+      await prisma.lessonProgress.upsert({
+        where: { sessionId_lessonId: { sessionId, lessonId } },
+        update: { completed: completed ?? false },
+        create: { sessionId, lessonId, completed: completed ?? false },
+      });
+
+      if (visitedHotspots && visitedHotspots.length > 0) {
+        await prisma.$transaction(
+          visitedHotspots.map((label) =>
+            prisma.hotspotVisit.upsert({
+              where: { sessionId_lessonId_layerId_label: { sessionId, lessonId, layerId: "", label } },
+              update: {},
+              create: { sessionId, lessonId, layerId: "", label },
+            })
+          )
+        );
+      }
+
+      return NextResponse.json({ ok: true });
     }
 
-    return NextResponse.json({ ok: true });
-  }
+    if (body.type === "layer") {
+      const { sessionId, lessonId, layerId, visitedHotspots, completed } = body;
 
-  if (body.type === "layer") {
-    const { sessionId, lessonId, layerId, visitedHotspots, completed } = body;
+      await prisma.layerProgress.upsert({
+        where: { sessionId_lessonId_layerId: { sessionId, lessonId, layerId } },
+        update: { completed: completed ?? false },
+        create: { sessionId, lessonId, layerId, completed: completed ?? false },
+      });
 
-    await prisma.layerProgress.upsert({
-      where: { sessionId_lessonId_layerId: { sessionId, lessonId, layerId } },
-      update: { completed: completed ?? false },
-      create: { sessionId, lessonId, layerId, completed: completed ?? false },
-    });
+      if (visitedHotspots && visitedHotspots.length > 0) {
+        await prisma.$transaction(
+          visitedHotspots.map((label) =>
+            prisma.hotspotVisit.upsert({
+              where: { sessionId_lessonId_layerId_label: { sessionId, lessonId, layerId, label } },
+              update: {},
+              create: { sessionId, lessonId, layerId, label },
+            })
+          )
+        );
+      }
 
-    if (visitedHotspots && visitedHotspots.length > 0) {
-      await prisma.$transaction(
-        visitedHotspots.map((label) =>
-          prisma.hotspotVisit.upsert({
-            where: { sessionId_lessonId_layerId_label: { sessionId, lessonId, layerId, label } },
-            update: {},
-            create: { sessionId, lessonId, layerId, label },
-          })
-        )
-      );
+      return NextResponse.json({ ok: true });
     }
 
-    return NextResponse.json({ ok: true });
+    if (body.type === "quiz") {
+      const { sessionId, courseId, score, total, passed, answers } = body;
+
+      await prisma.quizAttempt.create({
+        data: {
+          sessionId,
+          courseId,
+          score,
+          total,
+          passed,
+          answers: JSON.stringify(answers ?? []),
+        },
+      });
+
+      return NextResponse.json({ ok: true });
+    }
+
+    return NextResponse.json({ error: "unknown type" }, { status: 400 });
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Database error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  if (body.type === "quiz") {
-    const { sessionId, courseId, score, total, passed, answers } = body;
-
-    await prisma.quizAttempt.create({
-      data: {
-        sessionId,
-        courseId,
-        score,
-        total,
-        passed,
-        answers: JSON.stringify(answers ?? []),
-      },
-    });
-
-    return NextResponse.json({ ok: true });
-  }
-
-  return NextResponse.json({ error: "unknown type" }, { status: 400 });
 }
