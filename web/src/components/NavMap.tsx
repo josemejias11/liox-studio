@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { ThemeToggle } from "./ThemeToggle";
-import type { CourseSection, LessonSection } from "./DeckViewer";
+import type { CourseSection, LessonSection } from "./MotoViewer";
 import type { SanitySpecification } from "./SpecificationPage";
 
 // ── Icon/color metadata per sectionType / lessonType ─────────────────────────

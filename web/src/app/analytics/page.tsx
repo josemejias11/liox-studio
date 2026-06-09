@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Bot, Users, Zap, Trophy, BookOpen, ArrowLeft } from "lucide-react";
 import { getAnalyticsData } from "@/services/analytics.service";
+import React from "react";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -56,7 +57,7 @@ export default async function AnalyticsPage() {
       <header className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b border-border bg-background/95 backdrop-blur-sm px-6">
         <div className="flex items-center gap-2 font-semibold text-lg text-primary">
           <Bot className="h-6 w-6" aria-hidden="true" />
-          <span>DeckTutor AI</span>
+          <span>Moto Tutor AI</span>
         </div>
         <span className="text-muted-foreground select-none">·</span>
         <span className="text-muted-foreground text-sm font-medium">Instructor Dashboard</span>

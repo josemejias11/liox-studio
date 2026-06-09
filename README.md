@@ -1,4 +1,4 @@
-# DeckTutor AI — eLearning Platform
+# Moto Tutor AI — eLearning Platform
 
 An AI-powered eLearning platform that replaces traditional authoring tools (Articulate Storyline, Adobe Captivate) with a modern CMS-driven system. Instructional designers author content in a headless CMS; learners interact with it through a 16:9 interactive course player with AI-powered chat, quiz generation, and an instructor analytics dashboard.
 
@@ -171,7 +171,7 @@ Server-rendered dashboard reading directly from SQLite:
 
 ## Progress Tracking
 
-Anonymous sessions are identified by a UUID stored in `localStorage` under the key `decktutor_session`. All progress is tied to this ID and persisted in SQLite.
+Anonymous sessions are identified by a UUID stored in `localStorage` under the key `mototutor_session`. All progress is tied to this ID and persisted in SQLite.
 
 | Table | Records |
 |-------|---------|

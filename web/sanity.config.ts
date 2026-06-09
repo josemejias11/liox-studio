@@ -8,7 +8,7 @@ export default defineConfig({
   basePath: "/studio",
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID ?? "REPLACE_ME",
   dataset: process.env.NEXT_PUBLIC_SANITY_DATASET ?? "production",
-  title: "DeckTutor AI — Studio",
+  title: "Moto Tutor AI — Studio",
   schema: { types: schemaTypes },
   plugins: [
     structureTool({ structure }),

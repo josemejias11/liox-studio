@@ -65,7 +65,7 @@ export function FullWidthCarousel({ photos, className = "" }: { photos: Photo[],
                 draggable={false}
               />
               {title && (
-                <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+                <div className="absolute bottom-0 inset-x-0 p-4 bg-linear-to-t from-black/80 via-black/40 to-transparent">
                   <p className="text-white text-sm md:text-base font-medium drop-shadow-md text-center">{title}</p>
                 </div>
               )}

@@ -33,7 +33,7 @@ const SUGGESTIONS = [
   "How does this compare to competitors?",
 ];
 
-// Lightweight markdown: **bold**, bullet lines, line breaks — no external library
+// Lightweight Markdown: **bold**, bullet lines, line breaks — no external library
 function renderText(text: string) {
   const lines = text.split("\n");
   return (
@@ -116,6 +116,7 @@ export function DiscoveryPanel({
   // Sync isMobileView with the viewport width (md breakpoint = 768 px).
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMobileView(mq.matches);
     const handler = (e: MediaQueryListEvent) => setIsMobileView(e.matches);
     mq.addEventListener("change", handler);
@@ -409,7 +410,7 @@ export function DiscoveryPanel({
                 <button
                   onClick={onClose}
                   className="text-muted-foreground hover:text-foreground transition-colors p-2 rounded-xl
-                    hover:bg-foreground/8 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                    hover:bg-foreground/8 min-h-11 min-w-11 flex items-center justify-center"
                   aria-label="Close panel"
                 >
                   <X className="h-4 w-4" />
@@ -546,7 +547,7 @@ export function DiscoveryPanel({
                   className="shrink-0 bg-accent text-accent-foreground
                     hover:bg-accent/90
                     disabled:bg-foreground/10 disabled:text-muted-foreground disabled:cursor-not-allowed
-                    rounded-full p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center
+                    rounded-full p-2.5 min-w-11 min-h-11 flex items-center justify-center
                     transition-all duration-200 active:scale-90"
                   aria-label="Send"
                 >

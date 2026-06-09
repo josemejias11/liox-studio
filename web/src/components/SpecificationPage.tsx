@@ -48,7 +48,7 @@ export function SpecificationPage({
       <div className="flex-1 overflow-y-auto overscroll-contain">
         {/* Hero image — full-bleed within the content area */}
         {heroUrl && (
-          <div className="w-full aspect-[4/3] overflow-hidden shrink-0">
+          <div className="w-full aspect-4/3 overflow-hidden shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={heroUrl}
@@ -91,7 +91,7 @@ export function SpecificationPage({
                       "flex items-start justify-between gap-4 py-2.5 px-3 rounded-lg",
                       item.highlight
                         ? "bg-accent/8 ring-1 ring-accent/15"
-                        : "even:bg-foreground/[0.025]",
+                        : "even:bg-foreground/2.5",
                     ].join(" ")}
                   >
                     <dt className="text-[12px] text-muted-foreground leading-snug shrink-0 max-w-[45%]">
@@ -131,12 +131,12 @@ export function SpecificationPage({
       </div>
 
       {/* ── Bottom vignette ── */}
-      <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background to-transparent pointer-events-none z-10" />
+      <div className="absolute bottom-0 left-0 right-0 h-20 bg-linear-to-t from-background to-transparent pointer-events-none z-10" />
 
       {/* ── Navigation bar ── */}
       <nav
         aria-label="Section navigation"
-        className="absolute bottom-0 left-0 right-0 h-14 z-20 flex items-center justify-end px-6 gap-1 bg-gradient-to-t from-background via-background/80 to-transparent"
+        className="absolute bottom-0 left-0 right-0 h-14 z-20 flex items-center justify-end px-6 gap-1 bg-linear-to-t from-background via-background/80 to-transparent"
       >
         {showPrev && (
           <button

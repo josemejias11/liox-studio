@@ -119,6 +119,33 @@ const slideVariants = {
   }),
 };
 
+function AnimatedLessonSlide({
+  children,
+  navDirection,
+  slideKey,
+}: {
+  children: React.ReactNode;
+  navDirection: number;
+  slideKey: string;
+}) {
+  return (
+    <AnimatePresence mode="wait" custom={navDirection}>
+      <motion.div
+        key={slideKey}
+        custom={navDirection}
+        variants={slideVariants}
+        initial="enter"
+        animate="center"
+        exit="exit"
+        transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
+        className="absolute inset-0"
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
 // ── Width helper ──────────────────────────────────────────────────────────────
 
 const getSemanticWidthClass = (width?: string) => {
@@ -133,7 +160,7 @@ const getSemanticWidthClass = (width?: string) => {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function DeckViewer({
+export default function MotoViewer({
   course,
   sections,
   course_title: _course_title,
@@ -191,16 +218,17 @@ export default function DeckViewer({
   const [lastLayerId, setLastLayerId] = useState<string | null>(null);
 
   // ── Session ───────────────────────────────────────────────────────────────
-  // Initialise as "" so SSR and the first client render agree (no hydration mismatch).
+  // Initialize as "" so SSR and the first client render agree (no hydration mismatch).
   // The real UUID is read/created from localStorage inside useEffect, which only
   // runs on the client — localStorage is not available during server rendering.
   const [sessionId, setSessionId] = useState<string>("");
   useEffect(() => {
-    let sid = localStorage.getItem("decktutor_session");
+    let sid = localStorage.getItem("mototutor_session");
     if (!sid) {
       sid = crypto.randomUUID();
-      localStorage.setItem("decktutor_session", sid);
+      localStorage.setItem("mototutor_session", sid);
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSessionId(sid);
   }, []);
   const { visited, markVisited: baseMarkVisited } = useLessonProgress(sessionId);
@@ -314,20 +342,43 @@ export default function DeckViewer({
     if (burstTimerRef.current) clearTimeout(burstTimerRef.current);
   }, []);
 
+  // ── Helpers for repeated navigation logic ──────────────────────────────────
+  function advanceToPostChapterPhase() {
+    if (specSections.length > 0) {
+      setCoursePhase({ phase: "specifications", specIndex: 0 });
+    } else if (quizSection) {
+      setCoursePhase({ phase: "quiz", quizData: quizSection });
+    } else if (disclaimerSection) {
+      setCoursePhase({ phase: "disclaimer" });
+    } else {
+      triggerComplete();
+    }
+  }
+
+  function goBackToLastChapterOrCover() {
+    const lastChapter = chapters[chapters.length - 1];
+    if (lastChapter) {
+      const lastChapterLessons = lessonSections.filter(
+        (ls) => ls.chapterIndex === lastChapter.chapterIndex
+      );
+      setCoursePhase({
+        phase: "chapter",
+        chapterIndex: lastChapter.chapterIndex,
+        lessonIndex: Math.max(0, lastChapterLessons.length - 1),
+      });
+    } else {
+      setCoursePhase({ phase: "cover" });
+    }
+  }
+
   // ── Navigation: goNext ────────────────────────────────────────────────────
   function goNext() {
     if (coursePhase.phase === "cover") {
       setNavDirection(1);
       if (lessonSections.length > 0) {
         setCoursePhase({ phase: "chapter", chapterIndex: 0, lessonIndex: 0 });
-      } else if (specSections.length > 0) {
-        setCoursePhase({ phase: "specifications", specIndex: 0 });
-      } else if (quizSection) {
-        setCoursePhase({ phase: "quiz", quizData: quizSection });
-      } else if (disclaimerSection) {
-        setCoursePhase({ phase: "disclaimer" });
       } else {
-        triggerComplete();
+        advanceToPostChapterPhase();
       }
       return;
     }
@@ -356,15 +407,7 @@ export default function DeckViewer({
       }
 
       // No more chapters — advance to specifications, quiz, disclaimer, or complete
-      if (specSections.length > 0) {
-        setCoursePhase({ phase: "specifications", specIndex: 0 });
-      } else if (quizSection) {
-        setCoursePhase({ phase: "quiz", quizData: quizSection });
-      } else if (disclaimerSection) {
-        setCoursePhase({ phase: "disclaimer" });
-      } else {
-        triggerComplete();
-      }
+      advanceToPostChapterPhase();
       return;
     }
 
@@ -373,12 +416,8 @@ export default function DeckViewer({
       const { specIndex } = coursePhase;
       if (specIndex < specSections.length - 1) {
         setCoursePhase({ phase: "specifications", specIndex: specIndex + 1 });
-      } else if (quizSection) {
-        setCoursePhase({ phase: "quiz", quizData: quizSection });
-      } else if (disclaimerSection) {
-        setCoursePhase({ phase: "disclaimer" });
       } else {
-        triggerComplete();
+        advanceToPostChapterPhase();
       }
       return;
     }
@@ -431,19 +470,7 @@ export default function DeckViewer({
         return;
       }
       // First spec — go to last lesson of last chapter (or cover)
-      const lastChapter = chapters[chapters.length - 1];
-      if (lastChapter) {
-        const lastChapterLessons = lessonSections.filter(
-          (ls) => ls.chapterIndex === lastChapter.chapterIndex
-        );
-        setCoursePhase({
-          phase: "chapter",
-          chapterIndex: lastChapter.chapterIndex,
-          lessonIndex: Math.max(0, lastChapterLessons.length - 1),
-        });
-      } else {
-        setCoursePhase({ phase: "cover" });
-      }
+      goBackToLastChapterOrCover();
       return;
     }
 
@@ -452,19 +479,7 @@ export default function DeckViewer({
       if (specSections.length > 0) {
         setCoursePhase({ phase: "specifications", specIndex: specSections.length - 1 });
       } else {
-        const lastChapter = chapters[chapters.length - 1];
-        if (lastChapter) {
-          const lastChapterLessons = lessonSections.filter(
-            (ls) => ls.chapterIndex === lastChapter.chapterIndex
-          );
-          setCoursePhase({
-            phase: "chapter",
-            chapterIndex: lastChapter.chapterIndex,
-            lessonIndex: Math.max(0, lastChapterLessons.length - 1),
-          });
-        } else {
-          setCoursePhase({ phase: "cover" });
-        }
+        goBackToLastChapterOrCover();
       }
       return;
     }
@@ -611,7 +626,7 @@ export default function DeckViewer({
                   className="w-full rounded-2xl object-cover max-h-[60vh] shadow-2xl ring-1 ring-white/10"
                 />
               ) : layerContent.photos ? (
-                <FullWidthCarousel photos={layerContent.photos} className="!mb-0" />
+                <FullWidthCarousel photos={layerContent.photos} className="mb-0!" />
               ) : null}
 
               {layerContent.textOverlay && layerContent.body && (
@@ -742,18 +757,8 @@ export default function DeckViewer({
 
     return (
       <LessonFrame moduleTitle={course.title}>
-        <AnimatePresence mode="wait" custom={navDirection}>
-          <motion.div
-            key="cover"
-            custom={navDirection}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute inset-0"
-          >
-            <CourseCover
+        <AnimatedLessonSlide navDirection={navDirection} slideKey={"cover"}>
+<CourseCover
               title={course.title}
               coverHeadline={course.coverHeadline}
               coverImage={finalImageUrl}
@@ -763,9 +768,7 @@ export default function DeckViewer({
                 setNavDirection(1);
                 goNext();
               }}
-            />
-          </motion.div>
-        </AnimatePresence>
+            />            </AnimatedLessonSlide>
         {navMapEl}
       </LessonFrame>
     );
@@ -778,25 +781,13 @@ export default function DeckViewer({
 
     return (
       <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={course.title}>
-        <AnimatePresence mode="wait" custom={navDirection}>
-          <motion.div
-            key={`spec-${coursePhase.specIndex}`}
-            custom={navDirection}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute inset-0"
-          >
-            <SpecificationPage
+        <AnimatedLessonSlide navDirection={navDirection} slideKey={`spec-${coursePhase.specIndex}`}>
+<SpecificationPage
               spec={spec}
               onNext={goNext}
               onPrev={goPrev}
               showPrev={true}
-            />
-          </motion.div>
-        </AnimatePresence>
+            />            </AnimatedLessonSlide>
         {navMapEl}
       </LessonFrame>
     );
@@ -806,27 +797,15 @@ export default function DeckViewer({
   if (coursePhase.phase === "quiz") {
     return (
       <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={course.title}>
-        <AnimatePresence mode="wait" custom={navDirection}>
-          <motion.div
-            key="quiz"
-            custom={navDirection}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute inset-0"
-          >
-            <QuizLesson
+        <AnimatedLessonSlide navDirection={navDirection} slideKey={"quiz"}>
+<QuizLesson
               sanityQuiz={coursePhase.quizData}
               onPass={handleQuizPass}
               onFail={handleQuizFail}
               passingScore={coursePhase.quizData.passingScore}
               sessionId={sessionId}
               courseId={course._id}
-            />
-          </motion.div>
-        </AnimatePresence>
+            />            </AnimatedLessonSlide>
         {navMapEl}
         <CompletionBurst active={showBurst} />
       </LessonFrame>
@@ -839,25 +818,13 @@ export default function DeckViewer({
 
     return (
       <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={course.title}>
-        <AnimatePresence mode="wait" custom={navDirection}>
-          <motion.div
-            key="disclaimer"
-            custom={navDirection}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute inset-0"
-          >
-            <DisclaimerPage
+        <AnimatedLessonSlide navDirection={navDirection} slideKey={"disclaimer"}>
+<DisclaimerPage
               disclaimer={disclaimerSection}
               onNext={goNext}
               onPrev={goPrev}
               showPrev={true}
-            />
-          </motion.div>
-        </AnimatePresence>
+            />            </AnimatedLessonSlide>
         {navMapEl}
       </LessonFrame>
     );
@@ -867,18 +834,8 @@ export default function DeckViewer({
   if (coursePhase.phase === "complete") {
     return (
       <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={course.title}>
-        <AnimatePresence mode="wait" custom={navDirection}>
-          <motion.div
-            key="complete"
-            custom={navDirection}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute inset-0"
-          >
-            <CourseComplete
+        <AnimatedLessonSlide navDirection={navDirection} slideKey={"complete"}>
+<CourseComplete
               moduleTitle={course.title}
               totalLessons={lessonSections.length}
               totalHotspotsVisited={totalHotspotsVisited}
@@ -890,9 +847,7 @@ export default function DeckViewer({
                 setShowChapterIntro(false);
                 setCoursePhase({ phase: "cover" });
               }}
-            />
-          </motion.div>
-        </AnimatePresence>
+            />            </AnimatedLessonSlide>
         {navMapEl}
         <CompletionBurst active={showBurst} />
       </LessonFrame>
@@ -924,18 +879,8 @@ export default function DeckViewer({
   if (currentLesson.lessonType === "stage") {
     return (
       <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={course.title}>
-        <AnimatePresence mode="wait" custom={navDirection}>
-          <motion.div
-            key={`stage-${currentLesson._key}`}
-            custom={navDirection}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute inset-0"
-          >
-            <ProductStage
+        <AnimatedLessonSlide navDirection={navDirection} slideKey={`stage-${currentLesson._key}`}>
+<ProductStage
               headline={safeHeadline}
               productImage={currentLesson.media?.asset?.url}
               stageBackground={currentLesson.stageBackground?.asset?.url}
@@ -949,9 +894,7 @@ export default function DeckViewer({
                 baseMarkVisited(lessonKey, hotspots.find((h: any) => h._key === id)?.label || "", hotspots.length);
                 openLayer(id);
               }}
-            />
-          </motion.div>
-        </AnimatePresence>
+            />            </AnimatedLessonSlide>
         {navMapEl}
         {renderLayerFrame()}
       </LessonFrame>
@@ -962,25 +905,13 @@ export default function DeckViewer({
   if (currentLesson.lessonType === "video") {
     return (
       <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={course.title}>
-        <AnimatePresence mode="wait" custom={navDirection}>
-          <motion.div
-            key={`video-${currentLesson._key}`}
-            custom={navDirection}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute inset-0"
-          >
-            <VideoLesson
+        <AnimatedLessonSlide navDirection={navDirection} slideKey={`video-${currentLesson._key}`}>
+<VideoLesson
               headline={safeHeadline}
               videoFileUrl={currentLesson.videoFile?.asset?.url}
               videoAspectRatio={currentLesson.videoAspectRatio}
               onNext={goNext}
-            />
-          </motion.div>
-        </AnimatePresence>
+            />            </AnimatedLessonSlide>
         {navMapEl}
       </LessonFrame>
     );
@@ -990,27 +921,15 @@ export default function DeckViewer({
   if (currentLesson.lessonType === "quiz") {
     return (
       <LessonFrame onToggleNavMap={toggleNavMap} moduleTitle={course.title}>
-        <AnimatePresence mode="wait" custom={navDirection}>
-          <motion.div
-            key={`quiz-lesson-${currentLesson._key}`}
-            custom={navDirection}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute inset-0"
-          >
-            <QuizLesson
+        <AnimatedLessonSlide navDirection={navDirection} slideKey={`quiz-lesson-${currentLesson._key}`}>
+<QuizLesson
               context={buildQuizContext()}
               onPass={goNext}   // lesson-type quiz always advances on pass
               onFail={goNext}   // lesson-type quiz also advances on fail (no gate)
               passingScore={80}
               sessionId={sessionId}
               courseId={course._id}
-            />
-          </motion.div>
-        </AnimatePresence>
+            />            </AnimatedLessonSlide>
         {navMapEl}
       </LessonFrame>
     );
@@ -1032,18 +951,8 @@ export default function DeckViewer({
           : undefined
       }
     >
-      <AnimatePresence mode="wait" custom={navDirection}>
-        <motion.div
-          key={`lesson-${currentLesson._key}`}
-          custom={navDirection}
-          variants={slideVariants}
-          initial="enter"
-          animate="center"
-          exit="exit"
-          transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
-          className="absolute inset-0"
-        >
-          {/* Background image or solid color */}
+      <AnimatedLessonSlide navDirection={navDirection} slideKey={`lesson-${currentLesson._key}`}>
+{/* Background image or solid color */}
           {imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -1060,7 +969,7 @@ export default function DeckViewer({
             <div
               className={`absolute pointer-events-none z-10 flex flex-col ${
                 imageUrl
-                  ? "left-[6%] right-[6%] bottom-[12%] md:left-[var(--desktop-x)] md:right-auto md:top-[var(--desktop-y)] md:bottom-auto"
+                  ? "left-[6%] right-[6%] bottom-[12%] md:left-(--desktop-x) md:right-auto md:top-(--desktop-y) md:bottom-auto"
                   : ""
               }`}
               style={
@@ -1176,9 +1085,7 @@ export default function DeckViewer({
             course_description={course.description}
           />
 
-          {renderLayerFrame()}
-        </motion.div>
-      </AnimatePresence>
+          {renderLayerFrame()}            </AnimatedLessonSlide>
 
       {navMapEl}
     </LessonFrame>

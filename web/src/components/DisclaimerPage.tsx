@@ -114,12 +114,12 @@ export function DisclaimerPage({
       </div>
 
       {/* ── Bottom vignette ── */}
-      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent pointer-events-none z-10" />
+      <div className="absolute bottom-0 left-0 right-0 h-24 bg-linear-to-t from-background to-transparent pointer-events-none z-10" />
 
       {/* ── Navigation / acknowledgement bar ── */}
       <nav
         aria-label="Section navigation"
-        className="absolute bottom-0 left-0 right-0 h-16 z-20 flex items-center justify-between px-5 gap-3 bg-gradient-to-t from-background via-background/90 to-transparent"
+        className="absolute bottom-0 left-0 right-0 h-16 z-20 flex items-center justify-between px-5 gap-3 bg-linear-to-t from-background via-background/90 to-transparent"
       >
         {/* Prev button */}
         {showPrev ? (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { X, ChevronLeft } from "lucide-react";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
@@ -107,7 +107,7 @@ export function LayerFrame({
             <div className="flex-1 overflow-y-auto p-6 relative">
               {children}
               {/* Bottom fade hint */}
-              <div className="sticky bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background/95 to-transparent pointer-events-none -mb-6" />
+              <div className="sticky bottom-0 left-0 right-0 h-12 bg-linear-to-t from-background/95 to-transparent pointer-events-none -mb-6" />
             </div>
           </motion.div>
         </div>

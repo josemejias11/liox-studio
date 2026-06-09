@@ -304,7 +304,7 @@ export function QuizLesson({
 
       {/* Header — progress bar + counter */}
       <div className="shrink-0 px-6 pt-5 pb-2">
-        <div className="h-[2px] bg-background/8 rounded-full overflow-hidden mb-3">
+        <div className="h-0.5 bg-background/8 rounded-full overflow-hidden mb-3">
           <div
             className="h-full bg-accent rounded-full transition-all duration-500 ease-out"
             style={{ width: `${(currentQ / total) * 100}%` }}
@@ -367,7 +367,7 @@ export function QuizLesson({
               >
                 {/* Letter badge */}
                 <span
-                  className={`shrink-0 h-[18px] w-[18px] rounded-full flex items-center justify-center text-[9px] font-bold border mt-[1px]
+                  className={`shrink-0 h-4.5 w-4.5 rounded-full flex items-center justify-center text-[9px] font-bold border mt-px
                     ${showGreen ? "border-accent    text-accent"
                     : showRed   ? "border-border text-muted-foreground"
                     :             "border-border/20  text-foreground/35"}`}

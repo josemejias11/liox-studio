@@ -10,7 +10,7 @@ import {
 
 export function structure(S: StructureBuilder) {
   return S.list()
-    .title("DeckTutor AI")
+    .title("Moto Tutor AI")
     .items([
       // ── Courses ───────────────────────────────────────────────────────────
       S.listItem()

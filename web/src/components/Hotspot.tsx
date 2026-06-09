@@ -1,5 +1,7 @@
 "use client";
 
+import React from "react";
+
 interface HotspotProps {
   // Position within the lesson as percentages (0–100)
   x: number;
@@ -49,12 +51,12 @@ export function Hotspot({
       {!visited && (
         <>
           <span
-            className={`absolute inset-[-16px] rounded-full animate-[ping_2.5s_ease-out_infinite] opacity-50 shadow-[0_0_25px_rgba(255,255,255,0.7)] ${
+            className={`absolute -inset-4 rounded-full animate-[ping_2.5s_ease-out_infinite] opacity-50 shadow-[0_0_25px_rgba(255,255,255,0.7)] ${
               pulseClassName || "bg-white"
             }`}
           />
           <span
-            className={`absolute inset-[-6px] rounded-full animate-[ping_2.5s_ease-out_infinite_1s] opacity-80 shadow-[0_0_20px_rgba(255,255,255,0.9)] ${
+            className={`absolute -inset-1.5 rounded-full animate-[ping_2.5s_ease-out_infinite_1s] opacity-80 shadow-[0_0_20px_rgba(255,255,255,0.9)] ${
               pulseClassName || "bg-white"
             }`}
           />
@@ -78,7 +80,7 @@ export function Hotspot({
 
       {/* Label tooltip — shows on hover above the dot */}
       <span
-        className={`absolute left-1/2 -translate-x-1/2 bottom-full mb-3 max-w-[250px] md:max-w-[320px] w-max text-center
+        className={`absolute left-1/2 -translate-x-1/2 bottom-full mb-3 max-w-62.5 md:max-w-[320px] w-max text-center
           rounded-xl px-4 py-2.5 text-sm md:text-base font-semibold leading-snug
           opacity-0 group-hover:opacity-100 transition-opacity duration-150
           pointer-events-none shadow-xl

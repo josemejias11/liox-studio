@@ -49,12 +49,12 @@ export function PulseHotspot({ x, y, label, visited, onVisit, onOpen, keyFocused
 
       {/* Visited glow halo */}
       {visited && (
-        <span className="absolute inset-[-6px] rounded-full bg-accent/20 blur-sm pointer-events-none" />
+        <span className="absolute -inset-1.5 rounded-full bg-accent/20 blur-sm pointer-events-none" />
       )}
 
       {/* Keyboard focus ring */}
       {keyFocused && (
-        <span className="absolute inset-[-12px] rounded-full border-2 border-border/70 animate-pulse pointer-events-none" />
+        <span className="absolute -inset-3 rounded-full border-2 border-border/70 animate-pulse pointer-events-none" />
       )}
 
       {/* Core dot */}
@@ -68,7 +68,7 @@ export function PulseHotspot({ x, y, label, visited, onVisit, onOpen, keyFocused
       >
         {visited && (
           <Check
-            className={`h-2.5 w-2.5 text-foreground stroke-[3] ${justVisited ? "stage-check-pop" : ""}`}
+            className={`h-2.5 w-2.5 text-foreground stroke-3 ${justVisited ? "stage-check-pop" : ""}`}
           />
         )}
       </span>

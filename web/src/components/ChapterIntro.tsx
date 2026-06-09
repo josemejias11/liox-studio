@@ -67,17 +67,17 @@ export function ChapterIntro({
 
       {/* Decorative ring — reduced-motion collapses this via globals.css */}
       <div
-        className="cc-spin absolute w-[340px] h-[340px] rounded-full border border-accent/[0.06]"
+        className="cc-spin absolute w-85 h-85 rounded-full border border-accent/6"
         aria-hidden="true"
       />
       <div
-        className="cc-spin-rev absolute w-[220px] h-[220px] rounded-full border border-accent/[0.1]"
+        className="cc-spin-rev absolute w-55 h-55 rounded-full border border-accent/10"
         aria-hidden="true"
       />
 
       {/* Content stack */}
       <motion.div
-        className="relative z-10 flex flex-col items-center text-center gap-5 px-8 max-w-[300px] w-full"
+        className="relative z-10 flex flex-col items-center text-center gap-5 px-8 max-w-75 w-full"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -101,7 +101,7 @@ export function ChapterIntro({
         {/* Accent rule */}
         <motion.span
           variants={itemVariants}
-          className="block h-[2px] w-10 rounded-full bg-accent"
+          className="block h-0.5 w-10 rounded-full bg-accent"
           aria-hidden="true"
         />
 

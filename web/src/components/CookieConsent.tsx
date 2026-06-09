@@ -9,7 +9,7 @@ export function CookieConsent() {
 
   useEffect(() => {
     // Check if the user has already consented
-    const consent = localStorage.getItem("decktutor_cookie_consent");
+    const consent = localStorage.getItem("mototutor_cookie_consent");
     if (!consent) {
       // Delay showing it slightly for a smoother entry
       const timer = setTimeout(() => setShow(true), 1500);
@@ -18,14 +18,14 @@ export function CookieConsent() {
   }, []);
 
   function handleAccept() {
-    localStorage.setItem("decktutor_cookie_consent", "true");
+    localStorage.setItem("mototutor_cookie_consent", "true");
     setShow(false);
   }
 
   function handleDecline() {
     // If they decline, we still hide it, but we could theoretically disable tracking.
     // For now, we'll mark as declined.
-    localStorage.setItem("decktutor_cookie_consent", "declined");
+    localStorage.setItem("mototutor_cookie_consent", "declined");
     setShow(false);
   }
 
@@ -37,7 +37,7 @@ export function CookieConsent() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          className="fixed bottom-4 left-4 right-4 md:right-auto md:left-8 md:bottom-8 md:max-w-sm z-[9999]"
+          className="fixed bottom-4 left-4 right-4 md:right-auto md:left-8 md:bottom-8 md:max-w-sm z-9999"
         >
           <div className="bg-card border border-border rounded-2xl shadow-2xl p-5 flex flex-col gap-4">
             <div className="flex items-start gap-3">

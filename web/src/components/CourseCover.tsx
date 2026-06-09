@@ -45,11 +45,11 @@ export function CourseCover({
       )}
 
       {/* Sophisticated Gradients */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/90 pointer-events-none" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80 pointer-events-none" />
+      <div className="absolute inset-0 bg-linear-to-b from-black/20 via-black/40 to-black/90 pointer-events-none" />
+      <div className="absolute inset-0 bg-linear-to-t from-black via-transparent to-transparent opacity-80 pointer-events-none" />
       
       {/* Subtle ambient glow behind text */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-accent/20 blur-[120px] rounded-[100%] pointer-events-none opacity-50 mix-blend-screen" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-200 h-100 bg-accent/20 blur-[120px] rounded-[100%] pointer-events-none opacity-50 mix-blend-screen" />
 
       {/* Content */}
       <div className="absolute inset-0 flex flex-col items-center justify-center p-8 z-10">
@@ -86,7 +86,7 @@ export function CourseCover({
           className={`group relative flex items-center gap-3 font-semibold text-lg px-8 py-4 rounded-full shadow-2xl transition-all duration-300 active:scale-95 border border-white/10 overflow-hidden completion-button-glow ${btnClass}`}
         >
           {/* Button inner glow effect */}
-          <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out" />
+          <div className="absolute inset-0 bg-linear-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
           
           <span className="relative z-10">{buttonText}</span>
           

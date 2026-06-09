@@ -63,7 +63,7 @@ export function LessonFrame({
         {children}
 
         {/* ── Bottom vignette — blends lesson content into the black banner below ── */}
-        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-background to-transparent pointer-events-none z-10" />
+        <div className="absolute bottom-0 left-0 right-0 h-40 bg-linear-to-t from-background to-transparent pointer-events-none z-10" />
 
 
         {/* ── Floating utility buttons (lessons without nav bar) ── */}
@@ -122,7 +122,7 @@ export function LessonFrame({
               {/* Counter — visible only for lesson sections */}
               {isLessonType && (
                 <>
-                  <span className="text-sm font-medium text-foreground/80 min-w-[3rem] text-center tabular-nums select-none" aria-hidden="true">
+                  <span className="text-sm font-medium text-foreground/80 min-w-12 text-center tabular-nums select-none" aria-hidden="true">
                     {currentLesson} / {totalLessons}
                   </span>
                   <span aria-live="polite" aria-atomic="true" className="sr-only">
@@ -176,7 +176,7 @@ export function LessonFrame({
           </p>
 
           {/* Indigo underline accent */}
-          <span className="block mt-1 h-[2px] w-10 rounded-full bg-accent" />
+          <span className="block mt-1 h-0.5 w-10 rounded-full bg-accent" />
 
           {/* Progress / section label — always rendered to keep banner height constant */}
           {sectionLabel ? (

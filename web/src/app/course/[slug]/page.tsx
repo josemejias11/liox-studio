@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import { readClient } from "@/sanity/lib/client";
 import { COURSE_BY_SLUG_QUERY } from "@/sanity/lib/queries";
-import DeckViewer from "@/components/DeckViewer";
-import type { CourseSection, LessonSection } from "@/components/DeckViewer";
+import MotoViewer from "@/components/MotoViewer";
+import type { CourseSection, LessonSection } from "@/components/MotoViewer";
 import type { SanitySpecification } from "@/components/SpecificationPage";
 import type { SanityDisclaimer } from "@/components/DisclaimerPage";
 import type { SanityQuizDoc } from "@/components/QuizLesson";
@@ -68,7 +68,7 @@ export default async function CoursePage({
 
   return (
     <div className="w-full h-dvh overflow-hidden bg-background">
-      <DeckViewer
+      <MotoViewer
         course={course}
         sections={sections}
         course_title={String(course.title ?? "")}

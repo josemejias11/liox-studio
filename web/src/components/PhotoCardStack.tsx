@@ -40,7 +40,6 @@ export function PhotoCardStack({ photos = [] }: PhotoCardStackProps) {
 
     cards.forEach((c) => observer.observe(c));
     return () => observer.disconnect();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [validPhotos.length]);
 
   function scrollTo(idx: number) {
@@ -77,7 +76,7 @@ export function PhotoCardStack({ photos = [] }: PhotoCardStackProps) {
             <div
               key={i}
               data-card
-              className={`shrink-0 snap-center aspect-[4/3] rounded-xl overflow-hidden relative
+              className={`shrink-0 snap-center aspect-4/3 rounded-xl overflow-hidden relative
                 shadow-lg shadow-black/50 ring-1 ring-white/10
                 ${validPhotos.length === 1 ? "w-full" : "w-[82%]"}`}
             >
@@ -90,7 +89,7 @@ export function PhotoCardStack({ photos = [] }: PhotoCardStackProps) {
                 loading="lazy"
               />
               {title && (
-                <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+                <div className="absolute bottom-0 inset-x-0 p-3 bg-linear-to-t from-black/80 via-black/40 to-transparent">
                   <p className="text-white text-xs font-medium drop-shadow-md">{title}</p>
                 </div>
               )}

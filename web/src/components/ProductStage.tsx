@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ChevronRight, Check, CheckCircle2 } from "lucide-react";
 import { PulseHotspot } from "./PulseHotspot";
 import { DiscoveryPanel } from "./DiscoveryPanel";
@@ -157,7 +157,7 @@ export function ProductStage({
 
     function onOrientation(e: DeviceOrientationEvent) {
       // gamma: left/right tilt (–90…90°) → –1…1
-      // beta:  front/back tilt (–180…180°), normalised around 30° reading angle
+      // beta:  front/back tilt (–180…180°), normalized around 30° reading angle
       const rawX = Math.max(-1, Math.min(1, (e.gamma ?? 0) / 45));
       const rawY = Math.max(-1, Math.min(1, ((e.beta ?? 30) - 30) / 45));
 
@@ -320,7 +320,7 @@ export function ProductStage({
           </svg>
           {allDiscovered && (
             <div className="absolute inset-0 flex items-center justify-center stage-check-pop">
-              <Check className="h-3.5 w-3.5 text-accent stroke-[3]" />
+              <Check className="h-3.5 w-3.5 text-accent stroke-3" />
             </div>
           )}
         </div>
@@ -328,7 +328,7 @@ export function ProductStage({
 
       {/* ── Keyboard hint — bottom left of arc ── */}
       {!activePanel && hotspots.length > 1 && (
-        <div className="absolute top-[52px] right-3 z-20 pointer-events-none stage-enter-top" style={{ animationDelay: "200ms" }}>
+        <div className="absolute top-13 right-3 z-20 pointer-events-none stage-enter-top" style={{ animationDelay: "200ms" }}>
           <p className="text-foreground/20 text-[8px] text-right tracking-wide select-none">
             ← → to explore
           </p>

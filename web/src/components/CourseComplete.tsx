@@ -30,20 +30,20 @@ export function CourseComplete({
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_40%_35%_at_55%_75%,rgba(104,91,199,0.06),transparent)] pointer-events-none" />
 
       {/* Decorative rings */}
-      <div className="cc-spin absolute w-[520px] h-[520px] rounded-full border border-border/[0.04]" />
-      <div className="cc-spin-rev absolute w-[360px] h-[360px] rounded-full border border-accent/[0.08]" />
-      <div className="cc-spin absolute w-[220px] h-[220px] rounded-full border border-border/[0.06]" />
+      <div className="cc-spin absolute w-130 h-130 rounded-full border border-border/4" />
+      <div className="cc-spin-rev absolute w-90 h-90 rounded-full border border-accent/8" />
+      <div className="cc-spin absolute w-55 h-55 rounded-full border border-border/6" />
 
       {/* Content card */}
-      <div className="relative z-10 flex flex-col items-center text-center gap-5 px-6 max-w-[300px] w-full">
+      <div className="relative z-10 flex flex-col items-center text-center gap-5 px-6 max-w-75 w-full">
 
         {/* Badge */}
         <div
-          className="cc-badge-in w-[68px] h-[68px] rounded-full flex items-center justify-center
+          className="cc-badge-in w-17 h-17 rounded-full flex items-center justify-center
             bg-accent
             shadow-[0_0_48px_rgba(104,91,199,0.32),0_0_80px_rgba(104,91,199,0.18)]"
         >
-          <GraduationCap className="h-[34px] w-[34px] text-accent-foreground stroke-[1.5]" />
+          <GraduationCap className="h-8.5 w-8.5 text-accent-foreground stroke-[1.5]" />
         </div>
 
         {/* Eyebrow + title */}
@@ -63,7 +63,7 @@ export function CourseComplete({
           className="cc-rise w-full"
           style={{ animationDelay: "260ms" }}
         >
-          <div className="flex items-stretch bg-background/[0.04] border border-border/[0.07] rounded-2xl overflow-hidden">
+          <div className="flex items-stretch bg-background/4 border border-border/[0.07] rounded-2xl overflow-hidden">
             <div className="flex-1 flex flex-col items-center justify-center py-3 gap-0.5">
               <span className="text-[28px] font-bold text-foreground tabular-nums leading-none">
                 {totalLessons}
@@ -103,7 +103,7 @@ export function CourseComplete({
             href="/"
             className="flex items-center gap-1.5 text-foreground/50 hover:text-foreground/90
               text-[11px] font-medium px-5 py-2 rounded-full
-              border border-border/10 hover:border-border/25 hover:bg-foreground/[0.04]
+              border border-border/10 hover:border-border/25 hover:bg-foreground/4
               transition-all duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2"
           >
             <Home className="h-3 w-3" />
