@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react";
 import { PortableText } from "@portabletext/react";
+import { motion } from "framer-motion";
 
 // ── Types aligned with GROQ DISCLAIMER_FIELDS output ──────────────────────
 
@@ -79,91 +80,93 @@ export function DisclaimerPage({
 
   const canProceed = !requiresAck || hasScrolledToBottom;
 
-  return (
-    <div className="absolute inset-0 flex flex-col overflow-hidden bg-background">
-      {/* ── Category eyebrow + title header ── */}
-      <header className="shrink-0 px-5 pt-5 pb-4 border-b border-border/20">
-        <span className="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-[0.2em] bg-foreground/8 text-foreground/50 mb-2">
-          {categoryLabel}
-        </span>
-        <h1 className="text-[18px] font-bold leading-snug text-foreground">
-          {disclaimer.title}
-        </h1>
-        {requiresAck && !hasScrolledToBottom && (
-          <p className="mt-1.5 text-[10px] text-muted-foreground/70">
-            Scroll to the bottom to acknowledge.
-          </p>
-        )}
-      </header>
+  const itemVariants = {
+    hidden: { opacity: 0, y: 15 },
+    visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 400, damping: 30 } },
+  };
 
+  return (
+    <motion.div 
+      initial="hidden" 
+      animate="visible" 
+      variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.08 } } }}
+      className="absolute inset-0 flex flex-col overflow-hidden bg-background"
+    >
       {/* ── Scrollable body ── */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto overscroll-contain px-5 py-4"
+        className="flex-1 overflow-y-auto overscroll-contain"
       >
-        {/* PortableText body */}
-        <div className="prose prose-sm max-w-none text-foreground/80 leading-relaxed [&_p]:mb-3 [&_strong]:text-foreground [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:mb-1 [&_h2]:text-[14px] [&_h2]:font-bold [&_h2]:text-foreground [&_h2]:mt-4 [&_h2]:mb-2">
-          <PortableText value={disclaimer.body} />
+        <div className="max-w-3xl mx-auto w-full px-6 md:px-8 pt-8 md:pt-12">
+          {/* ── Category eyebrow + title header ── */}
+          <motion.header variants={itemVariants} className="shrink-0 pb-6 md:pb-8">
+            <span className="inline-flex text-xs font-semibold uppercase tracking-[0.2em] text-accent bg-accent/10 px-3 py-1 rounded-full mb-3">
+              {categoryLabel}
+            </span>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground leading-tight">
+              {disclaimer.title}
+            </h1>
+            {requiresAck && !hasScrolledToBottom && (
+              <p className="text-xs font-medium text-muted-foreground/80 mt-2">
+                Scroll to the bottom to acknowledge.
+              </p>
+            )}
+          </motion.header>
+
+          {/* PortableText body */}
+          <motion.div variants={itemVariants} className="prose prose-sm md:prose-base dark:prose-invert prose-p:text-muted-foreground prose-headings:text-foreground prose-a:text-accent prose-strong:text-foreground max-w-none leading-relaxed">
+            <PortableText value={disclaimer.body} />
+          </motion.div>
+
+          {/* Scroll sentinel — IntersectionObserver target */}
+          <div ref={sentinelRef} aria-hidden="true" className="h-px w-full mt-2" />
+
+          {/* Bottom padding so content clears the nav */}
+          <div className="h-28" aria-hidden="true" />
         </div>
-
-        {/* Scroll sentinel — IntersectionObserver target */}
-        <div ref={sentinelRef} aria-hidden="true" className="h-px w-full mt-2" />
-
-        {/* Bottom padding so content clears the nav */}
-        <div className="h-20" aria-hidden="true" />
       </div>
 
-      {/* ── Bottom vignette ── */}
-      <div className="absolute bottom-0 left-0 right-0 h-24 bg-linear-to-t from-background to-transparent pointer-events-none z-10" />
-
-      {/* ── Navigation / acknowledgement bar ── */}
-      <nav
-        aria-label="Section navigation"
-        className="absolute bottom-0 left-0 right-0 h-16 z-20 flex items-center justify-between px-5 gap-3 bg-linear-to-t from-background via-background/90 to-transparent"
+      {/* ── Floating Glassmorphic Nav & Action Pill ── */}
+      <motion.nav 
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.4, type: "spring", damping: 25 }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 p-1.5 bg-background/70 backdrop-blur-xl border border-border/20 shadow-2xl rounded-full"
       >
-        {/* Prev button */}
-        {showPrev ? (
-          <button
-            onClick={onPrev}
-            className="h-10 w-10 rounded-full flex items-center justify-center text-foreground/60 hover:text-foreground hover:bg-foreground/10 transition-all"
-            aria-label="Previous section"
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </button>
-        ) : (
-          <div className="w-10" aria-hidden="true" />
+        {/* Previous Button */}
+        {showPrev && (
+          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={onPrev} className="h-10 w-10 shrink-0 rounded-full flex items-center justify-center text-foreground hover:bg-foreground/10 transition-colors">
+            <ChevronLeft className="h-5 w-5" />
+          </motion.button>
         )}
 
-        {/* Acknowledge / Continue button */}
+        {/* Acknowledge / Continue Button */}
         {requiresAck ? (
-          <button
+          <motion.button
+            whileHover={canProceed ? { scale: 1.02 } : {}}
+            whileTap={canProceed ? { scale: 0.98 } : {}}
             onClick={onNext}
             disabled={!canProceed}
-            aria-disabled={!canProceed}
-            className={[
-              "flex items-center gap-2 px-5 py-2.5 rounded-full text-[12px] font-semibold transition-all duration-300",
+            className={`flex items-center justify-center gap-2 px-6 h-10 rounded-full text-sm font-semibold transition-colors duration-300 ${
               canProceed
-                ? "bg-accent text-accent-foreground shadow-[0_0_20px_rgba(104,91,199,0.25)] hover:shadow-[0_0_28px_rgba(104,91,199,0.4)] active:scale-95"
-                : "bg-foreground/10 text-foreground/30 cursor-not-allowed",
-            ].join(" ")}
+                ? "bg-accent text-accent-foreground shadow-[0_0_24px_rgba(104,91,199,0.3)]"
+                : "bg-foreground/10 text-foreground/40 cursor-not-allowed"
+            }`}
           >
             {canProceed && <CheckCircle2 className="h-4 w-4 shrink-0" />}
             {ackLabel}
-          </button>
+          </motion.button>
         ) : (
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={onNext}
-            className="flex items-center gap-1.5 px-5 py-2.5 rounded-full text-[12px] font-semibold bg-foreground/8 text-foreground hover:bg-foreground/15 active:scale-95 transition-all duration-150"
-            aria-label="Continue to next section"
+            className="flex items-center justify-center gap-2 px-6 h-10 rounded-full text-sm font-semibold bg-foreground/10 text-foreground hover:bg-foreground/15 transition-colors"
           >
-            Continue
-            <ChevronRight className="h-4 w-4" />
-          </button>
+            Continue <ChevronRight className="h-4 w-4 shrink-0" />
+          </motion.button>
         )}
-
-        {/* Right spacer — balances the layout when there is no prev button */}
-        {!showPrev && <div className="w-10" aria-hidden="true" />}
-      </nav>
-    </div>
+      </motion.nav>
+    </motion.div>
   );
 }

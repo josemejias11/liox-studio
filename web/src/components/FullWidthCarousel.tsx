@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { optimizeSanityImage } from "@/lib/image-optimization";
 
 interface Photo {
   asset?: { url?: string };
@@ -58,7 +59,7 @@ export function FullWidthCarousel({ photos, className = "" }: { photos: Photo[],
             <div key={i} className="relative w-full shrink-0 snap-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
-                src={p.asset!.url!} 
+                src={optimizeSanityImage(p.asset!.url!, 1200)} 
                 alt={title || `Gallery image ${i + 1}`} 
                 className="w-full h-auto object-cover" 
                 style={{ maxHeight: '50vh' }} 

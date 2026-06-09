@@ -60,6 +60,7 @@ const QUIZ_FIELDS = groq`
     _key,
     questionText,
     questionType,
+    image { asset->{url} },
     answers[] { _key, text, isCorrect, feedback },
     explanation,
   },

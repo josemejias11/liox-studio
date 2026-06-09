@@ -6,16 +6,16 @@ const XAI_API_KEY = process.env.XAI_API_KEY ?? "";
 import { z } from "zod";
 
 const ChatRequestSchema = z.object({
-  query: z.string().optional(),
+  query: z.string().max(2000).optional(),
   messages: z.array(
     z.object({
       role: z.enum(["user", "assistant"]),
-      content: z.string(),
+      content: z.string().max(2000),
     })
-  ).optional(),
-  lesson_content: z.string().optional(),
-  course_title: z.string().optional(),
-  course_description: z.string().optional(),
+  ).max(50).optional(),
+  lesson_content: z.string().max(10000).optional(),
+  course_title: z.string().max(200).optional(),
+  course_description: z.string().max(500).optional(),
 });
 
 type ChatRequestBody = z.infer<typeof ChatRequestSchema>;
@@ -25,7 +25,7 @@ function buildSystemPrompt(
   course_description: string | undefined,
   lesson_content: string | undefined
 ): string {
-  const title = course_title?.trim() || "this course";
+  const title = course_title?.replace(/[\n\r`]/g, " ").trim() || "this course";
 
   let prompt = `You are a dedicated learning assistant for the course: ${title}.\n\n`;
 
@@ -157,21 +157,27 @@ export async function POST(req: NextRequest) {
     .slice(0, -1)
     .map((m) => ({ role: m.role, content: m.content }));
 
+  const abortController = new AbortController();
+  const timeoutId = setTimeout(() => abortController.abort(), 30_000);
+
   let grokStream;
   try {
-    grokStream = await client.chat.completions.create({
-      model: "grok-3-mini",
-      max_tokens: 1024,
-      stream: true,
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...history,
-        { role: "user", content: lastMessage },
-      ],
-    });
-  } catch (e: unknown) {
-    const errorMessage = e instanceof Error ? e.message : "xAI API error";
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    grokStream = await client.chat.completions.create(
+      {
+        model: "grok-3-mini",
+        max_tokens: 1024,
+        stream: true,
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...history,
+          { role: "user", content: lastMessage },
+        ],
+      },
+      { signal: abortController.signal }
+    );
+  } catch {
+    clearTimeout(timeoutId);
+    return new Response(JSON.stringify({ error: "Chat service temporarily unavailable" }), {
       status: 502,
       headers: { "Content-Type": "application/json" },
     });
@@ -187,10 +193,10 @@ export async function POST(req: NextRequest) {
           }
         }
         controller.enqueue("data: [DONE]\n\n");
-      } catch (e: unknown) {
-        const errorMessage = e instanceof Error ? e.message : "Unknown error occurred";
-        controller.enqueue(`data: ${JSON.stringify({ error: errorMessage })}\n\n`);
+      } catch {
+        controller.enqueue(`data: ${JSON.stringify({ error: "Stream interrupted" })}\n\n`);
       } finally {
+        clearTimeout(timeoutId);
         controller.close();
       }
     },

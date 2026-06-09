@@ -5,25 +5,28 @@ import { PlayCircle, MousePointer2, Layers, Plus } from "lucide-react";
 import { LessonFrame } from "./LessonFrame";
 import { Hotspot } from "./Hotspot";
 import { DiscoveryPanel } from "./DiscoveryPanel";
-import { ProductStage } from "./ProductStage";
-import { QuizLesson } from "./QuizLesson";
+import dynamic from "next/dynamic";
 import type { SanityQuizDoc } from "./QuizLesson";
+import type { SanitySpecification } from "./SpecificationPage";
+import type { SanityDisclaimer } from "./DisclaimerPage";
 import { CourseComplete } from "./CourseComplete";
 import { NavMap } from "./NavMap";
 import { FullWidthCarousel } from "./FullWidthCarousel";
-import { VideoLesson } from "./VideoLesson";
 import { useLessonProgress } from "@/hooks/useLessonProgress";
 import { LayerFrame } from "./LayerFrame";
 import { PortableText } from "@portabletext/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CourseCover } from "./CourseCover";
-import { SpecificationPage } from "./SpecificationPage";
-import type { SanitySpecification } from "./SpecificationPage";
-import { DisclaimerPage } from "./DisclaimerPage";
-import type { SanityDisclaimer } from "./DisclaimerPage";
+
+const ProductStage = dynamic(() => import("./ProductStage").then((m) => ({ default: m.ProductStage })));
+const QuizLesson = dynamic(() => import("./QuizLesson").then((m) => ({ default: m.QuizLesson })));
+const VideoLesson = dynamic(() => import("./VideoLesson").then((m) => ({ default: m.VideoLesson })));
+const SpecificationPage = dynamic(() => import("./SpecificationPage").then((m) => ({ default: m.SpecificationPage })));
+const DisclaimerPage = dynamic(() => import("./DisclaimerPage").then((m) => ({ default: m.DisclaimerPage })));
 import { CompletionBurst } from "./CompletionBurst";
 
 import { ChapterIntro } from "./ChapterIntro";
+import { optimizeSanityImage } from "@/lib/image-optimization";
 
 // ── Domain types ──────────────────────────────────────────────────────────────
 
@@ -626,7 +629,7 @@ export default function MotoViewer({
               {layerContent.media?.asset?.url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={layerContent.media.asset.url}
+                  src={optimizeSanityImage(layerContent.media.asset.url, 1200)}
                   alt={layerContent.headline}
                   className="w-full rounded-2xl object-cover max-h-[60vh] shadow-2xl ring-1 ring-white/10"
                 />
@@ -961,7 +964,7 @@ export default function MotoViewer({
           {imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={imageUrl}
+              src={optimizeSanityImage(imageUrl, 1920)}
               alt={safeHeadline}
               className="absolute inset-0 w-full h-full object-cover"
             />
@@ -1023,7 +1026,7 @@ export default function MotoViewer({
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={fg.image.asset.url}
+                    src={optimizeSanityImage(fg.image.asset.url, 800)}
                     alt="Floating Graphic"
                     className="w-full h-auto drop-shadow-2xl"
                   />

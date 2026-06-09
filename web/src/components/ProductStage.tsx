@@ -5,6 +5,7 @@ import { ChevronRight, Check, CheckCircle2 } from "lucide-react";
 import { PulseHotspot } from "./PulseHotspot";
 import { DiscoveryPanel } from "./DiscoveryPanel";
 import { CompletionBurst } from "./CompletionBurst";
+import { optimizeSanityImage } from "@/lib/image-optimization";
 
 interface StageHotspot {
   _key: string;
@@ -200,7 +201,7 @@ export function ProductStage({
       {stageBackground ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={stageBackground}
+          src={optimizeSanityImage(stageBackground, 1920)}
           alt=""
           className="absolute inset-0 w-full h-full object-cover stage-enter-bg"
           style={{
@@ -255,7 +256,7 @@ export function ProductStage({
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={productImage}
+                src={optimizeSanityImage(productImage, 1200)}
                 alt={headline}
                 className="h-[78vh] max-h-full w-auto object-contain drop-shadow-[0_24px_64px_rgba(0,0,0,0.75)]"
               />

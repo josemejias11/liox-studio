@@ -3,23 +3,23 @@ import { z } from "zod";
 const LessonProgressSchema = z.object({
   type: z.literal("lesson"),
   sessionId: z.string().uuid("Invalid session ID format"),
-  lessonId: z.string().min(1),
-  visitedHotspots: z.array(z.string()).max(50).optional(),
+  lessonId: z.string().min(1).max(100),
+  visitedHotspots: z.array(z.string().max(200)).max(50).optional(),
   completed: z.boolean().optional(),
 });
 
 const QuizProgressSchema = z.object({
   type: z.literal("quiz"),
   sessionId: z.string().uuid("Invalid session ID format"),
-  courseId: z.string().min(1),
+  courseId: z.string().min(1).max(100),
   score: z.number().int().min(0),
   total: z.number().int().min(1),
   passed: z.boolean(),
   answers: z.array(
     z.object({
-      question: z.string(),
-      selected: z.string(),
-      correct: z.string(),
+      question: z.string().max(1000),
+      selected: z.string().max(1000),
+      correct: z.string().max(1000),
     })
   ).max(100).optional(),
 });
@@ -27,9 +27,9 @@ const QuizProgressSchema = z.object({
 const LayerProgressSchema = z.object({
   type: z.literal("layer"),
   sessionId: z.string().uuid("Invalid session ID format"),
-  lessonId: z.string().min(1),
-  layerId: z.string().min(1),
-  visitedHotspots: z.array(z.string()).max(50).optional(),
+  lessonId: z.string().min(1).max(100),
+  layerId: z.string().min(1).max(100),
+  visitedHotspots: z.array(z.string().max(200)).max(50).optional(),
   completed: z.boolean().optional(),
 });
 

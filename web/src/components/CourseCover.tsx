@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
+import { optimizeSanityImage } from "@/lib/image-optimization";
 
 interface CourseCoverProps {
   title: string;
@@ -36,7 +37,7 @@ export function CourseCover({
           initial={{ scale: 1.05, opacity: 0 }}
           animate={{ scale: 1, opacity: 0.7 }}
           transition={{ duration: 1.5, ease: "easeOut" }}
-          src={coverImage}
+          src={optimizeSanityImage(coverImage, 1920)}
           alt="Course cover"
           className="absolute inset-0 w-full h-full object-cover"
         />

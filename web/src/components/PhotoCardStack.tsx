@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { optimizeSanityImage } from "@/lib/image-optimization";
 
 interface Photo {
   asset?: { url?: string; originalFilename?: string };
@@ -82,7 +83,7 @@ export function PhotoCardStack({ photos = [] }: PhotoCardStackProps) {
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={p.asset!.url!}
+                src={optimizeSanityImage(p.asset!.url!, 800)}
                 alt={title}
                 className="w-full h-full object-cover"
                 draggable={false}

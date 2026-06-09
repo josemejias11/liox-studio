@@ -44,6 +44,12 @@ export const quizType = defineType({
               validation: (r) => r.required(),
             }),
             defineField({
+              name: "image",
+              title: "Related Image",
+              type: "image",
+              options: { hotspot: true },
+            }),
+            defineField({
               name: "questionType",
               title: "Question Type",
               type: "string",

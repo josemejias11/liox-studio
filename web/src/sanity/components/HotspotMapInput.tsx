@@ -24,7 +24,7 @@ function assetRefToUrl(ref: string, projectId: string, dataset: string): string 
   const lastDash = withoutPrefix.lastIndexOf("-");
   const ext  = withoutPrefix.slice(lastDash + 1);
   const base = withoutPrefix.slice(0, lastDash);
-  return `https://cdn.sanity.io/images/${projectId}/${dataset}/${base}.${ext}`;
+  return `https://cdn.sanity.io/images/${projectId}/${dataset}/${base}.${ext}?auto=format&w=800`;
 }
 
 function shortId(): string {

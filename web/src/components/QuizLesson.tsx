@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
+import confetti from "canvas-confetti";
 import {
   CheckCircle2,
   XCircle,
@@ -23,6 +25,7 @@ export interface SanityQuizDoc {
     _key: string;
     questionText: string;
     questionType: "multiple-choice" | "true-false";
+    image?: { asset: { url: string } };
     answers: Array<{ _key: string; text: string; isCorrect: boolean; feedback?: string }>;
     explanation?: string;
   }>;
@@ -38,10 +41,12 @@ interface AIQuestion {
   options: string[];
   correct_answer: string;
   explanation: string;
+  image_url?: string;
 }
 
 interface QuizData {
   title: string;
+  instructions?: string;
   questions: AIQuestion[];
 }
 
@@ -78,6 +83,7 @@ const SCORE_TIERS = [
 function toQuizData(sanityQuiz: SanityQuizDoc): QuizData {
   return {
     title: sanityQuiz.title,
+    instructions: sanityQuiz.instructions,
     questions: sanityQuiz.questions.map((q) => {
       const correctAnswer = q.answers.find((a) => a.isCorrect);
       return {
@@ -85,6 +91,7 @@ function toQuizData(sanityQuiz: SanityQuizDoc): QuizData {
         options: q.answers.map((a) => a.text),
         correct_answer: correctAnswer?.text ?? "",
         explanation: q.explanation ?? correctAnswer?.feedback ?? "",
+        image_url: q.image?.asset?.url,
       };
     }),
   };
@@ -111,6 +118,10 @@ export function QuizLesson({
   const [revealed, setRevealed] = useState(false);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
+  const [userAnswers, setUserAnswers] = useState<string[]>([]);
+  const [isReviewing, setIsReviewing] = useState(false);
+  const [isShaking, setIsShaking] = useState(false);
+  const [started, setStarted] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   // Retry is controlled by Sanity config; AI quiz always allows retry
@@ -121,6 +132,13 @@ export function QuizLesson({
     if (!done || !sessionId || !courseId) return;
     const total = quiz?.questions.length ?? 0;
     const pctScore = total > 0 ? (score / total) * 100 : 0;
+    
+    const mappedAnswers = quiz?.questions.map((q, i) => ({
+      question: q.question,
+      selected: userAnswers[i] ?? "",
+      correct: q.correct_answer,
+    })) ?? [];
+
     fetch("/api/progress", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -131,9 +149,14 @@ export function QuizLesson({
         score,
         total,
         passed: pctScore >= passingScore,
-        answers: [],
+        answers: mappedAnswers,
       }),
     }).catch(() => {});
+    
+    // Confetti on Pass
+    if (!isReviewing && pctScore >= passingScore) {
+      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done]);
 
@@ -156,25 +179,32 @@ export function QuizLesson({
 
   // ── Answer selection ──────────────────────────────────────────────────────
   function handleSelect(option: string) {
-    if (selected) return;
+    if (selected || isReviewing) return;
     const isCorrect = option === quiz!.questions[currentQ].correct_answer;
     if (isCorrect) setScore((s) => s + 1);
     setSelected(option);
+    setUserAnswers((prev) => [...prev, option]);
 
     // Brief pause so selection state registers visually, then reveal feedback
-    const t1 = setTimeout(() => setRevealed(true), 90);
-    // Advance to next question or to score screen after feedback
-    const t2 = setTimeout(() => {
-      const next = currentQ + 1;
-      if (next >= quiz!.questions.length) {
-        setDone(true);
-      } else {
-        setCurrentQ(next);
-        setSelected(null);
-        setRevealed(false);
+    const t1 = setTimeout(() => {
+      setRevealed(true);
+      if (!isCorrect) {
+        setIsShaking(true);
+        setTimeout(() => setIsShaking(false), 400);
       }
-    }, 2100);
-    timers.current = [t1, t2];
+    }, 90);
+    timers.current = [t1];
+  }
+
+  function handleNext() {
+    const next = currentQ + 1;
+    if (next >= quiz!.questions.length) {
+      setDone(true);
+    } else {
+      setCurrentQ(next);
+      setSelected(null);
+      setRevealed(false);
+    }
   }
 
   function handleRetry() {
@@ -184,6 +214,9 @@ export function QuizLesson({
     setRevealed(false);
     setScore(0);
     setDone(false);
+    setUserAnswers([]);
+    setIsReviewing(false);
+    setStarted(false);
   }
 
   const total = quiz?.questions.length ?? 5;
@@ -207,8 +240,28 @@ export function QuizLesson({
     );
   }
 
+  // ── Intro screen ──────────────────────────────────────────────────────────
+  if (!started && quiz?.instructions) {
+    return (
+      <div className="absolute inset-0 bg-background flex flex-col items-center justify-center px-8 text-center quiz-enter">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_35%,rgba(104,91,199,0.07),transparent)] pointer-events-none" />
+        <Trophy className="h-12 w-12 text-accent mb-5 opacity-80" />
+        <h2 className="text-2xl md:text-3xl font-black text-foreground leading-tight mb-4">{quiz.title}</h2>
+        <p className="text-foreground/70 text-base leading-relaxed max-w-sm mx-auto mb-8 font-medium">
+          {quiz.instructions}
+        </p>
+        <button
+          onClick={() => setStarted(true)}
+          className="bg-foreground text-background font-black text-lg px-8 py-3.5 rounded-full hover:bg-foreground/90 transition-transform hover:scale-105 active:scale-95 shadow-2xl"
+        >
+          Start Quiz
+        </button>
+      </div>
+    );
+  }
+
   // ── Score screen ──────────────────────────────────────────────────────────
-  if (done) {
+  if (done && !isReviewing) {
     const pct = score / total;
     const pctScore = Math.round(pct * 100);
     const passed = pctScore >= passingScore;
@@ -290,6 +343,17 @@ export function QuizLesson({
               Continue <ChevronRight className="h-4 w-4" />
             </button>
           )}
+
+          <button
+            onClick={() => {
+              setIsReviewing(true);
+              setCurrentQ(0);
+              setRevealed(true);
+            }}
+            className="mt-4 text-base font-bold text-foreground/70 hover:text-foreground transition-colors underline underline-offset-4"
+          >
+            Review Answers
+          </button>
         </div>
       </div>
     );
@@ -304,18 +368,24 @@ export function QuizLesson({
 
       {/* Header — progress bar + counter */}
       <div className="shrink-0 px-6 pt-5 pb-2">
-        <div className="h-0.5 bg-background/8 rounded-full overflow-hidden mb-3">
-          <div
-            className="h-full bg-accent rounded-full transition-all duration-500 ease-out"
-            style={{ width: `${(currentQ / total) * 100}%` }}
-          />
+        <div className="flex items-center gap-1.5 mb-3 w-full">
+          {Array.from({ length: total }).map((_, i) => {
+            let bgColor = "bg-border/20"; // Unanswered
+            if (userAnswers[i] && i !== currentQ) {
+              const isCorrect = userAnswers[i] === quiz!.questions[i].correct_answer;
+              bgColor = isCorrect ? "bg-accent" : "bg-destructive/80";
+            } else if (i === currentQ) {
+              bgColor = "bg-accent/50 animate-pulse";
+            }
+            return <div key={i} className={`h-1.5 flex-1 rounded-full ${bgColor} transition-colors duration-300`} />;
+          })}
         </div>
         <div className="flex items-center justify-between">
-          <p className="text-foreground/25 text-[10px] font-semibold uppercase tracking-widest">
+          <p className="text-foreground/70 text-xs font-bold uppercase tracking-widest">
             Knowledge Check
           </p>
-          <p className="text-foreground/25 text-[10px] font-medium tabular-nums">
-            {currentQ + 1} <span className="text-foreground/15">/ {total}</span>
+          <p className="text-foreground/70 text-xs font-bold tabular-nums">
+            {currentQ + 1} <span className="text-foreground/40">/ {total}</span>
           </p>
         </div>
       </div>
@@ -323,14 +393,28 @@ export function QuizLesson({
       {/* Body — keyed by question index so entry animations replay per question */}
       <div key={currentQ} className="flex-1 flex flex-col px-6 pb-5 gap-4 overflow-hidden min-h-0">
         {/* Question text */}
-        <p className="quiz-enter text-foreground text-[17px] font-semibold leading-snug pt-1 shrink-0">
+        <p className="quiz-enter text-foreground text-xl md:text-2xl font-bold leading-tight pt-2 shrink-0">
           {q.question}
         </p>
 
-        {/* Answer options — 2 × 2 grid */}
-        <div className="grid grid-cols-2 gap-2.5 flex-1 content-start" role="group" aria-label="Answer options">
+        {/* Optional Image */}
+        {q.image_url && (
+          <div className="quiz-enter shrink-0 w-full max-w-lg mx-auto rounded-xl overflow-hidden shadow-lg border border-border/10">
+            <img src={`${q.image_url}?auto=format&q=75&fit=max&w=800`} alt="Question reference" className="w-full h-auto object-cover max-h-[30vh]" />
+          </div>
+        )}
+
+        {/* Answer options */}
+        <motion.div 
+          className="grid grid-cols-1 md:grid-cols-2 gap-3 flex-1 content-start" 
+          role="group" 
+          aria-label="Answer options"
+          animate={isShaking ? { x: [-6, 6, -6, 6, 0] } : { x: 0 }}
+          transition={{ duration: 0.4 }}
+        >
           {q.options.map((option, i) => {
-            const isSelected = selected === option;
+            const activeSelected = isReviewing ? userAnswers[currentQ] : selected;
+            const isSelected = activeSelected === option;
             const isCorrect  = option === q.correct_answer;
             const showGreen  = revealed && isCorrect;
             const showRed    = revealed && isSelected && !isCorrect;
@@ -356,7 +440,7 @@ export function QuizLesson({
               <button
                 key={option}
                 onClick={() => handleSelect(option)}
-                disabled={!!selected}
+                disabled={!!selected || isReviewing}
                 aria-pressed={isSelected}
                 aria-label={`${OPTION_LABELS[i]}: ${option}${
                   revealed && isCorrect ? " — correct" :
@@ -367,7 +451,7 @@ export function QuizLesson({
               >
                 {/* Letter badge */}
                 <span
-                  className={`shrink-0 h-4.5 w-4.5 rounded-full flex items-center justify-center text-[9px] font-bold border mt-px
+                  className={`shrink-0 h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold border mt-px
                     ${showGreen ? "border-accent    text-accent"
                     : showRed   ? "border-border text-muted-foreground"
                     :             "border-border/20  text-foreground/35"}`}
@@ -377,7 +461,7 @@ export function QuizLesson({
 
                 {/* Option text */}
                 <span
-                  className={`text-[12px] leading-snug font-medium
+                  className={`text-base leading-snug font-semibold mt-px
                     ${showGreen ? "text-foreground"
                     : showRed   ? "text-muted-foreground"
                     :             "text-foreground/75"}`}
@@ -397,14 +481,68 @@ export function QuizLesson({
               </button>
             );
           })}
-        </div>
+        </motion.div>
 
         {/* Explanation — appears after feedback is revealed */}
         {revealed && (
-          <div className="quiz-enter shrink-0 bg-background/5 border border-border/8 rounded-xl px-4 py-3">
-            <p className="text-[9.5px] text-foreground/25 font-semibold uppercase tracking-widest mb-1">Why</p>
-            <p className="text-foreground/55 text-[11.5px] leading-relaxed">{q.explanation}</p>
-          </div>
+          <>
+            <div className="quiz-enter shrink-0 bg-background/5 border border-border/8 rounded-2xl px-5 py-4 mt-2">
+              {(() => {
+                const activeSelected = isReviewing ? userAnswers[currentQ] : selected;
+                const isCorrect = activeSelected === q.correct_answer;
+                return (
+                  <div className={`flex items-center gap-1.5 mb-2 ${isCorrect ? "text-accent" : "text-destructive"}`}>
+                    {isCorrect ? <CheckCircle2 className="h-5 w-5" /> : <XCircle className="h-5 w-5" />}
+                    <p className="text-sm font-black uppercase tracking-widest">
+                      {isCorrect ? "Correct!" : "Incorrect"}
+                    </p>
+                  </div>
+                );
+              })()}
+              <p className="text-foreground/80 text-base leading-relaxed font-medium">{q.explanation}</p>
+            </div>
+
+            {!isReviewing ? (
+              <motion.button
+                autoFocus
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleNext}
+                className="w-full mt-4 flex items-center justify-center gap-2 bg-foreground text-background font-black text-base px-6 py-3.5 rounded-full shadow-[0_0_24px_rgba(0,0,0,0.15)] focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                {currentQ + 1 >= total ? "Finish Quiz" : "Next Question"}
+                <ChevronRight className="h-5 w-5" />
+              </motion.button>
+            ) : (
+              <div className="flex items-center justify-between mt-6">
+                <button
+                  onClick={() => setCurrentQ((prev) => Math.max(0, prev - 1))}
+                  disabled={currentQ === 0}
+                  className="text-base font-black px-5 py-2.5 rounded-full border-2 border-foreground/10 text-foreground hover:border-foreground/30 hover:bg-foreground/5 transition-all disabled:opacity-20"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => {
+                    setDone(true);
+                    setIsReviewing(false);
+                  }}
+                  className="text-base font-black px-6 py-2.5 bg-foreground text-background rounded-full hover:bg-foreground/90 transition-all shadow-lg"
+                >
+                  Back to Score
+                </button>
+                <button
+                  onClick={() => setCurrentQ((prev) => Math.min(total - 1, prev + 1))}
+                  disabled={currentQ === total - 1}
+                  className="text-base font-black px-5 py-2.5 rounded-full border-2 border-foreground/10 text-foreground hover:border-foreground/30 hover:bg-foreground/5 transition-all disabled:opacity-20"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

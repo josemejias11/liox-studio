@@ -44,9 +44,8 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json({ lessons, layers });
-  } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : "Database error";
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -61,32 +60,32 @@ export async function POST(req: NextRequest) {
   const body = parsed.data;
 
   try {
-    await prisma.session.upsert({
-      where: { id: body.sessionId },
-      update: { updatedAt: new Date() },
-      create: { id: body.sessionId },
-    });
-
     if (body.type === "lesson") {
       const { sessionId, lessonId, visitedHotspots, completed } = body;
 
-      await prisma.lessonProgress.upsert({
-        where: { sessionId_lessonId: { sessionId, lessonId } },
-        update: { completed: completed ?? false },
-        create: { sessionId, lessonId, completed: completed ?? false },
-      });
+      await prisma.$transaction(async (tx) => {
+        await tx.session.upsert({
+          where: { id: sessionId },
+          update: { updatedAt: new Date() },
+          create: { id: sessionId },
+        });
 
-      if (visitedHotspots && visitedHotspots.length > 0) {
-        await prisma.$transaction(
-          visitedHotspots.map((label) =>
-            prisma.hotspotVisit.upsert({
+        await tx.lessonProgress.upsert({
+          where: { sessionId_lessonId: { sessionId, lessonId } },
+          update: { completed: completed ?? false },
+          create: { sessionId, lessonId, completed: completed ?? false },
+        });
+
+        if (visitedHotspots && visitedHotspots.length > 0) {
+          for (const label of visitedHotspots) {
+            await tx.hotspotVisit.upsert({
               where: { sessionId_lessonId_layerId_label: { sessionId, lessonId, layerId: "", label } },
               update: {},
               create: { sessionId, lessonId, layerId: "", label },
-            })
-          )
-        );
-      }
+            });
+          }
+        }
+      });
 
       return NextResponse.json({ ok: true });
     }
@@ -94,23 +93,29 @@ export async function POST(req: NextRequest) {
     if (body.type === "layer") {
       const { sessionId, lessonId, layerId, visitedHotspots, completed } = body;
 
-      await prisma.layerProgress.upsert({
-        where: { sessionId_lessonId_layerId: { sessionId, lessonId, layerId } },
-        update: { completed: completed ?? false },
-        create: { sessionId, lessonId, layerId, completed: completed ?? false },
-      });
+      await prisma.$transaction(async (tx) => {
+        await tx.session.upsert({
+          where: { id: sessionId },
+          update: { updatedAt: new Date() },
+          create: { id: sessionId },
+        });
 
-      if (visitedHotspots && visitedHotspots.length > 0) {
-        await prisma.$transaction(
-          visitedHotspots.map((label) =>
-            prisma.hotspotVisit.upsert({
+        await tx.layerProgress.upsert({
+          where: { sessionId_lessonId_layerId: { sessionId, lessonId, layerId } },
+          update: { completed: completed ?? false },
+          create: { sessionId, lessonId, layerId, completed: completed ?? false },
+        });
+
+        if (visitedHotspots && visitedHotspots.length > 0) {
+          for (const label of visitedHotspots) {
+            await tx.hotspotVisit.upsert({
               where: { sessionId_lessonId_layerId_label: { sessionId, lessonId, layerId, label } },
               update: {},
               create: { sessionId, lessonId, layerId, label },
-            })
-          )
-        );
-      }
+            });
+          }
+        }
+      });
 
       return NextResponse.json({ ok: true });
     }
@@ -118,23 +123,30 @@ export async function POST(req: NextRequest) {
     if (body.type === "quiz") {
       const { sessionId, courseId, score, total, passed, answers } = body;
 
-      await prisma.quizAttempt.create({
-        data: {
-          sessionId,
-          courseId,
-          score,
-          total,
-          passed,
-          answers: JSON.stringify(answers ?? []),
-        },
+      await prisma.$transaction(async (tx) => {
+        await tx.session.upsert({
+          where: { id: sessionId },
+          update: { updatedAt: new Date() },
+          create: { id: sessionId },
+        });
+
+        await tx.quizAttempt.create({
+          data: {
+            sessionId,
+            courseId,
+            score,
+            total,
+            passed,
+            answers: JSON.stringify(answers ?? []),
+          },
+        });
       });
 
       return NextResponse.json({ ok: true });
     }
 
     return NextResponse.json({ error: "unknown type" }, { status: 400 });
-  } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : "Database error";
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { readClient } from "@/sanity/lib/client";
 import { COURSES_QUERY } from "@/sanity/lib/queries";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { optimizeSanityImage } from "@/lib/image-optimization";
 
 export interface CourseSummary {
   _id: string;
@@ -70,7 +71,7 @@ export default async function Home() {
                     {course.thumbnail?.asset?.url ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={course.thumbnail.asset.url}
+                        src={optimizeSanityImage(course.thumbnail.asset.url, 800)}
                         alt=""
                         className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
                       />
