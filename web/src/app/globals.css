@@ -208,7 +208,8 @@
   position: absolute;
   inset: -5px;
   border-radius: 9999px;
-  border: 2px solid rgb(56 189 248 / 0.55);
+  border-width: 2px;
+  border-style: solid;
   animation: stage-wave 2.4s ease-out infinite;
   pointer-events: none;
 }
@@ -219,7 +220,8 @@
   position: absolute;
   inset: -5px;
   border-radius: 9999px;
-  border: 2px solid rgb(52 211 153 / 0.85);
+  border-width: 2px;
+  border-style: solid;
   animation: stage-burst 0.55s ease-out forwards;
   pointer-events: none;
 }

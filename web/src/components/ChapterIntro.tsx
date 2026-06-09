@@ -109,16 +109,23 @@ export function ChapterIntro({
         <motion.button
           variants={itemVariants}
           onClick={onContinue}
-          className="flex items-center gap-2 mt-1 px-6 py-3 rounded-full
+          whileHover={{ 
+            scale: 1.03, 
+            boxShadow: "0px 8px 32px rgba(104, 91, 199, 0.4)",
+            transition: { type: "spring", stiffness: 400, damping: 25 }
+          }}
+          whileTap={{ 
+            scale: 0.96, 
+            boxShadow: "0px 4px 16px rgba(104, 91, 199, 0.2)",
+            transition: { type: "spring", stiffness: 400, damping: 25 } 
+          }}
+          className="group flex items-center gap-2 mt-1 px-6 py-3 rounded-full
             bg-accent text-accent-foreground font-semibold text-[13px]
-            shadow-[0_0_32px_rgba(104,91,199,0.3)]
-            hover:shadow-[0_0_44px_rgba(104,91,199,0.5)]
-            hover:scale-105 active:scale-95
-            transition-all duration-200
+            shadow-[0_0_24px_rgba(104,91,199,0.25)]
             focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           Begin
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="h-4 w-4 transition-transform duration-300 ease-out group-hover:translate-x-0.5" />
         </motion.button>
       </motion.div>
     </motion.div>

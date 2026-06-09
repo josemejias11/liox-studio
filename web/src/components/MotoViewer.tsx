@@ -50,6 +50,7 @@ export interface SanityHotspot {
   layerContent?: SanityLayerContent;
   body?: any;
   photos?: { asset?: { url?: string } }[];
+  variant?: "moto-indigo-black" | "white-black";
 }
 
 export interface SanityLesson {
@@ -377,6 +378,7 @@ export default function MotoViewer({
       setNavDirection(1);
       if (lessonSections.length > 0) {
         setCoursePhase({ phase: "chapter", chapterIndex: 0, lessonIndex: 0 });
+        setShowChapterIntro(true);
       } else {
         advanceToPostChapterPhase();
       }
@@ -577,6 +579,9 @@ export default function MotoViewer({
         chapterIndex: ls.chapterIndex,
         lessonIndex: lessonIdx >= 0 ? lessonIdx : 0,
       });
+      if (lessonIdx === 0 || lessonIdx === -1) {
+        setShowChapterIntro(true);
+      }
     } else if (section.sectionType === "specification") {
       const specIdx = i - lessonSections.length;
       setCoursePhase({ phase: "specifications", specIndex: specIdx >= 0 ? specIdx : 0 });
@@ -1043,6 +1048,7 @@ export default function MotoViewer({
                   y={h.y}
                   label={h.label}
                   visited={visited[lessonKey]?.has(h.label) ?? false}
+                  variant={h.variant || "moto-indigo-black"}
                   icon={
                     Icon ? (
                       <Icon className="w-5 h-5 text-white" />
