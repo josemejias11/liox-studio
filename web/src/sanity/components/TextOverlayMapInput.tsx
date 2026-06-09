@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { set, setIfMissing, useFormValue, useClient, ObjectInputProps, Path } from "sanity";
 
 interface SanityImage {
