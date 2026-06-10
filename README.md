@@ -8,7 +8,7 @@ An AI-powered eLearning platform that replaces traditional authoring tools (Arti
 
 A single Next.js 16 application — no separate backend service required.
 
-```
+```text
 Sanity CMS (headless)
        │
        ▼
@@ -20,15 +20,27 @@ Next.js 16 (web/)
 /studio           Sanity authoring UI (embedded)
 /api/chat         AI tutor — xAI Grok streaming (SSE)
 /api/quiz         AI quiz generation — Google Gemini 2.0 Flash
-/api/progress     lesson + quiz progress (SQLite via Prisma)
+/api/quiz/grade   Server-side quiz grading
+/api/progress     lesson + layer progress (SQLite via Prisma)
 ```
 
 **Data flow:**
-1. Content is authored in Sanity Studio → published to the Sanity CDN
-2. `page.tsx` fetches course + lessons from Sanity at render time via the CDN read client
-3. Learner asks a question → `/api/chat` → xAI Grok streams a response (SSE)
-4. Quiz request → `/api/quiz` → Google Gemini 2.0 Flash returns structured JSON
-5. Hotspot visits and quiz results → `/api/progress` → SQLite via Prisma
+1. Content is authored in Sanity Studio → published to the Sanity CDN.
+2. `page.tsx` fetches course + lessons from Sanity at render time via the CDN read client.
+3. Learner asks a question → `/api/chat` → xAI Grok streams a response (SSE).
+4. Quiz request → `/api/quiz` → Google Gemini 2.0 Flash generates a structured JSON quiz, safely stores the correct answers server-side, and returns a client-safe version.
+5. Quiz grading → `/api/quiz/grade` → verifies the submission securely server-side and automatically logs the attempt.
+6. Hotspot visits and lesson progress → `/api/progress` → SQLite via Prisma.
+
+---
+
+## Performance & Security
+
+Recent updates to the backend architecture include essential optimizations:
+- **Rate Limiting:** A custom in-memory rate limiter protects AI endpoints (10 requests/minute for chat, 5 requests/minute for quiz generation) to prevent abuse.
+- **TTL Cleanup:** Automatically drops generated quizzes older than 7 days during new quiz generation to prevent SQLite bloat.
+- **SQLite WAL Mode:** Enabled Write-Ahead Logging (WAL) and increased `busy_timeout` (5000ms) on the Prisma SQLite connection to smoothly handle concurrent telemetry and progress writes without database locks.
+- **Server-Side Grading:** The correct answers to both generated quizzes and Sanity-authored quizzes are never serialized to the client browser. Submissions are instead posted to the `/api/quiz/grade` endpoint to calculate scores and commit attempts securely.
 
 ---
 
@@ -163,9 +175,10 @@ Server-rendered dashboard reading directly from SQLite:
 | Method | Path | Description |
 |--------|------|-------------|
 | `POST` | `/api/chat` | Streams xAI Grok tutor response (SSE). Body: `{ messages?, query?, lesson_content?, course_title?, course_description? }` |
-| `POST` | `/api/quiz` | Generates multiple-choice quiz JSON via Gemini 2.0 Flash. Body: `{ context?, num_questions? }` |
+| `POST` | `/api/quiz` | Generates multiple-choice quiz JSON via Gemini 2.0 Flash. Returns a safe version without answers. Body: `{ context?, num_questions? }` |
+| `POST` | `/api/quiz/grade` | Grades quiz submissions securely against server-stored answers and logs the attempt. |
 | `GET`  | `/api/progress?sessionId=` | Returns lesson and layer progress for a session |
-| `POST` | `/api/progress` | Upserts lesson/layer progress or records a quiz attempt |
+| `POST` | `/api/progress` | Upserts lesson/layer progress or hotspot visits |
 
 ---
 
