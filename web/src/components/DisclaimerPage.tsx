@@ -82,7 +82,7 @@ export function DisclaimerPage({
 
   const itemVariants = {
     hidden: { opacity: 0, y: 15 },
-    visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 400, damping: 30 } },
+    visible: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 400, damping: 30 } },
   };
 
   return (
@@ -133,12 +133,6 @@ export function DisclaimerPage({
         transition={{ delay: 0.4, type: "spring", damping: 25 }}
         className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 p-1.5 bg-background/70 backdrop-blur-xl border border-border/20 shadow-2xl rounded-full"
       >
-        {/* Previous Button */}
-        {showPrev && (
-          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={onPrev} className="h-10 w-10 shrink-0 rounded-full flex items-center justify-center text-foreground hover:bg-foreground/10 transition-colors">
-            <ChevronLeft className="h-5 w-5" />
-          </motion.button>
-        )}
 
         {/* Acknowledge / Continue Button */}
         {requiresAck ? (
@@ -163,7 +157,7 @@ export function DisclaimerPage({
             onClick={onNext}
             className="flex items-center justify-center gap-2 px-6 h-10 rounded-full text-sm font-semibold bg-foreground/10 text-foreground hover:bg-foreground/15 transition-colors"
           >
-            Continue <ChevronRight className="h-4 w-4 shrink-0" />
+            End Course <ChevronRight className="h-4 w-4 shrink-0" />
           </motion.button>
         )}
       </motion.nav>

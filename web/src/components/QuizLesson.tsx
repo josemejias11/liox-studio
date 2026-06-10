@@ -407,7 +407,7 @@ export function QuizLesson({
         {/* Answer options */}
         <motion.div 
           className="grid grid-cols-1 md:grid-cols-2 gap-3 flex-1 content-start" 
-          role="group" 
+          role="radiogroup"
           aria-label="Answer options"
           animate={isShaking ? { x: [-6, 6, -6, 6, 0] } : { x: 0 }}
           transition={{ duration: 0.4 }}
@@ -441,7 +441,7 @@ export function QuizLesson({
                 key={option}
                 onClick={() => handleSelect(option)}
                 disabled={!!selected || isReviewing}
-                aria-pressed={isSelected}
+                role="radio" aria-checked={isSelected}
                 aria-label={`${OPTION_LABELS[i]}: ${option}${
                   revealed && isCorrect ? " — correct" :
                   revealed && isSelected && !isCorrect ? " — incorrect" : ""

@@ -62,7 +62,7 @@ export function Hotspot({
     <button
       onClick={handleClick}
       style={{ left: `${x}%`, top: `${y}%` }}
-      className={`absolute -translate-x-1/2 -translate-y-1/2 z-10 group focus:outline-none ${className}`}
+      className={`absolute -translate-x-1/2 -translate-y-1/2 z-10 group focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${className}`}
       aria-label={`Learn about ${safeLabel}`}
     >
       {/* Wave rings — continuous waves */}
@@ -93,8 +93,8 @@ export function Hotspot({
 
       {/* Label tooltip — shows on hover above the dot */}
       <span
-        className={`absolute left-1/2 -translate-x-1/2 bottom-full mb-3 max-w-[250px] w-max text-center
-          rounded-lg px-3 py-1.5 text-[11px] font-semibold tracking-wide
+        className={`absolute left-1/2 -translate-x-1/2 bottom-full mb-3 max-w-62.5 w-max text-center
+          rounded-lg px-3 py-1.5 text-sm font-semibold tracking-wide
           opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0
           transition-all duration-200 ease-out
           pointer-events-none shadow-2xl

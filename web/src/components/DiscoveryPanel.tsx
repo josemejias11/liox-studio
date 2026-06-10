@@ -25,6 +25,7 @@ interface DiscoveryPanelProps {
   mode?: "sidebar" | "popover";
   course_title?: string;
   course_description?: string;
+  suggestions?: string[];
 }
 
 const SUGGESTIONS = [
@@ -76,6 +77,7 @@ export function DiscoveryPanel({
   mode,
   course_title,
   course_description,
+  suggestions,
 }: DiscoveryPanelProps) {
   const hasLearnContent = !!(body || (photos?.length ?? 0) > 0);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -399,10 +401,10 @@ export function DiscoveryPanel({
               <div className="flex items-center justify-between">
                 {/* Left: AI indicator + label pill */}
                 <div className="flex items-center gap-2.5">
-                  <div className="bg-accent/20 rounded-full p-1.5 ring-1 ring-accent/30">
+                  <div className="bg-accent/20 rounded-full p-2 ring-1 ring-accent/30">
                     <Sparkles className="h-3.5 w-3.5 text-accent" />
                   </div>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide bg-accent/15 text-foreground border border-accent/25">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[14px] font-semibold tracking-wide bg-accent/15 text-foreground border border-accent/25">
                     {label}
                   </span>
                 </div>
@@ -430,7 +432,7 @@ export function DiscoveryPanel({
                 <div className="px-4 pt-4 pb-2 flex flex-col gap-4">
                   {(photos?.length ?? 0) > 0 && <PhotoCardStack photos={photos} />}
                   {body && (
-                    <div className="text-foreground text-[13.5px] leading-relaxed prose prose-sm prose-invert max-w-none">
+                    <div className="text-foreground text-[16px] leading-relaxed prose prose-sm prose-invert max-w-none">
                       {typeof body === "string" ? body : <PortableText value={body} />}
                     </div>
                   )}
@@ -506,7 +508,7 @@ export function DiscoveryPanel({
                       Try asking
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {SUGGESTIONS.map((s) => (
+                      {(suggestions ?? SUGGESTIONS).map((s) => (
                         <button
                           key={s}
                           onClick={() => handleSend(s)}

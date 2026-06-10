@@ -10,6 +10,7 @@ interface CourseCoverProps {
   coverImage?: string;
   buttonText?: string;
   buttonColor?: string;
+  learningObjectives?: string[];
   onStart: () => void;
 }
 
@@ -19,6 +20,7 @@ export function CourseCover({
   coverImage,
   buttonText = "Start Course",
   buttonColor,
+  learningObjectives,
   onStart,
 }: CourseCoverProps) {
   const finalHeadline = coverHeadline || title;
@@ -72,6 +74,25 @@ export function CourseCover({
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white text-center tracking-tight leading-[1.1] drop-shadow-2xl">
             {finalHeadline}
           </h1>
+
+          {learningObjectives && learningObjectives.length > 0 && (
+            <motion.ul
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-6 flex flex-col gap-2 text-white/70 text-sm text-left max-w-md w-full"
+              aria-label="Learning objectives"
+            >
+              {learningObjectives.map((obj, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-accent/30 flex items-center justify-center">
+                    <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                  </span>
+                  {obj}
+                </li>
+              ))}
+            </motion.ul>
+          )}
         </motion.div>
       </div>
 
@@ -84,7 +105,7 @@ export function CourseCover({
       >
         <button
           onClick={onStart}
-          className={`group relative flex items-center gap-3 font-semibold text-lg px-8 py-4 rounded-full shadow-2xl transition-all duration-300 active:scale-95 border border-white/10 overflow-hidden completion-button-glow ${btnClass}`}
+          className={`group relative flex items-center gap-3 font-semibold text-lg px-8 py-4 rounded-full shadow-2xl transition-all duration-300 active:scale-95 border border-white/10 overflow-hidden completion-button-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black ${btnClass}`}
         >
           {/* Button inner glow effect */}
           <div className="absolute inset-0 bg-linear-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />

@@ -16,16 +16,18 @@ export function PhotoCardStack({ photos = [] }: PhotoCardStackProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
+  // validPhotos derived before hooks so its length is stable across renders
   const validPhotos = (photos || []).filter((p) => p.asset?.url);
-  if (!validPhotos.length) return null;
 
-  // Track which slide is centred using IntersectionObserver for accuracy
-  // eslint-disable-next-line react-hooks/rules-of-hooks
+  // Track which slide is centred using IntersectionObserver — always invoked
+  // (guard inside the effect body) so hook order is unconditional and rule-compliant.
   useEffect(() => {
     const container = scrollRef.current;
     if (!container || validPhotos.length <= 1) return;
 
-    const cards = Array.from(container.querySelectorAll<HTMLElement>("[data-card]"));
+    const cards = Array.from(
+      container.querySelectorAll<HTMLElement>("[data-card]")
+    );
     const observer = new IntersectionObserver(
       (entries) => {
         const visible = entries
@@ -43,6 +45,9 @@ export function PhotoCardStack({ photos = [] }: PhotoCardStackProps) {
     return () => observer.disconnect();
   }, [validPhotos.length]);
 
+  // Early return AFTER all hooks — rules-of-hooks compliant
+  if (!validPhotos.length) return null;
+
   function scrollTo(idx: number) {
     const container = scrollRef.current;
     if (!container) return;
@@ -59,17 +64,17 @@ export function PhotoCardStack({ photos = [] }: PhotoCardStackProps) {
     return name.charAt(0).toUpperCase() + name.slice(1);
   }
 
+  const isSingle = validPhotos.length === 1;
+
   return (
     <div className="relative group/stack select-none">
-      {/* Card row — GPU-composited scroll, no hover scale to avoid jank */}
+      {/* Photo row — GPU-composited horizontal scroll, no card background */}
       <div
         ref={scrollRef}
-        className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 scrollbar-none"
-        style={{
-          scrollbarWidth: "none",
-          WebkitOverflowScrolling: "touch",
-          willChange: "scroll-position",
-        }}
+        className={`flex gap-6 overflow-x-auto snap-x snap-mandatory pb-1 ${
+          isSingle ? "justify-center" : ""
+        }`}
+        style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
       >
         {validPhotos.map((p, i) => {
           const title = parseTitle(p.asset?.originalFilename);
@@ -77,38 +82,54 @@ export function PhotoCardStack({ photos = [] }: PhotoCardStackProps) {
             <div
               key={i}
               data-card
-              className={`shrink-0 snap-center aspect-4/3 rounded-xl overflow-hidden relative
-                shadow-lg shadow-black/50 ring-1 ring-white/10
-                ${validPhotos.length === 1 ? "w-full" : "w-[82%]"}`}
+              className={`shrink-0 snap-center flex flex-col items-center gap-2 ${
+                isSingle ? "w-auto" : "w-[70%]"
+              }`}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={optimizeSanityImage(p.asset!.url!, 800)}
-                alt={title}
-                className="w-full h-full object-cover"
-                draggable={false}
-                loading="lazy"
-              />
+              {/*
+               * Frameless photo — no container background so the phone render
+               * floats directly against the dark panel surface. The glow element
+               * is a blurred accent circle positioned behind the device.
+               * drop-shadow on <img> follows the PNG alpha silhouette rather
+               * than boxing the rectangle — critical for transparent product renders.
+               */}
+              <div
+                className={`relative flex items-center justify-center ${
+                  isSingle ? "max-w-[400px]" : "w-full"
+                }`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={optimizeSanityImage(p.asset!.url!, 600)}
+                  alt={title || `Product photo ${i + 1}`}
+                  className="w-full h-auto block object-contain"
+                  draggable={false}
+                  loading="lazy"
+                />
+              </div>
+
+              {/* Caption — below the image, never overlaid on the product */}
               {title && (
-                <div className="absolute bottom-0 inset-x-0 p-3 bg-linear-to-t from-black/80 via-black/40 to-transparent">
-                  <p className="text-white text-xs font-medium drop-shadow-md">{title}</p>
-                </div>
+                <p className="text-[11px] text-muted-foreground/80 text-center leading-tight tracking-wide px-2">
+                  {title}
+                </p>
               )}
             </div>
           );
         })}
       </div>
 
-      {/* Prev / next arrows — visible on hover, hidden on touch devices */}
+{/* Prev / next arrows — hover-revealed, positioned at image mid-height */}
       {validPhotos.length > 1 && (
         <>
           <button
             onClick={() => scrollTo(Math.max(0, activeIndex - 1))}
             disabled={activeIndex === 0}
-            className="absolute left-1 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full
-              bg-background/70 backdrop-blur-sm text-foreground flex items-center justify-center
+            className="absolute left-0 top-[42%] -translate-y-1/2 h-7 w-7 rounded-full
+              bg-white/8 backdrop-blur-sm text-foreground/60 flex items-center justify-center
               opacity-0 group-hover/stack:opacity-100 disabled:opacity-0
-              transition-opacity duration-150 hover:bg-background/90 active:scale-90"
+              transition-opacity duration-150 hover:bg-white/16 hover:text-foreground
+              active:scale-90"
             aria-label="Previous photo"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -116,10 +137,11 @@ export function PhotoCardStack({ photos = [] }: PhotoCardStackProps) {
           <button
             onClick={() => scrollTo(Math.min(validPhotos.length - 1, activeIndex + 1))}
             disabled={activeIndex === validPhotos.length - 1}
-            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full
-              bg-background/70 backdrop-blur-sm text-foreground flex items-center justify-center
+            className="absolute right-0 top-[42%] -translate-y-1/2 h-7 w-7 rounded-full
+              bg-white/8 backdrop-blur-sm text-foreground/60 flex items-center justify-center
               opacity-0 group-hover/stack:opacity-100 disabled:opacity-0
-              transition-opacity duration-150 hover:bg-background/90 active:scale-90"
+              transition-opacity duration-150 hover:bg-white/16 hover:text-foreground
+              active:scale-90"
             aria-label="Next photo"
           >
             <ChevronRight className="h-4 w-4" />
@@ -127,7 +149,7 @@ export function PhotoCardStack({ photos = [] }: PhotoCardStackProps) {
         </>
       )}
 
-      {/* Reactive dot indicators */}
+      {/* Dot indicators */}
       {validPhotos.length > 1 && (
         <div className="flex justify-center gap-1.5 mt-2">
           {validPhotos.map((_, i) => (

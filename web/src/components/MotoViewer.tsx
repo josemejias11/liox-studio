@@ -54,6 +54,7 @@ export interface SanityHotspot {
   body?: any;
   photos?: { asset?: { url?: string } }[];
   variant?: "moto-indigo-black" | "white-black";
+  suggestions?: string[];
 }
 
 export interface SanityLesson {
@@ -421,8 +422,12 @@ export default function MotoViewer({
       const { specIndex } = coursePhase;
       if (specIndex < specSections.length - 1) {
         setCoursePhase({ phase: "specifications", specIndex: specIndex + 1 });
+      } else if (quizSection) {
+        setCoursePhase({ phase: "quiz", quizData: quizSection });
+      } else if (disclaimerSection) {
+        setCoursePhase({ phase: "disclaimer" });
       } else {
-        advanceToPostChapterPhase();
+        triggerComplete();
       }
       return;
     }
@@ -772,6 +777,7 @@ export default function MotoViewer({
               coverImage={finalImageUrl}
               buttonText={course.coverButtonText}
               buttonColor={course.coverButtonColor}
+              learningObjectives={course.learningObjectives}
               onStart={() => {
                 setNavDirection(1);
                 goNext();
@@ -898,6 +904,9 @@ export default function MotoViewer({
               visited={visited[lessonKey] ?? new Set()}
               onVisit={markVisited}
               onNext={goNext}
+              onPrev={goPrev}
+              course_title={course.title}
+              course_description={course.description}
               onOpenLayer={(id: string) => {
                 baseMarkVisited(lessonKey, hotspots.find((h: any) => h._key === id)?.label || "", hotspots.length);
                 openLayer(id);

@@ -68,7 +68,7 @@ export function CourseComplete({
               <span className="text-[28px] font-bold text-foreground tabular-nums leading-none">
                 {totalLessons}
               </span>
-              <span className="text-[9px] text-foreground/25 font-semibold uppercase tracking-wider">
+              <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider">
                 Lessons
               </span>
             </div>
@@ -79,8 +79,8 @@ export function CourseComplete({
               <span className="text-[28px] font-bold text-accent tabular-nums leading-none">
                 {totalHotspotsVisited}
               </span>
-              <span className="text-[9px] text-foreground/25 font-semibold uppercase tracking-wider">
-                Features
+              <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider">
+                Discovered
               </span>
             </div>
 
@@ -90,7 +90,7 @@ export function CourseComplete({
               <span className="text-[28px] font-bold text-muted-foreground tabular-nums leading-none">
                 {exploredPct}%
               </span>
-              <span className="text-[9px] text-foreground/25 font-semibold uppercase tracking-wider">
+              <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider">
                 Explored
               </span>
             </div>

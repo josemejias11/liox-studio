@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { ChevronRight, Check, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, CheckCircle2 } from "lucide-react";
 import { PulseHotspot } from "./PulseHotspot";
 import { DiscoveryPanel } from "./DiscoveryPanel";
 import { CompletionBurst } from "./CompletionBurst";
@@ -16,6 +16,7 @@ interface StageHotspot {
   x: number;
   y: number;
   contentMode?: "tooltip" | "layer";
+  suggestions?: string[];
 }
 
 interface ProductStageProps {
@@ -29,6 +30,9 @@ interface ProductStageProps {
   onVisit: (label: string) => void;
   onNext: () => void;
   onOpenLayer?: (id: string) => void;
+  onPrev?: () => void;
+  course_title?: string;
+  course_description?: string;
 }
 
 export function ProductStage({
@@ -42,6 +46,9 @@ export function ProductStage({
   onVisit,
   onNext,
   onOpenLayer,
+  onPrev,
+  course_title,
+  course_description,
 }: ProductStageProps) {
   const [activePanel, setActivePanel] = useState<{
     label: string;
@@ -50,6 +57,7 @@ export function ProductStage({
     photos?: { asset?: { url?: string } }[];
     x?: number;
     y?: number;
+    suggestions?: string[];
   } | null>(null);
 
   // Phase 4 — completion burst
@@ -132,7 +140,7 @@ export function ProductStage({
           if (h.contentMode === "layer") {
             ool?.(h._key);
           } else {
-            setActivePanel({ label: h.label, topic: h.topic, body: h.body, photos: h.photos, x: h.x, y: h.y });
+            setActivePanel({ label: h.label, topic: h.topic, body: h.body, photos: h.photos, x: h.x, y: h.y, suggestions: h.suggestions });
           }
         }
       }
@@ -197,6 +205,18 @@ export function ProductStage({
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
+      {/* ── Back button ── */}
+      {onPrev && (
+        <button
+          onClick={onPrev}
+          className="absolute top-4 left-4 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/60 backdrop-blur-sm border border-border/20 text-foreground/70 text-xs font-medium hover:text-foreground hover:bg-background/80 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          aria-label="Go to previous lesson"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+          Back
+        </button>
+      )}
+
       {/* ── Background — fades in, counter-drifts ── */}
       {stageBackground ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -285,7 +305,7 @@ export function ProductStage({
             visited={visited.has(h.label)}
             onVisit={() => onVisit(h.label)}
             onOpen={() =>
-              setActivePanel({ label: h.label, topic: h.topic, body: h.body, photos: h.photos, x: h.x, y: h.y })
+              setActivePanel({ label: h.label, topic: h.topic, body: h.body, photos: h.photos, x: h.x, y: h.y, suggestions: h.suggestions })
             }
             keyFocused={focusedHotspotIndex === i}
           />
@@ -338,7 +358,7 @@ export function ProductStage({
 
       {/* ── Lesson label — bottom left ── */}
       <div
-        className="absolute bottom-10 left-5 z-20 pointer-events-none stage-enter-bottom"
+        className="absolute bottom-16 left-5 z-20 pointer-events-none stage-enter-bottom"
         style={{ animationDelay: "380ms" }}
       >
         <p className="text-foreground/25 text-[8px] font-semibold uppercase tracking-[0.15em] mb-0.5">
@@ -352,20 +372,20 @@ export function ProductStage({
       {/* ── Continue ── */}
       {allDiscovered && (
         <div className="absolute bottom-8 right-4 z-20 stage-rise flex flex-col items-end gap-2">
-          <div className="completion-badge flex items-center gap-1.5 bg-accent/15 border border-accent/35 rounded-full px-3 py-1">
-            <CheckCircle2 className="h-3 w-3 text-accent shrink-0" />
-            <span className="text-foreground text-[10px] font-semibold tracking-wide whitespace-nowrap">
+          <div className="completion-badge flex items-center gap-1.5 bg-accent/15 border border-accent/35 rounded-full px-3 py-1.5">
+            <CheckCircle2 className="h-3.5 w-3.5 text-accent shrink-0" />
+            <span className="text-foreground text-xs font-semibold tracking-wide whitespace-nowrap">
               All {total} features discovered
             </span>
           </div>
           <button
             onClick={onNext}
-            className="completion-button-glow flex items-center gap-1.5 bg-background text-foreground text-[11px] font-bold
-              px-5 py-2.5 rounded-full shadow-2xl shadow-moto-black/40
+            className="completion-button-glow flex items-center gap-2 bg-background text-foreground text-sm font-bold
+              px-6 py-3 rounded-full shadow-2xl shadow-moto-black/40
               hover:bg-background/90 active:scale-95 transition-transform duration-150"
           >
             Continue
-            <ChevronRight className="h-3.5 w-3.5" />
+            <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       )}
@@ -395,6 +415,9 @@ export function ProductStage({
         x={activePanel?.x}
         y={activePanel?.y}
         mode="popover"
+        course_title={course_title}
+        course_description={course_description}
+        suggestions={activePanel?.suggestions}
       />
     </div>
   );

@@ -76,7 +76,7 @@ export function PulseHotspot({ x, y, label, visited, onVisit, onOpen, keyFocused
       {/* Label tooltip — floats above on hover with micro-animation */}
       <span
         className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 whitespace-nowrap
-          rounded-lg px-3 py-1.5 text-[11px] font-semibold tracking-wide
+          rounded-lg px-3 py-1.5 text-sm font-semibold tracking-wide
           opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0
           transition-all duration-200 ease-out
           pointer-events-none shadow-2xl
