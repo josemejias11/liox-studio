@@ -4,6 +4,11 @@ import OpenAI from "openai";
 const XAI_API_KEY = process.env.XAI_API_KEY ?? "";
 
 import { z } from "zod";
+import { RateLimiter } from "@/lib/rate-limit";
+
+// 10 requests per minute
+const limiter = new RateLimiter(10, 60 * 1000);
+
 
 const ChatRequestSchema = z.object({
   query: z.string().max(2000).optional(),
@@ -13,6 +18,10 @@ const ChatRequestSchema = z.object({
       content: z.string().max(2000),
     })
   ).max(50).optional(),
+  // context_hint carries the hotspot topic string sent from DiscoveryPanel.
+  // Accepted for wire-contract compatibility (currently unused in the prompt —
+  // the auto-fire message already embeds the topic).
+  context_hint: z.string().max(200).optional(),
   lesson_content: z.string().max(10000).optional(),
   course_title: z.string().max(200).optional(),
   course_description: z.string().max(500).optional(),
@@ -111,6 +120,14 @@ function mockStream(text: string): ReadableStream {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+  if (!limiter.check(ip)) {
+    return new Response(JSON.stringify({ error: "Too many requests" }), {
+      status: 429,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   let body: ChatRequestBody;
   try {
     const json = await req.json();

@@ -15,6 +15,13 @@ import {
   type GradableQuestion,
 } from "@/lib/quiz-grading";
 
+class CmsConfigurationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "CmsConfigurationError";
+  }
+}
+
 // ── Server-side answer key — never serialized to the browser ─────────────────
 
 /** Shape of QUIZ_GRADING_QUERY (GROQ returns null for missing fields). */
@@ -86,8 +93,13 @@ async function loadAnswerKey(
   if (!parsed.success || parsed.data.questions.length === 0) return null;
 
   return {
-    questions: parsed.data.questions.map((q) => {
+    questions: parsed.data.questions.map((q, index) => {
       const correctIndex = q.answers.findIndex((a) => a.isCorrect);
+      if (correctIndex === -1) {
+        throw new CmsConfigurationError(
+          `CMS Quiz misconfigured: Question ${index + 1} has no correct answer marked.`
+        );
+      }
       return {
         options: q.answers.map((a) => a.text),
         correctIndex,
@@ -152,9 +164,23 @@ export async function POST(req: NextRequest) {
           update: { updatedAt: new Date() },
           create: { id: sessionId },
         });
-        await tx.quizAttempt.create({
-          data: {
+        await tx.quizAttempt.upsert({
+          where: { sessionId_quizId: { sessionId, quizId: body.quizId } },
+          update: {
+            score: result.score,
+            total: result.total,
+            passed: result.passed,
+            answers: JSON.stringify(
+              body.answers.map((selectedIndex, questionIndex) => ({
+                questionIndex,
+                selectedIndex,
+                correct: result.results[questionIndex]?.correct ?? false,
+              }))
+            ),
+          },
+          create: {
             sessionId,
+            quizId: body.quizId,
             courseId,
             score: result.score,
             total: result.total,
@@ -172,7 +198,11 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(result);
-  } catch {
+  } catch (err) {
+    if (err instanceof CmsConfigurationError) {
+      return NextResponse.json({ error: err.message }, { status: 422 });
+    }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+

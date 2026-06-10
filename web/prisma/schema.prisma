@@ -69,10 +69,15 @@ model GeneratedQuiz {
   @@index([createdAt])
 }
 
-// Records each quiz attempt for a session
+// Records the latest quiz attempt per (session, quiz) — re-submitting the same
+// quiz upserts rather than inserting a duplicate row. `quizId` is the
+// GeneratedQuiz.id for AI quizzes or the Sanity document _id for CMS quizzes.
+// Legacy rows (pre-quizId) were backfilled with their own `id` as quizId so
+// the unique constraint holds without dropping history.
 model QuizAttempt {
   id        String   @id @default(cuid())
   sessionId String
+  quizId    String   @default("")
   courseId  String
   score     Int
   total     Int
@@ -81,6 +86,7 @@ model QuizAttempt {
   createdAt DateTime @default(now())
 
   session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  @@unique([sessionId, quizId])
   @@index([sessionId])
   @@index([sessionId, passed])
   @@index([createdAt])

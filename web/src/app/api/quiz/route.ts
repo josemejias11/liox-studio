@@ -9,6 +9,11 @@ import {
   type ClientQuiz,
   type ServerAiQuiz,
 } from "@/lib/contracts/quiz";
+import { RateLimiter } from "@/lib/rate-limit";
+
+// 5 requests per minute
+const limiter = new RateLimiter(5, 60 * 1000);
+
 
 const QuizRequestSchema = z.object({
   context: z.string().max(5000).optional(),
@@ -59,6 +64,12 @@ const MOCK_QUIZ: ServerAiQuiz = {
  * `explanation`. Grading happens in /api/quiz/grade against the stored record.
  */
 async function persistAndStrip(quiz: ServerAiQuiz): Promise<ClientQuiz> {
+  // Cleanup old generated quizzes (older than 7 days)
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  await prisma.generatedQuiz.deleteMany({
+    where: { createdAt: { lt: sevenDaysAgo } },
+  }).catch(err => console.error("Failed to cleanup old quizzes", err));
+
   const record = await prisma.generatedQuiz.create({
     data: { payload: JSON.stringify(quiz) },
   });
@@ -76,6 +87,11 @@ async function persistAndStrip(quiz: ServerAiQuiz): Promise<ClientQuiz> {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+  if (!limiter.check(ip)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   let body: QuizRequestBody;
   try {
     const json = await req.json();
