@@ -8,6 +8,6 @@ export const prisma =
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
 // Configure SQLite to run with WAL mode and busy_timeout to handle concurrent progress writes better.
-prisma.$executeRawUnsafe("PRAGMA journal_mode = WAL;").catch(console.error);
-prisma.$executeRawUnsafe("PRAGMA busy_timeout = 5000;").catch(console.error);
+prisma.$queryRawUnsafe("PRAGMA journal_mode = WAL;").catch(console.error);
+prisma.$queryRawUnsafe("PRAGMA busy_timeout = 5000;").catch(console.error);
 
