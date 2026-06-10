@@ -8,8 +8,6 @@ import { ChevronRight } from "lucide-react";
 
 interface ChapterIntroProps {
   chapterTitle: string;
-  chapterNumber: number;
-  totalChapters: number;
   onContinue: () => void;
 }
 
@@ -35,12 +33,7 @@ const itemVariants: Variants = {
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export function ChapterIntro({
-  chapterTitle,
-  chapterNumber: _chapterNumber,
-  totalChapters: _totalChapters,
-  onContinue,
-}: ChapterIntroProps) {
+export function ChapterIntro({ chapterTitle, onContinue }: ChapterIntroProps) {
   const [barWidth, setBarWidth] = useState(0);
   const pausedRef = useRef(false);
   const elapsedRef = useRef(0);

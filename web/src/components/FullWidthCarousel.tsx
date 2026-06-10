@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { optimizeSanityImage } from "@/lib/image-optimization";
+import { titleFromFilename } from "@/lib/utils";
 import type { SanityPhoto } from "@/lib/contracts/sanity";
 
 export function FullWidthCarousel({ photos, className = "" }: { photos: SanityPhoto[], className?: string }) {
@@ -46,12 +47,7 @@ export function FullWidthCarousel({ photos, className = "" }: { photos: SanityPh
         style={{ scrollbarWidth: 'none' }}
       >
         {validPhotos.map((p, i) => {
-          const filename = p.asset?.originalFilename;
-          let title = "";
-          if (filename) {
-            title = filename.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
-            title = title.charAt(0).toUpperCase() + title.slice(1);
-          }
+          const title = titleFromFilename(p.asset?.originalFilename);
           return (
             <div key={i} className="relative w-full shrink-0 snap-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -20,8 +20,8 @@ interface DiscoveryPanelProps {
   x?: number;
   y?: number;
   mode?: "sidebar" | "popover";
-  course_title?: string;
-  course_description?: string;
+  courseTitle?: string;
+  courseDescription?: string;
 }
 
 const SUGGESTIONS = [
@@ -71,8 +71,8 @@ export function DiscoveryPanel({
   x,
   y,
   mode,
-  course_title,
-  course_description,
+  courseTitle,
+  courseDescription,
 }: DiscoveryPanelProps) {
   const hasLearnContent = !!(body || (photos?.length ?? 0) > 0);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -196,12 +196,13 @@ export function DiscoveryPanel({
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        // /api/chat wire contract uses snake_case keys (ChatRequestSchema).
         body: JSON.stringify({
           messages: conversationRef.current,
           context_hint: topic,
           lesson_content: plainTextBody,
-          course_title,
-          course_description,
+          course_title: courseTitle,
+          course_description: courseDescription,
         }),
         signal: controller.signal,
       });
@@ -539,6 +540,7 @@ export function DiscoveryPanel({
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSend()}
                   placeholder="Ask about this feature…"
+                  aria-label="Ask the AI assistant about this feature"
                   disabled={streaming}
                   className="flex-1 bg-foreground/6 text-foreground text-sm placeholder:text-muted-foreground
                     rounded-full px-4 py-2.5 outline-none

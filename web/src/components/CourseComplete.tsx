@@ -8,8 +8,6 @@ interface CourseCompleteProps {
   totalLessons: number;
   totalHotspotsVisited: number;
   totalHotspots: number;
-  /** @deprecated Use the "Return to Library" link instead. Kept for backwards compatibility. */
-  onRestart?: () => void;
 }
 
 export function CourseComplete({

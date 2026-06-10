@@ -120,31 +120,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    if (body.type === "quiz") {
-      const { sessionId, courseId, score, total, passed, answers } = body;
-
-      await prisma.$transaction(async (tx) => {
-        await tx.session.upsert({
-          where: { id: sessionId },
-          update: { updatedAt: new Date() },
-          create: { id: sessionId },
-        });
-
-        await tx.quizAttempt.create({
-          data: {
-            sessionId,
-            courseId,
-            score,
-            total,
-            passed,
-            answers: JSON.stringify(answers ?? []),
-          },
-        });
-      });
-
-      return NextResponse.json({ ok: true });
-    }
-
+    // Quiz attempts are recorded server-side by /api/quiz/grade — this route
+    // intentionally no longer accepts a client-supplied quiz result.
     return NextResponse.json({ error: "unknown type" }, { status: 400 });
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

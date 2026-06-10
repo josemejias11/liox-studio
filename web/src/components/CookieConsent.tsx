@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import { X, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { getConsent, setConsent } from "@/lib/consent";
 
 export function CookieConsent() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    // Check if the user has already consented
-    const consent = localStorage.getItem("mototutor_cookie_consent");
-    if (!consent) {
+    // Check if the user has already made a choice
+    if (getConsent() === "unset") {
       // Delay showing it slightly for a smoother entry
       const timer = setTimeout(() => setShow(true), 1500);
       return () => clearTimeout(timer);
@@ -18,14 +18,14 @@ export function CookieConsent() {
   }, []);
 
   function handleAccept() {
-    localStorage.setItem("mototutor_cookie_consent", "true");
+    setConsent("accepted");
     setShow(false);
   }
 
   function handleDecline() {
-    // If they decline, we still hide it, but we could theoretically disable tracking.
-    // For now, we'll mark as declined.
-    localStorage.setItem("mototutor_cookie_consent", "declined");
+    // Declining clears any persisted session id and keeps all future
+    // session/progress state in memory only (see lib/consent.ts).
+    setConsent("declined");
     setShow(false);
   }
 

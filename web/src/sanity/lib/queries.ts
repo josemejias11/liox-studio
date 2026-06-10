@@ -60,6 +60,9 @@ const SPEC_FIELDS = groq`
   footnotes,
 `;
 
+// Client-safe projection — answer correctness (isCorrect / feedback) and the
+// post-answer explanation never reach the browser; grading happens server-side
+// against QUIZ_GRADING_QUERY in /api/quiz/grade.
 const QUIZ_FIELDS = groq`
   "sectionType": "quiz",
   "_key": _id,
@@ -70,8 +73,7 @@ const QUIZ_FIELDS = groq`
     questionText,
     questionType,
     image { asset->{url} },
-    answers[] { _key, text, isCorrect, feedback },
-    explanation,
+    answers[] { _key, text },
   },
   passingScore,
   allowRetry,
@@ -132,5 +134,17 @@ export const COURSE_BY_SLUG_QUERY = groq`
     "specifications": specifications[]->{${SPEC_FIELDS}},
     "quiz": quiz->{${QUIZ_FIELDS}},
     "disclaimer": disclaimer->{${DISCLAIMER_FIELDS}},
+  }
+`;
+
+// SERVER-ONLY: full quiz answer key for /api/quiz/grade. Never use this query
+// in code whose result is serialized to the browser.
+export const QUIZ_GRADING_QUERY = groq`
+  *[_type == "quiz" && _id == $id][0] {
+    questions[] {
+      answers[] { text, isCorrect, feedback },
+      explanation,
+    },
+    passingScore,
   }
 `;

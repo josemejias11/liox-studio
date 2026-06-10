@@ -1,11 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import Image from "next/image";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { ChevronLeft, ChevronRight, Check, CheckCircle2 } from "lucide-react";
-import { PulseHotspot } from "./PulseHotspot";
+import { Hotspot } from "./Hotspot";
 import { DiscoveryPanel } from "./DiscoveryPanel";
 import { CompletionBurst } from "./CompletionBurst";
 import { optimizeSanityImage } from "@/lib/image-optimization";
+import { sanityImageLoader } from "@/lib/sanity-image-loader";
 import type { RichText, SanityHotspot, SanityPhoto } from "@/lib/contracts/sanity";
 
 interface ProductStageProps {
@@ -20,8 +23,8 @@ interface ProductStageProps {
   onNext: () => void;
   onOpenLayer?: (id: string) => void;
   onPrev?: () => void;
-  course_title?: string;
-  course_description?: string;
+  courseTitle?: string;
+  courseDescription?: string;
 }
 
 export function ProductStage({
@@ -36,8 +39,8 @@ export function ProductStage({
   onNext,
   onOpenLayer,
   onPrev,
-  course_title,
-  course_description,
+  courseTitle,
+  courseDescription,
 }: ProductStageProps) {
   const [activePanel, setActivePanel] = useState<{
     label: string;
@@ -52,18 +55,58 @@ export function ProductStage({
   const [showBurst, setShowBurst] = useState(false);
   const prevAllDiscovered = useRef(false);
 
-  // Phase 6 — entrance + shared parallax state (mouse OR gyroscope)
+  // Phase 6 — entrance + shared parallax state (mouse OR gyroscope).
+  // Motion values write straight to styles — pointer/orientation events cause
+  // zero React re-renders. Per-layer springs replicate the easing the old CSS
+  // transitions applied (bg 0.3s / glow 0.45s / product 0.15s, all ease-out).
   const [entered, setEntered] = useState(false);
-  const [parallax, setParallax] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Phase 7 — keyboard navigation
+  const parallaxX = useMotionValue(0);
+  const parallaxY = useMotionValue(0);
+
+  const bgX = useSpring(parallaxX, { stiffness: 170, damping: 26, mass: 1 });
+  const bgY = useSpring(parallaxY, { stiffness: 170, damping: 26, mass: 1 });
+  const glowX = useSpring(parallaxX, { stiffness: 90, damping: 20, mass: 1 });
+  const glowY = useSpring(parallaxY, { stiffness: 90, damping: 20, mass: 1 });
+  const prodX = useSpring(parallaxX, { stiffness: 380, damping: 36, mass: 1 });
+  const prodY = useSpring(parallaxY, { stiffness: 380, damping: 36, mass: 1 });
+
+  // Background counter-drifts against the cursor.
+  const bgTranslateX = useTransform(bgX, (v) => v * -6);
+  const bgTranslateY = useTransform(bgY, (v) => v * -4);
+
+  // Cursor-reactive ambient glow position.
+  const glowBackground = useTransform(
+    [glowX, glowY],
+    (latest: number[]) =>
+      `radial-gradient(ellipse 62% 52% at ${50 + (latest[0] ?? 0) * 10}% ${50 + (latest[1] ?? 0) * 7}%, rgba(104,91,199,0.09), transparent)`
+  );
+
+  // Product parallax is disabled once all hotspots are discovered (the
+  // completion spin/rise/breathe layer then animates from a neutral origin).
+  // A motion-value factor keeps that gating out of the render path.
+  const prodFactor = useMotionValue(1);
+  const prodTranslateX = useTransform(
+    [prodX, prodFactor],
+    (latest: number[]) => (latest[0] ?? 0) * 14 * (latest[1] ?? 0)
+  );
+  const prodTranslateY = useTransform(
+    [prodY, prodFactor],
+    (latest: number[]) => (latest[0] ?? 0) * 9 * (latest[1] ?? 0)
+  );
+
+  // Phase 7 — keyboard navigation (roving tabindex)
+  // Arrow keys move REAL DOM focus between hotspot buttons: only the active
+  // hotspot is tabbable, screen readers follow focus, and the visible ring is
+  // the button's own focus-visible style. Enter/Space activate natively.
   const [focusedHotspotIndex, setFocusedHotspotIndex] = useState<number | null>(null);
+  const hotspotRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   // Ref bundle for event handlers to avoid stale closures
-  const stateRef = useRef({ activePanel, focusedHotspotIndex, hotspots, visited, onVisit, onOpenLayer });
+  const stateRef = useRef({ activePanel, focusedHotspotIndex, hotspots });
   useEffect(() => {
-    stateRef.current = { activePanel, focusedHotspotIndex, hotspots, visited, onVisit, onOpenLayer };
+    stateRef.current = { activePanel, focusedHotspotIndex, hotspots };
   });
 
   const discoveredCount = visited.size;
@@ -74,6 +117,10 @@ export function ProductStage({
   const radius = 18;
   const circumference = 2 * Math.PI * radius;
   const strokeOffset = circumference * (1 - (total > 0 ? discoveredCount / total : 0));
+
+  useEffect(() => {
+    prodFactor.set(allDiscovered ? 0 : 1);
+  }, [allDiscovered, prodFactor]);
 
   // ── Mount ─────────────────────────────────────────────────────────────────
 
@@ -101,36 +148,23 @@ export function ProductStage({
       // Never intercept while focus is inside a text field
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
-      const { activePanel: ap, focusedHotspotIndex: fi, hotspots: hs, visited: vs, onVisit: ov, onOpenLayer: ool } =
-        stateRef.current;
+      const { activePanel: ap, focusedHotspotIndex: fi, hotspots: hs } = stateRef.current;
 
       if (e.key === "Escape") {
         setActivePanel(null);
-        setFocusedHotspotIndex(null);
         return;
       }
 
-      // Hotspot cycling — only when panel is closed
-      if (!ap) {
-        if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
-          if (hs.length === 0) return;
-          e.preventDefault();
-          const dir = e.key === "ArrowRight" ? 1 : -1;
-          const base = fi ?? (dir === 1 ? -1 : hs.length);
-          setFocusedHotspotIndex(((base + dir) + hs.length) % hs.length);
-        }
-
-        if ((e.key === "Enter" || e.key === " ") && fi !== null) {
-          e.preventDefault();
-          const h = hs[fi];
-          if (!h) return;
-          if (!vs.has(h.label)) ov(h.label);
-          if (h.contentMode === "layer") {
-            ool?.(h._key);
-          } else {
-            setActivePanel({ label: h.label, topic: h.topic, body: h.body, photos: h.photos, x: h.x, y: h.y });
-          }
-        }
+      // Hotspot cycling — only when panel is closed. Moves real DOM focus so
+      // assistive tech follows; Enter/Space then activate the button natively.
+      if (!ap && (e.key === "ArrowRight" || e.key === "ArrowLeft")) {
+        if (hs.length === 0) return;
+        e.preventDefault();
+        const dir = e.key === "ArrowRight" ? 1 : -1;
+        const base = fi ?? (dir === 1 ? -1 : hs.length);
+        const next = (base + dir + hs.length) % hs.length;
+        setFocusedHotspotIndex(next);
+        hotspotRefs.current[next]?.focus();
       }
     }
 
@@ -138,19 +172,10 @@ export function ProductStage({
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []); // runs once — stateRef provides live values
 
-  // Clear keyboard focus when panel opens (so re-focus cycles cleanly on close)
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (activePanel) setFocusedHotspotIndex(null);
-  }, [activePanel]);
-
   // ── Phase 7: Device-orientation (gyroscope) parallax ──────────────────────
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.DeviceOrientationEvent) return;
-
-    let smoothX = 0;
-    let smoothY = 0;
 
     function onOrientation(e: DeviceOrientationEvent) {
       // gamma: left/right tilt (–90…90°) → –1…1
@@ -158,30 +183,28 @@ export function ProductStage({
       const rawX = Math.max(-1, Math.min(1, (e.gamma ?? 0) / 45));
       const rawY = Math.max(-1, Math.min(1, ((e.beta ?? 30) - 30) / 45));
 
-      // Low-pass filter for smooth, floating motion
-      smoothX = smoothX * 0.82 + rawX * 0.18;
-      smoothY = smoothY * 0.82 + rawY * 0.18;
-
-      setParallax({ x: smoothX, y: smoothY });
+      // Low-pass filter for smooth, floating motion — straight into the motion
+      // values; the layer springs handle the rest.
+      parallaxX.set(parallaxX.get() * 0.82 + rawX * 0.18);
+      parallaxY.set(parallaxY.get() * 0.82 + rawY * 0.18);
     }
 
     window.addEventListener("deviceorientation", onOrientation, true);
     return () => window.removeEventListener("deviceorientation", onOrientation, true);
-  }, []);
+  }, [parallaxX, parallaxY]);
 
-  // ── Mouse handlers (desktop) ───────────────────────────────────────────────
+  // ── Mouse handlers (desktop) — motion-value writes, no re-renders ─────────
 
   function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    setParallax({
-      x: ((e.clientX - rect.left)  / rect.width  - 0.5) * 2,
-      y: ((e.clientY - rect.top)   / rect.height - 0.5) * 2,
-    });
+    parallaxX.set(((e.clientX - rect.left) / rect.width - 0.5) * 2);
+    parallaxY.set(((e.clientY - rect.top) / rect.height - 0.5) * 2);
   }
 
   function handleMouseLeave() {
-    setParallax({ x: 0, y: 0 });
+    parallaxX.set(0);
+    parallaxY.set(0);
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -207,27 +230,28 @@ export function ProductStage({
 
       {/* ── Background — fades in, counter-drifts ── */}
       {stageBackground ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={optimizeSanityImage(stageBackground, 1920)}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover stage-enter-bg"
-          style={{
-            transform: `translate(${parallax.x * -6}px, ${parallax.y * -4}px) scale(1.05)`,
-            transition: "transform 0.3s ease-out",
-          }}
-        />
+        <motion.div
+          className="absolute inset-0 stage-enter-bg"
+          style={{ x: bgTranslateX, y: bgTranslateY, scale: 1.05 }}
+        >
+          <Image
+            src={stageBackground}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            loader={sanityImageLoader}
+            className="object-cover"
+          />
+        </motion.div>
       ) : (
         <div className="absolute inset-0 bg-background stage-enter-bg" />
       )}
 
       {/* ── Cursor-reactive ambient glow ── */}
-      <div
+      <motion.div
         className="absolute inset-0 pointer-events-none"
-        style={{
-          background: `radial-gradient(ellipse 62% 52% at ${50 + parallax.x * 10}% ${50 + parallax.y * 7}%, rgba(104,91,199,0.09), transparent)`,
-          transition: "background 0.45s ease-out",
-        }}
+        style={{ background: glowBackground }}
       />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_40%_40%_at_50%_82%,rgba(15,23,42,0.65),transparent)] pointer-events-none" />
 
@@ -241,16 +265,9 @@ export function ProductStage({
           style={{ right: "0%" }}
         >
           {/* Parallax layer */}
-          <div
+          <motion.div
             className="h-full flex items-center justify-center"
-            style={
-              !allDiscovered
-                ? {
-                    transform: `translate(${parallax.x * 14}px, ${parallax.y * 9}px)`,
-                    transition: "transform 0.15s ease-out",
-                  }
-                : undefined
-            }
+            style={{ x: prodTranslateX, y: prodTranslateY }}
           >
             {/* Breathe / spin layer */}
             <div
@@ -269,7 +286,7 @@ export function ProductStage({
                 className="h-[78vh] max-h-full w-auto object-contain drop-shadow-[0_24px_64px_rgba(0,0,0,0.75)]"
               />
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
 
@@ -286,16 +303,26 @@ export function ProductStage({
             transition: `opacity 0.4s ease-out ${240 + i * 110}ms, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) ${240 + i * 110}ms`,
           }}
         >
-          <PulseHotspot
+          <Hotspot
+            ref={(el) => {
+              hotspotRefs.current[i] = el;
+            }}
             x={0}
             y={0}
             label={h.label}
             visited={visited.has(h.label)}
+            variant="pulse"
             onVisit={() => onVisit(h.label)}
-            onOpen={() =>
-              setActivePanel({ label: h.label, topic: h.topic, body: h.body, photos: h.photos, x: h.x, y: h.y })
-            }
-            keyFocused={focusedHotspotIndex === i}
+            onOpen={() => {
+              if (h.contentMode === "layer") {
+                onOpenLayer?.(h._key);
+                return;
+              }
+              setActivePanel({ label: h.label, topic: h.topic, body: h.body, photos: h.photos, x: h.x, y: h.y });
+            }}
+            // Roving tabindex — exactly one hotspot is in the tab order.
+            tabIndex={i === (focusedHotspotIndex ?? 0) ? 0 : -1}
+            onFocus={() => setFocusedHotspotIndex(i)}
           />
         </div>
       ))}
@@ -403,8 +430,8 @@ export function ProductStage({
         x={activePanel?.x}
         y={activePanel?.y}
         mode="popover"
-        course_title={course_title}
-        course_description={course_description}
+        courseTitle={courseTitle}
+        courseDescription={courseDescription}
       />
     </div>
   );

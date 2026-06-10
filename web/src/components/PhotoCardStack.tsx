@@ -3,13 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { optimizeSanityImage } from "@/lib/image-optimization";
-
-interface Photo {
-  asset?: { url?: string; originalFilename?: string };
-}
+import { titleFromFilename } from "@/lib/utils";
+import type { SanityPhoto } from "@/lib/contracts/sanity";
 
 interface PhotoCardStackProps {
-  photos: Photo[];
+  photos: SanityPhoto[];
 }
 
 export function PhotoCardStack({ photos = [] }: PhotoCardStackProps) {
@@ -57,13 +55,6 @@ export function PhotoCardStack({ photos = [] }: PhotoCardStackProps) {
     }
   }
 
-  function parseTitle(filename?: string) {
-    if (!filename) return "";
-    let name = filename.replace(/\.[^/.]+$/, "");
-    name = name.replace(/[-_]/g, " ");
-    return name.charAt(0).toUpperCase() + name.slice(1);
-  }
-
   const isSingle = validPhotos.length === 1;
 
   return (
@@ -77,7 +68,7 @@ export function PhotoCardStack({ photos = [] }: PhotoCardStackProps) {
         style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
       >
         {validPhotos.map((p, i) => {
-          const title = parseTitle(p.asset?.originalFilename);
+          const title = titleFromFilename(p.asset?.originalFilename);
           return (
             <div
               key={i}

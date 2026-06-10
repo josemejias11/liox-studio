@@ -12,6 +12,12 @@ interface LessonFrameProps {
   totalLessons?: number;
   onPrev?: () => void;
   onNext?: () => void;
+  /**
+   * Sole switch for disabling "Next" (hotspot gate / end of flow). LessonFrame
+   * deliberately does NOT infer the last lesson from currentLesson ===
+   * totalLessons — the navigation reducer owns flow boundaries, and inferring
+   * here forced callers to inflate totals (breaking counter + progress bar).
+   */
   nextDisabled?: boolean;
   // Completion hint shown above nav when nextDisabled
   completionHint?: string;
@@ -133,7 +139,7 @@ export function LessonFrame({
 
               <button
                 onClick={onNext}
-                disabled={currentLesson === totalLessons || nextDisabled}
+                disabled={nextDisabled}
                 className="h-10 w-10 rounded-full flex items-center justify-center text-foreground/60 hover:text-foreground hover:bg-foreground/10 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
                 aria-label="Next lesson"
               >

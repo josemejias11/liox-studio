@@ -3,7 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 const API_KEY = process.env.GOOGLE_AI_STUDIO_API_KEY ?? "";
 
 import { z } from "zod";
-import { AiQuizResponseSchema } from "@/lib/contracts/quiz";
+import { prisma } from "@/lib/db";
+import {
+  ServerAiQuizSchema,
+  type ClientQuiz,
+  type ServerAiQuiz,
+} from "@/lib/contracts/quiz";
 
 const QuizRequestSchema = z.object({
   context: z.string().max(5000).optional(),
@@ -12,7 +17,7 @@ const QuizRequestSchema = z.object({
 
 type QuizRequestBody = z.infer<typeof QuizRequestSchema>;
 
-const MOCK_QUIZ = {
+const MOCK_QUIZ: ServerAiQuiz = {
   title: "motorola edge 70 max — Knowledge Check",
   questions: [
     {
@@ -48,6 +53,28 @@ const MOCK_QUIZ = {
   ],
 };
 
+/**
+ * Persist the full quiz (answer key included) server-side and return only the
+ * client-safe projection — the browser never sees `correct_answer` /
+ * `explanation`. Grading happens in /api/quiz/grade against the stored record.
+ */
+async function persistAndStrip(quiz: ServerAiQuiz): Promise<ClientQuiz> {
+  const record = await prisma.generatedQuiz.create({
+    data: { payload: JSON.stringify(quiz) },
+  });
+  return {
+    quizId: record.id,
+    source: "ai",
+    title: quiz.title,
+    ...(quiz.instructions !== undefined ? { instructions: quiz.instructions } : {}),
+    questions: quiz.questions.map((q) => ({
+      question: q.question,
+      options: q.options,
+      ...(q.image_url !== undefined ? { image_url: q.image_url } : {}),
+    })),
+  };
+}
+
 export async function POST(req: NextRequest) {
   let body: QuizRequestBody;
   try {
@@ -61,7 +88,11 @@ export async function POST(req: NextRequest) {
   const { context, num_questions } = body;
 
   if (!API_KEY) {
-    return NextResponse.json(MOCK_QUIZ);
+    try {
+      return NextResponse.json(await persistAndStrip(MOCK_QUIZ));
+    } catch {
+      return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    }
   }
 
   const { GoogleGenerativeAI } = await import("@google/generative-ai");
@@ -94,11 +125,11 @@ export async function POST(req: NextRequest) {
         ? raw.split("```")[1].split("```")[0].trim()
         : raw.trim();
 
-    const validated = AiQuizResponseSchema.safeParse(JSON.parse(cleaned));
+    const validated = ServerAiQuizSchema.safeParse(JSON.parse(cleaned));
     if (!validated.success) {
       return NextResponse.json({ error: "Quiz generation failed" }, { status: 502 });
     }
-    return NextResponse.json(validated.data);
+    return NextResponse.json(await persistAndStrip(validated.data));
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

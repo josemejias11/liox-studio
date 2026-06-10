@@ -4,7 +4,7 @@ import { PortableText } from "@portabletext/react";
 import { LayerFrame } from "./LayerFrame";
 import { FullWidthCarousel } from "./FullWidthCarousel";
 import { optimizeSanityImage } from "@/lib/image-optimization";
-import { getSemanticWidthClass } from "@/lib/utils";
+import { cssAspectRatio, getSemanticWidthClass } from "@/lib/utils";
 import type { RichText, SanityLayerContent } from "@/lib/contracts/sanity";
 
 // ── Rich layer panel (hotspot "layer" content mode) ───────────────────────────
@@ -81,16 +81,7 @@ export function LessonLayer({
           {layerContent.layerType === "video" && layerContent.videoFile?.asset?.url && (
             <div
               className="mt-6 bg-black rounded-2xl overflow-hidden border border-white/10 relative shadow-2xl flex items-center justify-center"
-              style={{
-                aspectRatio:
-                  layerContent.videoAspectRatio === "1:1"
-                    ? "1 / 1"
-                    : layerContent.videoAspectRatio === "4:5"
-                    ? "4 / 5"
-                    : layerContent.videoAspectRatio === "9:16"
-                    ? "9 / 16"
-                    : "16 / 9",
-              }}
+              style={{ aspectRatio: cssAspectRatio(layerContent.videoAspectRatio) }}
             >
               <video
                 src={layerContent.videoFile.asset.url}

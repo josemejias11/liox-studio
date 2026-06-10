@@ -1,8 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
-import { optimizeSanityImage } from "@/lib/image-optimization";
+import { sanityImageLoader } from "@/lib/sanity-image-loader";
 
 interface CourseCoverProps {
   title: string;
@@ -35,14 +36,22 @@ export function CourseCover({
     <div className="absolute inset-0 w-full h-full overflow-hidden bg-black dark">
       {/* Background Media */}
       {coverImage ? (
-        <motion.img
+        <motion.div
           initial={{ scale: 1.05, opacity: 0 }}
           animate={{ scale: 1, opacity: 0.7 }}
           transition={{ duration: 1.5, ease: "easeOut" }}
-          src={optimizeSanityImage(coverImage, 1920)}
-          alt="Course cover"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+          className="absolute inset-0"
+        >
+          <Image
+            src={coverImage}
+            alt="Course cover"
+            fill
+            priority
+            sizes="100vw"
+            loader={sanityImageLoader}
+            className="object-cover"
+          />
+        </motion.div>
       ) : (
         <div className="absolute inset-0 bg-neutral-950" />
       )}

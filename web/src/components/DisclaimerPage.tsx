@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react";
+import { ChevronRight, CheckCircle2 } from "lucide-react";
 import { PortableText } from "@portabletext/react";
 import { motion } from "framer-motion";
 import type { SanityDisclaimer } from "@/lib/contracts/sanity";
@@ -11,8 +11,6 @@ type DisclaimerCategory = NonNullable<SanityDisclaimer["category"]>;
 interface DisclaimerPageProps {
   disclaimer: SanityDisclaimer;
   onNext: () => void;
-  onPrev: () => void;
-  showPrev: boolean;
 }
 
 // ── Category display labels ────────────────────────────────────────────────
@@ -27,12 +25,7 @@ const CATEGORY_LABELS: Record<DisclaimerCategory, string> = {
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export function DisclaimerPage({
-  disclaimer,
-  onNext,
-  onPrev,
-  showPrev,
-}: DisclaimerPageProps) {
+export function DisclaimerPage({ disclaimer, onNext }: DisclaimerPageProps) {
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);

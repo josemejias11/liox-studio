@@ -17,6 +17,12 @@ import {
   deriveCourseStructure,
   getChapterLessons,
 } from "@/lib/course-structure";
+import {
+  CONSENT_EVENT,
+  SESSION_KEY,
+  getConsent,
+  type ConsentStatus,
+} from "@/lib/consent";
 import type { CourseSection, SanityCourse } from "@/lib/contracts/sanity";
 
 const ProductStage = dynamic(() => import("./ProductStage").then((m) => ({ default: m.ProductStage })));
@@ -38,13 +44,9 @@ const slideVariants = {
 export default function MotoViewer({
   course,
   sections,
-  course_title: _course_title,
-  course_description: _course_description,
 }: {
   course: SanityCourse;
   sections: CourseSection[];
-  course_title: string;
-  course_description?: string;
 }) {
   // One source of truth for section grouping/indexing (shared with NavMap)
   const structure = useMemo(() => deriveCourseStructure(sections), [sections]);
@@ -59,18 +61,45 @@ export default function MotoViewer({
 
   // ── Session ───────────────────────────────────────────────────────────────
   // Initialize as "" so SSR and the first client render agree (no hydration
-  // mismatch); the real UUID is read/created from localStorage on the client.
+  // mismatch); the UUID is resolved on the client. Persistence is gated on
+  // cookie consent: without "accepted", the id is ephemeral (in-memory only)
+  // and no progress/quiz data is written to localStorage or the server.
   const [sessionId, setSessionId] = useState<string>("");
+  const [persistSession, setPersistSession] = useState(false);
   useEffect(() => {
-    let sid = localStorage.getItem("mototutor_session");
-    if (!sid) {
+    const consent = getConsent();
+    let sid = consent === "accepted" ? localStorage.getItem(SESSION_KEY) : null;
+    if (consent === "accepted" && !sid) {
       sid = crypto.randomUUID();
-      localStorage.setItem("mototutor_session", sid);
+      localStorage.setItem(SESSION_KEY, sid);
     }
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSessionId(sid);
+    setSessionId(sid ?? crypto.randomUUID());
+    setPersistSession(consent === "accepted");
+
+    // If the user accepts mid-session, start persisting the current id so
+    // progress carries across visits; on decline, stop persisting immediately
+    // (setConsent already removed the stored id).
+    function onConsentChange(e: Event) {
+      const status = (e as CustomEvent<ConsentStatus>).detail;
+      if (status === "accepted") {
+        setSessionId((prev) => {
+          const id = prev || crypto.randomUUID();
+          localStorage.setItem(SESSION_KEY, id);
+          return id;
+        });
+        setPersistSession(true);
+      } else {
+        setPersistSession(false);
+      }
+    }
+    window.addEventListener(CONSENT_EVENT, onConsentChange);
+    return () => window.removeEventListener(CONSENT_EVENT, onConsentChange);
   }, []);
-  const { visited, markVisited: baseMarkVisited } = useLessonProgress(sessionId);
+  const { visited, markVisited: baseMarkVisited } = useLessonProgress(
+    sessionId,
+    persistSession
+  );
 
   // ── Current lesson (chapter phase only) ───────────────────────────────────
   const currentLesson =
@@ -101,11 +130,6 @@ export default function MotoViewer({
     setShowNavMap(false);
     setActiveLayerId(null);
     nav.navigateToSection(i);
-  }
-
-  function restart() {
-    setActiveLayerId(null);
-    nav.restart();
   }
 
   // ── Completion stats ──────────────────────────────────────────────────────
@@ -173,8 +197,7 @@ export default function MotoViewer({
               sanityQuiz={structure.quizSection}
               onPass={nav.finishQuiz}
               onFail={nav.finishQuiz}
-              passingScore={structure.quizSection.passingScore}
-              sessionId={sessionId}
+              sessionId={persistSession ? sessionId : undefined}
               courseId={course._id}
             />
           ) : null,
@@ -187,8 +210,6 @@ export default function MotoViewer({
             <DisclaimerPage
               disclaimer={structure.disclaimerSection}
               onNext={goNext}
-              onPrev={goPrev}
-              showPrev={true}
             />
           ) : null,
         };
@@ -202,7 +223,6 @@ export default function MotoViewer({
               totalLessons={structure.lessonSections.length}
               totalHotspotsVisited={totalHotspotsVisited}
               totalHotspots={totalHotspots}
-              onRestart={restart}
             />
           ),
         };
@@ -219,8 +239,6 @@ export default function MotoViewer({
             screen: (
               <ChapterIntro
                 chapterTitle={chapter?.chapterTitle ?? ""}
-                chapterNumber={phase.chapterIndex + 1}
-                totalChapters={structure.chapters.length}
                 onContinue={nav.dismissChapterIntro}
               />
             ),
@@ -243,8 +261,8 @@ export default function MotoViewer({
                   onVisit={markVisited}
                   onNext={goNext}
                   onPrev={goPrev}
-                  course_title={course.title}
-                  course_description={course.description}
+                  courseTitle={course.title}
+                  courseDescription={course.description}
                   onOpenLayer={openLayerById}
                 />
               ),
@@ -269,8 +287,7 @@ export default function MotoViewer({
                   context={buildQuizContext()}
                   onPass={goNext} // lesson-type quiz advances on pass and fail (no gate)
                   onFail={goNext}
-                  passingScore={80}
-                  sessionId={sessionId}
+                  sessionId={persistSession ? sessionId : undefined}
                   courseId={course._id}
                 />
               ),
@@ -309,10 +326,11 @@ export default function MotoViewer({
       ? { moduleTitle: course.title }
       : isContentLesson
       ? {
-          // totalSections + 1 keeps LessonFrame from disabling "Next" at the
-          // very last section (the navigation reducer handles that boundary).
+          // True totals — LessonFrame no longer infers "last lesson" from the
+          // count; the navigation reducer owns that boundary and nextDisabled
+          // covers the hotspot gate.
           currentLesson: nav.currentSectionIndex >= 0 ? nav.currentSectionIndex + 1 : 1,
-          totalLessons: structure.totalSections + 1,
+          totalLessons: structure.totalSections,
           onPrev: goPrev,
           onNext: goNext,
           nextDisabled: nextLocked,

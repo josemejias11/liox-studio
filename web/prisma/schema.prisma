@@ -58,6 +58,17 @@ model HotspotVisit {
   @@index([label])
 }
 
+// Server-side store for AI-generated quizzes. The full payload (including
+// correct answers + explanations) never leaves the server; clients receive a
+// stripped projection and grade against this record via /api/quiz/grade.
+model GeneratedQuiz {
+  id        String   @id @default(cuid())
+  payload   String   // JSON: AiQuizResponse (questions incl. correct_answer / explanation)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 // Records each quiz attempt for a session
 model QuizAttempt {
   id        String   @id @default(cuid())

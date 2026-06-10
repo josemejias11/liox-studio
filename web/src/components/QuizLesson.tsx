@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import confetti from "canvas-confetti";
 import {
@@ -14,24 +15,16 @@ import {
   RefreshCw,
 } from "lucide-react";
 
-import { AiQuizResponseSchema } from "@/lib/contracts/quiz";
+import {
+  ClientQuizSchema,
+  QuestionResultSchema,
+  SubmitQuizResponseSchema,
+  type ClientQuiz,
+  type QuestionResult,
+  type SubmitQuizResponse,
+} from "@/lib/contracts/quiz";
 import type { SanityQuizDoc } from "@/lib/contracts/sanity";
-
-// ── AI quiz format (internal to renderer) ────────────────────────────────────
-
-interface AIQuestion {
-  question: string;
-  options: string[];
-  correct_answer: string;
-  explanation: string;
-  image_url?: string;
-}
-
-interface QuizData {
-  title: string;
-  instructions?: string;
-  questions: AIQuestion[];
-}
+import { sanityImageLoader } from "@/lib/sanity-image-loader";
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -40,19 +33,21 @@ export interface QuizLessonProps {
   context?: string;
   /** When provided, renders the Sanity-authored questions instead of calling /api/quiz */
   sanityQuiz?: SanityQuizDoc;
-  /** Called with score 0–100 (percentage) when learner meets the passing threshold */
+  /** Called with the server-graded score 0–100 (percentage) on pass */
   onPass: (score: number) => void;
   /** Called when learner fails and retry is not allowed */
   onFail: () => void;
-  /** Passing threshold percentage; defaults to 80 */
-  passingScore?: number;
+  /**
+   * Session identity for recording the attempt server-side. Omit when storage
+   * consent was declined — the quiz still grades, but nothing is persisted.
+   */
   sessionId?: string;
   courseId?: string;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const OPTION_LABELS = ["A", "B", "C", "D"];
+const OPTION_LABELS = ["A", "B", "C", "D", "E", "F", "G", "H"];
 
 const SCORE_TIERS = [
   { min: 1.0,  icon: Trophy,    color: "text-muted-foreground", label: "Perfect Score!",   message: "You're a certified product expert.",           emoji: "🏆" },
@@ -61,22 +56,24 @@ const SCORE_TIERS = [
   { min: 0,    icon: RefreshCw, color: "text-muted-foreground", label: "Keep Exploring!",   message: "Revisit the features and give it another go.", emoji: "🔁" },
 ];
 
-// ── Transform Sanity questions into the AI renderer format ────────────────────
+// ── Transform the client-safe Sanity projection into the shared wire shape ────
+// (No correctness data exists here — grading happens in /api/quiz/grade.)
 
-function toQuizData(sanityQuiz: SanityQuizDoc): QuizData {
+function toClientQuiz(sanityQuiz: SanityQuizDoc): ClientQuiz {
   return {
+    quizId: sanityQuiz._key, // GROQ maps the quiz document _id onto _key
+    source: "sanity",
     title: sanityQuiz.title ?? "",
-    instructions: sanityQuiz.instructions,
-    questions: sanityQuiz.questions.map((q) => {
-      const correctAnswer = q.answers.find((a) => a.isCorrect);
-      return {
-        question: q.questionText,
-        options: q.answers.map((a) => a.text),
-        correct_answer: correctAnswer?.text ?? "",
-        explanation: q.explanation ?? correctAnswer?.feedback ?? "",
-        image_url: q.image?.asset?.url,
-      };
-    }),
+    ...(sanityQuiz.instructions !== undefined
+      ? { instructions: sanityQuiz.instructions }
+      : {}),
+    questions: sanityQuiz.questions.map((q) => ({
+      question: q.questionText,
+      options: q.answers.map((a) => a.text),
+      ...(q.image?.asset?.url !== undefined
+        ? { image_url: q.image.asset.url }
+        : {}),
+    })),
   };
 }
 
@@ -87,21 +84,25 @@ export function QuizLesson({
   sanityQuiz,
   onPass,
   onFail,
-  passingScore = 80,
   sessionId,
   courseId,
 }: QuizLessonProps) {
   // Sanity mode: populate quiz immediately; AI mode: populate after fetch
-  const [quiz, setQuiz] = useState<QuizData | null>(() =>
-    sanityQuiz ? toQuizData(sanityQuiz) : null
+  const [quiz, setQuiz] = useState<ClientQuiz | null>(() =>
+    sanityQuiz ? toClientQuiz(sanityQuiz) : null
   );
   const [loadErr, setLoadErr] = useState<string | null>(null);
   const [currentQ, setCurrentQ] = useState(0);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [revealed, setRevealed] = useState(false);
-  const [score, setScore] = useState(0);
+  const [selected, setSelected] = useState<number | null>(null);
+  const [grading, setGrading] = useState(false);
+  const [gradeErr, setGradeErr] = useState<string | null>(null);
+  /** Server-graded per-question feedback, filled as the learner answers. */
+  const [results, setResults] = useState<(QuestionResult | undefined)[]>([]);
+  const [userAnswers, setUserAnswers] = useState<number[]>([]);
   const [done, setDone] = useState(false);
-  const [userAnswers, setUserAnswers] = useState<string[]>([]);
+  /** Server-graded final result — the only source of score/passed. */
+  const [summary, setSummary] = useState<SubmitQuizResponse | null>(null);
+  const [submitErr, setSubmitErr] = useState<string | null>(null);
   const [isReviewing, setIsReviewing] = useState(false);
   const [isShaking, setIsShaking] = useState(false);
   const [started, setStarted] = useState(false);
@@ -110,41 +111,9 @@ export function QuizLesson({
   // Retry is controlled by Sanity config; AI quiz always allows retry
   const allowRetry = sanityQuiz ? (sanityQuiz.allowRetry ?? false) : true;
 
-  // ── Persist result when quiz completes ────────────────────────────────────
-  useEffect(() => {
-    if (!done || !sessionId || !courseId) return;
-    const total = quiz?.questions.length ?? 0;
-    const pctScore = total > 0 ? (score / total) * 100 : 0;
-    
-    const mappedAnswers = quiz?.questions.map((q, i) => ({
-      question: q.question,
-      selected: userAnswers[i] ?? "",
-      correct: q.correct_answer,
-    })) ?? [];
-
-    fetch("/api/progress", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: "quiz",
-        sessionId,
-        courseId,
-        score,
-        total,
-        passed: pctScore >= passingScore,
-        answers: mappedAnswers,
-      }),
-    }).catch(() => {});
-    
-    // Confetti on Pass
-    if (!isReviewing && pctScore >= passingScore) {
-      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [done]);
-
   // ── Fetch AI quiz once on mount (Sanity mode skips this) ──────────────────
   useEffect(() => {
+    const pendingTimers = timers.current;
     if (sanityQuiz) return;
     if (!context) return;
 
@@ -155,42 +124,100 @@ export function QuizLesson({
     })
       .then(async (r) => {
         if (!r.ok) throw new Error(`Quiz request failed (${r.status})`);
-        const parsed = AiQuizResponseSchema.safeParse(await r.json());
+        const parsed = ClientQuizSchema.safeParse(await r.json());
         if (!parsed.success) throw new Error("Quiz response failed validation");
         setQuiz(parsed.data);
       })
       .catch(() => setLoadErr("Couldn't generate quiz. Please try again."));
 
-    return () => timers.current.forEach(clearTimeout);
+    return () => pendingTimers.forEach(clearTimeout);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Answer selection ──────────────────────────────────────────────────────
-  function handleSelect(option: string) {
-    if (selected || isReviewing) return;
-    const isCorrect = option === quiz!.questions[currentQ].correct_answer;
-    if (isCorrect) setScore((s) => s + 1);
-    setSelected(option);
-    setUserAnswers((prev) => [...prev, option]);
+  // ── Answer selection — graded server-side per question ────────────────────
+  async function handleSelect(optionIndex: number) {
+    if (selected !== null || isReviewing || grading || !quiz) return;
+    setSelected(optionIndex);
+    setGrading(true);
+    setGradeErr(null);
 
-    // Brief pause so selection state registers visually, then reveal feedback
-    const t1 = setTimeout(() => {
-      setRevealed(true);
-      if (!isCorrect) {
+    try {
+      const res = await fetch("/api/quiz/grade", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "question",
+          source: quiz.source,
+          quizId: quiz.quizId,
+          questionIndex: currentQ,
+          selectedIndex: optionIndex,
+        }),
+      });
+      if (!res.ok) throw new Error(`Grade request failed (${res.status})`);
+      const parsed = QuestionResultSchema.safeParse(await res.json());
+      if (!parsed.success) throw new Error("Grade response failed validation");
+
+      setResults((prev) => {
+        const next = [...prev];
+        next[currentQ] = parsed.data;
+        return next;
+      });
+      setUserAnswers((prev) => [...prev, optionIndex]);
+
+      if (!parsed.data.correct) {
         setIsShaking(true);
-        setTimeout(() => setIsShaking(false), 400);
+        timers.current.push(setTimeout(() => setIsShaking(false), 400));
       }
-    }, 90);
-    timers.current = [t1];
+    } catch {
+      // Re-enable selection so the learner can try the same question again.
+      setSelected(null);
+      setGradeErr("Couldn't check your answer — tap an option to try again.");
+    } finally {
+      setGrading(false);
+    }
+  }
+
+  // ── Final submission — server computes score / passed and records it ──────
+  async function submitQuiz(answers: number[]) {
+    if (!quiz) return;
+    setDone(true);
+    setIsReviewing(false);
+    setSubmitErr(null);
+
+    try {
+      const res = await fetch("/api/quiz/grade", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "submit",
+          source: quiz.source,
+          quizId: quiz.quizId,
+          answers,
+          // Identity is only attached when consent allows persistence.
+          ...(sessionId && courseId ? { sessionId, courseId } : {}),
+        }),
+      });
+      if (!res.ok) throw new Error(`Submit request failed (${res.status})`);
+      const parsed = SubmitQuizResponseSchema.safeParse(await res.json());
+      if (!parsed.success) throw new Error("Submit response failed validation");
+
+      setSummary(parsed.data);
+      if (parsed.data.passed) {
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+      }
+    } catch {
+      setSubmitErr("Couldn't score your quiz.");
+    }
   }
 
   function handleNext() {
     const next = currentQ + 1;
-    if (next >= quiz!.questions.length) {
-      setDone(true);
+    if (!quiz) return;
+    if (next >= quiz.questions.length) {
+      void submitQuiz(userAnswers);
     } else {
       setCurrentQ(next);
       setSelected(null);
-      setRevealed(false);
+      setGradeErr(null);
     }
   }
 
@@ -198,10 +225,13 @@ export function QuizLesson({
     timers.current.forEach(clearTimeout);
     setCurrentQ(0);
     setSelected(null);
-    setRevealed(false);
-    setScore(0);
-    setDone(false);
+    setGrading(false);
+    setGradeErr(null);
+    setResults([]);
     setUserAnswers([]);
+    setDone(false);
+    setSummary(null);
+    setSubmitErr(null);
     setIsReviewing(false);
     setStarted(false);
   }
@@ -247,11 +277,37 @@ export function QuizLesson({
     );
   }
 
-  // ── Score screen ──────────────────────────────────────────────────────────
-  if (done && !isReviewing) {
-    const pct = score / total;
+  // ── Scoring state — waiting for (or retrying) the server grade ────────────
+  if (done && !isReviewing && !summary) {
+    return (
+      <div className="absolute inset-0 bg-background flex flex-col items-center justify-center gap-4">
+        {submitErr ? (
+          <>
+            <p className="text-muted-foreground/80 text-sm">{submitErr}</p>
+            <button
+              onClick={() => void submitQuiz(userAnswers)}
+              className="flex items-center gap-2 bg-background text-foreground font-bold text-sm
+                px-6 py-2.5 rounded-full shadow-2xl border border-border/20
+                hover:bg-background/90 active:scale-95 transition-transform duration-150"
+            >
+              <RefreshCw className="h-4 w-4" /> Try Again
+            </button>
+          </>
+        ) : (
+          <>
+            <Loader2 className="h-7 w-7 text-accent animate-spin" />
+            <p className="text-foreground/40 text-sm font-medium">Scoring your answers…</p>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  // ── Score screen — rendered exclusively from the server-graded summary ────
+  if (done && !isReviewing && summary) {
+    const pct = summary.total > 0 ? summary.score / summary.total : 0;
     const pctScore = Math.round(pct * 100);
-    const passed = pctScore >= passingScore;
+    const passed = summary.passed;
     const tier = SCORE_TIERS.find((t) => pct >= t.min) ?? SCORE_TIERS[SCORE_TIERS.length - 1];
     const Icon = tier.icon;
     const barColor = pct >= 0.8 ? "rgb(104 91 199)" : pct >= 0.6 ? "rgb(104 91 199)" : "rgb(122 118 112)";
@@ -259,7 +315,7 @@ export function QuizLesson({
     return (
       <div
         role="status"
-        aria-label={`${tier.label} You scored ${score} out of ${total}`}
+        aria-label={`${tier.label} You scored ${summary.score} out of ${summary.total}`}
         className="absolute inset-0 bg-background flex flex-col items-center justify-center gap-5 px-8"
       >
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_55%_50%_at_50%_45%,rgba(104,91,199,0.07),transparent)] pointer-events-none" />
@@ -273,14 +329,14 @@ export function QuizLesson({
         {/* Score number */}
         <div className="quiz-score-in text-center" style={{ animationDelay: "90ms" }}>
           <p className="text-[64px] font-bold text-foreground leading-none tabular-nums">
-            {score}
-            <span className="text-foreground/25 text-3xl font-normal">/{total}</span>
+            {summary.score}
+            <span className="text-foreground/25 text-3xl font-normal">/{summary.total}</span>
           </p>
           <p className={`text-base font-semibold mt-1.5 ${tier.color}`}>{tier.label}</p>
           <p className="text-foreground/35 text-[12px] mt-0.5">{tier.message}</p>
           {!passed && (
             <p className="text-foreground/30 text-[11px] mt-1.5">
-              Passing score: {passingScore}%
+              Passing score: {summary.passingScore}%
             </p>
           )}
         </div>
@@ -335,7 +391,6 @@ export function QuizLesson({
             onClick={() => {
               setIsReviewing(true);
               setCurrentQ(0);
-              setRevealed(true);
             }}
             className="mt-4 text-base font-bold text-foreground/70 hover:text-foreground transition-colors underline underline-offset-4"
           >
@@ -348,6 +403,8 @@ export function QuizLesson({
 
   // ── Question view ─────────────────────────────────────────────────────────
   const q = quiz!.questions[currentQ];
+  const result = results[currentQ];
+  const revealed = isReviewing ? result !== undefined : selected !== null && result !== undefined;
 
   return (
     <div className="absolute inset-0 bg-background flex flex-col select-none">
@@ -358,9 +415,9 @@ export function QuizLesson({
         <div className="flex items-center gap-1.5 mb-3 w-full">
           {Array.from({ length: total }).map((_, i) => {
             let bgColor = "bg-border/20"; // Unanswered
-            if (userAnswers[i] && i !== currentQ) {
-              const isCorrect = userAnswers[i] === quiz!.questions[i].correct_answer;
-              bgColor = isCorrect ? "bg-accent" : "bg-destructive/80";
+            const r = results[i];
+            if (r && i !== currentQ) {
+              bgColor = r.correct ? "bg-accent" : "bg-destructive/80";
             } else if (i === currentQ) {
               bgColor = "bg-accent/50 animate-pulse";
             }
@@ -387,13 +444,21 @@ export function QuizLesson({
         {/* Optional Image */}
         {q.image_url && (
           <div className="quiz-enter shrink-0 w-full max-w-lg mx-auto rounded-xl overflow-hidden shadow-lg border border-border/10">
-            <img src={`${q.image_url}?auto=format&q=75&fit=max&w=800`} alt="Question reference" className="w-full h-auto object-cover max-h-[30vh]" />
+            <Image
+              loader={sanityImageLoader}
+              src={q.image_url}
+              alt="Question reference"
+              width={800}
+              height={450}
+              sizes="(min-width: 560px) 512px, 100vw"
+              className="w-full h-auto object-cover max-h-[30vh]"
+            />
           </div>
         )}
 
         {/* Answer options */}
-        <motion.div 
-          className="grid grid-cols-1 md:grid-cols-2 gap-3 flex-1 content-start" 
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 gap-3 flex-1 content-start"
           role="radiogroup"
           aria-label="Answer options"
           animate={isShaking ? { x: [-6, 6, -6, 6, 0] } : { x: 0 }}
@@ -401,8 +466,8 @@ export function QuizLesson({
         >
           {q.options.map((option, i) => {
             const activeSelected = isReviewing ? userAnswers[currentQ] : selected;
-            const isSelected = activeSelected === option;
-            const isCorrect  = option === q.correct_answer;
+            const isSelected = activeSelected === i;
+            const isCorrect  = result !== undefined && i === result.correctIndex;
             const showGreen  = revealed && isCorrect;
             const showRed    = revealed && isSelected && !isCorrect;
             const dimmed     = revealed && !isCorrect && !isSelected;
@@ -425,11 +490,11 @@ export function QuizLesson({
 
             return (
               <button
-                key={option}
-                onClick={() => handleSelect(option)}
-                disabled={!!selected || isReviewing}
+                key={`${i}-${option}`}
+                onClick={() => void handleSelect(i)}
+                disabled={selected !== null || isReviewing || grading}
                 role="radio" aria-checked={isSelected}
-                aria-label={`${OPTION_LABELS[i]}: ${option}${
+                aria-label={`${OPTION_LABELS[i] ?? i + 1}: ${option}${
                   revealed && isCorrect ? " — correct" :
                   revealed && isSelected && !isCorrect ? " — incorrect" : ""
                 }`}
@@ -443,7 +508,7 @@ export function QuizLesson({
                     : showRed   ? "border-border text-muted-foreground"
                     :             "border-border/20  text-foreground/35"}`}
                 >
-                  {OPTION_LABELS[i]}
+                  {OPTION_LABELS[i] ?? i + 1}
                 </span>
 
                 {/* Option text */}
@@ -455,6 +520,13 @@ export function QuizLesson({
                 >
                   {option}
                 </span>
+
+                {/* Pending grade spinner on the picked option */}
+                {grading && isSelected && (
+                  <span className="absolute top-2 right-2">
+                    <Loader2 className="h-3.5 w-3.5 text-accent animate-spin" />
+                  </span>
+                )}
 
                 {/* Result icon (after answer is revealed) */}
                 {revealed && isSelected && (
@@ -470,13 +542,19 @@ export function QuizLesson({
           })}
         </motion.div>
 
-        {/* Explanation — appears after feedback is revealed */}
-        {revealed && (
+        {/* Grading error — selection re-enabled so the learner can retry */}
+        {gradeErr && (
+          <p role="alert" className="shrink-0 text-destructive/80 text-sm font-medium">
+            {gradeErr}
+          </p>
+        )}
+
+        {/* Explanation — appears after the server grades the answer */}
+        {revealed && result && (
           <>
             <div className="quiz-enter shrink-0 bg-background/5 border border-border/8 rounded-2xl px-5 py-4 mt-2">
               {(() => {
-                const activeSelected = isReviewing ? userAnswers[currentQ] : selected;
-                const isCorrect = activeSelected === q.correct_answer;
+                const isCorrect = isReviewing ? userAnswers[currentQ] === result.correctIndex : result.correct;
                 return (
                   <div className={`flex items-center gap-1.5 mb-2 ${isCorrect ? "text-accent" : "text-destructive"}`}>
                     {isCorrect ? <CheckCircle2 className="h-5 w-5" /> : <XCircle className="h-5 w-5" />}
@@ -486,7 +564,7 @@ export function QuizLesson({
                   </div>
                 );
               })()}
-              <p className="text-foreground/80 text-base leading-relaxed font-medium">{q.explanation}</p>
+              <p className="text-foreground/80 text-base leading-relaxed font-medium">{result.explanation}</p>
             </div>
 
             {!isReviewing ? (
@@ -513,7 +591,6 @@ export function QuizLesson({
                 </button>
                 <button
                   onClick={() => {
-                    setDone(true);
                     setIsReviewing(false);
                   }}
                   className="text-base font-black px-6 py-2.5 bg-foreground text-background rounded-full hover:bg-foreground/90 transition-all shadow-lg"

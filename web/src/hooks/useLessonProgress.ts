@@ -13,7 +13,14 @@ interface ProgressData {
   lessons?: Record<string, LessonData>;
 }
 
-export function useLessonProgress(sessionId: string) {
+/**
+ * @param sessionId Browser session id (persisted UUID, or an ephemeral one
+ *                  when storage consent is declined/undecided).
+ * @param persist   When false (no consent), progress is kept only in the local
+ *                  SWR cache — no POSTs are sent, so nothing is recorded
+ *                  server-side or on the device.
+ */
+export function useLessonProgress(sessionId: string, persist: boolean = true) {
   const { data, error, isLoading, mutate } = useSWR<ProgressData>(
     sessionId ? `/api/progress?sessionId=${sessionId}` : null,
     fetcher,
@@ -61,16 +68,19 @@ export function useLessonProgress(sessionId: string) {
       },
     };
 
-    // Optimistically update the SWR cache and perform the mutation
+    // Optimistically update the SWR cache; only POST when consent allows
+    // persistence (otherwise progress lives solely in this tab's memory).
     mutate(
-      async () => {
-        await fetch("/api/progress", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        return optimisticData;
-      },
+      persist
+        ? async () => {
+            await fetch("/api/progress", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+            return optimisticData;
+          }
+        : optimisticData,
       {
         optimisticData,
         rollbackOnError: true,

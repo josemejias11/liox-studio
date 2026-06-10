@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { PlayCircle, MousePointer2, Layers, Plus } from "lucide-react";
 import { PortableText, type PortableTextMarkComponent } from "@portabletext/react";
 import { Hotspot } from "./Hotspot";
 import { DiscoveryPanel } from "./DiscoveryPanel";
 import { optimizeSanityImage } from "@/lib/image-optimization";
+import { sanityImageLoader } from "@/lib/sanity-image-loader";
 import { getSemanticWidthClass } from "@/lib/utils";
 import type {
   LessonSection,
@@ -74,13 +76,16 @@ export function ContentLesson({
 
   return (
     <>
-      {/* Background image or solid color */}
+      {/* Background image or solid color — the lesson's LCP element */}
       {imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={optimizeSanityImage(imageUrl, 1920)}
+        <Image
+          src={imageUrl}
           alt={lesson.headline}
-          className="absolute inset-0 w-full h-full object-cover"
+          fill
+          priority
+          sizes="100vw"
+          loader={sanityImageLoader}
+          className="object-cover"
         />
       ) : (
         <div className="absolute inset-0 bg-background" />
@@ -201,8 +206,8 @@ export function ContentLesson({
         y={activePanel?.y}
         photos={activePanel?.photos}
         mode="popover"
-        course_title={courseTitle}
-        course_description={courseDescription}
+        courseTitle={courseTitle}
+        courseDescription={courseDescription}
       />
     </>
   );

@@ -52,6 +52,87 @@ function lessonCompletion(
   return "partial";
 }
 
+// ── Section row — shared by lesson / spec / quiz / disclaimer entries ─────────
+
+interface SectionRowProps {
+  /** Index glyph in the left gutter: a 1-based number, "✓", or "!". */
+  indexGlyph: string | number;
+  /**
+   * Screen-reader replacement for a symbolic glyph ("✓" / "!"). When set, the
+   * glyph is aria-hidden and this text is rendered visually hidden instead, so
+   * assistive tech never reads raw symbols. Numeric indices stay readable.
+   */
+  glyphSrText?: string;
+  icon: React.ElementType;
+  iconColor: string;
+  title: string;
+  isCurrent: boolean;
+  onClick: () => void;
+  /** Lesson completion state; non-lesson sections use the default "auto" dot. */
+  completion?: "auto" | "full" | "partial" | "none";
+}
+
+function SectionRow({
+  indexGlyph,
+  glyphSrText,
+  icon: Icon,
+  iconColor,
+  title,
+  isCurrent,
+  onClick,
+  completion = "auto",
+}: SectionRowProps) {
+  return (
+    <button
+      onClick={onClick}
+      className={`
+        w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg
+        transition-all duration-150 active:scale-[0.97]
+        ${
+          isCurrent
+            ? "bg-accent/14 ring-1 ring-inset ring-accent/35"
+            : "hover:bg-background/[0.045]"
+        }
+      `}
+    >
+      {/* Index glyph */}
+      <span
+        aria-hidden={glyphSrText ? true : undefined}
+        className={`shrink-0 text-xs font-bold tabular-nums w-4 text-right
+          ${isCurrent ? "text-accent" : "text-foreground/25"}`}
+      >
+        {indexGlyph}
+      </span>
+      {glyphSrText && <span className="sr-only">{glyphSrText}</span>}
+
+      {/* Section type icon */}
+      <Icon className={`shrink-0 h-3.5 w-3.5 ${iconColor}`} />
+
+      {/* Title */}
+      <span
+        className={`flex-1 text-sm font-medium leading-tight truncate
+          ${isCurrent ? "text-foreground" : "text-foreground/50"}`}
+      >
+        {title}
+      </span>
+
+      {/* Completion dot */}
+      <span
+        className={`shrink-0 h-2 w-2 rounded-full
+          ${
+            completion === "full"
+              ? "bg-accent"
+              : completion === "partial"
+              ? "bg-muted"
+              : completion === "auto"
+              ? "bg-background/18"
+              : "border border-border"
+          }`}
+      />
+    </button>
+  );
+}
+
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface NavMapProps {
@@ -156,57 +237,18 @@ export function NavMap({
               {group.lessons.map(({ section, absoluteIndex }, posInChapter) => {
                 const meta =
                   LESSON_TYPE_META[section.lessonType] ?? LESSON_TYPE_META.content;
-                const Icon = meta.icon;
-                const isCurrent = absoluteIndex === currentSectionIndex;
-                const completion = lessonCompletion(section, visited);
 
                 return (
-                  <button
+                  <SectionRow
                     key={section._key}
+                    indexGlyph={posInChapter + 1}
+                    icon={meta.icon}
+                    iconColor={meta.color}
+                    title={section.headline}
+                    isCurrent={absoluteIndex === currentSectionIndex}
                     onClick={() => onNavigate(absoluteIndex)}
-                    className={`
-                      w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg
-                      transition-all duration-150 active:scale-[0.97]
-                      ${
-                        isCurrent
-                          ? "bg-accent/14 ring-1 ring-inset ring-accent/35"
-                          : "hover:bg-background/[0.045]"
-                      }
-                    `}
-                  >
-                    {/* Position within chapter (1-based) */}
-                    <span
-                      className={`shrink-0 text-xs font-bold tabular-nums w-4 text-right
-                        ${isCurrent ? "text-accent" : "text-foreground/25"}`}
-                    >
-                      {posInChapter + 1}
-                    </span>
-
-                    {/* Lesson type icon */}
-                    <Icon className={`shrink-0 h-3.5 w-3.5 ${meta.color}`} />
-
-                    {/* Headline */}
-                    <span
-                      className={`flex-1 text-sm font-medium leading-tight truncate
-                        ${isCurrent ? "text-foreground" : "text-foreground/50"}`}
-                    >
-                      {section.headline}
-                    </span>
-
-                    {/* Completion dot */}
-                    <span
-                      className={`shrink-0 h-2 w-2 rounded-full
-                        ${
-                          completion === "full"
-                            ? "bg-accent"
-                            : completion === "partial"
-                            ? "bg-muted"
-                            : completion === "auto"
-                            ? "bg-background/18"
-                            : "border border-border"
-                        }`}
-                    />
-                  </button>
+                    completion={lessonCompletion(section, visited)}
+                  />
                 );
               })}
             </div>
@@ -217,123 +259,44 @@ export function NavMap({
             <div className="mx-3 my-2 border-t border-border/20" aria-hidden="true" />
           )}
 
-          {/* ── Specification sections ── */}
-          {specSections.map((spec, k) => {
-            const absoluteIndex = specOffset + k;
-            const isCurrent = absoluteIndex === currentSectionIndex;
-            const meta = SECTION_TYPE_META.specification;
-            const Icon = meta.icon;
-
-            return (
-              <button
-                key={spec._key ?? `spec-${k}`}
-                onClick={() => onNavigate(absoluteIndex)}
-                className={`
-                  w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg
-                  transition-all duration-150 active:scale-[0.97]
-                  ${
-                    isCurrent
-                      ? "bg-accent/14 ring-1 ring-inset ring-accent/35"
-                      : "hover:bg-background/[0.045]"
-                  }
-                `}
-              >
-                <span
-                  className={`shrink-0 text-xs font-bold tabular-nums w-4 text-right
-                    ${isCurrent ? "text-accent" : "text-foreground/25"}`}
-                >
-                  {k + 1}
-                </span>
-                <Icon className={`shrink-0 h-3.5 w-3.5 ${meta.color}`} />
-                <span
-                  className={`flex-1 text-sm font-medium leading-tight truncate
-                    ${isCurrent ? "text-foreground" : "text-foreground/50"}`}
-                >
-                  {spec.title}
-                </span>
-                {/* Spec sections show an empty dot (no hotspot tracking) */}
-                <span className="shrink-0 h-2 w-2 rounded-full bg-background/18" />
-              </button>
-            );
-          })}
+          {/* ── Specification sections — empty dot (no hotspot tracking) ── */}
+          {specSections.map((spec, k) => (
+            <SectionRow
+              key={spec._key ?? `spec-${k}`}
+              indexGlyph={k + 1}
+              icon={SECTION_TYPE_META.specification.icon}
+              iconColor={SECTION_TYPE_META.specification.color}
+              title={spec.title}
+              isCurrent={specOffset + k === currentSectionIndex}
+              onClick={() => onNavigate(specOffset + k)}
+            />
+          ))}
 
           {/* ── Quiz section ── */}
-          {quizSection && (() => {
-            const absoluteIndex = quizOffset;
-            const isCurrent = absoluteIndex === currentSectionIndex;
-            const meta = SECTION_TYPE_META.quiz;
-            const Icon = meta.icon;
-            const title = quizSection.title ?? "Knowledge Check";
-
-            return (
-              <button
-                onClick={() => onNavigate(absoluteIndex)}
-                className={`
-                  w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg
-                  transition-all duration-150 active:scale-[0.97]
-                  ${
-                    isCurrent
-                      ? "bg-accent/14 ring-1 ring-inset ring-accent/35"
-                      : "hover:bg-background/[0.045]"
-                  }
-                `}
-              >
-                <span
-                  className={`shrink-0 text-xs font-bold tabular-nums w-4 text-right
-                    ${isCurrent ? "text-accent" : "text-foreground/25"}`}
-                >
-                  ✓
-                </span>
-                <Icon className={`shrink-0 h-3.5 w-3.5 ${meta.color}`} />
-                <span
-                  className={`flex-1 text-sm font-medium leading-tight truncate
-                    ${isCurrent ? "text-foreground" : "text-foreground/50"}`}
-                >
-                  {title}
-                </span>
-                <span className="shrink-0 h-2 w-2 rounded-full bg-background/18" />
-              </button>
-            );
-          })()}
+          {quizSection && (
+            <SectionRow
+              indexGlyph="✓"
+              glyphSrText="Quiz section"
+              icon={SECTION_TYPE_META.quiz.icon}
+              iconColor={SECTION_TYPE_META.quiz.color}
+              title={quizSection.title ?? "Knowledge Check"}
+              isCurrent={quizOffset === currentSectionIndex}
+              onClick={() => onNavigate(quizOffset)}
+            />
+          )}
 
           {/* ── Disclaimer section ── */}
-          {disclaimerSection && (() => {
-            const absoluteIndex = disclaimerOffset;
-            const isCurrent = absoluteIndex === currentSectionIndex;
-            const meta = SECTION_TYPE_META.disclaimer;
-            const Icon = meta.icon;
-            const title = disclaimerSection.title ?? "Disclaimer";
-
-            return (
-              <button
-                onClick={() => onNavigate(absoluteIndex)}
-                className={`
-                  w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg
-                  transition-all duration-150 active:scale-[0.97]
-                  ${
-                    isCurrent
-                      ? "bg-accent/14 ring-1 ring-inset ring-accent/35"
-                      : "hover:bg-background/[0.045]"
-                  }
-                `}
-              >
-                <span
-                  className={`shrink-0 text-xs font-bold tabular-nums w-4 text-right
-                    ${isCurrent ? "text-accent" : "text-foreground/25"}`}
-                >
-                  !
-                </span>
-                <Icon className={`shrink-0 h-3.5 w-3.5 ${meta.color}`} />
-                <span
-                  className={`flex-1 text-sm font-medium leading-tight truncate
-                    ${isCurrent ? "text-foreground" : "text-foreground/50"}`}
-                >
-                  {title}
-                </span>
-                <span className="shrink-0 h-2 w-2 rounded-full bg-background/18" />
-              </button>
-            );
-          })()}
+          {disclaimerSection && (
+            <SectionRow
+              indexGlyph="!"
+              glyphSrText="Attention required"
+              icon={SECTION_TYPE_META.disclaimer.icon}
+              iconColor={SECTION_TYPE_META.disclaimer.color}
+              title={disclaimerSection.title ?? "Disclaimer"}
+              isCurrent={disclaimerOffset === currentSectionIndex}
+              onClick={() => onNavigate(disclaimerOffset)}
+            />
+          )}
         </div>
 
         {/* Footer */}

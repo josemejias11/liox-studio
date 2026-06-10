@@ -175,6 +175,8 @@ export const specificationSchema = z.object({
 export type SanitySpecification = z.output<typeof specificationSchema>;
 
 // ── Quiz ──────────────────────────────────────────────────────────────────────
+// Client-safe projection: `isCorrect` / `feedback` are deliberately absent —
+// grading happens server-side via /api/quiz/grade (see contracts/quiz.ts).
 
 export const quizDocSchema = z.object({
   sectionType: z.literal("quiz"),
@@ -194,12 +196,9 @@ export const quizDocSchema = z.object({
             z.object({
               _key: z.string(),
               text: z.string().catch(""),
-              isCorrect: z.boolean().catch(false),
-              feedback: opt(z.string()),
             })
           )
           .catch([]),
-        explanation: opt(z.string()),
       })
     )
     .catch([]),

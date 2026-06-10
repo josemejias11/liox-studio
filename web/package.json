@@ -13,7 +13,6 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.102.0",
     "@base-ui/react": "^1.5.0",
     "@emotion/is-prop-valid": "^1.4.0",
     "@google/generative-ai": "^0.24.1",
@@ -33,7 +32,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "sanity": "^5.30.0",
-    "shadcn": "^4.10.0",
+    "shadcn": "^4.11.0",
     "styled-components": "^6.4.2",
     "swr": "^2.4.1",
     "tailwind-merge": "^3.6.0",

@@ -55,12 +55,7 @@ export default async function CoursePage({
 
   return (
     <div className="w-full h-dvh overflow-hidden bg-background">
-      <MotoViewer
-        course={course}
-        sections={sections}
-        course_title={course.title}
-        course_description={course.description}
-      />
+      <MotoViewer course={course} sections={sections} />
     </div>
   );
 }

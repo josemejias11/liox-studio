@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { ChevronRight, AlertCircle } from "lucide-react";
+import { cssAspectRatio } from "@/lib/utils";
 
 interface VideoLessonProps {
   headline: string;
@@ -12,16 +13,9 @@ interface VideoLessonProps {
 
 export function VideoLesson({ headline, videoFileUrl, videoAspectRatio = "16:9", onNext }: VideoLessonProps) {
   const [hasEnded, setHasEnded] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
 
   const src = videoFileUrl;
-  const aspectRatioMap: Record<string, string> = {
-    "16:9": "16 / 9",
-    "1:1": "1 / 1",
-    "4:5": "4 / 5",
-    "9:16": "9 / 16"
-  };
-  const cssAspectRatio = aspectRatioMap[videoAspectRatio] || "16 / 9";
+  const aspectRatio = cssAspectRatio(videoAspectRatio);
 
   // ── No source configured ─────────────────────────────────────────────────
   if (!src) {
@@ -53,12 +47,11 @@ export function VideoLesson({ headline, videoFileUrl, videoAspectRatio = "16:9",
       <div className="flex-1 flex items-center justify-center px-5 pt-5 pb-2 min-h-0">
         <div className="relative w-full h-full rounded-xl overflow-hidden shadow-2xl shadow-black/70 bg-black flex items-center justify-center">
           <video
-            ref={videoRef}
             src={src}
             controls
             playsInline
             className="w-full h-full object-contain"
-            style={{ aspectRatio: cssAspectRatio }}
+            style={{ aspectRatio }}
             onEnded={() => setHasEnded(true)}
           />
         </div>
@@ -69,14 +62,14 @@ export function VideoLesson({ headline, videoFileUrl, videoAspectRatio = "16:9",
         <p className="text-foreground/35 text-[11px] font-medium truncate flex-1">{headline}</p>
 
         <button
-          onClick={canContinue ? onNext : undefined}
+          onClick={onNext}
+          disabled={!canContinue}
           className={`shrink-0 flex items-center gap-1.5 text-[12px] font-semibold
             px-4 py-2 rounded-full transition-all duration-300 active:scale-95
             ${canContinue
               ? "bg-background text-foreground shadow-lg hover:bg-background/90 cursor-pointer"
               : "bg-background/8 text-foreground/25 cursor-default"
             }`}
-          aria-disabled={!canContinue}
           title={canContinue ? undefined : "Watch the video to continue"}
         >
           {canContinue ? "Continue" : "Watch to continue"}
