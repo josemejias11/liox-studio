@@ -14,25 +14,8 @@ import {
   RefreshCw,
 } from "lucide-react";
 
-// ── Sanity quiz document shape (aligned with GROQ QUIZ_FIELDS output) ────────
-
-export interface SanityQuizDoc {
-  _key: string;
-  sectionType: "quiz";
-  title: string;
-  instructions?: string;
-  questions: Array<{
-    _key: string;
-    questionText: string;
-    questionType: "multiple-choice" | "true-false";
-    image?: { asset: { url: string } };
-    answers: Array<{ _key: string; text: string; isCorrect: boolean; feedback?: string }>;
-    explanation?: string;
-  }>;
-  passingScore: number;  // percentage, e.g. 80
-  allowRetry: boolean;
-  showCorrectAnswers: boolean;
-}
+import { AiQuizResponseSchema } from "@/lib/contracts/quiz";
+import type { SanityQuizDoc } from "@/lib/contracts/sanity";
 
 // ── AI quiz format (internal to renderer) ────────────────────────────────────
 
@@ -82,7 +65,7 @@ const SCORE_TIERS = [
 
 function toQuizData(sanityQuiz: SanityQuizDoc): QuizData {
   return {
-    title: sanityQuiz.title,
+    title: sanityQuiz.title ?? "",
     instructions: sanityQuiz.instructions,
     questions: sanityQuiz.questions.map((q) => {
       const correctAnswer = q.answers.find((a) => a.isCorrect);
@@ -125,7 +108,7 @@ export function QuizLesson({
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   // Retry is controlled by Sanity config; AI quiz always allows retry
-  const allowRetry = sanityQuiz ? sanityQuiz.allowRetry : true;
+  const allowRetry = sanityQuiz ? (sanityQuiz.allowRetry ?? false) : true;
 
   // ── Persist result when quiz completes ────────────────────────────────────
   useEffect(() => {
@@ -170,8 +153,12 @@ export function QuizLesson({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ context, num_questions: 5 }),
     })
-      .then((r) => r.json())
-      .then((data: QuizData) => setQuiz(data))
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`Quiz request failed (${r.status})`);
+        const parsed = AiQuizResponseSchema.safeParse(await r.json());
+        if (!parsed.success) throw new Error("Quiz response failed validation");
+        setQuiz(parsed.data);
+      })
       .catch(() => setLoadErr("Couldn't generate quiz. Please try again."));
 
     return () => timers.current.forEach(clearTimeout);

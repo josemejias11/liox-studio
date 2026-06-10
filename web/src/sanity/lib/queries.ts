@@ -25,7 +25,16 @@ const LESSON_FIELDS = groq`
       photos[] { asset->{ url, originalFilename } },
       videoAspectRatio,
       videoFile { asset->{ url } },
-      textOverlay { x, y, width }
+      textOverlay { x, y, width },
+      hotspots[] {
+        _key,
+        label,
+        topic,
+        body,
+        photos[] { asset->{ url, originalFilename } },
+        x,
+        y,
+      }
     },
     body,
     photos[] { asset->{ url, originalFilename } },

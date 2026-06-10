@@ -13,8 +13,8 @@ import {
 } from "lucide-react";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { ThemeToggle } from "./ThemeToggle";
-import type { CourseSection, LessonSection } from "./MotoViewer";
-import type { SanitySpecification } from "./SpecificationPage";
+import type { LessonSection } from "@/lib/contracts/sanity";
+import type { CourseStructure } from "@/lib/course-structure";
 
 // ── Icon/color metadata per sectionType / lessonType ─────────────────────────
 
@@ -55,7 +55,8 @@ function lessonCompletion(
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface NavMapProps {
-  sections: CourseSection[];
+  /** Derived course structure — same instance MotoViewer navigates with. */
+  structure: CourseStructure;
   /** Absolute index in the flat sections array; -1 for cover, sections.length for complete */
   currentSectionIndex: number;
   visited: Record<string, Set<string>>;
@@ -66,7 +67,7 @@ interface NavMapProps {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function NavMap({
-  sections,
+  structure,
   currentSectionIndex,
   visited,
   onNavigate,
@@ -88,46 +89,20 @@ export function NavMap({
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
-  // ── Derive section groups ─────────────────────────────────────────────────
-
-  const lessonSections = sections.filter(
-    (s): s is LessonSection => s.sectionType === "lesson"
-  );
-  const specSections = sections.filter(
-    (s): s is SanitySpecification => s.sectionType === "specification"
-  );
-  const quizSection = sections.find((s) => s.sectionType === "quiz");
-  const disclaimerSection = sections.find((s) => s.sectionType === "disclaimer");
+  // ── Section groups / offsets — single source of truth (course-structure) ──
+  const {
+    lessonSections,
+    specSections,
+    quizSection,
+    disclaimerSection,
+    chapters: chapterGroups,
+    specOffset,
+    quizOffset,
+    disclaimerOffset,
+  } = structure;
 
   const hasNonLessonSections =
     specSections.length > 0 || quizSection != null || disclaimerSection != null;
-
-  // Group lessons by chapterIndex while preserving their absolute index in sections
-  type ChapterGroup = {
-    chapterIndex: number;
-    chapterTitle: string;
-    lessons: Array<{ section: LessonSection; absoluteIndex: number }>;
-  };
-
-  const chapterGroups: ChapterGroup[] = [];
-  const seenChapters = new Set<number>();
-  lessonSections.forEach((ls, lessonPos) => {
-    if (!seenChapters.has(ls.chapterIndex)) {
-      seenChapters.add(ls.chapterIndex);
-      chapterGroups.push({
-        chapterIndex: ls.chapterIndex,
-        chapterTitle: ls.chapterTitle,
-        lessons: [],
-      });
-    }
-    const group = chapterGroups.find((g) => g.chapterIndex === ls.chapterIndex)!;
-    group.lessons.push({ section: ls, absoluteIndex: lessonPos });
-  });
-
-  // Non-lesson sections start at absolute index = lessonSections.length
-  const specOffset = lessonSections.length;
-  const quizOffset = specOffset + specSections.length;
-  const disclaimerOffset = quizOffset + (quizSection ? 1 : 0);
 
   // Explored count (lessons only, for footer)
   const exploredCount = lessonSections.filter((ls) => {
@@ -178,16 +153,12 @@ export function NavMap({
               </div>
 
               {/* Lessons in this chapter */}
-              {group.lessons.map(({ section, absoluteIndex }) => {
+              {group.lessons.map(({ section, absoluteIndex }, posInChapter) => {
                 const meta =
                   LESSON_TYPE_META[section.lessonType] ?? LESSON_TYPE_META.content;
                 const Icon = meta.icon;
                 const isCurrent = absoluteIndex === currentSectionIndex;
                 const completion = lessonCompletion(section, visited);
-
-                // Position label within chapter (1-based)
-                const posInChapter =
-                  group.lessons.findIndex((l) => l.absoluteIndex === absoluteIndex) + 1;
 
                 return (
                   <button
@@ -203,12 +174,12 @@ export function NavMap({
                       }
                     `}
                   >
-                    {/* Position within chapter */}
+                    {/* Position within chapter (1-based) */}
                     <span
                       className={`shrink-0 text-xs font-bold tabular-nums w-4 text-right
                         ${isCurrent ? "text-accent" : "text-foreground/25"}`}
                     >
-                      {posInChapter}
+                      {posInChapter + 1}
                     </span>
 
                     {/* Lesson type icon */}
@@ -292,7 +263,7 @@ export function NavMap({
             const isCurrent = absoluteIndex === currentSectionIndex;
             const meta = SECTION_TYPE_META.quiz;
             const Icon = meta.icon;
-            const title = (quizSection as any).title ?? "Knowledge Check";
+            const title = quizSection.title ?? "Knowledge Check";
 
             return (
               <button
@@ -331,7 +302,7 @@ export function NavMap({
             const isCurrent = absoluteIndex === currentSectionIndex;
             const meta = SECTION_TYPE_META.disclaimer;
             const Icon = meta.icon;
-            const title = (disclaimerSection as any).title ?? "Disclaimer";
+            const title = disclaimerSection.title ?? "Disclaimer";
 
             return (
               <button

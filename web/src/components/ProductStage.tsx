@@ -6,18 +6,7 @@ import { PulseHotspot } from "./PulseHotspot";
 import { DiscoveryPanel } from "./DiscoveryPanel";
 import { CompletionBurst } from "./CompletionBurst";
 import { optimizeSanityImage } from "@/lib/image-optimization";
-
-interface StageHotspot {
-  _key: string;
-  label: string;
-  topic: string;
-  body?: string;
-  photos?: { asset?: { url?: string } }[];
-  x: number;
-  y: number;
-  contentMode?: "tooltip" | "layer";
-  suggestions?: string[];
-}
+import type { RichText, SanityHotspot, SanityPhoto } from "@/lib/contracts/sanity";
 
 interface ProductStageProps {
   headline: string;
@@ -25,7 +14,7 @@ interface ProductStageProps {
   stageBackground?: string;
   enableCompletionAnimation?: boolean;
   completionTransition?: "spin" | "rise" | "fade";
-  hotspots: StageHotspot[];
+  hotspots: SanityHotspot[];
   visited: Set<string>;
   onVisit: (label: string) => void;
   onNext: () => void;
@@ -53,11 +42,10 @@ export function ProductStage({
   const [activePanel, setActivePanel] = useState<{
     label: string;
     topic: string;
-    body?: string;
-    photos?: { asset?: { url?: string } }[];
+    body?: RichText;
+    photos?: SanityPhoto[];
     x?: number;
     y?: number;
-    suggestions?: string[];
   } | null>(null);
 
   // Phase 4 — completion burst
@@ -140,7 +128,7 @@ export function ProductStage({
           if (h.contentMode === "layer") {
             ool?.(h._key);
           } else {
-            setActivePanel({ label: h.label, topic: h.topic, body: h.body, photos: h.photos, x: h.x, y: h.y, suggestions: h.suggestions });
+            setActivePanel({ label: h.label, topic: h.topic, body: h.body, photos: h.photos, x: h.x, y: h.y });
           }
         }
       }
@@ -305,7 +293,7 @@ export function ProductStage({
             visited={visited.has(h.label)}
             onVisit={() => onVisit(h.label)}
             onOpen={() =>
-              setActivePanel({ label: h.label, topic: h.topic, body: h.body, photos: h.photos, x: h.x, y: h.y, suggestions: h.suggestions })
+              setActivePanel({ label: h.label, topic: h.topic, body: h.body, photos: h.photos, x: h.x, y: h.y })
             }
             keyFocused={focusedHotspotIndex === i}
           />
@@ -417,7 +405,6 @@ export function ProductStage({
         mode="popover"
         course_title={course_title}
         course_description={course_description}
-        suggestions={activePanel?.suggestions}
       />
     </div>
   );

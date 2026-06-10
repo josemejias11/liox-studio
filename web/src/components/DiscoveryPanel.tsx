@@ -5,27 +5,23 @@ import { X, Send, Sparkles } from "lucide-react";
 import { PhotoCardStack } from "./PhotoCardStack";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { PortableText } from "@portabletext/react";
+import { toPlainText, type RichText, type SanityPhoto } from "@/lib/contracts/sanity";
 
 type Message = { role: "assistant" | "user"; text: string; streaming?: boolean };
 type Turn = { role: "user" | "assistant"; content: string };
-
-interface Photo {
-  asset?: { url?: string };
-}
 
 interface DiscoveryPanelProps {
   open: boolean;
   onClose: () => void;
   label: string;
   topic?: string;
-  body?: any;
-  photos?: Photo[];
+  body?: RichText;
+  photos?: SanityPhoto[];
   x?: number;
   y?: number;
   mode?: "sidebar" | "popover";
   course_title?: string;
   course_description?: string;
-  suggestions?: string[];
 }
 
 const SUGGESTIONS = [
@@ -77,7 +73,6 @@ export function DiscoveryPanel({
   mode,
   course_title,
   course_description,
-  suggestions,
 }: DiscoveryPanelProps) {
   const hasLearnContent = !!(body || (photos?.length ?? 0) > 0);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -190,11 +185,12 @@ export function DiscoveryPanel({
     let fullResponse = "";
 
     // Extract plain text from PortableText array for the AI
-    const plainTextBody = typeof body === "string"
-      ? body
-      : Array.isArray(body)
-        ? body.map((b: any) => b.children?.map((c: any) => c.text).join("") || "").join("\n")
-        : "";
+    const plainTextBody =
+      typeof body === "string"
+        ? body
+        : Array.isArray(body)
+          ? body.map((b) => toPlainText([b])).join("\n")
+          : "";
 
     try {
       const res = await fetch("/api/chat", {
@@ -210,7 +206,13 @@ export function DiscoveryPanel({
         signal: controller.signal,
       });
 
-      const reader = res.body!.getReader();
+      // Error responses (or missing stream bodies) must surface a visible
+      // error bubble instead of streaming an error page into an empty bubble.
+      if (!res.ok || !res.body) {
+        throw new Error(`Chat request failed (${res.status})`);
+      }
+
+      const reader = res.body.getReader();
       // Use { stream: true } so the decoder doesn't flush its internal buffer on each call,
       // allowing multi-byte characters split across chunks to be handled correctly.
       const dec = new TextDecoder("utf-8", { fatal: false });
@@ -508,7 +510,7 @@ export function DiscoveryPanel({
                       Try asking
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {(suggestions ?? SUGGESTIONS).map((s) => (
+                      {SUGGESTIONS.map((s) => (
                         <button
                           key={s}
                           onClick={() => handleSend(s)}

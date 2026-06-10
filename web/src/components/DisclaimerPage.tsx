@@ -4,20 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react";
 import { PortableText } from "@portabletext/react";
 import { motion } from "framer-motion";
+import type { SanityDisclaimer } from "@/lib/contracts/sanity";
 
-// ── Types aligned with GROQ DISCLAIMER_FIELDS output ──────────────────────
-
-type DisclaimerCategory = "legal" | "safety" | "regulatory" | "warranty" | "general";
-
-export interface SanityDisclaimer {
-  _key?: string;
-  sectionType: "disclaimer";
-  title: string;
-  category?: DisclaimerCategory;
-  body: Parameters<typeof PortableText>[0]["value"];
-  acknowledgementRequired?: boolean;
-  acknowledgementLabel?: string;
-}
+type DisclaimerCategory = NonNullable<SanityDisclaimer["category"]>;
 
 interface DisclaimerPageProps {
   disclaimer: SanityDisclaimer;

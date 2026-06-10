@@ -3,29 +3,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { optimizeSanityImage } from "@/lib/image-optimization";
 import { motion } from "framer-motion";
-
-// ── Types aligned with GROQ SPEC_FIELDS output ─────────────────────────────
-
-interface SanitySpecItem {
-  label: string;
-  value: string;
-  highlight?: boolean;
-}
-
-interface SanitySpecGroup {
-  groupName: string;
-  specs: SanitySpecItem[];
-}
-
-export interface SanitySpecification {
-  _key?: string;
-  sectionType: "specification";
-  title: string;
-  subtitle?: string;
-  heroImage?: { asset?: { url?: string } };
-  specGroups: SanitySpecGroup[];
-  footnotes?: string[];
-}
+import type { SanitySpecification } from "@/lib/contracts/sanity";
 
 interface SpecificationPageProps {
   spec: SanitySpecification;

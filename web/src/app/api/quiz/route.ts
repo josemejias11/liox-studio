@@ -3,22 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 const API_KEY = process.env.GOOGLE_AI_STUDIO_API_KEY ?? "";
 
 import { z } from "zod";
+import { AiQuizResponseSchema } from "@/lib/contracts/quiz";
 
 const QuizRequestSchema = z.object({
   context: z.string().max(5000).optional(),
   num_questions: z.number().int().min(1).max(20).optional().default(5),
-});
-
-const QuizResponseSchema = z.object({
-  title: z.string().max(200),
-  questions: z.array(
-    z.object({
-      question: z.string().max(500),
-      options: z.array(z.string().max(200)).length(4),
-      correct_answer: z.string().max(200),
-      explanation: z.string().max(500),
-    })
-  ).min(1).max(20),
 });
 
 type QuizRequestBody = z.infer<typeof QuizRequestSchema>;
@@ -105,7 +94,7 @@ export async function POST(req: NextRequest) {
         ? raw.split("```")[1].split("```")[0].trim()
         : raw.trim();
 
-    const validated = QuizResponseSchema.safeParse(JSON.parse(cleaned));
+    const validated = AiQuizResponseSchema.safeParse(JSON.parse(cleaned));
     if (!validated.success) {
       return NextResponse.json({ error: "Quiz generation failed" }, { status: 502 });
     }

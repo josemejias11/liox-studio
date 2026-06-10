@@ -3,12 +3,9 @@
 import { useRef, useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { optimizeSanityImage } from "@/lib/image-optimization";
+import type { SanityPhoto } from "@/lib/contracts/sanity";
 
-interface Photo {
-  asset?: { url?: string };
-}
-
-export function FullWidthCarousel({ photos, className = "" }: { photos: Photo[], className?: string }) {
+export function FullWidthCarousel({ photos, className = "" }: { photos: SanityPhoto[], className?: string }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -49,7 +46,7 @@ export function FullWidthCarousel({ photos, className = "" }: { photos: Photo[],
         style={{ scrollbarWidth: 'none' }}
       >
         {validPhotos.map((p, i) => {
-          const filename = (p.asset as any)?.originalFilename;
+          const filename = p.asset?.originalFilename;
           let title = "";
           if (filename) {
             title = filename.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
