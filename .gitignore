@@ -1,8 +1,7 @@
 # Python
-parser-service/venv/
-parser-service/__pycache__/
-parser-service/chroma_db/
+**/venv/
 **/__pycache__/
+parser-service/chroma_db/
 *.pyc
 *.pyo
 
