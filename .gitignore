@@ -1,0 +1,20 @@
+# Python
+parser-service/venv/
+parser-service/__pycache__/
+parser-service/chroma_db/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Next.js
+web/.next/
+web/node_modules/
+web/.env.local
+
+# SQLite
+*.db
+*.db-shm
+*.db-wal
+
+# OS
+.DS_Store

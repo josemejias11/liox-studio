@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+markitdown
+chromadb
+langchain
+langchain-community
+python-multipart
