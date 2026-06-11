@@ -25,6 +25,7 @@ interface DiscoveryPanelProps {
   mode?: 'sidebar' | 'popover';
   courseTitle?: string;
   courseDescription?: string;
+  courseId?: string;
 }
 
 const SUGGESTIONS = [
@@ -76,6 +77,7 @@ export function DiscoveryPanel({
   mode,
   courseTitle,
   courseDescription,
+  courseId,
 }: DiscoveryPanelProps) {
   const hasVideo = !!videoFile?.asset?.url;
   const hasLearnContent = !!(body || (photos?.length ?? 0) > 0 || hasVideo);
@@ -198,7 +200,7 @@ export function DiscoveryPanel({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          course_id: 'course_123', // Fallback ID if not provided, since DiscoveryPanel isn't wired to courseId right now
+          course_id: courseId || 'course_123',
           query: `Context regarding ${topic || 'the feature'}:\n${queryText}`,
         }),
         signal: controller.signal,

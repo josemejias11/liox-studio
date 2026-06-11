@@ -241,6 +241,7 @@ export default function MotoViewer({
                   onPrev={goPrev}
                   courseTitle={course.title}
                   courseDescription={course.description}
+                  courseId={course._id}
                 />
               ),
             };
@@ -280,6 +281,7 @@ export default function MotoViewer({
                   onVisit={markVisited}
                   courseTitle={course.title}
                   courseDescription={course.description}
+                  courseId={course._id}
                 />
               ),
             };

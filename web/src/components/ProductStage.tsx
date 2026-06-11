@@ -23,6 +23,7 @@ interface ProductStageProps {
   onPrev?: () => void;
   courseTitle?: string;
   courseDescription?: string;
+  courseId: string;
 }
 
 export function ProductStage({
@@ -38,6 +39,7 @@ export function ProductStage({
   onPrev,
   courseTitle,
   courseDescription,
+  courseId,
 }: ProductStageProps) {
   const [activePanel, setActivePanel] = useState<{
     label: string;
@@ -449,6 +451,7 @@ export function ProductStage({
         mode="popover"
         courseTitle={courseTitle}
         courseDescription={courseDescription}
+        courseId={courseId}
       />
     </div>
   );

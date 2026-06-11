@@ -37,6 +37,7 @@ export function ContentLesson({
   onVisit,
   courseTitle,
   courseDescription,
+  courseId,
 }: ContentLessonProps) {
   const [activePanel, setActivePanel] = useState<ActivePanel | null>(null);
 
@@ -192,6 +193,7 @@ export function ContentLesson({
         mode="popover"
         courseTitle={courseTitle}
         courseDescription={courseDescription}
+        courseId={courseId}
       />
     </>
   );

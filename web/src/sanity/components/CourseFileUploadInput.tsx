@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { StringInputProps, set, unset } from 'sanity';
+import { StringInputProps, set, unset, useFormValue } from 'sanity';
 import { Button, Card, Flex, Text, Box, Stack, Badge } from '@sanity/ui';
 
 export function CourseFileUploadInput(props: StringInputProps) {
-  const { value, onChange, document } = props;
+  const { value, onChange } = props;
+  const document = useFormValue([]) as any;
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
