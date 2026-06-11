@@ -279,10 +279,11 @@ export function ProductStage({
                   : "stage-product-breathe"
               }
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src={optimizeSanityImage(productImage, 1200)}
                 alt={headline}
+                width={1200}
+                height={1200}
                 className="h-[78vh] max-h-full w-auto object-contain drop-shadow-[0_24px_64px_rgba(0,0,0,0.75)]"
               />
             </div>

@@ -143,11 +143,12 @@ export function ContentLesson({
               className={`absolute pointer-events-none z-10 ${getSemanticWidthClass(fg.width)}`}
               style={{ left: `${fg.x ?? 0}%`, top: `${fg.y ?? 0}%` }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src={optimizeSanityImage(fg.image.asset.url, 800)}
                 alt="Floating Graphic"
-                className="w-full h-auto drop-shadow-2xl"
+                width={800}
+                height={800}
+                className="w-full h-auto object-contain drop-shadow-2xl"
               />
             </div>
           )

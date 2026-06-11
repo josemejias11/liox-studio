@@ -41,6 +41,7 @@ Recent updates to the backend architecture include essential optimizations:
 - **TTL Cleanup:** Automatically drops generated quizzes older than 7 days during new quiz generation to prevent SQLite bloat.
 - **SQLite WAL Mode:** Enabled Write-Ahead Logging (WAL) and increased `busy_timeout` (5000ms) on the Prisma SQLite connection to smoothly handle concurrent telemetry and progress writes without database locks.
 - **Server-Side Grading:** The correct answers to both generated quizzes and Sanity-authored quizzes are never serialized to the client browser. Submissions are instead posted to the `/api/quiz/grade` endpoint to calculate scores and commit attempts securely.
+- **Image Optimization & Layout Stability:** All images use Next.js `<Image />` with properly configured intrinsic dimensions to eliminate Cumulative Layout Shift (CLS) while retaining dynamic per-case design layouts.
 
 ---
 
@@ -96,6 +97,16 @@ In **sanity.io/manage → your project → API → CORS Origins**, add with **Al
 
 #### API Token
 In **sanity.io/manage → your project → API → Tokens** → **Add API token** → Permissions: **Editor**
+
+---
+
+### 3. Development & Testing
+
+```bash
+npm run test     # Run Vitest unit tests (e.g. course navigation, quiz grading)
+npm run format   # Format the codebase with Prettier
+npm run build    # Automatically deploys Prisma migrations before building
+```
 
 ---
 
@@ -219,4 +230,5 @@ Anonymous sessions are identified by a UUID stored in `localStorage` under the k
 | AI — Chat | xAI Grok (`grok-3-mini`) via OpenAI-compatible SDK |
 | AI — Quiz | Google Gemini 2.0 Flash (`@google/generative-ai`) |
 | Database | SQLite + Prisma ORM v5 (progress tracking, quiz attempts) |
+| Testing & DX | Vitest, Prettier, TypeScript (strict with noUncheckedIndexedAccess) |
 | Animations | Framer Motion |

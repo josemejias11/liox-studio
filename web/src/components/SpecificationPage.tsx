@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import Image from "next/image";
 import { optimizeSanityImage } from "@/lib/image-optimization";
 import { motion } from "framer-motion";
 import type { SanitySpecification } from "@/lib/contracts/sanity";
@@ -43,10 +44,11 @@ export function SpecificationPage({
             transition={{ duration: 0.6, ease: "easeOut" }}
             className="w-full aspect-4/3 overflow-hidden shrink-0"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={optimizeSanityImage(heroUrl, 1200)}
               alt={spec.title}
+              width={1200}
+              height={900}
               className="w-full h-full object-cover"
             />
           </motion.div>

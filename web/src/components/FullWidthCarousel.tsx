@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { optimizeSanityImage } from "@/lib/image-optimization";
 import { titleFromFilename } from "@/lib/utils";
@@ -50,10 +51,11 @@ export function FullWidthCarousel({ photos, className = "" }: { photos: SanityPh
           const title = titleFromFilename(p.asset?.originalFilename);
           return (
             <div key={i} className="relative w-full shrink-0 snap-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img 
+              <Image 
                 src={optimizeSanityImage(p.asset!.url!, 1200)} 
                 alt={title || `Gallery image ${i + 1}`} 
+                width={1200}
+                height={800}
                 className="w-full h-auto object-cover" 
                 style={{ maxHeight: '50vh' }} 
                 draggable={false}

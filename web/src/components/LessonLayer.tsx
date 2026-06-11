@@ -1,6 +1,7 @@
 "use client";
 
 import { PortableText } from "@portabletext/react";
+import Image from "next/image";
 import { LayerFrame } from "./LayerFrame";
 import { FullWidthCarousel } from "./FullWidthCarousel";
 import { optimizeSanityImage } from "@/lib/image-optimization";
@@ -41,10 +42,11 @@ export function LessonLayer({
           {(mediaUrl || hasPhotos) ? (
             <div className="relative mb-6">
               {mediaUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={optimizeSanityImage(mediaUrl, 1200)}
-                  alt={layerContent.headline}
+                  alt={layerContent.headline || "Layer Media"}
+                  width={1200}
+                  height={800}
                   className="w-full rounded-2xl object-cover max-h-[60vh] shadow-2xl ring-1 ring-white/10"
                 />
               ) : layerContent.photos ? (

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Bot, BarChart2, BookOpen, PlayCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -69,10 +70,11 @@ export default async function Home() {
                 <Card className="overflow-hidden border-border transition-all duration-300 hover:shadow-lg hover:-translate-y-1 h-full flex flex-col bg-card">
                   <div className="relative aspect-[16/9] w-full bg-muted overflow-hidden">
                     {course.thumbnail?.asset?.url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <Image
                         src={optimizeSanityImage(course.thumbnail.asset.url, 800)}
                         alt=""
+                        width={800}
+                        height={450}
                         className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
                       />
                     ) : (

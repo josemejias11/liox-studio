@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { optimizeSanityImage } from "@/lib/image-optimization";
 import { titleFromFilename } from "@/lib/utils";
@@ -89,10 +90,11 @@ export function PhotoCardStack({ photos = [] }: PhotoCardStackProps) {
                   isSingle ? "max-w-[400px]" : "w-full"
                 }`}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={optimizeSanityImage(p.asset!.url!, 600)}
                   alt={title || `Product photo ${i + 1}`}
+                  width={600}
+                  height={600}
                   className="w-full h-auto block object-contain"
                   draggable={false}
                   loading="lazy"

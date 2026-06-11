@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "NODE_OPTIONS='--localstorage-file=./.next/.localstorage' next dev",
-    "build": "next build",
+    "build": "prisma migrate deploy && next build",
     "start": "next start",
     "lint": "eslint",
+    "format": "prettier --write .",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
@@ -47,8 +49,10 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
+    "prettier": "^3.8.4",
     "prisma": "^5.22.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.8"
   }
 }
