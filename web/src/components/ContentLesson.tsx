@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { PlayCircle, MousePointer2, Layers, Plus } from 'lucide-react';
+import { PlayCircle } from 'lucide-react';
 import { PortableText, type PortableTextMarkComponent } from '@portabletext/react';
 import { Hotspot } from './Hotspot';
 import { DiscoveryPanel } from './DiscoveryPanel';
@@ -10,17 +10,11 @@ import { sanityImageLoader } from '@/lib/sanity-image-loader';
 import { getSemanticWidthClass } from '@/lib/utils';
 import type { LessonSection, RichText, SanityHotspot, SanityPhoto } from '@/lib/contracts/sanity';
 
-// ── Regular content lesson screen ─────────────────────────────────────────────
-// Background media, positioned text overlay, floating graphics, hotspots, and
-// the tooltip-mode DiscoveryPanel. Layer-mode hotspots are delegated upward via
-// onOpenLayer (the LessonLayer panel is owned by MotoViewer).
-
 interface ContentLessonProps {
   lesson: LessonSection;
   hotspots: SanityHotspot[];
   visitedLabels: Set<string>;
   onVisit: (label: string) => void;
-  onOpenLayer: (hotspotKey: string) => void;
   courseTitle: string;
   courseDescription?: string;
 }
@@ -32,6 +26,8 @@ interface ActivePanel {
   x?: number;
   y?: number;
   photos?: SanityPhoto[];
+  videoFile?: { asset?: { url?: string } };
+  videoAspectRatio?: string;
 }
 
 export function ContentLesson({
@@ -39,7 +35,6 @@ export function ContentLesson({
   hotspots,
   visitedLabels,
   onVisit,
-  onOpenLayer,
   courseTitle,
   courseDescription,
 }: ContentLessonProps) {
@@ -50,17 +45,26 @@ export function ContentLesson({
   const overlayY = lesson.textOverlay?.y ?? 15;
   const overlayWidth = getSemanticWidthClass(lesson.textOverlay?.width);
 
-  // Inline "layerLink" annotations open the matching layer-mode hotspot.
+  // Inline "layerLink" annotations open the matching hotspot's discovery panel.
   const LayerLinkMark: PortableTextMarkComponent<{
     _type: 'layerLink';
     linkedLayer?: string;
   }> = ({ children, value }) => (
     <button
       onClick={() => {
-        const hotspot = hotspots.find(
-          (h) => h.label === value?.linkedLayer && h.contentMode === 'layer',
-        );
-        if (hotspot) onOpenLayer(hotspot._key);
+        const hotspot = hotspots.find((h) => h.label === value?.linkedLayer);
+        if (hotspot) {
+          setActivePanel({
+            topic: hotspot.topic,
+            title: hotspot.label,
+            body: hotspot.body,
+            x: hotspot.x,
+            y: hotspot.y,
+            photos: hotspot.photos,
+            videoFile: hotspot.videoFile,
+            videoAspectRatio: hotspot.videoAspectRatio,
+          });
+        }
       }}
       className="text-accent decoration-accent/40 hover:decoration-accent mx-1 font-medium underline underline-offset-4 transition-colors"
     >
@@ -149,47 +153,34 @@ export function ContentLesson({
       )}
 
       {/* Hotspots */}
-      {hotspots.map((h, i) => {
-        let Icon = null;
-        if (h.contentMode === 'layer' && h.layerContent) {
-          if (h.layerContent.layerType === 'video') Icon = PlayCircle;
-          else if (h.layerContent.layerType === 'interaction') Icon = MousePointer2;
-          else Icon = Layers;
-        }
-
-        return (
-          <Hotspot
-            key={i}
-            x={h.x}
-            y={h.y}
-            label={h.label}
-            visited={visitedLabels.has(h.label)}
-            variant="moto-indigo-black"
-            icon={
-              Icon ? (
-                <Icon className="h-5 w-5 text-white" />
-              ) : h.contentMode === 'layer' ? (
-                <Plus className="h-5 w-5 text-white" />
-              ) : undefined
-            }
-            onVisit={() => onVisit(h.label)}
-            onOpen={() => {
-              if (h.contentMode === 'layer' && h.layerContent) {
-                onOpenLayer(h._key);
-                return;
-              }
-              setActivePanel({
-                topic: h.topic,
-                title: h.label,
-                body: h.body,
-                x: h.x,
-                y: h.y,
-                photos: h.photos,
-              });
-            }}
-          />
-        );
-      })}
+      {hotspots.map((h, i) => (
+        <Hotspot
+          key={i}
+          x={h.x}
+          y={h.y}
+          label={h.label}
+          visited={visitedLabels.has(h.label)}
+          variant="moto-indigo-black"
+          icon={
+            h.videoFile?.asset?.url ? (
+              <PlayCircle className="h-5 w-5 text-white" />
+            ) : undefined
+          }
+          onVisit={() => onVisit(h.label)}
+          onOpen={() =>
+            setActivePanel({
+              topic: h.topic,
+              title: h.label,
+              body: h.body,
+              x: h.x,
+              y: h.y,
+              photos: h.photos,
+              videoFile: h.videoFile,
+              videoAspectRatio: h.videoAspectRatio,
+            })
+          }
+        />
+      ))}
 
       <DiscoveryPanel
         open={activePanel !== null}
@@ -197,9 +188,11 @@ export function ContentLesson({
         label={activePanel?.title ?? ''}
         topic={activePanel?.topic}
         body={activePanel?.body}
+        photos={activePanel?.photos}
+        videoFile={activePanel?.videoFile}
+        videoAspectRatio={activePanel?.videoAspectRatio}
         x={activePanel?.x}
         y={activePanel?.y}
-        photos={activePanel?.photos}
         mode="popover"
         courseTitle={courseTitle}
         courseDescription={courseDescription}

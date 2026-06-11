@@ -10,7 +10,6 @@ import { ChapterIntro } from './ChapterIntro';
 import { NavMap } from './NavMap';
 import { CompletionBurst } from './CompletionBurst';
 import { ContentLesson } from './ContentLesson';
-import { LessonLayer } from './LessonLayer';
 import { useLessonProgress } from '@/hooks/useLessonProgress';
 import { useCourseNavigation } from '@/hooks/useCourseNavigation';
 import { deriveCourseStructure, getChapterLessons } from '@/lib/course-structure';
@@ -54,10 +53,6 @@ export default function MotoViewer({
   const { phase, navDirection, showChapterIntro, showBurst } = nav;
 
   const [showNavMap, setShowNavMap] = useState(false);
-
-  // Layer panel state — lastLayerId lets LayerFrame animate out gracefully
-  const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
-  const [lastLayerId, setLastLayerId] = useState<string | null>(null);
 
   // ── Session ───────────────────────────────────────────────────────────────
   // Initialize as "" so SSR and the first client render agree (no hydration
@@ -110,20 +105,12 @@ export default function MotoViewer({
 
   const markVisited = (label: string) => baseMarkVisited(lessonKey, label, hotspots.length);
 
-  function openLayerById(id: string) {
-    const hotspot = hotspots.find((h) => h._key === id);
-    baseMarkVisited(lessonKey, hotspot?.label ?? '', hotspots.length);
-    setLastLayerId(id);
-    setActiveLayerId(id);
-  }
-
   // ── Navigation wrappers (close transient overlays before moving) ──────────
   const goNext = () => nav.goNext(nextLocked);
   const goPrev = nav.goPrev;
 
   function navigateToSection(i: number) {
     setShowNavMap(false);
-    setActiveLayerId(null);
     nav.navigateToSection(i);
   }
 
@@ -253,7 +240,6 @@ export default function MotoViewer({
                   onPrev={goPrev}
                   courseTitle={course.title}
                   courseDescription={course.description}
-                  onOpenLayer={openLayerById}
                 />
               ),
             };
@@ -291,7 +277,6 @@ export default function MotoViewer({
                   hotspots={hotspots}
                   visitedLabels={visited[lessonKey] ?? new Set()}
                   onVisit={markVisited}
-                  onOpenLayer={openLayerById}
                   courseTitle={course.title}
                   courseDescription={course.description}
                 />
@@ -332,12 +317,6 @@ export default function MotoViewer({
           }
         : { onToggleNavMap: () => setShowNavMap((v) => !v), moduleTitle: course.title };
 
-  // Active layer content for the shared LessonLayer panel
-  const layerTargetId = activeLayerId ?? lastLayerId;
-  const activeLayerContent = layerTargetId
-    ? hotspots.find((h) => h._key === layerTargetId)?.layerContent
-    : undefined;
-
   // ── Render — one persistent AnimatePresence across all phases ─────────────
   return (
     <LessonFrame {...frameProps}>
@@ -365,13 +344,6 @@ export default function MotoViewer({
           onClose={() => setShowNavMap(false)}
         />
       )}
-
-      <LessonLayer
-        open={activeLayerId !== null}
-        onClose={() => setActiveLayerId(null)}
-        parentLessonTitle={currentLesson?.headline ?? ''}
-        layerContent={activeLayerContent}
-      />
 
       <CompletionBurst active={showBurst} />
     </LessonFrame>

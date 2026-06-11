@@ -20,7 +20,6 @@ interface ProductStageProps {
   visited: Set<string>;
   onVisit: (label: string) => void;
   onNext: () => void;
-  onOpenLayer?: (id: string) => void;
   onPrev?: () => void;
   courseTitle?: string;
   courseDescription?: string;
@@ -36,7 +35,6 @@ export function ProductStage({
   visited,
   onVisit,
   onNext,
-  onOpenLayer,
   onPrev,
   courseTitle,
   courseDescription,
@@ -46,6 +44,8 @@ export function ProductStage({
     topic: string;
     body?: RichText;
     photos?: SanityPhoto[];
+    videoFile?: { asset?: { url?: string } };
+    videoAspectRatio?: string;
     x?: number;
     y?: number;
   } | null>(null);
@@ -310,20 +310,18 @@ export function ProductStage({
             visited={visited.has(h.label)}
             variant="pulse"
             onVisit={() => onVisit(h.label)}
-            onOpen={() => {
-              if (h.contentMode === 'layer') {
-                onOpenLayer?.(h._key);
-                return;
-              }
+            onOpen={() =>
               setActivePanel({
                 label: h.label,
-                topic: h.topic,
+                topic: h.topic ?? '',
                 body: h.body,
                 photos: h.photos,
+                videoFile: h.videoFile,
+                videoAspectRatio: h.videoAspectRatio,
                 x: h.x,
                 y: h.y,
-              });
-            }}
+              })
+            }
             // Roving tabindex — exactly one hotspot is in the tab order.
             tabIndex={i === (focusedHotspotIndex ?? 0) ? 0 : -1}
             onFocus={() => setFocusedHotspotIndex(i)}
@@ -444,6 +442,8 @@ export function ProductStage({
         topic={activePanel?.topic}
         body={activePanel?.body}
         photos={activePanel?.photos ?? []}
+        videoFile={activePanel?.videoFile}
+        videoAspectRatio={activePanel?.videoAspectRatio}
         x={activePanel?.x}
         y={activePanel?.y}
         mode="popover"

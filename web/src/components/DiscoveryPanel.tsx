@@ -6,6 +6,7 @@ import { PhotoCardStack } from './PhotoCardStack';
 import { useFocusTrap } from '@/lib/useFocusTrap';
 import { PortableText } from '@portabletext/react';
 import { toPlainText, type RichText, type SanityPhoto } from '@/lib/contracts/sanity';
+import { cssAspectRatio } from '@/lib/utils';
 
 type Message = { role: 'assistant' | 'user'; text: string; streaming?: boolean };
 type Turn = { role: 'user' | 'assistant'; content: string };
@@ -17,6 +18,8 @@ interface DiscoveryPanelProps {
   topic?: string;
   body?: RichText;
   photos?: SanityPhoto[];
+  videoFile?: { asset?: { url?: string } };
+  videoAspectRatio?: string;
   x?: number;
   y?: number;
   mode?: 'sidebar' | 'popover';
@@ -66,13 +69,16 @@ export function DiscoveryPanel({
   topic,
   body,
   photos = [],
+  videoFile,
+  videoAspectRatio,
   x,
   y,
   mode,
   courseTitle,
   courseDescription,
 }: DiscoveryPanelProps) {
-  const hasLearnContent = !!(body || (photos?.length ?? 0) > 0);
+  const hasVideo = !!videoFile?.asset?.url;
+  const hasLearnContent = !!(body || (photos?.length ?? 0) > 0 || hasVideo);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [streaming, setStreaming] = useState(false);
@@ -359,7 +365,8 @@ export function DiscoveryPanel({
         }
 
         // Desktop/tablet floating panel — maxHeight is set via floatingStyle (dynamic, based on hotspot position).
-        const floatingClasses = `absolute w-[min(500px,58%)] rounded-3xl flex flex-col
+        // Widen to accommodate 16:9 video when a video is present.
+        const floatingClasses = `absolute ${hasVideo ? 'w-[min(640px,70%)]' : 'w-[min(500px,58%)]'} rounded-3xl flex flex-col
           bg-card/80 backdrop-blur-3xl border border-white/10
           shadow-2xl transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${originClass}
           ${open ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.3] pointer-events-none'}`;
@@ -430,10 +437,24 @@ export function DiscoveryPanel({
               className="flex-1 scrollbar-none overflow-y-auto"
               style={{ scrollbarWidth: 'none' }}
             >
-              {/* Learn content — photos and rich text body, shown above AI chat if present */}
+              {/* Learn content — media + body, shown above AI chat if present */}
               {hasLearnContent && (
                 <div className="flex flex-col gap-4 px-4 pt-4 pb-2">
-                  {(photos?.length ?? 0) > 0 && <PhotoCardStack photos={photos} />}
+                  {/* Media zone: video has priority; falls back to photos */}
+                  {hasVideo ? (
+                    <div
+                      className="relative w-full overflow-hidden rounded-2xl bg-black"
+                      style={{ aspectRatio: cssAspectRatio(videoAspectRatio) }}
+                    >
+                      <video
+                        src={videoFile!.asset!.url!}
+                        controls
+                        className="absolute inset-0 h-full w-full object-contain"
+                      />
+                    </div>
+                  ) : (photos?.length ?? 0) > 0 ? (
+                    <PhotoCardStack photos={photos} />
+                  ) : null}
                   {body && (
                     <div className="text-foreground prose prose-sm prose-invert max-w-none text-[16px] leading-relaxed">
                       {typeof body === 'string' ? body : <PortableText value={body} />}

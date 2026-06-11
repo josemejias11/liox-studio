@@ -64,33 +64,6 @@ const floatingGraphicSchema = z.object({
   width: opt(z.string()),
 });
 
-// ── Layer (hotspot "Rich Layer" content) ──────────────────────────────────────
-
-/** Hotspots nested inside an interaction-type layer (see layer.ts schema). */
-export const layerHotspotSchema = z.object({
-  _key: opt(z.string()),
-  label: plainStringSchema,
-  topic: opt(z.string()),
-  body: opt(richTextSchema),
-  photos: opt(z.array(photoSchema)),
-  x: opt(z.number()),
-  y: opt(z.number()),
-});
-export type SanityLayerHotspot = z.output<typeof layerHotspotSchema>;
-
-export const layerContentSchema = z.object({
-  headline: plainStringSchema,
-  body: opt(richTextSchema),
-  layerType: opt(z.enum(['content', 'interaction', 'video', 'quiz'])),
-  media: opt(imageSchema),
-  photos: opt(z.array(photoSchema)),
-  videoAspectRatio: opt(z.string()),
-  videoFile: opt(imageSchema),
-  textOverlay: opt(textOverlaySchema),
-  hotspots: opt(z.array(layerHotspotSchema)),
-});
-export type SanityLayerContent = z.output<typeof layerContentSchema>;
-
 // ── Lesson hotspots ───────────────────────────────────────────────────────────
 
 export const hotspotSchema = z.object({
@@ -100,10 +73,10 @@ export const hotspotSchema = z.object({
   // Coordinates default to 0 when un-placed/malformed rather than failing the course.
   x: z.number().catch(0),
   y: z.number().catch(0),
-  contentMode: opt(z.enum(['tooltip', 'layer'])),
-  layerContent: opt(layerContentSchema),
   body: opt(richTextSchema),
   photos: opt(z.array(photoSchema)),
+  videoFile: opt(imageSchema),
+  videoAspectRatio: opt(z.string()),
 });
 export type SanityHotspot = z.output<typeof hotspotSchema>;
 

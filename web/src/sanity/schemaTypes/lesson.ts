@@ -188,38 +188,41 @@ export const lessonType = defineType({
               validation: (r) => r.min(0).max(100),
             }),
             defineField({
-              name: 'contentMode',
-              title: 'Content Mode',
-              type: 'string',
-              options: {
-                list: [
-                  { title: 'Tooltip (Inline text panel)', value: 'tooltip' },
-                  { title: 'Rich Layer (Full Screen)', value: 'layer' },
-                ],
-                layout: 'radio',
-              },
-              initialValue: 'tooltip',
-            }),
-            defineField({
-              name: 'layerContent',
-              title: 'Layer Content',
-              type: 'layer',
-              hidden: ({ parent }) => parent?.contentMode === 'tooltip',
-            }),
-            defineField({
               name: 'body',
-              title: 'Panel Body',
+              title: 'Body Text',
               type: 'array',
               of: [{ type: 'block' }],
-              hidden: ({ parent }) => parent?.contentMode === 'layer',
             }),
             defineField({
               name: 'photos',
-              title: 'Photo Gallery',
-              description: 'Images shown as a swipeable card stack inside the panel.',
+              title: 'Photos',
+              description:
+                '1 photo = hero image. 2 or more = swipeable carousel. Hidden when a video is set.',
               type: 'array',
               of: [{ type: 'image', options: { hotspot: true } }],
-              hidden: ({ parent }) => parent?.contentMode === 'layer',
+            }),
+            defineField({
+              name: 'videoFile',
+              title: 'Video',
+              description: 'Upload an MP4. Takes the media slot and overrides photos when set.',
+              type: 'file',
+              options: { accept: 'video/mp4' },
+            }),
+            defineField({
+              name: 'videoAspectRatio',
+              title: 'Video Aspect Ratio',
+              type: 'string',
+              options: {
+                list: [
+                  { title: '16:9', value: '16:9' },
+                  { title: '1:1 (Square)', value: '1:1' },
+                  { title: '4:5 (Portrait)', value: '4:5' },
+                  { title: '9:16 (Vertical)', value: '9:16' },
+                ],
+                layout: 'radio',
+              },
+              initialValue: '16:9',
+              hidden: ({ parent }) => !parent?.videoFile,
             }),
           ],
           preview: {

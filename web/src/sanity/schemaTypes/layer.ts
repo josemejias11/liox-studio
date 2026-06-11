@@ -1,5 +1,4 @@
 import { defineType, defineField } from 'sanity';
-import { HotspotMapInput } from '../components/HotspotMapInput';
 import { TextOverlayMapInput } from '../components/TextOverlayMapInput';
 
 export const layerType = defineType({
@@ -14,7 +13,6 @@ export const layerType = defineType({
       options: {
         list: [
           { title: 'Content', value: 'content' },
-          { title: 'Interaction (Hotspots)', value: 'interaction' },
           { title: 'Video', value: 'video' },
           { title: 'Quiz', value: 'quiz' },
         ],
@@ -118,57 +116,6 @@ export const layerType = defineType({
       },
       initialValue: '16:9',
       hidden: ({ parent }) => parent?.layerType !== 'video',
-    }),
-    defineField({
-      name: 'hotspots',
-      title: 'Hotspot Definitions',
-      type: 'array',
-      components: { input: HotspotMapInput },
-      hidden: ({ parent }) => parent?.layerType !== 'interaction',
-      of: [
-        {
-          type: 'object',
-          name: 'hotspot',
-          fields: [
-            defineField({
-              name: 'label',
-              title: 'Label',
-              type: 'string',
-              validation: (r) => r.required(),
-            }),
-            defineField({ name: 'topic', title: 'AI Topic Query', type: 'string' }),
-            defineField({
-              name: 'body',
-              title: 'Panel Body',
-              description: 'Content shown in the discovery panel when this hotspot is opened.',
-              type: 'text',
-              rows: 5,
-            }),
-            defineField({
-              name: 'photos',
-              title: 'Photo Gallery',
-              description: 'Images shown as a swipeable card stack inside the panel.',
-              type: 'array',
-              of: [{ type: 'image', options: { hotspot: true } }],
-            }),
-            defineField({
-              name: 'x',
-              title: 'X Position (%)',
-              type: 'number',
-              validation: (r) => r.min(0).max(100),
-            }),
-            defineField({
-              name: 'y',
-              title: 'Y Position (%)',
-              type: 'number',
-              validation: (r) => r.min(0).max(100),
-            }),
-          ],
-          preview: {
-            select: { title: 'label', subtitle: 'topic' },
-          },
-        },
-      ],
     }),
   ],
   preview: {
