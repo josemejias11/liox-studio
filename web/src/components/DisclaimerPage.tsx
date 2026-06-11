@@ -120,7 +120,7 @@ export function DisclaimerPage({ disclaimer, onNext }: DisclaimerPageProps) {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.4, type: 'spring', damping: 25 }}
-        className="bg-background/70 border-border/20 absolute bottom-4 right-4 z-20 flex items-center gap-2 rounded-full border p-1.5 shadow-2xl backdrop-blur-xl md:bottom-8 md:right-8"
+        className="bg-background/70 border-border/20 absolute right-4 bottom-4 z-20 flex items-center gap-2 rounded-full border p-1.5 shadow-2xl backdrop-blur-xl md:right-8 md:bottom-8"
       >
         {/* Acknowledge / Continue Button */}
         {requiresAck ? (

@@ -10,6 +10,7 @@ import { ChapterIntro } from './ChapterIntro';
 import { NavMap } from './NavMap';
 import { CompletionBurst } from './CompletionBurst';
 import { ContentLesson } from './ContentLesson';
+import { CourseAIFab } from './CourseAIFab';
 import { useLessonProgress } from '@/hooks/useLessonProgress';
 import { useCourseNavigation } from '@/hooks/useCourseNavigation';
 import { deriveCourseStructure, getChapterLessons } from '@/lib/course-structure';
@@ -343,6 +344,13 @@ export default function MotoViewer({
           onNavigate={navigateToSection}
           onClose={() => setShowNavMap(false)}
         />
+      )}
+
+      {/* Floating AI Assistant Widget */}
+      {phase.phase !== 'cover' && 
+       phase.phase !== 'quiz' && 
+       currentLesson?.lessonType !== 'quiz' && (
+         <CourseAIFab courseId={course._id} />
       )}
 
       <CompletionBurst active={showBurst} />

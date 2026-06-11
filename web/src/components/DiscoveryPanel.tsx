@@ -194,57 +194,28 @@ export function DiscoveryPanel({
           : '';
 
     try {
-      const res = await fetch('/api/chat', {
+      const res = await fetch('http://localhost:8000/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // /api/chat wire contract uses snake_case keys (ChatRequestSchema).
         body: JSON.stringify({
-          messages: conversationRef.current,
-          context_hint: topic,
-          lesson_content: plainTextBody,
-          course_title: courseTitle,
-          course_description: courseDescription,
+          course_id: 'course_123', // Fallback ID if not provided, since DiscoveryPanel isn't wired to courseId right now
+          query: `Context regarding ${topic || 'the feature'}:\n${queryText}`,
         }),
         signal: controller.signal,
       });
 
-      // Error responses (or missing stream bodies) must surface a visible
-      // error bubble instead of streaming an error page into an empty bubble.
-      if (!res.ok || !res.body) {
+      if (!res.ok) {
         throw new Error(`Chat request failed (${res.status})`);
       }
 
-      const reader = res.body.getReader();
-      // Use { stream: true } so the decoder doesn't flush its internal buffer on each call,
-      // allowing multi-byte characters split across chunks to be handled correctly.
-      const dec = new TextDecoder('utf-8', { fatal: false });
-      // Buffer accumulates text across read() calls so that a `data:` line straddling
-      // two chunks is never split and dropped.
-      let sseBuffer = '';
-
-      outer: while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        sseBuffer += dec.decode(value, { stream: true });
-        const lines = sseBuffer.split('\n');
-        // The last element is an incomplete line (or ""); keep it for the next read.
-        sseBuffer = lines.pop() ?? '';
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const payload = line.slice(6).trim();
-          if (payload === '[DONE]') break outer;
-          try {
-            fullResponse += JSON.parse(payload).text ?? '';
-            setMessages((prev) => {
-              const msgs = [...prev];
-              msgs[msgs.length - 1] = { role: 'assistant', text: fullResponse, streaming: true };
-              return msgs;
-            });
-          } catch {}
-        }
-      }
-      // Flush any remaining bytes the decoder was holding for multi-byte chars.
-      dec.decode();
+      const data = await res.json();
+      fullResponse = data.answer || "I received your question but couldn't parse the response.";
+      
+      setMessages((prev) => {
+        const msgs = [...prev];
+        msgs[msgs.length - 1] = { role: 'assistant', text: fullResponse, streaming: true };
+        return msgs;
+      });
     } catch (e: unknown) {
       if ((e as { name?: string }).name !== 'AbortError' && !controller.signal.aborted) {
         setMessages((prev) => {

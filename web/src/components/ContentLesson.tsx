@@ -161,11 +161,7 @@ export function ContentLesson({
           label={h.label}
           visited={visitedLabels.has(h.label)}
           variant="moto-indigo-black"
-          icon={
-            h.videoFile?.asset?.url ? (
-              <PlayCircle className="h-5 w-5 text-white" />
-            ) : undefined
-          }
+          icon={h.videoFile?.asset?.url ? <PlayCircle className="h-5 w-5 text-white" /> : undefined}
           onVisit={() => onVisit(h.label)}
           onOpen={() =>
             setActivePanel({

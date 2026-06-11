@@ -1,7 +1,4 @@
-export function optimizeSanityImage(
-  url: string | undefined | null,
-  width?: number,
-): string {
+export function optimizeSanityImage(url: string | undefined | null, width?: number): string {
   if (!url) return '';
   if (!url.startsWith('https://cdn.sanity.io/')) return url;
 

@@ -1,4 +1,5 @@
 import { defineType, defineField } from 'sanity';
+import { CourseFileUploadInput } from '../components/CourseFileUploadInput';
 
 export const courseType = defineType({
   name: 'course',
@@ -58,6 +59,15 @@ export const courseType = defineType({
       group: 'content',
       of: [{ type: 'reference', to: [{ type: 'chapter' }] }],
       validation: (r) => r.required().min(1),
+    }),
+    defineField({
+      name: 'courseMaterial',
+      title: 'Course Material',
+      type: 'string',
+      group: 'content',
+      components: {
+        input: CourseFileUploadInput,
+      },
     }),
     defineField({
       name: 'specifications',
