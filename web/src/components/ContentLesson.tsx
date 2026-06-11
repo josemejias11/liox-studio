@@ -6,7 +6,6 @@ import { PlayCircle, MousePointer2, Layers, Plus } from 'lucide-react';
 import { PortableText, type PortableTextMarkComponent } from '@portabletext/react';
 import { Hotspot } from './Hotspot';
 import { DiscoveryPanel } from './DiscoveryPanel';
-import { optimizeSanityImage } from '@/lib/image-optimization';
 import { sanityImageLoader } from '@/lib/sanity-image-loader';
 import { getSemanticWidthClass } from '@/lib/utils';
 import type { LessonSection, RichText, SanityHotspot, SanityPhoto } from '@/lib/contracts/sanity';
@@ -139,7 +138,7 @@ export function ContentLesson({
               style={{ left: `${fg.x ?? 0}%`, top: `${fg.y ?? 0}%` }}
             >
               <Image
-                src={optimizeSanityImage(fg.image.asset.url, 800)}
+                src={fg.image.asset.url}
                 alt="Floating Graphic"
                 width={800}
                 height={800}

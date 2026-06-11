@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
     styledComponents: true,
   },
   images: {
+    loaderFile: './src/lib/sanity-image-loader.ts',
     remotePatterns: [
       // Sanity CDN for course images
       { protocol: 'https', hostname: 'cdn.sanity.io' },

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import { X, ChevronLeft } from 'lucide-react';
+import { X, ChevronLeft, Layers } from 'lucide-react';
 import { useFocusTrap } from '@/lib/useFocusTrap';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 
@@ -47,7 +47,7 @@ export function LayerFrame({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="bg-background/60 pointer-events-auto absolute inset-0 backdrop-blur-sm"
+            className="bg-background/40 pointer-events-auto absolute inset-0 backdrop-blur-[1px]"
             onClick={onClose}
             aria-hidden="true"
           />
@@ -68,7 +68,7 @@ export function LayerFrame({
             role="dialog"
             aria-modal="true"
             aria-labelledby="layer-frame-title"
-            className="bg-background/95 border-border pointer-events-auto relative flex h-full w-full flex-col rounded-t-[2rem] border shadow-2xl sm:h-auto sm:max-h-[90dvh]"
+            className="bg-card/80 pointer-events-auto relative flex h-full w-full flex-col rounded-t-3xl border border-white/10 shadow-2xl backdrop-blur-3xl sm:h-auto sm:max-h-[90dvh]"
           >
             {/* Drag Handle */}
             <div className="flex w-full shrink-0 cursor-grab justify-center py-3 active:cursor-grabbing">
@@ -76,41 +76,44 @@ export function LayerFrame({
             </div>
 
             {/* Header */}
-            <header className="sticky top-0 z-20 flex shrink-0 items-center justify-between px-6 pb-4">
-              <div className="flex items-center gap-3 overflow-hidden">
+            <header className="shrink-0 border-b border-white/8 px-5 pb-3.5 pt-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5 overflow-hidden">
+                  <button
+                    onClick={onClose}
+                    className="text-muted-foreground hover:text-foreground hover:bg-foreground/8 -ml-1 shrink-0 rounded-xl p-2 transition-colors"
+                    aria-label={`Back to ${parentLessonTitle}`}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <div className="bg-accent/20 ring-accent/30 shrink-0 rounded-full p-2 ring-1">
+                    <Layers className="text-accent h-3.5 w-3.5" />
+                  </div>
+                  <span className="bg-accent/15 text-foreground border-accent/25 inline-flex items-center truncate rounded-full border px-2.5 py-0.5 text-[14px] font-semibold tracking-wide">
+                    {layerTitle}
+                  </span>
+                </div>
                 <button
                   onClick={onClose}
-                  className="hover:bg-muted -ml-2 shrink-0 rounded-full p-2 transition-colors"
-                  aria-label={`Back to ${parentLessonTitle}`}
+                  className="text-muted-foreground hover:text-foreground hover:bg-foreground/8 -mr-1 flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl p-2 transition-colors"
+                  aria-label="Close"
                 >
-                  <ChevronLeft className="text-foreground h-5 w-5" />
+                  <X className="h-4 w-4" />
                 </button>
-                <div className="flex flex-col truncate">
-                  <span className="text-accent truncate text-[10px] font-bold tracking-widest uppercase">
-                    {parentLessonTitle}
-                  </span>
-                  <h2
-                    id="layer-frame-title"
-                    className="text-foreground truncate text-lg font-semibold"
-                  >
-                    {layerTitle}
-                  </h2>
-                </div>
               </div>
-              <button
-                onClick={onClose}
-                className="hover:bg-muted -mr-2 shrink-0 rounded-full p-2 transition-colors"
-                aria-label="Close"
-              >
-                <X className="text-foreground h-5 w-5" />
-              </button>
+              <p className="text-accent mt-1.5 pl-[72px] text-[10px] font-bold tracking-widest uppercase">
+                {parentLessonTitle}
+              </p>
             </header>
 
             {/* Content */}
-            <div className="relative flex-1 overflow-y-auto p-6">
+            <div
+              className="scrollbar-none relative flex-1 overflow-y-auto px-5 py-4"
+              style={{ scrollbarWidth: 'none' }}
+            >
               {children}
               {/* Bottom fade hint */}
-              <div className="from-background/95 pointer-events-none sticky right-0 bottom-0 left-0 -mb-6 h-12 bg-linear-to-t to-transparent" />
+              <div className="from-card/80 pointer-events-none sticky right-0 bottom-0 left-0 -mb-4 h-10 bg-linear-to-t to-transparent" />
             </div>
           </motion.div>
         </div>

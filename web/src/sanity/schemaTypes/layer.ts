@@ -8,6 +8,21 @@ export const layerType = defineType({
   type: 'object',
   fields: [
     defineField({
+      name: 'layerType',
+      title: 'Layer Type',
+      type: 'string',
+      options: {
+        list: [
+          { title: 'Content', value: 'content' },
+          { title: 'Interaction (Hotspots)', value: 'interaction' },
+          { title: 'Video', value: 'video' },
+          { title: 'Quiz', value: 'quiz' },
+        ],
+        layout: 'radio',
+      },
+      initialValue: 'content',
+    }),
+    defineField({
       name: 'headline',
       title: 'Headline',
       type: 'string',
@@ -18,6 +33,7 @@ export const layerType = defineType({
       title: 'Body Copy',
       type: 'array',
       of: [{ type: 'block' }],
+      hidden: ({ parent }) => parent?.layerType === 'interaction' || parent?.layerType === 'video',
     }),
     defineField({
       name: 'media',
@@ -25,6 +41,7 @@ export const layerType = defineType({
       description: 'Upload a 16:9 image',
       type: 'image',
       options: { hotspot: true },
+      hidden: ({ parent }) => parent?.layerType === 'interaction' || parent?.layerType === 'video',
     }),
     defineField({
       name: 'photos',
@@ -32,6 +49,7 @@ export const layerType = defineType({
       description: 'Optional image carousel to display in the layer.',
       type: 'array',
       of: [{ type: 'image', options: { hotspot: true } }],
+      hidden: ({ parent }) => parent?.layerType !== 'content' && parent?.layerType !== undefined,
     }),
     defineField({
       name: 'textOverlay',
@@ -40,7 +58,9 @@ export const layerType = defineType({
         'Control the size and position of the frosted glass text card when an image or carousel is present.',
       type: 'object',
       components: { input: TextOverlayMapInput },
-      hidden: ({ parent }) => !parent?.media && !(parent?.photos?.length > 0),
+      hidden: ({ parent }) =>
+        (parent?.layerType !== 'content' && parent?.layerType !== undefined) ||
+        (!parent?.media && !(parent?.photos?.length > 0)),
       fields: [
         defineField({
           name: 'x',
@@ -73,21 +93,6 @@ export const layerType = defineType({
           initialValue: 'medium',
         }),
       ],
-    }),
-    defineField({
-      name: 'layerType',
-      title: 'Layer Type',
-      type: 'string',
-      options: {
-        list: [
-          { title: 'Content', value: 'content' },
-          { title: 'Interaction (Hotspots)', value: 'interaction' },
-          { title: 'Video', value: 'video' },
-          { title: 'Quiz', value: 'quiz' },
-        ],
-        layout: 'radio',
-      },
-      initialValue: 'content',
     }),
 
     defineField({

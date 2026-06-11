@@ -16,3 +16,5 @@ export const sanityImageLoader: ImageLoader = ({ src, width, quality }) => {
   url.searchParams.set('q', String(quality ?? 75));
   return url.toString();
 };
+
+export default sanityImageLoader;

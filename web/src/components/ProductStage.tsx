@@ -7,7 +7,6 @@ import { ChevronLeft, ChevronRight, Check, CheckCircle2 } from 'lucide-react';
 import { Hotspot } from './Hotspot';
 import { DiscoveryPanel } from './DiscoveryPanel';
 import { CompletionBurst } from './CompletionBurst';
-import { optimizeSanityImage } from '@/lib/image-optimization';
 import { sanityImageLoader } from '@/lib/sanity-image-loader';
 import type { RichText, SanityHotspot, SanityPhoto } from '@/lib/contracts/sanity';
 
@@ -277,7 +276,7 @@ export function ProductStage({
               }
             >
               <Image
-                src={optimizeSanityImage(productImage, 1200)}
+                src={productImage}
                 alt={headline}
                 width={1200}
                 height={1200}

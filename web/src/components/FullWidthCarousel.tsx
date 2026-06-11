@@ -3,7 +3,6 @@
 import { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { optimizeSanityImage } from '@/lib/image-optimization';
 import { titleFromFilename } from '@/lib/utils';
 import type { SanityPhoto } from '@/lib/contracts/sanity';
 
@@ -60,7 +59,7 @@ export function FullWidthCarousel({
           return (
             <div key={i} className="relative w-full shrink-0 snap-center">
               <Image
-                src={optimizeSanityImage(p.asset!.url!, 1200)}
+                src={p.asset!.url!}
                 alt={title || `Gallery image ${i + 1}`}
                 width={1200}
                 height={800}

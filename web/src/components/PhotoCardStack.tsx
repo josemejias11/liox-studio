@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { optimizeSanityImage } from '@/lib/image-optimization';
 import { titleFromFilename } from '@/lib/utils';
 import type { SanityPhoto } from '@/lib/contracts/sanity';
 
@@ -89,7 +88,7 @@ export function PhotoCardStack({ photos = [] }: PhotoCardStackProps) {
                 }`}
               >
                 <Image
-                  src={optimizeSanityImage(p.asset!.url!, 600)}
+                  src={p.asset!.url!}
                   alt={title || `Product photo ${i + 1}`}
                   width={600}
                   height={600}

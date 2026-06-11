@@ -2,11 +2,16 @@
 
 import { PortableText } from '@portabletext/react';
 import Image from 'next/image';
+import { motion } from 'framer-motion';
 import { LayerFrame } from './LayerFrame';
 import { FullWidthCarousel } from './FullWidthCarousel';
-import { optimizeSanityImage } from '@/lib/image-optimization';
 import { cssAspectRatio, getSemanticWidthClass } from '@/lib/utils';
 import type { RichText, SanityLayerContent } from '@/lib/contracts/sanity';
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 15 },
+  visible: { opacity: 1, y: 0 },
+};
 
 // ── Rich layer panel (hotspot "layer" content mode) ───────────────────────────
 
@@ -33,24 +38,31 @@ export function LessonLayer({ open, onClose, parentLessonTitle, layerContent }: 
       layerTitle={layerContent?.headline ?? ''}
     >
       {layerContent && (
-        <>
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: { opacity: 0 },
+            visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
+          }}
+        >
           {mediaUrl || hasPhotos ? (
-            <div className="relative mb-6">
-              {mediaUrl ? (
+            <motion.div variants={itemVariants} className="relative mb-6">
+              {hasPhotos ? (
+                <FullWidthCarousel photos={layerContent.photos!} className="mb-0!" />
+              ) : mediaUrl ? (
                 <Image
-                  src={optimizeSanityImage(mediaUrl, 1200)}
+                  src={mediaUrl}
                   alt={layerContent.headline || 'Layer Media'}
                   width={1200}
                   height={800}
                   className="max-h-[60vh] w-full rounded-2xl object-cover shadow-2xl ring-1 ring-white/10"
                 />
-              ) : layerContent.photos ? (
-                <FullWidthCarousel photos={layerContent.photos} className="mb-0!" />
               ) : null}
 
               {layerContent.textOverlay && layerContent.body && (
                 <div
-                  className="absolute z-10"
+                  className="static z-10 mt-4 md:absolute md:mt-0"
                   style={{
                     left: `${layerContent.textOverlay.x ?? 6}%`,
                     top: `${layerContent.textOverlay.y ?? 15}%`,
@@ -65,17 +77,21 @@ export function LessonLayer({ open, onClose, parentLessonTitle, layerContent }: 
                   </div>
                 </div>
               )}
-            </div>
+            </motion.div>
           ) : null}
 
           {(!layerContent.textOverlay || (!mediaUrl && !hasPhotos)) && layerContent.body && (
-            <div className="text-foreground prose prose-invert max-w-none text-base leading-relaxed">
+            <motion.div
+              variants={itemVariants}
+              className="text-foreground prose prose-invert mb-6 max-w-none text-base leading-relaxed"
+            >
               <RichTextBody value={layerContent.body} />
-            </div>
+            </motion.div>
           )}
 
           {layerContent.layerType === 'video' && layerContent.videoFile?.asset?.url && (
-            <div
+            <motion.div
+              variants={itemVariants}
               className="relative mt-6 flex items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl"
               style={{ aspectRatio: cssAspectRatio(layerContent.videoAspectRatio) }}
             >
@@ -84,13 +100,13 @@ export function LessonLayer({ open, onClose, parentLessonTitle, layerContent }: 
                 controls
                 className="absolute inset-0 h-full w-full object-contain"
               />
-            </div>
+            </motion.div>
           )}
 
           {layerContent.layerType === 'interaction' &&
             layerContent.hotspots &&
             layerContent.hotspots.length > 0 && (
-              <div className="mt-8">
+              <motion.div variants={itemVariants} className="mt-8">
                 <h3 className="text-accent/80 mb-4 text-sm font-bold tracking-widest uppercase">
                   Interactive Features
                 </h3>
@@ -107,9 +123,9 @@ export function LessonLayer({ open, onClose, parentLessonTitle, layerContent }: 
                     </div>
                   ))}
                 </div>
-              </div>
+              </motion.div>
             )}
-        </>
+        </motion.div>
       )}
     </LayerFrame>
   );

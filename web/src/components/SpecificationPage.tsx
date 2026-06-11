@@ -2,7 +2,6 @@
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
-import { optimizeSanityImage } from '@/lib/image-optimization';
 import { motion } from 'framer-motion';
 import type { SanitySpecification } from '@/lib/contracts/sanity';
 
@@ -44,7 +43,7 @@ export function SpecificationPage({ spec, onNext, onPrev, showPrev }: Specificat
             className="aspect-4/3 w-full shrink-0 overflow-hidden"
           >
             <Image
-              src={optimizeSanityImage(heroUrl, 1200)}
+              src={heroUrl}
               alt={spec.title}
               width={1200}
               height={900}

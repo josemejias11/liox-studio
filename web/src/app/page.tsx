@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { readClient } from '@/sanity/lib/client';
 import { COURSES_QUERY } from '@/sanity/lib/queries';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { optimizeSanityImage } from '@/lib/image-optimization';
+
+export const revalidate = 60;
 
 export interface CourseSummary {
   _id: string;
@@ -63,7 +64,7 @@ export default async function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {courses.map((course) => (
+            {courses.map((course, index) => (
               <Link
                 key={course._id}
                 href={`/course/${course.slug.current}`}
@@ -74,10 +75,13 @@ export default async function Home() {
                   <div className="bg-muted relative aspect-[16/9] w-full overflow-hidden">
                     {course.thumbnail?.asset?.url ? (
                       <Image
-                        src={optimizeSanityImage(course.thumbnail.asset.url, 800)}
-                        alt=""
+                        src={course.thumbnail.asset.url as string}
+                        alt={course.title}
                         width={800}
                         height={450}
+                        sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                        priority={index === 0}
+                        loading={index === 0 ? 'eager' : 'lazy'}
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     ) : (
