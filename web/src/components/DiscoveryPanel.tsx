@@ -442,16 +442,12 @@ export function DiscoveryPanel({
                 <div className="flex flex-col gap-4 px-4 pt-4 pb-2">
                   {/* Media zone: video has priority; falls back to photos */}
                   {hasVideo ? (
-                    <div
-                      className="relative w-full overflow-hidden rounded-2xl bg-black"
+                    <video
+                      src={videoFile!.asset!.url!}
+                      controls
+                      className="w-full rounded-2xl bg-black object-contain"
                       style={{ aspectRatio: cssAspectRatio(videoAspectRatio) }}
-                    >
-                      <video
-                        src={videoFile!.asset!.url!}
-                        controls
-                        className="absolute inset-0 h-full w-full object-contain"
-                      />
-                    </div>
+                    />
                   ) : (photos?.length ?? 0) > 0 ? (
                     <PhotoCardStack photos={photos} />
                   ) : null}
