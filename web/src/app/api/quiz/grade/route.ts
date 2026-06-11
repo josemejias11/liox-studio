@@ -1,24 +1,20 @@
-import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
-import { prisma } from "@/lib/db";
-import { readClient } from "@/sanity/lib/client";
-import { QUIZ_GRADING_QUERY } from "@/sanity/lib/queries";
-import {
-  QuizGradeRequestSchema,
-  ServerAiQuizSchema,
-  type QuizSource,
-} from "@/lib/contracts/quiz";
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { prisma } from '@/lib/db';
+import { readClient } from '@/sanity/lib/client';
+import { QUIZ_GRADING_QUERY } from '@/sanity/lib/queries';
+import { QuizGradeRequestSchema, ServerAiQuizSchema, type QuizSource } from '@/lib/contracts/quiz';
 import {
   DEFAULT_PASSING_SCORE,
   gradeQuestion,
   gradeSubmission,
   type GradableQuestion,
-} from "@/lib/quiz-grading";
+} from '@/lib/quiz-grading';
 
 class CmsConfigurationError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "CmsConfigurationError";
+    this.name = 'CmsConfigurationError';
   }
 }
 
@@ -32,20 +28,20 @@ const sanityGradingSchema = z.object({
         answers: z
           .array(
             z.object({
-              text: z.string().catch(""),
+              text: z.string().catch(''),
               isCorrect: z.boolean().catch(false),
               feedback: z
                 .string()
                 .nullish()
                 .transform((v) => v ?? undefined),
-            })
+            }),
           )
           .catch([]),
         explanation: z
           .string()
           .nullish()
           .transform((v) => v ?? undefined),
-      })
+      }),
     )
     .catch([]),
   passingScore: z
@@ -59,11 +55,8 @@ interface AnswerKey {
   passingScore: number;
 }
 
-async function loadAnswerKey(
-  source: QuizSource,
-  quizId: string
-): Promise<AnswerKey | null> {
-  if (source === "ai") {
+async function loadAnswerKey(source: QuizSource, quizId: string): Promise<AnswerKey | null> {
+  if (source === 'ai') {
     const record = await prisma.generatedQuiz.findUnique({ where: { id: quizId } });
     if (!record) return null;
 
@@ -97,13 +90,13 @@ async function loadAnswerKey(
       const correctIndex = q.answers.findIndex((a) => a.isCorrect);
       if (correctIndex === -1) {
         throw new CmsConfigurationError(
-          `CMS Quiz misconfigured: Question ${index + 1} has no correct answer marked.`
+          `CMS Quiz misconfigured: Question ${index + 1} has no correct answer marked.`,
         );
       }
       return {
         options: q.answers.map((a) => a.text),
         correctIndex,
-        explanation: q.explanation ?? q.answers[correctIndex]?.feedback ?? "",
+        explanation: q.explanation ?? q.answers[correctIndex]?.feedback ?? '',
       };
     }),
     passingScore: parsed.data.passingScore ?? DEFAULT_PASSING_SCORE,
@@ -117,14 +110,14 @@ export async function POST(req: NextRequest) {
   try {
     json = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
   const parsed = QuizGradeRequestSchema.safeParse(json);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: "Invalid request payload", details: parsed.error.issues },
-      { status: 400 }
+      { error: 'Invalid request payload', details: parsed.error.issues },
+      { status: 400 },
     );
   }
   const body = parsed.data;
@@ -132,13 +125,13 @@ export async function POST(req: NextRequest) {
   try {
     const key = await loadAnswerKey(body.source, body.quizId);
     if (!key) {
-      return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
+      return NextResponse.json({ error: 'Quiz not found' }, { status: 404 });
     }
 
-    if (body.action === "question") {
+    if (body.action === 'question') {
       const question = key.questions[body.questionIndex];
       if (!question || body.selectedIndex >= question.options.length) {
-        return NextResponse.json({ error: "Question or answer out of range" }, { status: 400 });
+        return NextResponse.json({ error: 'Question or answer out of range' }, { status: 400 });
       }
       return NextResponse.json(gradeQuestion(question, body.selectedIndex));
     }
@@ -146,8 +139,8 @@ export async function POST(req: NextRequest) {
     // action === "submit"
     if (body.answers.length !== key.questions.length) {
       return NextResponse.json(
-        { error: "Answer count does not match question count" },
-        { status: 400 }
+        { error: 'Answer count does not match question count' },
+        { status: 400 },
       );
     }
 
@@ -175,7 +168,7 @@ export async function POST(req: NextRequest) {
                 questionIndex,
                 selectedIndex,
                 correct: result.results[questionIndex]?.correct ?? false,
-              }))
+              })),
             ),
           },
           create: {
@@ -190,7 +183,7 @@ export async function POST(req: NextRequest) {
                 questionIndex,
                 selectedIndex,
                 correct: result.results[questionIndex]?.correct ?? false,
-              }))
+              })),
             ),
           },
         });
@@ -202,7 +195,6 @@ export async function POST(req: NextRequest) {
     if (err instanceof CmsConfigurationError) {
       return NextResponse.json({ error: err.message }, { status: 422 });
     }
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-

@@ -4,7 +4,7 @@ import type {
   SanityDisclaimer,
   SanityQuizDoc,
   SanitySpecification,
-} from "@/lib/contracts/sanity";
+} from '@/lib/contracts/sanity';
 
 // ── Derived course structure ──────────────────────────────────────────────────
 // One source of truth for section grouping / absolute indexing, shared by
@@ -36,20 +36,14 @@ export interface CourseStructure {
   totalSections: number;
 }
 
-export function deriveCourseStructure(
-  sections: CourseSection[]
-): CourseStructure {
-  const lessonSections = sections.filter(
-    (s): s is LessonSection => s.sectionType === "lesson"
-  );
+export function deriveCourseStructure(sections: CourseSection[]): CourseStructure {
+  const lessonSections = sections.filter((s): s is LessonSection => s.sectionType === 'lesson');
   const specSections = sections.filter(
-    (s): s is SanitySpecification => s.sectionType === "specification"
+    (s): s is SanitySpecification => s.sectionType === 'specification',
   );
-  const quizSection = sections.find(
-    (s): s is SanityQuizDoc => s.sectionType === "quiz"
-  );
+  const quizSection = sections.find((s): s is SanityQuizDoc => s.sectionType === 'quiz');
   const disclaimerSection = sections.find(
-    (s): s is SanityDisclaimer => s.sectionType === "disclaimer"
+    (s): s is SanityDisclaimer => s.sectionType === 'disclaimer',
   );
 
   // Group lessons by chapterIndex while preserving absolute section indices.
@@ -90,7 +84,7 @@ export function deriveCourseStructure(
 /** Lessons belonging to a chapter, in order. */
 export function getChapterLessons(
   structure: CourseStructure,
-  chapterIndex: number
+  chapterIndex: number,
 ): LessonSection[] {
   return (
     structure.chapters

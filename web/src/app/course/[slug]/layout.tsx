@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 
 // Scopes bg-background to the immersive player route so the body's
 // bg-background (Frost) never bleeds through any uncovered pixel.

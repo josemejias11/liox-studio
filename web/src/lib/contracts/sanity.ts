@@ -1,5 +1,5 @@
-import { z } from "zod";
-import type { PortableTextBlock } from "@portabletext/types";
+import { z } from 'zod';
+import type { PortableTextBlock } from '@portabletext/types';
 
 // ── Sanity content contract ───────────────────────────────────────────────────
 // Single source of truth for the shapes returned by the GROQ queries in
@@ -11,35 +11,26 @@ import type { PortableTextBlock } from "@portabletext/types";
 
 /** Coerce a string or PortableText block array to plain text. */
 export function toPlainText(value: unknown): string {
-  if (typeof value === "string") return value;
+  if (typeof value === 'string') return value;
   if (Array.isArray(value)) {
     return value
       .map((block) => {
-        const children = (block as { children?: Array<{ text?: unknown }> })
-          .children;
-        return (
-          children
-            ?.map((c) => (typeof c.text === "string" ? c.text : ""))
-            .join("") ?? ""
-        );
+        const children = (block as { children?: Array<{ text?: unknown }> }).children;
+        return children?.map((c) => (typeof c.text === 'string' ? c.text : '')).join('') ?? '';
       })
-      .join("");
+      .join('');
   }
-  return value == null ? "" : String(value);
+  return value == null ? '' : String(value);
 }
 
 // ── Shared fragments ──────────────────────────────────────────────────────────
 
 /** GROQ returns `null` for missing projections; normalize to `undefined`. */
 const opt = <T extends z.ZodType>(schema: T) =>
-  schema
-    .nullish()
-    .transform((v) => (v ?? undefined) as z.output<T> | undefined);
+  schema.nullish().transform((v) => (v ?? undefined) as z.output<T> | undefined);
 
 /** PortableText block content — structurally validated as an array only. */
-export const portableTextSchema = z.custom<PortableTextBlock[]>((v) =>
-  Array.isArray(v)
-);
+export const portableTextSchema = z.custom<PortableTextBlock[]>((v) => Array.isArray(v));
 
 /** Rich text fields tolerate both plain strings and PortableText arrays. */
 export type RichText = string | PortableTextBlock[];
@@ -48,7 +39,7 @@ const richTextSchema = z.union([z.string(), portableTextSchema]);
 /** Headline/label fields: tolerate legacy PortableText values, emit a string. */
 const plainStringSchema = z
   .union([z.string(), portableTextSchema])
-  .catch("")
+  .catch('')
   .transform(toPlainText);
 
 const imageSchema = z.object({
@@ -56,9 +47,7 @@ const imageSchema = z.object({
 });
 
 export const photoSchema = z.object({
-  asset: opt(
-    z.object({ url: opt(z.string()), originalFilename: opt(z.string()) })
-  ),
+  asset: opt(z.object({ url: opt(z.string()), originalFilename: opt(z.string()) })),
 });
 export type SanityPhoto = z.output<typeof photoSchema>;
 
@@ -92,7 +81,7 @@ export type SanityLayerHotspot = z.output<typeof layerHotspotSchema>;
 export const layerContentSchema = z.object({
   headline: plainStringSchema,
   body: opt(richTextSchema),
-  layerType: opt(z.enum(["content", "interaction", "video", "quiz"])),
+  layerType: opt(z.enum(['content', 'interaction', 'video', 'quiz'])),
   media: opt(imageSchema),
   photos: opt(z.array(photoSchema)),
   videoAspectRatio: opt(z.string()),
@@ -107,11 +96,11 @@ export type SanityLayerContent = z.output<typeof layerContentSchema>;
 export const hotspotSchema = z.object({
   _key: z.string(),
   label: plainStringSchema,
-  topic: z.string().catch(""),
+  topic: z.string().catch(''),
   // Coordinates default to 0 when un-placed/malformed rather than failing the course.
   x: z.number().catch(0),
   y: z.number().catch(0),
-  contentMode: opt(z.enum(["tooltip", "layer"])),
+  contentMode: opt(z.enum(['tooltip', 'layer'])),
   layerContent: opt(layerContentSchema),
   body: opt(richTextSchema),
   photos: opt(z.array(photoSchema)),
@@ -121,13 +110,11 @@ export type SanityHotspot = z.output<typeof hotspotSchema>;
 // ── Lesson ────────────────────────────────────────────────────────────────────
 
 export const lessonSchema = z.object({
-  sectionType: z.literal("lesson"),
+  sectionType: z.literal('lesson'),
   _key: z.string(),
   headline: plainStringSchema,
   body: opt(richTextSchema),
-  lessonType: z
-    .enum(["content", "interaction", "stage", "video", "quiz"])
-    .catch("content"),
+  lessonType: z.enum(['content', 'interaction', 'stage', 'video', 'quiz']).catch('content'),
   media: opt(imageSchema),
   textOverlay: opt(textOverlaySchema),
   hotspots: opt(z.array(hotspotSchema)),
@@ -136,7 +123,7 @@ export const lessonSchema = z.object({
   floatingGraphics: opt(z.array(floatingGraphicSchema)),
   stageBackground: opt(imageSchema),
   enableCompletionAnimation: opt(z.boolean()),
-  completionTransition: opt(z.enum(["spin", "rise", "fade"])),
+  completionTransition: opt(z.enum(['spin', 'rise', 'fade'])),
 });
 export type SanityLesson = z.output<typeof lessonSchema>;
 
@@ -149,25 +136,25 @@ export type LessonSection = SanityLesson & {
 // ── Specification ─────────────────────────────────────────────────────────────
 
 export const specificationSchema = z.object({
-  sectionType: z.literal("specification"),
+  sectionType: z.literal('specification'),
   _key: opt(z.string()),
-  title: z.string().catch(""),
+  title: z.string().catch(''),
   subtitle: opt(z.string()),
   heroImage: opt(imageSchema),
   specGroups: z
     .array(
       z.object({
-        groupName: z.string().catch(""),
+        groupName: z.string().catch(''),
         specs: z
           .array(
             z.object({
-              label: z.string().catch(""),
-              value: z.string().catch(""),
+              label: z.string().catch(''),
+              value: z.string().catch(''),
               highlight: opt(z.boolean()),
-            })
+            }),
           )
           .catch([]),
-      })
+      }),
     )
     .catch([]),
   footnotes: opt(z.array(z.string())),
@@ -179,7 +166,7 @@ export type SanitySpecification = z.output<typeof specificationSchema>;
 // grading happens server-side via /api/quiz/grade (see contracts/quiz.ts).
 
 export const quizDocSchema = z.object({
-  sectionType: z.literal("quiz"),
+  sectionType: z.literal('quiz'),
   _key: z.string(),
   title: opt(z.string()),
   instructions: opt(z.string()),
@@ -187,7 +174,7 @@ export const quizDocSchema = z.object({
     .array(
       z.object({
         _key: z.string(),
-        questionText: z.string().catch(""),
+        questionText: z.string().catch(''),
         // Sanity schema values: "single" | "multi" | "truefalse"
         questionType: opt(z.string()),
         image: opt(imageSchema),
@@ -195,11 +182,11 @@ export const quizDocSchema = z.object({
           .array(
             z.object({
               _key: z.string(),
-              text: z.string().catch(""),
-            })
+              text: z.string().catch(''),
+            }),
           )
           .catch([]),
-      })
+      }),
     )
     .catch([]),
   passingScore: opt(z.number()),
@@ -211,12 +198,10 @@ export type SanityQuizDoc = z.output<typeof quizDocSchema>;
 // ── Disclaimer ────────────────────────────────────────────────────────────────
 
 export const disclaimerSchema = z.object({
-  sectionType: z.literal("disclaimer"),
+  sectionType: z.literal('disclaimer'),
   _key: opt(z.string()),
   title: opt(z.string()),
-  category: opt(
-    z.enum(["legal", "safety", "regulatory", "warranty", "general"])
-  ),
+  category: opt(z.enum(['legal', 'safety', 'regulatory', 'warranty', 'general'])),
   body: portableTextSchema.catch([]),
   acknowledgementRequired: opt(z.boolean()),
   acknowledgementLabel: opt(z.string()),
@@ -234,7 +219,7 @@ const chapterSchema = z.object({
 
 export const courseSchema = z.object({
   _id: z.string(),
-  title: z.string().catch(""),
+  title: z.string().catch(''),
   description: opt(z.string()),
   thumbnail: opt(imageSchema),
   coverImage: opt(imageSchema),
@@ -250,8 +235,4 @@ export const courseSchema = z.object({
 export type SanityCourse = z.output<typeof courseSchema>;
 
 /** Flat discriminated union of every section type in the course flow. */
-export type CourseSection =
-  | LessonSection
-  | SanitySpecification
-  | SanityQuizDoc
-  | SanityDisclaimer;
+export type CourseSection = LessonSection | SanitySpecification | SanityQuizDoc | SanityDisclaimer;

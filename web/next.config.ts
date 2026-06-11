@@ -1,4 +1,4 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   // Enable the SWC styled-components transform so Turbopack can handle the
@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       // Sanity CDN for course images
-      { protocol: "https", hostname: "cdn.sanity.io" },
+      { protocol: 'https', hostname: 'cdn.sanity.io' },
     ],
   },
 };

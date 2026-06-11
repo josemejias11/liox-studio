@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
-import { ChevronRight, CheckCircle2 } from "lucide-react";
-import { PortableText } from "@portabletext/react";
-import { motion } from "framer-motion";
-import type { SanityDisclaimer } from "@/lib/contracts/sanity";
+import { useEffect, useRef, useState } from 'react';
+import { ChevronRight, CheckCircle2 } from 'lucide-react';
+import { PortableText } from '@portabletext/react';
+import { motion } from 'framer-motion';
+import type { SanityDisclaimer } from '@/lib/contracts/sanity';
 
-type DisclaimerCategory = NonNullable<SanityDisclaimer["category"]>;
+type DisclaimerCategory = NonNullable<SanityDisclaimer['category']>;
 
 interface DisclaimerPageProps {
   disclaimer: SanityDisclaimer;
@@ -16,11 +16,11 @@ interface DisclaimerPageProps {
 // ── Category display labels ────────────────────────────────────────────────
 
 const CATEGORY_LABELS: Record<DisclaimerCategory, string> = {
-  legal: "Legal",
-  safety: "Safety",
-  regulatory: "Regulatory",
-  warranty: "Warranty",
-  general: "Notice",
+  legal: 'Legal',
+  safety: 'Safety',
+  regulatory: 'Regulatory',
+  warranty: 'Warranty',
+  general: 'Notice',
 };
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -31,7 +31,7 @@ export function DisclaimerPage({ disclaimer, onNext }: DisclaimerPageProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const requiresAck = disclaimer.acknowledgementRequired === true;
-  const ackLabel = disclaimer.acknowledgementLabel ?? "I Acknowledge";
+  const ackLabel = disclaimer.acknowledgementLabel ?? 'I Acknowledge';
   const categoryLabel = disclaimer.category
     ? CATEGORY_LABELS[disclaimer.category]
     : CATEGORY_LABELS.general;
@@ -53,7 +53,7 @@ export function DisclaimerPage({ disclaimer, onNext }: DisclaimerPageProps) {
           observer.disconnect();
         }
       },
-      { root: scrollEl, threshold: 0.1 }
+      { root: scrollEl, threshold: 0.1 },
     );
 
     observer.observe(sentinel);
@@ -64,44 +64,51 @@ export function DisclaimerPage({ disclaimer, onNext }: DisclaimerPageProps) {
 
   const itemVariants = {
     hidden: { opacity: 0, y: 15 },
-    visible: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 400, damping: 30 } },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { type: 'spring' as const, stiffness: 400, damping: 30 },
+    },
   };
 
   return (
-    <motion.div 
-      initial="hidden" 
-      animate="visible" 
-      variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.08 } } }}
-      className="absolute inset-0 flex flex-col overflow-hidden bg-background"
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={{
+        hidden: { opacity: 0 },
+        visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
+      }}
+      className="bg-background absolute inset-0 flex flex-col overflow-hidden"
     >
       {/* ── Scrollable body ── */}
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto overscroll-contain"
-      >
-        <div className="max-w-3xl mx-auto w-full px-6 md:px-8 pt-8 md:pt-12">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain">
+        <div className="mx-auto w-full max-w-3xl px-6 pt-8 md:px-8 md:pt-12">
           {/* ── Category eyebrow + title header ── */}
           <motion.header variants={itemVariants} className="shrink-0 pb-6 md:pb-8">
-            <span className="inline-flex text-xs font-semibold uppercase tracking-[0.2em] text-accent bg-accent/10 px-3 py-1 rounded-full mb-3">
+            <span className="text-accent bg-accent/10 mb-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold tracking-[0.2em] uppercase">
               {categoryLabel}
             </span>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground leading-tight">
+            <h1 className="text-foreground text-3xl leading-tight font-bold tracking-tight md:text-4xl">
               {disclaimer.title}
             </h1>
             {requiresAck && !hasScrolledToBottom && (
-              <p className="text-xs font-medium text-muted-foreground/80 mt-2">
+              <p className="text-muted-foreground/80 mt-2 text-xs font-medium">
                 Scroll to the bottom to acknowledge.
               </p>
             )}
           </motion.header>
 
           {/* PortableText body */}
-          <motion.div variants={itemVariants} className="prose prose-sm md:prose-base dark:prose-invert prose-p:text-muted-foreground prose-headings:text-foreground prose-a:text-accent prose-strong:text-foreground max-w-none leading-relaxed">
+          <motion.div
+            variants={itemVariants}
+            className="prose prose-sm md:prose-base dark:prose-invert prose-p:text-muted-foreground prose-headings:text-foreground prose-a:text-accent prose-strong:text-foreground max-w-none leading-relaxed"
+          >
             <PortableText value={disclaimer.body} />
           </motion.div>
 
           {/* Scroll sentinel — IntersectionObserver target */}
-          <div ref={sentinelRef} aria-hidden="true" className="h-px w-full mt-2" />
+          <div ref={sentinelRef} aria-hidden="true" className="mt-2 h-px w-full" />
 
           {/* Bottom padding so content clears the nav */}
           <div className="h-28" aria-hidden="true" />
@@ -109,13 +116,12 @@ export function DisclaimerPage({ disclaimer, onNext }: DisclaimerPageProps) {
       </div>
 
       {/* ── Floating Glassmorphic Nav & Action Pill ── */}
-      <motion.nav 
+      <motion.nav
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.4, type: "spring", damping: 25 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 p-1.5 bg-background/70 backdrop-blur-xl border border-border/20 shadow-2xl rounded-full"
+        transition={{ delay: 0.4, type: 'spring', damping: 25 }}
+        className="bg-background/70 border-border/20 absolute bottom-8 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full border p-1.5 shadow-2xl backdrop-blur-xl"
       >
-
         {/* Acknowledge / Continue Button */}
         {requiresAck ? (
           <motion.button
@@ -123,10 +129,10 @@ export function DisclaimerPage({ disclaimer, onNext }: DisclaimerPageProps) {
             whileTap={canProceed ? { scale: 0.98 } : {}}
             onClick={onNext}
             disabled={!canProceed}
-            className={`flex items-center justify-center gap-2 px-6 h-10 rounded-full text-sm font-semibold transition-colors duration-300 ${
+            className={`flex h-10 items-center justify-center gap-2 rounded-full px-6 text-sm font-semibold transition-colors duration-300 ${
               canProceed
-                ? "bg-accent text-accent-foreground shadow-[0_0_24px_rgba(104,91,199,0.3)]"
-                : "bg-foreground/10 text-foreground/40 cursor-not-allowed"
+                ? 'bg-accent text-accent-foreground shadow-[0_0_24px_rgba(104,91,199,0.3)]'
+                : 'bg-foreground/10 text-foreground/40 cursor-not-allowed'
             }`}
           >
             {canProceed && <CheckCircle2 className="h-4 w-4 shrink-0" />}
@@ -137,7 +143,7 @@ export function DisclaimerPage({ disclaimer, onNext }: DisclaimerPageProps) {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={onNext}
-            className="flex items-center justify-center gap-2 px-6 h-10 rounded-full text-sm font-semibold bg-foreground/10 text-foreground hover:bg-foreground/15 transition-colors"
+            className="bg-foreground/10 text-foreground hover:bg-foreground/15 flex h-10 items-center justify-center gap-2 rounded-full px-6 text-sm font-semibold transition-colors"
           >
             End Course <ChevronRight className="h-4 w-4 shrink-0" />
           </motion.button>

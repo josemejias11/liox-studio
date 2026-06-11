@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from 'react';
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), ' +
@@ -8,10 +8,7 @@ const FOCUSABLE =
  * Traps keyboard focus inside `containerRef` while `active` is true.
  * Restores focus to the previously focused element when deactivated.
  */
-export function useFocusTrap(
-  containerRef: { current: HTMLElement | null },
-  active: boolean,
-) {
+export function useFocusTrap(containerRef: { current: HTMLElement | null }, active: boolean) {
   const prevFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -28,16 +25,17 @@ export function useFocusTrap(
     first?.focus();
 
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key !== "Tab") return;
+      if (e.key !== 'Tab') return;
       if (!containerRef.current) return;
 
-      const focusables = Array.from(
-        containerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE),
-      );
-      if (focusables.length === 0) { e.preventDefault(); return; }
+      const focusables = Array.from(containerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE));
+      if (focusables.length === 0) {
+        e.preventDefault();
+        return;
+      }
 
       const firstEl = focusables[0];
-      const lastEl  = focusables[focusables.length - 1];
+      const lastEl = focusables[focusables.length - 1];
 
       if (e.shiftKey) {
         if (document.activeElement === firstEl) {
@@ -52,9 +50,9 @@ export function useFocusTrap(
       }
     }
 
-    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown);
       // Return focus to wherever the user was before
       prevFocusRef.current?.focus();
     };

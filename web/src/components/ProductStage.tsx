@@ -1,22 +1,22 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect, useRef } from "react";
-import Image from "next/image";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { ChevronLeft, ChevronRight, Check, CheckCircle2 } from "lucide-react";
-import { Hotspot } from "./Hotspot";
-import { DiscoveryPanel } from "./DiscoveryPanel";
-import { CompletionBurst } from "./CompletionBurst";
-import { optimizeSanityImage } from "@/lib/image-optimization";
-import { sanityImageLoader } from "@/lib/sanity-image-loader";
-import type { RichText, SanityHotspot, SanityPhoto } from "@/lib/contracts/sanity";
+import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { ChevronLeft, ChevronRight, Check, CheckCircle2 } from 'lucide-react';
+import { Hotspot } from './Hotspot';
+import { DiscoveryPanel } from './DiscoveryPanel';
+import { CompletionBurst } from './CompletionBurst';
+import { optimizeSanityImage } from '@/lib/image-optimization';
+import { sanityImageLoader } from '@/lib/sanity-image-loader';
+import type { RichText, SanityHotspot, SanityPhoto } from '@/lib/contracts/sanity';
 
 interface ProductStageProps {
   headline: string;
   productImage?: string;
   stageBackground?: string;
   enableCompletionAnimation?: boolean;
-  completionTransition?: "spin" | "rise" | "fade";
+  completionTransition?: 'spin' | 'rise' | 'fade';
   hotspots: SanityHotspot[];
   visited: Set<string>;
   onVisit: (label: string) => void;
@@ -32,7 +32,7 @@ export function ProductStage({
   productImage,
   stageBackground,
   enableCompletionAnimation = false,
-  completionTransition = "spin",
+  completionTransition = 'spin',
   hotspots,
   visited,
   onVisit,
@@ -80,7 +80,7 @@ export function ProductStage({
   const glowBackground = useTransform(
     [glowX, glowY],
     (latest: number[]) =>
-      `radial-gradient(ellipse 62% 52% at ${50 + (latest[0] ?? 0) * 10}% ${50 + (latest[1] ?? 0) * 7}%, rgba(104,91,199,0.09), transparent)`
+      `radial-gradient(ellipse 62% 52% at ${50 + (latest[0] ?? 0) * 10}% ${50 + (latest[1] ?? 0) * 7}%, rgba(104,91,199,0.09), transparent)`,
   );
 
   // Product parallax is disabled once all hotspots are discovered (the
@@ -89,11 +89,11 @@ export function ProductStage({
   const prodFactor = useMotionValue(1);
   const prodTranslateX = useTransform(
     [prodX, prodFactor],
-    (latest: number[]) => (latest[0] ?? 0) * 14 * (latest[1] ?? 0)
+    (latest: number[]) => (latest[0] ?? 0) * 14 * (latest[1] ?? 0),
   );
   const prodTranslateY = useTransform(
     [prodY, prodFactor],
-    (latest: number[]) => (latest[0] ?? 0) * 9 * (latest[1] ?? 0)
+    (latest: number[]) => (latest[0] ?? 0) * 9 * (latest[1] ?? 0),
   );
 
   // Phase 7 — keyboard navigation (roving tabindex)
@@ -150,17 +150,17 @@ export function ProductStage({
 
       const { activePanel: ap, focusedHotspotIndex: fi, hotspots: hs } = stateRef.current;
 
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         setActivePanel(null);
         return;
       }
 
       // Hotspot cycling — only when panel is closed. Moves real DOM focus so
       // assistive tech follows; Enter/Space then activate the button natively.
-      if (!ap && (e.key === "ArrowRight" || e.key === "ArrowLeft")) {
+      if (!ap && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
         if (hs.length === 0) return;
         e.preventDefault();
-        const dir = e.key === "ArrowRight" ? 1 : -1;
+        const dir = e.key === 'ArrowRight' ? 1 : -1;
         const base = fi ?? (dir === 1 ? -1 : hs.length);
         const next = (base + dir + hs.length) % hs.length;
         setFocusedHotspotIndex(next);
@@ -168,14 +168,14 @@ export function ProductStage({
       }
     }
 
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
   }, []); // runs once — stateRef provides live values
 
   // ── Phase 7: Device-orientation (gyroscope) parallax ──────────────────────
 
   useEffect(() => {
-    if (typeof window === "undefined" || !window.DeviceOrientationEvent) return;
+    if (typeof window === 'undefined' || !window.DeviceOrientationEvent) return;
 
     function onOrientation(e: DeviceOrientationEvent) {
       // gamma: left/right tilt (–90…90°) → –1…1
@@ -189,8 +189,8 @@ export function ProductStage({
       parallaxY.set(parallaxY.get() * 0.82 + rawY * 0.18);
     }
 
-    window.addEventListener("deviceorientation", onOrientation, true);
-    return () => window.removeEventListener("deviceorientation", onOrientation, true);
+    window.addEventListener('deviceorientation', onOrientation, true);
+    return () => window.removeEventListener('deviceorientation', onOrientation, true);
   }, [parallaxX, parallaxY]);
 
   // ── Mouse handlers (desktop) — motion-value writes, no re-renders ─────────
@@ -220,7 +220,7 @@ export function ProductStage({
       {onPrev && (
         <button
           onClick={onPrev}
-          className="absolute top-4 left-4 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/60 backdrop-blur-sm border border-border/20 text-foreground/70 text-xs font-medium hover:text-foreground hover:bg-background/80 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="bg-background/60 border-border/20 text-foreground/70 hover:text-foreground hover:bg-background/80 focus-visible:ring-accent absolute top-4 left-4 z-30 flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium backdrop-blur-sm transition-all focus-visible:ring-2 focus-visible:outline-none"
           aria-label="Go to previous lesson"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
@@ -231,7 +231,7 @@ export function ProductStage({
       {/* ── Background — fades in, counter-drifts ── */}
       {stageBackground ? (
         <motion.div
-          className="absolute inset-0 stage-enter-bg"
+          className="stage-enter-bg absolute inset-0"
           style={{ x: bgTranslateX, y: bgTranslateY, scale: 1.05 }}
         >
           <Image
@@ -245,38 +245,35 @@ export function ProductStage({
           />
         </motion.div>
       ) : (
-        <div className="absolute inset-0 bg-background stage-enter-bg" />
+        <div className="bg-background stage-enter-bg absolute inset-0" />
       )}
 
       {/* ── Cursor-reactive ambient glow ── */}
       <motion.div
-        className="absolute inset-0 pointer-events-none"
+        className="pointer-events-none absolute inset-0"
         style={{ background: glowBackground }}
       />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_40%_40%_at_50%_82%,rgba(15,23,42,0.65),transparent)] pointer-events-none" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_40%_40%_at_50%_82%,rgba(15,23,42,0.65),transparent)]" />
 
       {/* ── Product image — 3-layer: entrance / parallax / breathe+spin ── */}
       {productImage && (
         <div
-          className={`absolute top-0 left-0 bottom-0 flex items-center justify-center stage-enter-product
-            transition-[right,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]
-            ${shouldAnimateCompletion && completionTransition === "fade" ? "opacity-80" : ""}
-          `}
-          style={{ right: "0%" }}
+          className={`stage-enter-product absolute top-0 bottom-0 left-0 flex items-center justify-center transition-[right,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${shouldAnimateCompletion && completionTransition === 'fade' ? 'opacity-80' : ''} `}
+          style={{ right: '0%' }}
         >
           {/* Parallax layer */}
           <motion.div
-            className="h-full flex items-center justify-center"
+            className="flex h-full items-center justify-center"
             style={{ x: prodTranslateX, y: prodTranslateY }}
           >
             {/* Breathe / spin layer */}
             <div
               className={
-                shouldAnimateCompletion && completionTransition === "spin"
-                  ? "stage-spin-anim"
-                  : shouldAnimateCompletion && completionTransition === "rise"
-                  ? "stage-rise-anim"
-                  : "stage-product-breathe"
+                shouldAnimateCompletion && completionTransition === 'spin'
+                  ? 'stage-spin-anim'
+                  : shouldAnimateCompletion && completionTransition === 'rise'
+                    ? 'stage-rise-anim'
+                    : 'stage-product-breathe'
               }
             >
               <Image
@@ -300,7 +297,7 @@ export function ProductStage({
             left: `${h.x}%`,
             top: `${h.y}%`,
             opacity: entered ? 1 : 0,
-            transform: entered ? "scale(1)" : "scale(0.2)",
+            transform: entered ? 'scale(1)' : 'scale(0.2)',
             transition: `opacity 0.4s ease-out ${240 + i * 110}ms, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) ${240 + i * 110}ms`,
           }}
         >
@@ -315,11 +312,18 @@ export function ProductStage({
             variant="pulse"
             onVisit={() => onVisit(h.label)}
             onOpen={() => {
-              if (h.contentMode === "layer") {
+              if (h.contentMode === 'layer') {
                 onOpenLayer?.(h._key);
                 return;
               }
-              setActivePanel({ label: h.label, topic: h.topic, body: h.body, photos: h.photos, x: h.x, y: h.y });
+              setActivePanel({
+                label: h.label,
+                topic: h.topic,
+                body: h.body,
+                photos: h.photos,
+                x: h.x,
+                y: h.y,
+              });
             }}
             // Roving tabindex — exactly one hotspot is in the tab order.
             tabIndex={i === (focusedHotspotIndex ?? 0) ? 0 : -1}
@@ -329,22 +333,32 @@ export function ProductStage({
       ))}
 
       {/* ── Progress arc — top right ── */}
-      <div className="absolute top-3 right-3 flex items-center gap-1.5 z-20 stage-enter-top">
+      <div className="stage-enter-top absolute top-3 right-3 z-20 flex items-center gap-1.5">
         <span
-          className={`text-[10px] font-medium tabular-nums select-none transition-colors duration-500
-            ${allDiscovered ? "text-accent/80" : "text-foreground/40"}`}
+          className={`text-[10px] font-medium tabular-nums transition-colors duration-500 select-none ${allDiscovered ? 'text-accent/80' : 'text-foreground/40'}`}
         >
           {discoveredCount} / {total}
         </span>
         <div className="relative">
           <svg
-            width="38" height="38" viewBox="0 0 44 44"
+            width="38"
+            height="38"
+            viewBox="0 0 44 44"
             className="-rotate-90"
             aria-label={`${discoveredCount} of ${total} discovered`}
           >
-            <circle cx="22" cy="22" r={radius} fill="none" stroke="rgba(233,234,242,0.08)" strokeWidth="2.5" />
             <circle
-              cx="22" cy="22" r={radius}
+              cx="22"
+              cy="22"
+              r={radius}
+              fill="none"
+              stroke="rgba(233,234,242,0.08)"
+              strokeWidth="2.5"
+            />
+            <circle
+              cx="22"
+              cy="22"
+              r={radius}
               fill="none"
               stroke="rgb(104,91,199)"
               strokeWidth="2.5"
@@ -352,12 +366,14 @@ export function ProductStage({
               strokeDasharray={circumference}
               strokeDashoffset={strokeOffset}
               className="transition-all duration-500 ease-out"
-              style={allDiscovered ? { filter: "drop-shadow(0 0 4px rgb(104 91 199 / 0.6))" } : undefined}
+              style={
+                allDiscovered ? { filter: 'drop-shadow(0 0 4px rgb(104 91 199 / 0.6))' } : undefined
+              }
             />
           </svg>
           {allDiscovered && (
-            <div className="absolute inset-0 flex items-center justify-center stage-check-pop">
-              <Check className="h-3.5 w-3.5 text-accent stroke-3" />
+            <div className="stage-check-pop absolute inset-0 flex items-center justify-center">
+              <Check className="text-accent h-3.5 w-3.5 stroke-3" />
             </div>
           )}
         </div>
@@ -365,8 +381,11 @@ export function ProductStage({
 
       {/* ── Keyboard hint — bottom left of arc ── */}
       {!activePanel && hotspots.length > 1 && (
-        <div className="absolute top-13 right-3 z-20 pointer-events-none stage-enter-top" style={{ animationDelay: "200ms" }}>
-          <p className="text-foreground/20 text-[8px] text-right tracking-wide select-none">
+        <div
+          className="stage-enter-top pointer-events-none absolute top-13 right-3 z-20"
+          style={{ animationDelay: '200ms' }}
+        >
+          <p className="text-foreground/20 text-right text-[8px] tracking-wide select-none">
             ← → to explore
           </p>
         </div>
@@ -374,31 +393,29 @@ export function ProductStage({
 
       {/* ── Lesson label — bottom left ── */}
       <div
-        className="absolute bottom-16 left-5 z-20 pointer-events-none stage-enter-bottom"
-        style={{ animationDelay: "380ms" }}
+        className="stage-enter-bottom pointer-events-none absolute bottom-16 left-5 z-20"
+        style={{ animationDelay: '380ms' }}
       >
-        <p className="text-foreground/25 text-[8px] font-semibold uppercase tracking-[0.15em] mb-0.5">
+        <p className="text-foreground/25 mb-0.5 text-[8px] font-semibold tracking-[0.15em] uppercase">
           Discover
         </p>
-        <h2 className="text-foreground/70 text-xs font-medium leading-tight max-w-[40%]">
+        <h2 className="text-foreground/70 max-w-[40%] text-xs leading-tight font-medium">
           {headline}
         </h2>
       </div>
 
       {/* ── Continue ── */}
       {allDiscovered && (
-        <div className="absolute bottom-8 right-4 z-20 stage-rise flex flex-col items-end gap-2">
-          <div className="completion-badge flex items-center gap-1.5 bg-accent/15 border border-accent/35 rounded-full px-3 py-1.5">
-            <CheckCircle2 className="h-3.5 w-3.5 text-accent shrink-0" />
+        <div className="stage-rise absolute right-4 bottom-8 z-20 flex flex-col items-end gap-2">
+          <div className="completion-badge bg-accent/15 border-accent/35 flex items-center gap-1.5 rounded-full border px-3 py-1.5">
+            <CheckCircle2 className="text-accent h-3.5 w-3.5 shrink-0" />
             <span className="text-foreground text-xs font-semibold tracking-wide whitespace-nowrap">
               All {total} features discovered
             </span>
           </div>
           <button
             onClick={onNext}
-            className="completion-button-glow flex items-center gap-2 bg-background text-foreground text-sm font-bold
-              px-6 py-3 rounded-full shadow-2xl shadow-moto-black/40
-              hover:bg-background/90 active:scale-95 transition-transform duration-150"
+            className="completion-button-glow bg-background text-foreground shadow-moto-black/40 hover:bg-background/90 flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold shadow-2xl transition-transform duration-150 active:scale-95"
           >
             Continue
             <ChevronRight className="h-4 w-4" />
@@ -409,8 +426,8 @@ export function ProductStage({
       {/* ── Discover hint ── */}
       {discoveredCount === 0 && total > 0 && (
         <div
-          className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 pointer-events-none stage-enter-bottom"
-          style={{ animationDelay: "700ms" }}
+          className="stage-enter-bottom pointer-events-none absolute bottom-10 left-1/2 z-20 -translate-x-1/2"
+          style={{ animationDelay: '700ms' }}
         >
           <span className="text-foreground/30 text-[10px] font-medium tracking-wide">
             Tap a hotspot to explore
@@ -424,7 +441,7 @@ export function ProductStage({
       <DiscoveryPanel
         open={activePanel !== null}
         onClose={() => setActivePanel(null)}
-        label={activePanel?.label ?? ""}
+        label={activePanel?.label ?? ''}
         topic={activePanel?.topic}
         body={activePanel?.body}
         photos={activePanel?.photos ?? []}

@@ -1,20 +1,15 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import Image from "next/image";
-import { PlayCircle, MousePointer2, Layers, Plus } from "lucide-react";
-import { PortableText, type PortableTextMarkComponent } from "@portabletext/react";
-import { Hotspot } from "./Hotspot";
-import { DiscoveryPanel } from "./DiscoveryPanel";
-import { optimizeSanityImage } from "@/lib/image-optimization";
-import { sanityImageLoader } from "@/lib/sanity-image-loader";
-import { getSemanticWidthClass } from "@/lib/utils";
-import type {
-  LessonSection,
-  RichText,
-  SanityHotspot,
-  SanityPhoto,
-} from "@/lib/contracts/sanity";
+import React, { useState } from 'react';
+import Image from 'next/image';
+import { PlayCircle, MousePointer2, Layers, Plus } from 'lucide-react';
+import { PortableText, type PortableTextMarkComponent } from '@portabletext/react';
+import { Hotspot } from './Hotspot';
+import { DiscoveryPanel } from './DiscoveryPanel';
+import { optimizeSanityImage } from '@/lib/image-optimization';
+import { sanityImageLoader } from '@/lib/sanity-image-loader';
+import { getSemanticWidthClass } from '@/lib/utils';
+import type { LessonSection, RichText, SanityHotspot, SanityPhoto } from '@/lib/contracts/sanity';
 
 // ── Regular content lesson screen ─────────────────────────────────────────────
 // Background media, positioned text overlay, floating graphics, hotspots, and
@@ -58,17 +53,17 @@ export function ContentLesson({
 
   // Inline "layerLink" annotations open the matching layer-mode hotspot.
   const LayerLinkMark: PortableTextMarkComponent<{
-    _type: "layerLink";
+    _type: 'layerLink';
     linkedLayer?: string;
   }> = ({ children, value }) => (
     <button
       onClick={() => {
         const hotspot = hotspots.find(
-          (h) => h.label === value?.linkedLayer && h.contentMode === "layer"
+          (h) => h.label === value?.linkedLayer && h.contentMode === 'layer',
         );
         if (hotspot) onOpenLayer(hotspot._key);
       }}
-      className="text-accent font-medium underline underline-offset-4 decoration-accent/40 hover:decoration-accent transition-colors mx-1"
+      className="text-accent decoration-accent/40 hover:decoration-accent mx-1 font-medium underline underline-offset-4 transition-colors"
     >
       {children}
     </button>
@@ -88,39 +83,39 @@ export function ContentLesson({
           className="object-cover"
         />
       ) : (
-        <div className="absolute inset-0 bg-background" />
+        <div className="bg-background absolute inset-0" />
       )}
 
       {/* Text content */}
       {(!imageUrl || lesson.body) && (
         <div
-          className={`absolute pointer-events-none z-10 flex flex-col ${
+          className={`pointer-events-none absolute z-10 flex flex-col ${
             imageUrl
-              ? "left-[6%] right-[6%] bottom-[12%] md:left-(--desktop-x) md:right-auto md:top-(--desktop-y) md:bottom-auto"
-              : ""
+              ? 'right-[6%] bottom-[12%] left-[6%] md:top-(--desktop-y) md:right-auto md:bottom-auto md:left-(--desktop-x)'
+              : ''
           }`}
           style={
             imageUrl
               ? ({
-                  "--desktop-x": `max(6%, ${overlayX}%)`,
-                  "--desktop-y": `${overlayY}%`,
+                  '--desktop-x': `max(6%, ${overlayX}%)`,
+                  '--desktop-y': `${overlayY}%`,
                 } as React.CSSProperties)
-              : { inset: 0, padding: "6%", justifyContent: "center" }
+              : { inset: 0, padding: '6%', justifyContent: 'center' }
           }
         >
           <div
-            className={`pointer-events-auto w-full ${imageUrl ? overlayWidth : "max-w-xl flex flex-col gap-4"} ${
+            className={`pointer-events-auto w-full ${imageUrl ? overlayWidth : 'flex max-w-xl flex-col gap-4'} ${
               imageUrl
-                ? "bg-card/60 backdrop-blur-2xl p-6 md:p-8 rounded-[2rem] border border-white/10 shadow-2xl"
-                : ""
+                ? 'bg-card/60 rounded-[2rem] border border-white/10 p-6 shadow-2xl backdrop-blur-2xl md:p-8'
+                : ''
             }`}
           >
-            <h2 className="text-foreground text-2xl font-semibold leading-tight">
+            <h2 className="text-foreground text-2xl leading-tight font-semibold">
               {lesson.headline}
             </h2>
             {lesson.body && (
-              <div className="prose dark:prose-invert max-w-none text-muted-foreground mt-4 text-base font-light leading-relaxed whitespace-pre-wrap">
-                {typeof lesson.body === "string" ? (
+              <div className="prose dark:prose-invert text-muted-foreground mt-4 max-w-none text-base leading-relaxed font-light whitespace-pre-wrap">
+                {typeof lesson.body === 'string' ? (
                   lesson.body
                 ) : (
                   <PortableText
@@ -140,7 +135,7 @@ export function ContentLesson({
           fg.image?.asset?.url && (
             <div
               key={i}
-              className={`absolute pointer-events-none z-10 ${getSemanticWidthClass(fg.width)}`}
+              className={`pointer-events-none absolute z-10 ${getSemanticWidthClass(fg.width)}`}
               style={{ left: `${fg.x ?? 0}%`, top: `${fg.y ?? 0}%` }}
             >
               <Image
@@ -148,18 +143,18 @@ export function ContentLesson({
                 alt="Floating Graphic"
                 width={800}
                 height={800}
-                className="w-full h-auto object-contain drop-shadow-2xl"
+                className="h-auto w-full object-contain drop-shadow-2xl"
               />
             </div>
-          )
+          ),
       )}
 
       {/* Hotspots */}
       {hotspots.map((h, i) => {
         let Icon = null;
-        if (h.contentMode === "layer" && h.layerContent) {
-          if (h.layerContent.layerType === "video") Icon = PlayCircle;
-          else if (h.layerContent.layerType === "interaction") Icon = MousePointer2;
+        if (h.contentMode === 'layer' && h.layerContent) {
+          if (h.layerContent.layerType === 'video') Icon = PlayCircle;
+          else if (h.layerContent.layerType === 'interaction') Icon = MousePointer2;
           else Icon = Layers;
         }
 
@@ -173,14 +168,14 @@ export function ContentLesson({
             variant="moto-indigo-black"
             icon={
               Icon ? (
-                <Icon className="w-5 h-5 text-white" />
-              ) : h.contentMode === "layer" ? (
-                <Plus className="w-5 h-5 text-white" />
+                <Icon className="h-5 w-5 text-white" />
+              ) : h.contentMode === 'layer' ? (
+                <Plus className="h-5 w-5 text-white" />
               ) : undefined
             }
             onVisit={() => onVisit(h.label)}
             onOpen={() => {
-              if (h.contentMode === "layer" && h.layerContent) {
+              if (h.contentMode === 'layer' && h.layerContent) {
                 onOpenLayer(h._key);
                 return;
               }
@@ -200,7 +195,7 @@ export function ContentLesson({
       <DiscoveryPanel
         open={activePanel !== null}
         onClose={() => setActivePanel(null)}
-        label={activePanel?.title ?? ""}
+        label={activePanel?.title ?? ''}
         topic={activePanel?.topic}
         body={activePanel?.body}
         x={activePanel?.x}

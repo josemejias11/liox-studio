@@ -1,18 +1,10 @@
-import { notFound } from "next/navigation";
-import { readClient } from "@/sanity/lib/client";
-import { COURSE_BY_SLUG_QUERY } from "@/sanity/lib/queries";
-import MotoViewer from "@/components/MotoViewer";
-import {
-  courseSchema,
-  type CourseSection,
-  type LessonSection,
-} from "@/lib/contracts/sanity";
+import { notFound } from 'next/navigation';
+import { readClient } from '@/sanity/lib/client';
+import { COURSE_BY_SLUG_QUERY } from '@/sanity/lib/queries';
+import MotoViewer from '@/components/MotoViewer';
+import { courseSchema, type CourseSection, type LessonSection } from '@/lib/contracts/sanity';
 
-export default async function CoursePage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function CoursePage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = await params;
 
   const raw = await readClient.fetch<unknown>(COURSE_BY_SLUG_QUERY, {
@@ -29,20 +21,19 @@ export default async function CoursePage({
   if (!parsed.success) {
     console.error(
       `[course/${resolvedParams.slug}] Sanity payload failed contract validation:`,
-      parsed.error.issues
+      parsed.error.issues,
     );
     notFound();
   }
   const course = parsed.data;
 
   // ── 1. Lessons from all chapters (enriched with chapterTitle + chapterIndex) ──
-  const lessonSections: LessonSection[] = (course.chapters ?? []).flatMap(
-    (chapter, chapterIndex) =>
-      (chapter.lessons ?? []).map((lesson) => ({
-        ...lesson,
-        chapterTitle: chapter.title ?? "",
-        chapterIndex,
-      }))
+  const lessonSections: LessonSection[] = (course.chapters ?? []).flatMap((chapter, chapterIndex) =>
+    (chapter.lessons ?? []).map((lesson) => ({
+      ...lesson,
+      chapterTitle: chapter.title ?? '',
+      chapterIndex,
+    })),
   );
 
   // ── Flat sections array — order defines course flow ────────────────────────
@@ -54,7 +45,7 @@ export default async function CoursePage({
   ];
 
   return (
-    <div className="w-full h-dvh overflow-hidden bg-background">
+    <div className="bg-background h-dvh w-full overflow-hidden">
       <MotoViewer course={course} sections={sections} />
     </div>
   );

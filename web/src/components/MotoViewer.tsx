@@ -1,42 +1,42 @@
-"use client";
+'use client';
 
-import React, { useEffect, useMemo, useState } from "react";
-import dynamic from "next/dynamic";
-import { motion, AnimatePresence } from "framer-motion";
-import { LessonFrame } from "./LessonFrame";
-import { CourseCover } from "./CourseCover";
-import { CourseComplete } from "./CourseComplete";
-import { ChapterIntro } from "./ChapterIntro";
-import { NavMap } from "./NavMap";
-import { CompletionBurst } from "./CompletionBurst";
-import { ContentLesson } from "./ContentLesson";
-import { LessonLayer } from "./LessonLayer";
-import { useLessonProgress } from "@/hooks/useLessonProgress";
-import { useCourseNavigation } from "@/hooks/useCourseNavigation";
-import {
-  deriveCourseStructure,
-  getChapterLessons,
-} from "@/lib/course-structure";
-import {
-  CONSENT_EVENT,
-  SESSION_KEY,
-  getConsent,
-  type ConsentStatus,
-} from "@/lib/consent";
-import type { CourseSection, SanityCourse } from "@/lib/contracts/sanity";
+import React, { useEffect, useMemo, useState } from 'react';
+import dynamic from 'next/dynamic';
+import { motion, AnimatePresence } from 'framer-motion';
+import { LessonFrame } from './LessonFrame';
+import { CourseCover } from './CourseCover';
+import { CourseComplete } from './CourseComplete';
+import { ChapterIntro } from './ChapterIntro';
+import { NavMap } from './NavMap';
+import { CompletionBurst } from './CompletionBurst';
+import { ContentLesson } from './ContentLesson';
+import { LessonLayer } from './LessonLayer';
+import { useLessonProgress } from '@/hooks/useLessonProgress';
+import { useCourseNavigation } from '@/hooks/useCourseNavigation';
+import { deriveCourseStructure, getChapterLessons } from '@/lib/course-structure';
+import { CONSENT_EVENT, SESSION_KEY, getConsent, type ConsentStatus } from '@/lib/consent';
+import type { CourseSection, SanityCourse } from '@/lib/contracts/sanity';
 
-const ProductStage = dynamic(() => import("./ProductStage").then((m) => ({ default: m.ProductStage })));
-const QuizLesson = dynamic(() => import("./QuizLesson").then((m) => ({ default: m.QuizLesson })));
-const VideoLesson = dynamic(() => import("./VideoLesson").then((m) => ({ default: m.VideoLesson })));
-const SpecificationPage = dynamic(() => import("./SpecificationPage").then((m) => ({ default: m.SpecificationPage })));
-const DisclaimerPage = dynamic(() => import("./DisclaimerPage").then((m) => ({ default: m.DisclaimerPage })));
+const ProductStage = dynamic(() =>
+  import('./ProductStage').then((m) => ({ default: m.ProductStage })),
+);
+const QuizLesson = dynamic(() => import('./QuizLesson').then((m) => ({ default: m.QuizLesson })));
+const VideoLesson = dynamic(() =>
+  import('./VideoLesson').then((m) => ({ default: m.VideoLesson })),
+);
+const SpecificationPage = dynamic(() =>
+  import('./SpecificationPage').then((m) => ({ default: m.SpecificationPage })),
+);
+const DisclaimerPage = dynamic(() =>
+  import('./DisclaimerPage').then((m) => ({ default: m.DisclaimerPage })),
+);
 
 // ── Framer Motion slide variants ─────────────────────────────────────────────
 
 const slideVariants = {
-  enter: (direction: number) => ({ x: direction > 0 ? "50%" : "-50%", opacity: 0 }),
+  enter: (direction: number) => ({ x: direction > 0 ? '50%' : '-50%', opacity: 0 }),
   center: { x: 0, opacity: 1 },
-  exit: (direction: number) => ({ x: direction < 0 ? "50%" : "-50%", opacity: 0 }),
+  exit: (direction: number) => ({ x: direction < 0 ? '50%' : '-50%', opacity: 0 }),
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -64,25 +64,25 @@ export default function MotoViewer({
   // mismatch); the UUID is resolved on the client. Persistence is gated on
   // cookie consent: without "accepted", the id is ephemeral (in-memory only)
   // and no progress/quiz data is written to localStorage or the server.
-  const [sessionId, setSessionId] = useState<string>("");
+  const [sessionId, setSessionId] = useState<string>('');
   const [persistSession, setPersistSession] = useState(false);
   useEffect(() => {
     const consent = getConsent();
-    let sid = consent === "accepted" ? localStorage.getItem(SESSION_KEY) : null;
-    if (consent === "accepted" && !sid) {
+    let sid = consent === 'accepted' ? localStorage.getItem(SESSION_KEY) : null;
+    if (consent === 'accepted' && !sid) {
       sid = crypto.randomUUID();
       localStorage.setItem(SESSION_KEY, sid);
     }
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSessionId(sid ?? crypto.randomUUID());
-    setPersistSession(consent === "accepted");
+    setPersistSession(consent === 'accepted');
 
     // If the user accepts mid-session, start persisting the current id so
     // progress carries across visits; on decline, stop persisting immediately
     // (setConsent already removed the stored id).
     function onConsentChange(e: Event) {
       const status = (e as CustomEvent<ConsentStatus>).detail;
-      if (status === "accepted") {
+      if (status === 'accepted') {
         setSessionId((prev) => {
           const id = prev || crypto.randomUUID();
           localStorage.setItem(SESSION_KEY, id);
@@ -96,28 +96,23 @@ export default function MotoViewer({
     window.addEventListener(CONSENT_EVENT, onConsentChange);
     return () => window.removeEventListener(CONSENT_EVENT, onConsentChange);
   }, []);
-  const { visited, markVisited: baseMarkVisited } = useLessonProgress(
-    sessionId,
-    persistSession
-  );
+  const { visited, markVisited: baseMarkVisited } = useLessonProgress(sessionId, persistSession);
 
   // ── Current lesson (chapter phase only) ───────────────────────────────────
   const currentLesson =
-    phase.phase === "chapter"
+    phase.phase === 'chapter'
       ? getChapterLessons(structure, phase.chapterIndex)[phase.lessonIndex]
       : undefined;
-  const lessonKey = currentLesson?._key ?? "";
+  const lessonKey = currentLesson?._key ?? '';
   const hotspots = useMemo(() => currentLesson?.hotspots ?? [], [currentLesson]);
   const visitedOnLesson = visited[lessonKey]?.size ?? 0;
-  const nextLocked =
-    hotspots.length > 0 && hotspots.some((h) => !visited[lessonKey]?.has(h.label));
+  const nextLocked = hotspots.length > 0 && hotspots.some((h) => !visited[lessonKey]?.has(h.label));
 
-  const markVisited = (label: string) =>
-    baseMarkVisited(lessonKey, label, hotspots.length);
+  const markVisited = (label: string) => baseMarkVisited(lessonKey, label, hotspots.length);
 
   function openLayerById(id: string) {
     const hotspot = hotspots.find((h) => h._key === id);
-    baseMarkVisited(lessonKey, hotspot?.label ?? "", hotspots.length);
+    baseMarkVisited(lessonKey, hotspot?.label ?? '', hotspots.length);
     setLastLayerId(id);
     setActiveLayerId(id);
   }
@@ -136,7 +131,7 @@ export default function MotoViewer({
   const totalHotspotsVisited = Object.values(visited).reduce((sum, s) => sum + s.size, 0);
   const totalHotspots = structure.lessonSections.reduce(
     (sum, s) => sum + (s.hotspots?.length ?? 0),
-    0
+    0,
   );
 
   // ── Context for lesson-type AI quizzes ────────────────────────────────────
@@ -147,24 +142,24 @@ export default function MotoViewer({
         .flatMap((s) => s.hotspots ?? [])
         .map((h) => h.topic || h.label)
         .filter(Boolean)
-        .join(", ")}`,
+        .join(', ')}`,
       `Explored by learner: ${
         Object.values(visited)
           .flatMap((labels) => Array.from(labels))
-          .join(", ") || "none yet"
+          .join(', ') || 'none yet'
       }`,
-    ].join("\n");
+    ].join('\n');
 
   // ── Phase switch — slide key + screen content ─────────────────────────────
   function renderPhase(): { slideKey: string; screen: React.ReactNode } {
     switch (phase.phase) {
-      case "cover": {
+      case 'cover': {
         const coverImage =
           course.coverImage?.asset?.url ||
           course.thumbnail?.asset?.url ||
           structure.lessonSections[0]?.media?.asset?.url;
         return {
-          slideKey: "cover",
+          slideKey: 'cover',
           screen: (
             <CourseCover
               title={course.title}
@@ -179,7 +174,7 @@ export default function MotoViewer({
         };
       }
 
-      case "specifications": {
+      case 'specifications': {
         const spec = structure.specSections[phase.specIndex];
         return {
           slideKey: `spec-${phase.specIndex}`,
@@ -189,9 +184,9 @@ export default function MotoViewer({
         };
       }
 
-      case "quiz":
+      case 'quiz':
         return {
-          slideKey: "quiz",
+          slideKey: 'quiz',
           screen: structure.quizSection ? (
             <QuizLesson
               sanityQuiz={structure.quizSection}
@@ -203,20 +198,17 @@ export default function MotoViewer({
           ) : null,
         };
 
-      case "disclaimer":
+      case 'disclaimer':
         return {
-          slideKey: "disclaimer",
+          slideKey: 'disclaimer',
           screen: structure.disclaimerSection ? (
-            <DisclaimerPage
-              disclaimer={structure.disclaimerSection}
-              onNext={goNext}
-            />
+            <DisclaimerPage disclaimer={structure.disclaimerSection} onNext={goNext} />
           ) : null,
         };
 
-      case "complete":
+      case 'complete':
         return {
-          slideKey: "complete",
+          slideKey: 'complete',
           screen: (
             <CourseComplete
               moduleTitle={course.title}
@@ -227,18 +219,16 @@ export default function MotoViewer({
           ),
         };
 
-      case "chapter": {
-        if (!currentLesson) return { slideKey: "empty", screen: null };
+      case 'chapter': {
+        if (!currentLesson) return { slideKey: 'empty', screen: null };
 
         if (showChapterIntro) {
-          const chapter = structure.chapters.find(
-            (c) => c.chapterIndex === phase.chapterIndex
-          );
+          const chapter = structure.chapters.find((c) => c.chapterIndex === phase.chapterIndex);
           return {
             slideKey: `intro-${phase.chapterIndex}`,
             screen: (
               <ChapterIntro
-                chapterTitle={chapter?.chapterTitle ?? ""}
+                chapterTitle={chapter?.chapterTitle ?? ''}
                 onContinue={nav.dismissChapterIntro}
               />
             ),
@@ -246,7 +236,7 @@ export default function MotoViewer({
         }
 
         switch (currentLesson.lessonType) {
-          case "stage":
+          case 'stage':
             return {
               slideKey: `stage-${currentLesson._key}`,
               screen: (
@@ -267,7 +257,7 @@ export default function MotoViewer({
                 />
               ),
             };
-          case "video":
+          case 'video':
             return {
               slideKey: `video-${currentLesson._key}`,
               screen: (
@@ -279,7 +269,7 @@ export default function MotoViewer({
                 />
               ),
             };
-          case "quiz":
+          case 'quiz':
             return {
               slideKey: `quiz-lesson-${currentLesson._key}`,
               screen: (
@@ -316,31 +306,31 @@ export default function MotoViewer({
 
   // ── LessonFrame props vary by phase ───────────────────────────────────────
   const isContentLesson =
-    phase.phase === "chapter" &&
+    phase.phase === 'chapter' &&
     !showChapterIntro &&
     currentLesson !== undefined &&
-    !["stage", "video", "quiz"].includes(currentLesson.lessonType);
+    !['stage', 'video', 'quiz'].includes(currentLesson.lessonType);
 
   const frameProps =
-    phase.phase === "cover"
+    phase.phase === 'cover'
       ? { moduleTitle: course.title }
       : isContentLesson
-      ? {
-          // True totals — LessonFrame no longer infers "last lesson" from the
-          // count; the navigation reducer owns that boundary and nextDisabled
-          // covers the hotspot gate.
-          currentLesson: nav.currentSectionIndex >= 0 ? nav.currentSectionIndex + 1 : 1,
-          totalLessons: structure.totalSections,
-          onPrev: goPrev,
-          onNext: goNext,
-          nextDisabled: nextLocked,
-          onToggleNavMap: () => setShowNavMap((v) => !v),
-          moduleTitle: course.title,
-          completionHint: nextLocked
-            ? `Tap all ${hotspots.length} features to continue (${visitedOnLesson} / ${hotspots.length})`
-            : undefined,
-        }
-      : { onToggleNavMap: () => setShowNavMap((v) => !v), moduleTitle: course.title };
+        ? {
+            // True totals — LessonFrame no longer infers "last lesson" from the
+            // count; the navigation reducer owns that boundary and nextDisabled
+            // covers the hotspot gate.
+            currentLesson: nav.currentSectionIndex >= 0 ? nav.currentSectionIndex + 1 : 1,
+            totalLessons: structure.totalSections,
+            onPrev: goPrev,
+            onNext: goNext,
+            nextDisabled: nextLocked,
+            onToggleNavMap: () => setShowNavMap((v) => !v),
+            moduleTitle: course.title,
+            completionHint: nextLocked
+              ? `Tap all ${hotspots.length} features to continue (${visitedOnLesson} / ${hotspots.length})`
+              : undefined,
+          }
+        : { onToggleNavMap: () => setShowNavMap((v) => !v), moduleTitle: course.title };
 
   // Active layer content for the shared LessonLayer panel
   const layerTargetId = activeLayerId ?? lastLayerId;
@@ -379,7 +369,7 @@ export default function MotoViewer({
       <LessonLayer
         open={activeLayerId !== null}
         onClose={() => setActiveLayerId(null)}
-        parentLessonTitle={currentLesson?.headline ?? ""}
+        parentLessonTitle={currentLesson?.headline ?? ''}
         layerContent={activeLayerContent}
       />
 

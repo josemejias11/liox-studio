@@ -1,14 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
-import { ProgressRequestSchema } from "@/lib/contracts/progress";
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/db';
+import { ProgressRequestSchema } from '@/lib/contracts/progress';
 
 export async function GET(req: NextRequest) {
-  const sessionId = new URL(req.url).searchParams.get("sessionId");
+  const sessionId = new URL(req.url).searchParams.get('sessionId');
   // Simple UUID v4 regex validation
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
   if (!sessionId || !uuidRegex.test(sessionId)) {
-    return NextResponse.json({ error: "Valid sessionId required" }, { status: 400 });
+    return NextResponse.json({ error: 'Valid sessionId required' }, { status: 400 });
   }
 
   try {
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     }
 
     for (const h of hotspotRecords) {
-      if (h.layerId && h.layerId !== "") {
+      if (h.layerId && h.layerId !== '') {
         if (!layers[h.layerId]) layers[h.layerId] = { visitedHotspots: [], completed: false };
         if (!layers[h.layerId].visitedHotspots.includes(h.label)) {
           layers[h.layerId].visitedHotspots.push(h.label);
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ lessons, layers });
   } catch {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -54,18 +54,21 @@ export async function POST(req: NextRequest) {
   try {
     json = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
   const parsed = ProgressRequestSchema.safeParse(json);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid request payload", details: parsed.error.issues }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Invalid request payload', details: parsed.error.issues },
+      { status: 400 },
+    );
   }
 
   const body = parsed.data;
 
   try {
-    if (body.type === "lesson") {
+    if (body.type === 'lesson') {
       const { sessionId, lessonId, visitedHotspots, completed } = body;
 
       await prisma.$transaction(async (tx) => {
@@ -84,9 +87,11 @@ export async function POST(req: NextRequest) {
         if (visitedHotspots && visitedHotspots.length > 0) {
           for (const label of visitedHotspots) {
             await tx.hotspotVisit.upsert({
-              where: { sessionId_lessonId_layerId_label: { sessionId, lessonId, layerId: "", label } },
+              where: {
+                sessionId_lessonId_layerId_label: { sessionId, lessonId, layerId: '', label },
+              },
               update: {},
-              create: { sessionId, lessonId, layerId: "", label },
+              create: { sessionId, lessonId, layerId: '', label },
             });
           }
         }
@@ -95,7 +100,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    if (body.type === "layer") {
+    if (body.type === 'layer') {
       const { sessionId, lessonId, layerId, visitedHotspots, completed } = body;
 
       await prisma.$transaction(async (tx) => {
@@ -127,8 +132,8 @@ export async function POST(req: NextRequest) {
 
     // Quiz attempts are recorded server-side by /api/quiz/grade — this route
     // intentionally no longer accepts a client-supplied quiz result.
-    return NextResponse.json({ error: "unknown type" }, { status: 400 });
+    return NextResponse.json({ error: 'unknown type' }, { status: 400 });
   } catch {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

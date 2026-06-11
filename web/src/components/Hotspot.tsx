@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import React, { useEffect, useRef, useState } from "react";
-import { Check } from "lucide-react";
+import React, { useEffect, useRef, useState } from 'react';
+import { Check } from 'lucide-react';
 
 // ── Variants ──────────────────────────────────────────────────────────────────
 // Single hotspot implementation; the former PulseHotspot is the "pulse" variant.
 
-export type HotspotVariant = "moto-indigo-black" | "white-black" | "pulse";
+export type HotspotVariant = 'moto-indigo-black' | 'white-black' | 'pulse';
 
 interface VariantStyles {
   ariaPrefix: string;
@@ -22,39 +22,37 @@ interface VariantStyles {
 }
 
 const VARIANT_STYLES: Record<HotspotVariant, VariantStyles> = {
-  "white-black": {
-    ariaPrefix: "Learn about",
-    ring: "border-white/55",
-    dotVisited: "border-transparent bg-white shadow-white/60",
-    dotUnvisited: "border-transparent bg-white shadow-white/50 hover:bg-white/90",
-    check: "text-moto-black",
+  'white-black': {
+    ariaPrefix: 'Learn about',
+    ring: 'border-white/55',
+    dotVisited: 'border-transparent bg-white shadow-white/60',
+    dotUnvisited: 'border-transparent bg-white shadow-white/50 hover:bg-white/90',
+    check: 'text-moto-black',
     tooltip:
-      "max-w-62.5 w-max text-center bg-background/90 backdrop-blur-sm text-foreground border border-border/20",
-    arrow: "border-t-background/90",
+      'max-w-62.5 w-max text-center bg-background/90 backdrop-blur-sm text-foreground border border-border/20',
+    arrow: 'border-t-background/90',
     visitedHalo: false,
   },
-  "moto-indigo-black": {
-    ariaPrefix: "Learn about",
-    ring: "border-moto-indigo/55",
-    dotVisited: "border-transparent bg-moto-indigo shadow-moto-indigo/60",
-    dotUnvisited:
-      "border-transparent bg-moto-indigo shadow-moto-indigo/50 hover:bg-moto-indigo/90",
-    check: "text-moto-black",
+  'moto-indigo-black': {
+    ariaPrefix: 'Learn about',
+    ring: 'border-moto-indigo/55',
+    dotVisited: 'border-transparent bg-moto-indigo shadow-moto-indigo/60',
+    dotUnvisited: 'border-transparent bg-moto-indigo shadow-moto-indigo/50 hover:bg-moto-indigo/90',
+    check: 'text-moto-black',
     tooltip:
-      "max-w-62.5 w-max text-center bg-background/90 backdrop-blur-sm text-foreground border border-border/20",
-    arrow: "border-t-background/90",
+      'max-w-62.5 w-max text-center bg-background/90 backdrop-blur-sm text-foreground border border-border/20',
+    arrow: 'border-t-background/90',
     visitedHalo: false,
   },
   pulse: {
-    ariaPrefix: "Discover",
-    ring: "",
-    dotVisited: "border-border/90 shadow-lg bg-accent shadow-moto-indigo/60",
-    dotUnvisited:
-      "border-border/90 shadow-lg bg-accent shadow-moto-indigo/50 group-hover:bg-muted",
-    check: "text-foreground",
+    ariaPrefix: 'Discover',
+    ring: '',
+    dotVisited: 'border-border/90 shadow-lg bg-accent shadow-moto-indigo/60',
+    dotUnvisited: 'border-border/90 shadow-lg bg-accent shadow-moto-indigo/50 group-hover:bg-muted',
+    check: 'text-foreground',
     tooltip:
-      "whitespace-nowrap bg-background/10 backdrop-blur-md text-foreground border border-border/20",
-    arrow: "border-t-moto-frost/15",
+      'whitespace-nowrap bg-background/10 backdrop-blur-md text-foreground border border-border/20',
+    arrow: 'border-t-moto-frost/15',
     visitedHalo: true,
   },
 };
@@ -90,10 +88,10 @@ export function Hotspot({
   visited = false,
   onOpen,
   onVisit,
-  variant = "white-black",
-  className = "",
-  pulseClassName = "",
-  labelClassName = "",
+  variant = 'white-black',
+  className = '',
+  pulseClassName = '',
+  labelClassName = '',
   icon,
   ref,
   tabIndex,
@@ -116,7 +114,7 @@ export function Hotspot({
       onVisit?.();
       timeoutsRef.current.push(
         setTimeout(() => setBursting(false), 600),
-        setTimeout(() => setJustVisited(false), 350)
+        setTimeout(() => setJustVisited(false), 350),
       );
     }
     onOpen();
@@ -132,7 +130,7 @@ export function Hotspot({
       onFocus={onFocus}
       onClick={handleClick}
       style={{ left: `${x}%`, top: `${y}%` }}
-      className={`absolute -translate-x-1/2 -translate-y-1/2 z-10 group focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${className}`}
+      className={`group focus-visible:ring-accent absolute z-10 -translate-x-1/2 -translate-y-1/2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${className}`}
       aria-label={`${styles.ariaPrefix} ${label}`}
     >
       {/* Wave rings — 3 staggered continuous waves, hidden once visited */}
@@ -149,41 +147,30 @@ export function Hotspot({
 
       {/* Visited glow halo */}
       {styles.visitedHalo && visited && (
-        <span className="absolute -inset-1.5 rounded-full bg-accent/20 blur-sm pointer-events-none" />
+        <span className="bg-accent/20 pointer-events-none absolute -inset-1.5 rounded-full blur-sm" />
       )}
 
       {/* The physical dot */}
       <span
-        className={`relative flex h-5 w-5 items-center justify-center rounded-full border-2
-          transition-all duration-300 group-hover:scale-125
-          ${visited ? styles.dotVisited : styles.dotUnvisited}
-        `}
+        className={`relative flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all duration-300 group-hover:scale-125 ${visited ? styles.dotVisited : styles.dotUnvisited} `}
       >
-        {visited ? (
-          icon || (
-            <Check
-              className={`h-2.5 w-2.5 stroke-3 ${styles.check} ${justVisited ? "stage-check-pop" : ""}`}
-            />
-          )
-        ) : (
-          icon
-        )}
+        {visited
+          ? icon || (
+              <Check
+                className={`h-2.5 w-2.5 stroke-3 ${styles.check} ${justVisited ? 'stage-check-pop' : ''}`}
+              />
+            )
+          : icon}
       </span>
 
       {/* Label tooltip — shows on hover AND keyboard focus above the dot */}
       <span
-        className={`absolute left-1/2 -translate-x-1/2 bottom-full mb-3
-          rounded-lg px-3 py-1.5 text-sm font-semibold tracking-wide
-          opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100
-          translate-y-2 group-hover:translate-y-0 group-focus-visible:translate-y-0
-          transition-all duration-200 ease-out
-          pointer-events-none shadow-2xl
-          ${labelClassName || styles.tooltip}`}
+        className={`pointer-events-none absolute bottom-full left-1/2 mb-3 -translate-x-1/2 translate-y-2 rounded-lg px-3 py-1.5 text-sm font-semibold tracking-wide opacity-0 shadow-2xl transition-all duration-200 ease-out group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100 ${labelClassName || styles.tooltip}`}
       >
         {label}
         {/* Arrow */}
         <span
-          className={`absolute left-1/2 -translate-x-1/2 top-full border-[5px] border-transparent ${styles.arrow}`}
+          className={`absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent ${styles.arrow}`}
         />
       </span>
     </button>

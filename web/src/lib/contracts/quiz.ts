@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 // ── Quiz wire contracts ───────────────────────────────────────────────────────
 // Grading is server-side: the browser never receives `isCorrect` /
@@ -23,7 +23,7 @@ export const ServerAiQuizSchema = z.object({
         correct_answer: z.string().max(200),
         explanation: z.string().max(500),
         image_url: z.string().max(2000).optional(),
-      })
+      }),
     )
     .min(1)
     .max(20),
@@ -41,7 +41,7 @@ export const ClientQuizQuestionSchema = z.object({
 
 export type ClientQuizQuestion = z.infer<typeof ClientQuizQuestionSchema>;
 
-export const QuizSourceSchema = z.enum(["ai", "sanity"]);
+export const QuizSourceSchema = z.enum(['ai', 'sanity']);
 export type QuizSource = z.infer<typeof QuizSourceSchema>;
 
 export const ClientQuizSchema = z.object({
@@ -64,7 +64,7 @@ const gradeIdentity = {
 
 /** Per-question feedback while the learner plays through the quiz. */
 export const GradeQuestionRequestSchema = z.object({
-  action: z.literal("question"),
+  action: z.literal('question'),
   ...gradeIdentity,
   questionIndex: z.number().int().min(0).max(19),
   selectedIndex: z.number().int().min(0).max(7),
@@ -76,7 +76,7 @@ export const GradeQuestionRequestSchema = z.object({
  * sessionId/courseId pair is provided (omitted when consent was declined).
  */
 export const SubmitQuizRequestSchema = z.object({
-  action: z.literal("submit"),
+  action: z.literal('submit'),
   ...gradeIdentity,
   /** Selected option index per question, in question order. */
   answers: z.array(z.number().int().min(0).max(7)).min(1).max(20),
@@ -84,7 +84,7 @@ export const SubmitQuizRequestSchema = z.object({
   courseId: z.string().min(1).max(100).optional(),
 });
 
-export const QuizGradeRequestSchema = z.discriminatedUnion("action", [
+export const QuizGradeRequestSchema = z.discriminatedUnion('action', [
   GradeQuestionRequestSchema,
   SubmitQuizRequestSchema,
 ]);

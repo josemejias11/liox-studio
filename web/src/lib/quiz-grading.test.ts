@@ -5,7 +5,7 @@ describe('quiz-grading helpers', () => {
   const mockQuestion: GradableQuestion = {
     correctIndex: 1,
     options: ['A', 'B', 'C'],
-    explanation: 'Explanation here'
+    explanation: 'Explanation here',
   };
 
   test('gradeQuestion returns correct status and explanation', () => {
@@ -23,7 +23,7 @@ describe('quiz-grading helpers', () => {
   test('gradeSubmission calculates total score correctly', () => {
     const questions: GradableQuestion[] = [mockQuestion, mockQuestion];
     const userAnswers = [1, 0]; // 1 correct, 1 incorrect
-    
+
     const submissionResult = gradeSubmission(questions, userAnswers, 100); // require 100%
     expect(submissionResult.score).toBe(1);
     expect(submissionResult.total).toBe(2);

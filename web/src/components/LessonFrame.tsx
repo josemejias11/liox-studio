@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { ReactNode } from "react";
-import { ChevronLeft, ChevronRight, LayoutGrid } from "lucide-react";
+import { ReactNode } from 'react';
+import { ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react';
 
-type SectionType = "lesson" | "specification" | "quiz" | "disclaimer";
+type SectionType = 'lesson' | 'specification' | 'quiz' | 'disclaimer';
 
 interface LessonFrameProps {
   children: ReactNode;
@@ -30,13 +30,11 @@ interface LessonFrameProps {
   sectionType?: SectionType;
 }
 
-
-
 const SECTION_LABELS: Record<SectionType, string | null> = {
   lesson: null,
-  specification: "Specifications",
-  quiz: "Knowledge Check",
-  disclaimer: "Disclaimer",
+  specification: 'Specifications',
+  quiz: 'Knowledge Check',
+  disclaimer: 'Disclaimer',
 };
 
 export function LessonFrame({
@@ -47,30 +45,30 @@ export function LessonFrame({
   onNext,
   nextDisabled = false,
   completionHint,
-  className = "",
+  className = '',
   onToggleNavMap,
   moduleTitle,
-  sectionType = "lesson",
+  sectionType = 'lesson',
 }: LessonFrameProps) {
   const showNav = currentLesson !== undefined && totalLessons !== undefined;
-  const navGradient = "bg-gradient-to-t from-background via-background/80 to-transparent";
+  const navGradient = 'bg-gradient-to-t from-background via-background/80 to-transparent';
 
-  const showProgress = currentLesson !== undefined && totalLessons !== undefined && totalLessons > 0;
+  const showProgress =
+    currentLesson !== undefined && totalLessons !== undefined && totalLessons > 0;
   const sectionLabel = SECTION_LABELS[sectionType];
-  const isLessonType = sectionType === "lesson";
+  const isLessonType = sectionType === 'lesson';
 
   return (
     // Outer shell — flex-col so the device banner stacks below the frame.
-    <div className="w-full h-dvh bg-background flex flex-col items-center justify-start overflow-hidden">
+    <div className="bg-background flex h-dvh w-full flex-col items-center justify-start overflow-hidden">
       {/* Fullscreen frame — fills all remaining vertical space after the banner */}
       <div
-        className={`relative overflow-clip bg-background rounded-none flex-1 w-full ${className}`}
+        className={`bg-background relative w-full flex-1 overflow-clip rounded-none ${className}`}
       >
         {children}
 
         {/* ── Bottom vignette — blends lesson content into the black banner below ── */}
-        <div className="absolute bottom-0 left-0 right-0 h-40 bg-linear-to-t from-background to-transparent pointer-events-none z-10" />
-
+        <div className="from-background pointer-events-none absolute right-0 bottom-0 left-0 z-10 h-40 bg-linear-to-t to-transparent" />
 
         {/* ── Floating utility buttons (lessons without nav bar) ── */}
         {!showNav && onToggleNavMap && (
@@ -78,40 +76,38 @@ export function LessonFrame({
             onClick={onToggleNavMap}
             aria-label="Open course navigation"
             title="Course map"
-            className="absolute bottom-4 left-4 z-50 h-10 w-10 rounded-full flex items-center justify-center
-              bg-background/50 backdrop-blur-sm text-foreground/40 hover:text-foreground hover:bg-background/80
-              transition-all duration-150 shadow-md"
+            className="bg-background/50 text-foreground/40 hover:text-foreground hover:bg-background/80 absolute bottom-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-full shadow-md backdrop-blur-sm transition-all duration-150"
           >
             <LayoutGrid className="h-5 w-5" />
           </button>
         )}
-
 
         {/* ── Nav bar — lives INSIDE the 16:9 frame at the bottom ── */}
         {showNav && (
           <>
             {/* Completion hint */}
             {nextDisabled && completionHint && (
-              <div className="absolute bottom-16 left-0 right-0 flex justify-center pointer-events-none z-10">
-                <span className="bg-background/80 backdrop-blur-md text-foreground shadow-md text-sm font-medium px-5 py-2 rounded-full border border-border/30">
+              <div className="pointer-events-none absolute right-0 bottom-16 left-0 z-10 flex justify-center">
+                <span className="bg-background/80 text-foreground border-border/30 rounded-full border px-5 py-2 text-sm font-medium shadow-md backdrop-blur-md">
                   {completionHint}
                 </span>
               </div>
             )}
 
-            <div className={`absolute bottom-0 left-0 right-0 h-14 z-20 flex items-center px-6 gap-3 ${navGradient}`}>
+            <div
+              className={`absolute right-0 bottom-0 left-0 z-20 flex h-14 items-center gap-3 px-6 ${navGradient}`}
+            >
               {/* Left cluster — map + notes */}
               {onToggleNavMap && (
                 <button
                   onClick={onToggleNavMap}
                   aria-label="Open course navigation"
                   title="Course map"
-                  className="h-10 w-10 rounded-full flex items-center justify-center text-foreground/40 hover:text-foreground hover:bg-foreground/10 transition-all"
+                  className="text-foreground/40 hover:text-foreground hover:bg-foreground/10 flex h-10 w-10 items-center justify-center rounded-full transition-all"
                 >
                   <LayoutGrid className="h-5 w-5" />
                 </button>
               )}
-
 
               <div className="flex-1" />
 
@@ -119,7 +115,7 @@ export function LessonFrame({
               <button
                 onClick={onPrev}
                 disabled={currentLesson === 1}
-                className="h-10 w-10 rounded-full flex items-center justify-center text-foreground/60 hover:text-foreground hover:bg-foreground/10 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
+                className="text-foreground/60 hover:text-foreground hover:bg-foreground/10 flex h-10 w-10 items-center justify-center rounded-full transition-all disabled:cursor-not-allowed disabled:opacity-25"
                 aria-label="Previous lesson"
               >
                 <ChevronLeft className="h-6 w-6" />
@@ -128,7 +124,10 @@ export function LessonFrame({
               {/* Counter — visible only for lesson sections */}
               {isLessonType && (
                 <>
-                  <span className="text-sm font-medium text-foreground/80 min-w-12 text-center tabular-nums select-none" aria-hidden="true">
+                  <span
+                    className="text-foreground/80 min-w-12 text-center text-sm font-medium tabular-nums select-none"
+                    aria-hidden="true"
+                  >
                     {currentLesson} / {totalLessons}
                   </span>
                   <span aria-live="polite" aria-atomic="true" className="sr-only">
@@ -140,7 +139,7 @@ export function LessonFrame({
               <button
                 onClick={onNext}
                 disabled={nextDisabled}
-                className="h-10 w-10 rounded-full flex items-center justify-center text-foreground/60 hover:text-foreground hover:bg-foreground/10 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
+                className="text-foreground/60 hover:text-foreground hover:bg-foreground/10 flex h-10 w-10 items-center justify-center rounded-full transition-all disabled:cursor-not-allowed disabled:opacity-25"
                 aria-label="Next lesson"
               >
                 <ChevronRight className="h-6 w-6" />
@@ -154,10 +153,10 @@ export function LessonFrame({
               aria-valuemin={1}
               aria-valuemax={totalLessons}
               aria-label="Course progress"
-              className="absolute bottom-0 left-0 right-0 h-px bg-foreground/10 z-30"
+              className="bg-foreground/10 absolute right-0 bottom-0 left-0 z-30 h-px"
             >
               <div
-                className="h-full bg-accent transition-[width] duration-500 ease-out"
+                className="bg-accent h-full transition-[width] duration-500 ease-out"
                 style={{ width: `${(currentLesson / totalLessons) * 100}%` }}
               />
             </div>
@@ -169,28 +168,30 @@ export function LessonFrame({
       {moduleTitle && (
         <div
           aria-hidden="true"
-          className="shrink-0 w-full flex flex-col items-center justify-center py-3 gap-1 bg-background"
+          className="bg-background flex w-full shrink-0 flex-col items-center justify-center gap-1 py-3"
         >
           {/* "You are learning about" label */}
-          <p className="text-[11px] uppercase tracking-[0.22em] font-medium text-muted-foreground leading-none">
+          <p className="text-muted-foreground text-[11px] leading-none font-medium tracking-[0.22em] uppercase">
             You are learning about
           </p>
 
           {/* Device / module name — the hero text */}
-          <p className="text-3xl font-bold text-foreground leading-none text-center">
+          <p className="text-foreground text-center text-3xl leading-none font-bold">
             {moduleTitle}
           </p>
 
           {/* Indigo underline accent */}
-          <span className="block mt-1 h-0.5 w-10 rounded-full bg-accent" />
+          <span className="bg-accent mt-1 block h-0.5 w-10 rounded-full" />
 
           {/* Progress / section label — always rendered to keep banner height constant */}
           {sectionLabel ? (
-            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-accent leading-none">
+            <p className="text-accent mt-1 text-xs leading-none font-semibold tracking-[0.18em] uppercase">
               {sectionLabel}
             </p>
           ) : (
-            <p className={`mt-1 text-xs tabular-nums text-muted-foreground/70 leading-none ${showProgress ? "" : "invisible"}`}>
+            <p
+              className={`text-muted-foreground/70 mt-1 text-xs leading-none tabular-nums ${showProgress ? '' : 'invisible'}`}
+            >
               lesson {currentLesson}&thinsp;/&thinsp;{totalLessons}
             </p>
           )}

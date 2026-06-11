@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 // Import from the explicit client-component subpath instead of "next-sanity/studio".
 // "next-sanity/studio" is a Server Component entry — it calls preloadModule() at
@@ -9,8 +9,8 @@
 // "next-sanity/studio/client-component" exposes the same NextStudio wrapped in a
 // Suspense + lazy() boundary that is safe to use as a client component, and avoids
 // any RSC-only API calls at module evaluation time.
-import { NextStudio } from "next-sanity/studio/client-component";
-import config from "../../../../sanity.config";
+import { NextStudio } from 'next-sanity/studio/client-component';
+import config from '../../../../sanity.config';
 
 export default function StudioPage() {
   return <NextStudio config={config} />;

@@ -1,6 +1,6 @@
-import { useMemo } from "react";
-import useSWR from "swr";
-import { ProgressRequestBody } from "@/lib/contracts/progress";
+import { useMemo } from 'react';
+import useSWR from 'swr';
+import { ProgressRequestBody } from '@/lib/contracts/progress';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -26,7 +26,7 @@ export function useLessonProgress(sessionId: string, persist: boolean = true) {
     fetcher,
     {
       revalidateOnFocus: false,
-    }
+    },
   );
 
   const visited = useMemo(() => {
@@ -41,16 +41,16 @@ export function useLessonProgress(sessionId: string, persist: boolean = true) {
 
   const markVisited = async (lessonKey: string, label: string, totalHotspots: number) => {
     if (!sessionId) return;
-    
+
     const currentLessonVisited = visited[lessonKey] ?? new Set<string>();
     if (currentLessonVisited.has(label)) return;
-    
+
     const nextVisitedSet = new Set([...currentLessonVisited, label]);
     const isCompleted = totalHotspots > 0 && nextVisitedSet.size >= totalHotspots;
     const visitedHotspots = Array.from(nextVisitedSet);
 
     const payload: ProgressRequestBody = {
-      type: "lesson",
+      type: 'lesson',
       sessionId,
       lessonId: lessonKey,
       visitedHotspots,
@@ -73,9 +73,9 @@ export function useLessonProgress(sessionId: string, persist: boolean = true) {
     mutate(
       persist
         ? async () => {
-            await fetch("/api/progress", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
+            await fetch('/api/progress', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload),
             });
             return optimisticData;
@@ -86,7 +86,7 @@ export function useLessonProgress(sessionId: string, persist: boolean = true) {
         rollbackOnError: true,
         populateCache: true,
         revalidate: false,
-      }
+      },
     );
   };
 
