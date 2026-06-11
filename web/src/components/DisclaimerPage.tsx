@@ -93,7 +93,7 @@ export function DisclaimerPage({ disclaimer, onNext }: DisclaimerPageProps) {
               {disclaimer.title}
             </h1>
             {requiresAck && !hasScrolledToBottom && (
-              <p className="text-muted-foreground/80 mt-2 text-xs font-medium">
+              <p className="text-muted-foreground mt-2 text-sm font-medium">
                 Scroll to the bottom to acknowledge.
               </p>
             )}
@@ -120,7 +120,7 @@ export function DisclaimerPage({ disclaimer, onNext }: DisclaimerPageProps) {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.4, type: 'spring', damping: 25 }}
-        className="bg-background/70 border-border/20 absolute bottom-8 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full border p-1.5 shadow-2xl backdrop-blur-xl"
+        className="bg-background/70 border-border/20 absolute bottom-4 right-4 z-20 flex items-center gap-2 rounded-full border p-1.5 shadow-2xl backdrop-blur-xl md:bottom-8 md:right-8"
       >
         {/* Acknowledge / Continue Button */}
         {requiresAck ? (
@@ -132,7 +132,7 @@ export function DisclaimerPage({ disclaimer, onNext }: DisclaimerPageProps) {
             className={`flex h-10 items-center justify-center gap-2 rounded-full px-6 text-sm font-semibold transition-colors duration-300 ${
               canProceed
                 ? 'bg-accent text-accent-foreground shadow-[0_0_24px_rgba(104,91,199,0.3)]'
-                : 'bg-foreground/10 text-foreground/40 cursor-not-allowed'
+                : 'bg-foreground/20 text-foreground/60 cursor-not-allowed'
             }`}
           >
             {canProceed && <CheckCircle2 className="h-4 w-4 shrink-0" />}
@@ -143,7 +143,7 @@ export function DisclaimerPage({ disclaimer, onNext }: DisclaimerPageProps) {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={onNext}
-            className="bg-foreground/10 text-foreground hover:bg-foreground/15 flex h-10 items-center justify-center gap-2 rounded-full px-6 text-sm font-semibold transition-colors"
+            className="bg-foreground text-background hover:bg-foreground/90 flex h-10 items-center justify-center gap-2 rounded-full px-6 text-sm font-bold shadow-xl transition-transform duration-150 active:scale-95"
           >
             End Course <ChevronRight className="h-4 w-4 shrink-0" />
           </motion.button>

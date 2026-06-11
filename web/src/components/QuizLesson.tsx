@@ -462,7 +462,7 @@ export function QuizLesson({
       </div>
 
       {/* Body — keyed by question index so entry animations replay per question */}
-      <div key={currentQ} className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-6 pb-5">
+      <div key={currentQ} className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 pb-24">
         {/* Question text */}
         <p className="quiz-enter text-foreground shrink-0 pt-2 text-xl leading-tight font-bold md:text-2xl">
           {q.question}
@@ -633,7 +633,7 @@ export function QuizLesson({
                 <button
                   onClick={() => setCurrentQ((prev) => Math.max(0, prev - 1))}
                   disabled={currentQ === 0}
-                  className="border-foreground/10 text-foreground hover:border-foreground/30 hover:bg-foreground/5 rounded-full border-2 px-5 py-2.5 text-base font-black transition-all disabled:opacity-20"
+                  className="border-foreground/30 text-foreground hover:border-foreground/50 hover:bg-foreground/5 rounded-full border-2 px-5 py-2.5 text-base font-black transition-all disabled:opacity-50"
                 >
                   Previous
                 </button>
@@ -648,7 +648,7 @@ export function QuizLesson({
                 <button
                   onClick={() => setCurrentQ((prev) => Math.min(total - 1, prev + 1))}
                   disabled={currentQ === total - 1}
-                  className="border-foreground/10 text-foreground hover:border-foreground/30 hover:bg-foreground/5 rounded-full border-2 px-5 py-2.5 text-base font-black transition-all disabled:opacity-20"
+                  className="border-foreground/30 text-foreground hover:border-foreground/50 hover:bg-foreground/5 rounded-full border-2 px-5 py-2.5 text-base font-black transition-all disabled:opacity-50"
                 >
                   Next
                 </button>

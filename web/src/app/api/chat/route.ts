@@ -45,15 +45,9 @@ function buildSystemPrompt(
   }
 
   prompt +=
-    `Answer questions about any aspect of this course — individual lessons, chapters, ` +
-    `specifications, disclaimers, or the subject matter in general. ` +
-    `You may draw on your broader knowledge of the course topic to provide thorough, accurate, and helpful answers.\n\n` +
-    `Only decline if a question is completely unrelated to ${title} and its subject domain ` +
-    `(for example: weather forecasts, sports scores, cooking recipes, or other topics with no ` +
-    `connection to this course). In that case, politely redirect the user to the course content — ` +
-    `keep the redirect brief and natural, not a canned phrase.\n\n` +
-    `When current lesson content is provided below, treat it as your primary, highest-confidence ` +
-    `reference. Supplement it with your broader subject-matter knowledge as needed.`;
+    `You must answer the user's question USING ONLY the provided context.\n` +
+    `If the answer cannot be found in the context, reply exactly with: 'I am sorry, but I can only answer questions related to the course material.'\n\n` +
+    `Do not draw on your broader knowledge or pre-training data. Stick strictly to the facts provided below.`;
 
   if (lesson_content?.trim()) {
     prompt += `\n\nCurrent lesson content (primary reference):\n"""\n${lesson_content.trim()}\n"""`;
