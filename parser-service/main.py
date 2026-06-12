@@ -50,7 +50,7 @@ OLLAMA_TIMEOUT_SECONDS = float(os.environ.get("OLLAMA_TIMEOUT_SECONDS", "120"))
 
 MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50MB hard cap, enforced while streaming
 UPLOAD_CHUNK_BYTES = 1024 * 1024
-ALLOWED_EXTENSIONS = {".pdf", ".pptx", ".docx"}
+ALLOWED_EXTENSIONS = {".pdf", ".pptx", ".docx", ".xlsx"}
 
 # Must satisfy Chroma collection-name rules (3-63 chars, alnum at both ends).
 COURSE_ID_PATTERN = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._-]{1,61}[a-zA-Z0-9]$")

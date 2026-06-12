@@ -55,7 +55,7 @@ const STUDIO_CSP = [
   "style-src 'self' 'unsafe-inline'",
   `img-src ${SHARED_IMG_SRC}`,
   "font-src 'self' https://fonts.gstatic.com",
-  "connect-src 'self' https://api.sanity.io https://*.api.sanity.io wss://*.api.sanity.io https://cdn.sanity.io https://accounts.sanity.io",
+  "connect-src 'self' https://api.sanity.io https://*.api.sanity.io wss://*.api.sanity.io https://cdn.sanity.io https://accounts.sanity.io https://registry.npmjs.org",
   "worker-src 'self' blob:",
   "frame-src 'self' https://accounts.sanity.io",
   "frame-ancestors 'self'",
