@@ -43,7 +43,7 @@ export default async function AnalyticsLoginPage({ searchParams }: LoginPageProp
             </div>
           )}
 
-          <form method="POST" action="/analytics/login" className="flex flex-col gap-4">
+          <form method="POST" action="/api/analytics/login" className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <label
                 htmlFor="password"
