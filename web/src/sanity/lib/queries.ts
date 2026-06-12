@@ -27,6 +27,11 @@ const LESSON_FIELDS = groq`
   stageBackground { asset->{ url } },
   enableCompletionAnimation,
   completionTransition,
+  colorVariants[] { label, colorHex, image { asset->{ url } } },
+  splitReverseLayout,
+  dropZones[] { id, label, correctChipId, xPositionPct, yPositionPct },
+  chips[] { id, text },
+  scrollChapters[] { heading, body, targetScale, targetRotation, targetX, targetY },
 `;
 
 const SPEC_FIELDS = groq`

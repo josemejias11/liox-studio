@@ -1,5 +1,6 @@
 import React, { useRef, useState, useCallback } from 'react';
-import { ArrayOfObjectsInputProps, PatchEvent, insert, set, unset, useFormValue } from 'sanity';
+import { ArrayOfObjectsInputProps, PatchEvent, insert, set, setIfMissing, unset, useFormValue } from 'sanity';
+import { randomKey } from '@sanity/util/content';
 import { Button, Card, Flex, Text, Box, Stack, Badge } from '@sanity/ui';
 import { MAX_UPLOAD_BYTES, UploadResponseSchema } from '@/lib/contracts/upload';
 
@@ -40,6 +41,10 @@ export function CourseFileUploadInput(props: ArrayOfObjectsInputProps) {
 
       const results: SessionFileStatus[] = [...initial];
 
+      // props.value does not re-render mid-loop, so track rows added/updated in
+      // this batch locally to keep same-filename dedup correct within it.
+      const knownFiles = new Map(indexedFiles.map((f) => [f.filename, f]));
+
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
 
@@ -64,28 +69,28 @@ export function CourseFileUploadInput(props: ArrayOfObjectsInputProps) {
 
           if (parsed?.success) {
             results[i] = { name: file.name, state: 'success', chunks: parsed.data.chunks_stored };
-            const existing = indexedFiles.find((f) => f.filename === file.name);
+            const existing = knownFiles.get(file.name);
             if (existing) {
               // Same filename re-uploaded — update the existing row in-place.
-              onChange(
-                PatchEvent.from(
-                  set(
-                    { ...existing, chunks: parsed.data.chunks_stored, uploadedAt: new Date().toISOString() },
-                    [{ _key: existing._key }],
-                  ),
-                ),
-              );
+              const updated: UploadedFile = {
+                ...existing,
+                chunks: parsed.data.chunks_stored,
+                uploadedAt: new Date().toISOString(),
+              };
+              onChange(PatchEvent.from(set(updated, [{ _key: existing._key }])));
+              knownFiles.set(file.name, updated);
             } else {
-              // New file — append to the persistent array.
-              onChange(
-                PatchEvent.from(
-                  insert(
-                    [{ _type: 'uploadedFile', filename: file.name, chunks: parsed.data.chunks_stored, uploadedAt: new Date().toISOString() }],
-                    'after',
-                    [-1],
-                  ),
-                ),
-              );
+              // New file — append to the persistent array. setIfMissing makes the
+              // first-ever insert persist (insert into a missing array is a no-op).
+              const added: UploadedFile = {
+                _key: randomKey(12),
+                _type: 'uploadedFile',
+                filename: file.name,
+                chunks: parsed.data.chunks_stored,
+                uploadedAt: new Date().toISOString(),
+              };
+              onChange(PatchEvent.from([setIfMissing([]), insert([added], 'after', [-1])]));
+              knownFiles.set(file.name, added);
             }
           } else {
             results[i] = { name: file.name, state: 'error' };
@@ -99,7 +104,7 @@ export function CourseFileUploadInput(props: ArrayOfObjectsInputProps) {
 
       setIsUploading(false);
     },
-    [courseId, onChange],
+    [courseId, onChange, indexedFiles],
   );
 
   const handleRemove = useCallback(
@@ -129,7 +134,7 @@ export function CourseFileUploadInput(props: ArrayOfObjectsInputProps) {
             Course Material (PDF, PPTX, DOCX, XLSX)
           </Text>
           <Text size={1} muted style={{ marginTop: '8px' }}>
-            All indexed files are listed below. Uploading again replaces that file's chunks.
+            All indexed files are listed below. Uploading again replaces that file&apos;s chunks.
           </Text>
         </Box>
 

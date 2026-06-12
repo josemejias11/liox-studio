@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode } from 'react';
-import { ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react';
+import { ChevronLeft, ChevronRight, LayoutGrid, Lock } from 'lucide-react';
 
 type SectionType = 'lesson' | 'specification' | 'quiz' | 'disclaimer';
 
@@ -51,7 +51,6 @@ export function LessonFrame({
   sectionType = 'lesson',
 }: LessonFrameProps) {
   const showNav = currentLesson !== undefined && totalLessons !== undefined;
-  const navGradient = 'bg-gradient-to-t from-background via-background/80 to-transparent';
 
   const showProgress =
     currentLesson !== undefined && totalLessons !== undefined && totalLessons > 0;
@@ -60,10 +59,10 @@ export function LessonFrame({
 
   return (
     // Outer shell — flex-col so the device banner stacks below the frame.
-    <div className="bg-background flex h-dvh w-full flex-col items-center justify-start overflow-hidden">
+    <div className="bg-glass-gradient flex h-dvh w-full flex-col items-center justify-start overflow-hidden">
       {/* Fullscreen frame — fills all remaining vertical space after the banner */}
       <div
-        className={`bg-background relative w-full flex-1 overflow-clip rounded-none ${className}`}
+        className={`relative w-full flex-1 overflow-clip rounded-none ${className}`}
       >
         {children}
 
@@ -87,15 +86,15 @@ export function LessonFrame({
           <>
             {/* Completion hint */}
             {nextDisabled && completionHint && (
-              <div className="pointer-events-none absolute right-0 bottom-16 left-0 z-10 flex justify-center">
-                <span className="bg-background/80 text-foreground border-border/30 rounded-full border px-5 py-2 text-sm font-medium shadow-md backdrop-blur-md">
+              <div className="pointer-events-none absolute right-0 bottom-24 left-0 z-10 flex justify-center">
+                <span className="glass-panel text-foreground rounded-full px-5 py-2 text-sm font-medium">
                   {completionHint}
                 </span>
               </div>
             )}
 
             <div
-              className={`absolute right-0 bottom-0 left-0 z-20 flex h-14 items-center gap-3 px-6 ${navGradient}`}
+              className="absolute right-4 bottom-4 left-4 z-20 flex h-14 items-center gap-3 px-6 glass-panel rounded-full"
             >
               {/* Left cluster — map + notes */}
               {onToggleNavMap && (
@@ -139,10 +138,14 @@ export function LessonFrame({
               <button
                 onClick={onNext}
                 disabled={nextDisabled}
-                className="text-foreground/60 hover:text-foreground hover:bg-foreground/10 flex h-10 w-10 items-center justify-center rounded-full transition-all disabled:cursor-not-allowed disabled:opacity-25"
+                className={`flex h-10 w-10 items-center justify-center rounded-full transition-all ${
+                  nextDisabled 
+                    ? 'text-foreground/40 bg-foreground/5 cursor-not-allowed' 
+                    : 'text-foreground hover:bg-foreground/10 bg-accent/10 shadow-[0_0_15px_rgba(104,91,199,0.3)]'
+                }`}
                 aria-label="Next lesson"
               >
-                <ChevronRight className="h-6 w-6" />
+                {nextDisabled ? <Lock className="h-4 w-4" /> : <ChevronRight className="h-6 w-6" />}
               </button>
             </div>
 
@@ -168,7 +171,7 @@ export function LessonFrame({
       {moduleTitle && (
         <div
           aria-hidden="true"
-          className="bg-background flex w-full shrink-0 flex-col items-center justify-center gap-1 py-3"
+          className="glass-panel rounded-t-3xl border-b-0 flex w-full shrink-0 flex-col items-center justify-center gap-1 py-3"
         >
           {/* "You are learning about" label */}
           <p className="text-muted-foreground text-[11px] leading-none font-medium tracking-[0.22em] uppercase">

@@ -8,10 +8,12 @@ import { Hotspot } from './Hotspot';
 import { DiscoveryPanel } from './DiscoveryPanel';
 import { CompletionBurst } from './CompletionBurst';
 import { sanityImageLoader } from '@/lib/sanity-image-loader';
+import { PortableText } from '@portabletext/react';
 import type { RichText, SanityHotspot, SanityPhoto } from '@/lib/contracts/sanity';
 
 interface ProductStageProps {
   headline: string;
+  body?: RichText;
   productImage?: string;
   stageBackground?: string;
   enableCompletionAnimation?: boolean;
@@ -26,6 +28,7 @@ interface ProductStageProps {
 
 export function ProductStage({
   headline,
+  body,
   productImage,
   stageBackground,
   enableCompletionAnimation = false,
@@ -391,12 +394,17 @@ export function ProductStage({
         className="stage-enter-bottom pointer-events-none absolute bottom-16 left-5 z-20"
         style={{ animationDelay: '380ms' }}
       >
-        <p className="text-foreground/25 mb-0.5 text-[8px] font-semibold tracking-[0.15em] uppercase">
+        <p className="text-foreground/25 mb-1 text-[10px] font-semibold tracking-[0.15em] uppercase">
           Discover
         </p>
-        <h2 className="text-foreground/70 max-w-[40%] text-xs leading-tight font-medium">
+        <h2 className="text-foreground/90 max-w-[40%] text-2xl leading-tight font-bold mb-2">
           {headline}
         </h2>
+        {body && (
+          <div className="text-foreground/70 prose prose-sm prose-invert max-w-sm">
+            {typeof body === 'string' ? <p>{body}</p> : <PortableText value={body as import('sanity').PortableTextBlock[]} />}
+          </div>
+        )}
       </div>
 
       {/* ── Continue ── */}

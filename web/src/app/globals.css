@@ -170,6 +170,24 @@
   }
 }
 
+@layer utilities {
+  .bg-glass-gradient {
+    background: linear-gradient(-45deg, var(--background), var(--muted), var(--secondary), var(--background));
+    background-size: 400% 400%;
+    animation: dynamic-gradient 20s ease infinite;
+  }
+  
+  .glass-panel {
+    @apply bg-white/40 backdrop-blur-xl border border-white/30 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:bg-black/40 dark:border-white/10 dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)];
+  }
+}
+
+@keyframes dynamic-gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 /* ── Product Stage animations ──────────────────────────────────────────────── */
 
 @keyframes stage-wave {

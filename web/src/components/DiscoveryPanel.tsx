@@ -333,9 +333,22 @@ export function DiscoveryPanel({
           };
         }
 
+        let panelWidthClass = 'w-[min(500px,58%)]';
+        if (hasVideo) {
+          if (videoAspectRatio === '9:16') {
+            panelWidthClass = 'w-[min(320px,45%)]';
+          } else if (videoAspectRatio === '4:5') {
+            panelWidthClass = 'w-[min(380px,50%)]';
+          } else if (videoAspectRatio === '1:1') {
+            panelWidthClass = 'w-[min(480px,55%)]';
+          } else {
+            panelWidthClass = 'w-[min(640px,70%)]';
+          }
+        }
+
         // Desktop/tablet floating panel — maxHeight is set via floatingStyle (dynamic, based on hotspot position).
-        // Widen to accommodate 16:9 video when a video is present.
-        const floatingClasses = `absolute ${hasVideo ? 'w-[min(640px,70%)]' : 'w-[min(500px,58%)]'} rounded-3xl flex flex-col
+        // Widen or narrow to accommodate the specific video aspect ratio.
+        const floatingClasses = `absolute ${panelWidthClass} rounded-3xl flex flex-col
           bg-card/80 backdrop-blur-3xl border border-white/10
           shadow-2xl transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${originClass}
           ${open ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.3] pointer-events-none'}`;
@@ -414,7 +427,9 @@ export function DiscoveryPanel({
                     <video
                       src={videoFile!.asset!.url!}
                       controls
-                      className="w-full rounded-2xl bg-black object-contain"
+                      autoPlay
+                      playsInline
+                      className="w-full max-h-[55vh] rounded-2xl bg-black object-contain"
                       style={{ aspectRatio: cssAspectRatio(videoAspectRatio) }}
                     />
                   ) : (photos?.length ?? 0) > 0 ? (

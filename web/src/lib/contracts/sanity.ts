@@ -87,7 +87,7 @@ export const lessonSchema = z.object({
   _key: z.string(),
   headline: plainStringSchema,
   body: opt(richTextSchema),
-  lessonType: z.enum(['content', 'interaction', 'stage', 'video', 'quiz']).catch('content'),
+  lessonType: z.enum(['content', 'interaction', 'stage', 'video', 'quiz', 'colorSwitcher', 'splitScreen', 'dragDrop', 'scrollStory']).catch('content'),
   media: opt(imageSchema),
   textOverlay: opt(textOverlaySchema),
   hotspots: opt(z.array(hotspotSchema)),
@@ -97,6 +97,31 @@ export const lessonSchema = z.object({
   stageBackground: opt(imageSchema),
   enableCompletionAnimation: opt(z.boolean()),
   completionTransition: opt(z.enum(['spin', 'rise', 'fade'])),
+  colorVariants: opt(z.array(z.object({
+    label: z.string().catch(''),
+    colorHex: opt(z.string()),
+    image: opt(imageSchema),
+  }))),
+  splitReverseLayout: opt(z.boolean()),
+  dropZones: opt(z.array(z.object({
+    id: z.string().catch(''),
+    label: z.string().catch(''),
+    correctChipId: z.string().catch(''),
+    xPositionPct: z.number().catch(0),
+    yPositionPct: z.number().catch(0),
+  }))),
+  chips: opt(z.array(z.object({
+    id: z.string().catch(''),
+    text: z.string().catch(''),
+  }))),
+  scrollChapters: opt(z.array(z.object({
+    heading: z.string().catch(''),
+    body: opt(richTextSchema),
+    targetScale: opt(z.number()),
+    targetRotation: opt(z.number()),
+    targetX: opt(z.number()),
+    targetY: opt(z.number()),
+  }))),
 });
 export type SanityLesson = z.output<typeof lessonSchema>;
 

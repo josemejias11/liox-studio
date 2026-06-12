@@ -29,6 +29,7 @@ const MAIN_CSP = [
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
   "style-src 'self' 'unsafe-inline'",
   `img-src ${SHARED_IMG_SRC}`,
+  "media-src 'self' https://cdn.sanity.io",
   "font-src 'self'",
   "connect-src 'self'",
   "worker-src 'self'",

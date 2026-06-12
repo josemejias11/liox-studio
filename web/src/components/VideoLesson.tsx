@@ -54,6 +54,7 @@ export function VideoLesson({
           <video
             src={src}
             controls
+            autoPlay
             playsInline
             className="h-full w-full object-contain"
             style={{ aspectRatio }}

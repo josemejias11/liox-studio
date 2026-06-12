@@ -30,6 +30,18 @@ const SpecificationPage = dynamic(() =>
 const DisclaimerPage = dynamic(() =>
   import('./DisclaimerPage').then((m) => ({ default: m.DisclaimerPage })),
 );
+const ColorSwitcherLesson = dynamic(() =>
+  import('./ColorSwitcherLesson').then((m) => ({ default: m.ColorSwitcherLesson })),
+);
+const SplitScreenLesson = dynamic(() =>
+  import('./SplitScreenLesson').then((m) => ({ default: m.SplitScreenLesson })),
+);
+const DragDropLesson = dynamic(() =>
+  import('./DragDropLesson').then((m) => ({ default: m.default })),
+);
+const ScrollStoryLesson = dynamic(() =>
+  import('./ScrollStoryLesson').then((m) => ({ default: m.default })),
+);
 
 // ── Framer Motion slide variants ─────────────────────────────────────────────
 
@@ -106,9 +118,15 @@ export default function MotoViewer({
   const lessonKey = currentLesson?._key ?? '';
   const hotspots = useMemo(() => currentLesson?.hotspots ?? [], [currentLesson]);
   const visitedOnLesson = visited[lessonKey]?.size ?? 0;
-  const nextLocked = hotspots.length > 0 && hotspots.some((h) => !visited[lessonKey]?.has(h.label));
+  
+  const isSpecialLesson = currentLesson?.lessonType === 'dragDrop' || currentLesson?.lessonType === 'scrollStory';
+  const isSpecialComplete = visited[lessonKey]?.has('completed');
+  
+  const nextLocked = 
+    (hotspots.length > 0 && hotspots.some((h) => !visited[lessonKey]?.has(h.label))) ||
+    (isSpecialLesson && !isSpecialComplete);
 
-  const markVisited = (label: string) => baseMarkVisited(lessonKey, label, hotspots.length);
+  const markVisited = (label: string) => baseMarkVisited(lessonKey, label, isSpecialLesson ? 1 : hotspots.length);
 
   // ── Navigation wrappers (close transient overlays before moving) ──────────
   const goNext = () => nav.goNext(nextLocked);
@@ -231,8 +249,9 @@ export default function MotoViewer({
             return {
               slideKey: `stage-${currentLesson._key}`,
               screen: (
-                <ProductStage
+              <ProductStage
                   headline={currentLesson.headline}
+                  body={currentLesson.body}
                   productImage={currentLesson.media?.asset?.url}
                   stageBackground={currentLesson.stageBackground?.asset?.url}
                   enableCompletionAnimation={currentLesson.enableCompletionAnimation}
@@ -268,6 +287,46 @@ export default function MotoViewer({
                   onFail={goNext}
                   sessionId={persistSession ? sessionId : undefined}
                   courseId={course._id}
+                />
+              ),
+            };
+          case 'colorSwitcher':
+            return {
+              slideKey: `colorSwitcher-${currentLesson._key}`,
+              screen: (
+                <ColorSwitcherLesson
+                  lesson={currentLesson}
+                />
+              ),
+            };
+          case 'splitScreen':
+            return {
+              slideKey: `splitScreen-${currentLesson._key}`,
+              screen: (
+                <SplitScreenLesson
+                  lesson={currentLesson}
+                />
+              ),
+            };
+          case 'dragDrop':
+            return {
+              slideKey: `dragDrop-${currentLesson._key}`,
+              screen: (
+                <DragDropLesson
+                  lesson={currentLesson}
+                  isCompleted={isSpecialComplete ?? false}
+                  onComplete={() => markVisited('completed')}
+                />
+              ),
+            };
+          case 'scrollStory':
+            return {
+              slideKey: `scrollStory-${currentLesson._key}`,
+              screen: (
+                <ScrollStoryLesson
+                  lesson={currentLesson}
+                  isCompleted={isSpecialComplete ?? false}
+                  onComplete={() => markVisited('completed')}
                 />
               ),
             };

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Check } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 // ── Variants ──────────────────────────────────────────────────────────────────
 // Single hotspot implementation; the former PulseHotspot is the "pulse" variant.
@@ -25,34 +26,34 @@ const VARIANT_STYLES: Record<HotspotVariant, VariantStyles> = {
   'white-black': {
     ariaPrefix: 'Learn about',
     ring: 'border-white/55',
-    dotVisited: 'border-transparent bg-white shadow-white/60',
-    dotUnvisited: 'border-transparent bg-white shadow-white/50 hover:bg-white/90',
-    check: 'text-moto-black',
+    dotVisited: 'glass-panel border-white/40 shadow-lg text-white bg-white/20',
+    dotUnvisited: 'glass-panel border-white/60 shadow-[0_0_15px_rgba(255,255,255,0.4)] bg-white/40',
+    check: 'text-white',
     tooltip:
-      'max-w-62.5 w-max text-center bg-background/90 backdrop-blur-sm text-foreground border border-border/20',
-    arrow: 'border-t-background/90',
+      'glass-panel max-w-62.5 w-max text-center text-foreground',
+    arrow: 'hidden',
     visitedHalo: false,
   },
   'moto-indigo-black': {
     ariaPrefix: 'Learn about',
     ring: 'border-moto-indigo/55',
-    dotVisited: 'border-transparent bg-moto-indigo shadow-moto-indigo/60',
-    dotUnvisited: 'border-transparent bg-moto-indigo shadow-moto-indigo/50 hover:bg-moto-indigo/90',
-    check: 'text-moto-black',
+    dotVisited: 'glass-panel border-moto-indigo/40 shadow-lg text-moto-indigo bg-moto-indigo/20',
+    dotUnvisited: 'glass-panel border-moto-indigo/60 shadow-[0_0_15px_rgba(104,91,199,0.4)] bg-moto-indigo/40',
+    check: 'text-moto-indigo',
     tooltip:
-      'max-w-62.5 w-max text-center bg-background/90 backdrop-blur-sm text-foreground border border-border/20',
-    arrow: 'border-t-background/90',
+      'glass-panel max-w-62.5 w-max text-center text-foreground',
+    arrow: 'hidden',
     visitedHalo: false,
   },
   pulse: {
     ariaPrefix: 'Discover',
     ring: '',
-    dotVisited: 'border-border/90 shadow-lg bg-accent shadow-moto-indigo/60',
-    dotUnvisited: 'border-border/90 shadow-lg bg-accent shadow-moto-indigo/50 group-hover:bg-muted',
+    dotVisited: 'glass-panel border-accent/40 shadow-lg bg-accent/20',
+    dotUnvisited: 'glass-panel border-accent/60 shadow-[0_0_20px_rgba(104,91,199,0.6)] bg-accent/40',
     check: 'text-foreground',
     tooltip:
-      'whitespace-nowrap bg-background/10 backdrop-blur-md text-foreground border border-border/20',
-    arrow: 'border-t-moto-frost/15',
+      'glass-panel whitespace-nowrap text-foreground',
+    arrow: 'hidden',
     visitedHalo: true,
   },
 };
@@ -124,7 +125,7 @@ export function Hotspot({
   const ringClass = pulseClassName || styles.ring;
 
   return (
-    <button
+    <motion.button
       ref={ref}
       tabIndex={tabIndex}
       onFocus={onFocus}
@@ -132,6 +133,9 @@ export function Hotspot({
       style={{ left: `${x}%`, top: `${y}%` }}
       className={`group focus-visible:ring-accent absolute z-10 -translate-x-1/2 -translate-y-1/2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${className}`}
       aria-label={`${styles.ariaPrefix} ${label}`}
+      whileHover={{ scale: 1.15 }}
+      whileTap={{ scale: 0.9 }}
+      transition={{ type: "spring", stiffness: 400, damping: 17 }}
     >
       {/* Wave rings — 3 staggered continuous waves, hidden once visited */}
       {!visited && (
@@ -147,25 +151,30 @@ export function Hotspot({
 
       {/* Visited glow halo */}
       {styles.visitedHalo && visited && (
-        <span className="bg-accent/20 pointer-events-none absolute -inset-1.5 rounded-full blur-sm" />
+        <motion.span 
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-accent/20 pointer-events-none absolute -inset-1.5 rounded-full blur-sm" 
+        />
       )}
 
       {/* The physical dot */}
-      <span
-        className={`relative flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all duration-300 group-hover:scale-125 ${visited ? styles.dotVisited : styles.dotUnvisited} `}
+      <motion.span
+        layout
+        className={`relative flex h-6 w-6 items-center justify-center rounded-full transition-colors duration-300 ${visited ? styles.dotVisited : styles.dotUnvisited} `}
       >
         {visited
           ? icon || (
               <Check
-                className={`h-2.5 w-2.5 stroke-3 ${styles.check} ${justVisited ? 'stage-check-pop' : ''}`}
+                className={`h-3 w-3 stroke-3 ${styles.check} ${justVisited ? 'stage-check-pop' : ''}`}
               />
             )
           : icon}
-      </span>
+      </motion.span>
 
       {/* Label tooltip — shows on hover AND keyboard focus above the dot */}
       <span
-        className={`pointer-events-none absolute bottom-full left-1/2 mb-3 -translate-x-1/2 translate-y-2 rounded-lg px-3 py-1.5 text-sm font-semibold tracking-wide opacity-0 shadow-2xl transition-all duration-200 ease-out group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100 ${labelClassName || styles.tooltip}`}
+        className={`pointer-events-none absolute bottom-full left-1/2 mb-3 -translate-x-1/2 translate-y-2 rounded-xl px-4 py-2 text-sm font-semibold tracking-wide opacity-0 transition-all duration-300 ease-out group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100 ${labelClassName || styles.tooltip}`}
       >
         {label}
         {/* Arrow */}
@@ -173,6 +182,6 @@ export function Hotspot({
           className={`absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent ${styles.arrow}`}
         />
       </span>
-    </button>
+    </motion.button>
   );
 }

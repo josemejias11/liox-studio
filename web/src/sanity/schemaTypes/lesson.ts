@@ -113,6 +113,10 @@ export const lessonType = defineType({
           { title: 'Product Stage', value: 'stage' },
           { title: 'Video', value: 'video' },
           { title: 'Quiz (In-Lesson)', value: 'quiz' },
+          { title: 'Color Switcher', value: 'colorSwitcher' },
+          { title: 'Split Screen', value: 'splitScreen' },
+          { title: 'Drag & Drop', value: 'dragDrop' },
+          { title: 'Scroll Story', value: 'scrollStory' },
         ],
         layout: 'radio',
       },
@@ -125,7 +129,7 @@ export const lessonType = defineType({
       type: 'file',
       group: 'media',
       options: { accept: 'video/mp4' },
-      hidden: ({ parent }) => parent?.lessonType !== 'video',
+      hidden: ({ parent }) => parent?.lessonType !== 'video' && parent?.lessonType !== 'splitScreen',
     }),
     defineField({
       name: 'videoAspectRatio',
@@ -142,7 +146,7 @@ export const lessonType = defineType({
         layout: 'radio',
       },
       initialValue: '16:9',
-      hidden: ({ parent }) => parent?.lessonType !== 'video',
+      hidden: ({ parent }) => parent?.lessonType !== 'video' && parent?.lessonType !== 'splitScreen',
     }),
     defineField({
       name: 'stageBackground',
@@ -153,6 +157,37 @@ export const lessonType = defineType({
       group: 'media',
       options: { hotspot: true },
       hidden: ({ parent }) => parent?.lessonType !== 'stage',
+    }),
+    defineField({
+      name: 'colorVariants',
+      title: 'Color Variants',
+      description: 'Up to 4 images for the color switcher.',
+      type: 'array',
+      group: 'content',
+      validation: (Rule) => Rule.max(4),
+      hidden: ({ parent }) => parent?.lessonType !== 'colorSwitcher',
+      of: [
+        {
+          type: 'object',
+          fields: [
+            defineField({ name: 'label', title: 'Color Name', type: 'string', validation: r => r.required() }),
+            defineField({ name: 'colorHex', title: 'Color Hex (e.g. #FF0000)', type: 'string' }),
+            defineField({ name: 'image', title: 'Product Image', type: 'image', options: { hotspot: true }, validation: r => r.required() }),
+          ],
+          preview: {
+            select: { title: 'label', subtitle: 'colorHex', media: 'image' },
+          }
+        }
+      ]
+    }),
+    defineField({
+      name: 'splitReverseLayout',
+      title: 'Reverse Split Layout',
+      description: 'If true, media is on the left and text is on the right.',
+      type: 'boolean',
+      group: 'content',
+      initialValue: false,
+      hidden: ({ parent }) => parent?.lessonType !== 'splitScreen',
     }),
 
     defineField({
@@ -285,6 +320,70 @@ export const lessonType = defineType({
           },
         },
       ],
+    }),
+    defineField({
+      name: 'dropZones',
+      title: 'Drop Zones',
+      type: 'array',
+      group: 'interactions',
+      hidden: ({ parent }) => parent?.lessonType !== 'dragDrop',
+      of: [
+        {
+          type: 'object',
+          fields: [
+            defineField({ name: 'id', title: 'Zone ID', type: 'string', validation: (r) => r.required() }),
+            defineField({ name: 'label', title: 'Label', type: 'string', validation: (r) => r.required() }),
+            defineField({ name: 'correctChipId', title: 'Correct Chip ID', type: 'string', validation: (r) => r.required() }),
+            defineField({ name: 'xPositionPct', title: 'X Position (%)', type: 'number', validation: (r) => r.min(0).max(100).required() }),
+            defineField({ name: 'yPositionPct', title: 'Y Position (%)', type: 'number', validation: (r) => r.min(0).max(100).required() }),
+          ],
+          preview: {
+            select: { title: 'label', subtitle: 'correctChipId' },
+          }
+        }
+      ]
+    }),
+    defineField({
+      name: 'chips',
+      title: 'Chips',
+      type: 'array',
+      group: 'interactions',
+      hidden: ({ parent }) => parent?.lessonType !== 'dragDrop',
+      of: [
+        {
+          type: 'object',
+          fields: [
+            defineField({ name: 'id', title: 'Chip ID', type: 'string', validation: (r) => r.required() }),
+            defineField({ name: 'text', title: 'Text', type: 'string', validation: (r) => r.required() }),
+          ],
+          preview: {
+            select: { title: 'text', subtitle: 'id' },
+          }
+        }
+      ]
+    }),
+    defineField({
+      name: 'scrollChapters',
+      title: 'Scroll Chapters',
+      type: 'array',
+      group: 'interactions',
+      hidden: ({ parent }) => parent?.lessonType !== 'scrollStory',
+      of: [
+        {
+          type: 'object',
+          fields: [
+            defineField({ name: 'heading', title: 'Heading', type: 'string', validation: (r) => r.required() }),
+            defineField({ name: 'body', title: 'Body Text', type: 'array', of: [{ type: 'block' }] }),
+            defineField({ name: 'targetScale', title: 'Target Scale', type: 'number', initialValue: 1 }),
+            defineField({ name: 'targetRotation', title: 'Target Rotation (deg)', type: 'number', initialValue: 0 }),
+            defineField({ name: 'targetX', title: 'Target X Offset (px)', type: 'number', initialValue: 0 }),
+            defineField({ name: 'targetY', title: 'Target Y Offset (px)', type: 'number', initialValue: 0 }),
+          ],
+          preview: {
+            select: { title: 'heading' },
+          }
+        }
+      ]
     }),
     defineField({
       name: 'enableCompletionAnimation',
