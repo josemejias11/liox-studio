@@ -2,6 +2,8 @@ import type { NextConfig } from 'next';
 
 // ─── Security header helpers ────────────────────────────────────────────────
 
+const isDev = process.env.NODE_ENV !== 'production';
+
 // Shared directives that apply to both the main app and the Studio path.
 const SHARED_IMG_SRC = [
   "'self'",
@@ -24,7 +26,7 @@ const SHARED_IMG_SRC = [
  */
 const MAIN_CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
   "style-src 'self' 'unsafe-inline'",
   `img-src ${SHARED_IMG_SRC}`,
   "font-src 'self'",
