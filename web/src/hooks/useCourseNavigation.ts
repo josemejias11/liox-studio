@@ -61,9 +61,7 @@ export function getSectionIndex(structure: CourseStructure, phase: CoursePhase):
 /** Phase that follows the last chapter: specs → quiz → disclaimer → complete. */
 function postChapterPhase(s: CourseStructure): CoursePhase {
   if (s.specSections.length > 0) return { phase: 'specifications', specIndex: 0 };
-  if (s.quizSection) return { phase: 'quiz' };
-  if (s.disclaimerSection) return { phase: 'disclaimer' };
-  return { phase: 'complete' };
+  return { phase: 'quiz' };
 }
 
 /** Last lesson of the last chapter, or the cover when there are no chapters. */
@@ -86,9 +84,8 @@ function phaseBeforeQuiz(s: CourseStructure): CoursePhase {
 }
 
 /** Phase that precedes the disclaimer when navigating backwards. */
-function phaseBeforeDisclaimer(s: CourseStructure): CoursePhase {
-  if (s.quizSection) return { phase: 'quiz' };
-  return phaseBeforeQuiz(s);
+function phaseBeforeDisclaimer(_s: CourseStructure): CoursePhase {
+  return { phase: 'quiz' };
 }
 
 // ── Reducer ───────────────────────────────────────────────────────────────────
@@ -137,9 +134,7 @@ function reduceNext(
           specIndex: phase.specIndex + 1,
         });
       }
-      if (structure.quizSection) return forward({ phase: 'quiz' });
-      if (structure.disclaimerSection) return forward({ phase: 'disclaimer' });
-      return forward({ phase: 'complete' });
+      return forward({ phase: 'quiz' });
 
     case 'disclaimer':
       return forward({ phase: 'complete' });

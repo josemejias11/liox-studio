@@ -177,15 +177,16 @@ export default function MotoViewer({
       case 'quiz':
         return {
           slideKey: 'quiz',
-          screen: structure.quizSection ? (
+          screen: (
             <QuizLesson
               sanityQuiz={structure.quizSection}
+              weakTopics={buildWeakTopics()}
               onPass={nav.finishQuiz}
               onFail={nav.finishQuiz}
               sessionId={persistSession ? sessionId : undefined}
               courseId={course._id}
             />
-          ) : null,
+          ),
         };
 
       case 'disclaimer':

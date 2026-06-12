@@ -171,8 +171,7 @@ export function NavMap({
     disclaimerOffset,
   } = structure;
 
-  const hasNonLessonSections =
-    specSections.length > 0 || quizSection != null || disclaimerSection != null;
+  const hasNonLessonSections = specSections.length > 0 || true || disclaimerSection != null;
 
   // Explored count (lessons only, for footer)
   const exploredCount = lessonSections.filter((ls) => {
@@ -261,17 +260,15 @@ export function NavMap({
           ))}
 
           {/* ── Quiz section ── */}
-          {quizSection && (
-            <SectionRow
-              indexGlyph="✓"
-              glyphSrText="Quiz section"
-              icon={SECTION_TYPE_META.quiz.icon}
-              iconColor={SECTION_TYPE_META.quiz.color}
-              title={quizSection.title ?? 'Knowledge Check'}
-              isCurrent={quizOffset === currentSectionIndex}
-              onClick={() => onNavigate(quizOffset)}
-            />
-          )}
+          <SectionRow
+            indexGlyph="✓"
+            glyphSrText="Quiz section"
+            icon={SECTION_TYPE_META.quiz.icon}
+            iconColor={SECTION_TYPE_META.quiz.color}
+            title={quizSection?.title ?? 'Knowledge Check'}
+            isCurrent={quizOffset === currentSectionIndex}
+            onClick={() => onNavigate(quizOffset)}
+          />
 
           {/* ── Disclaimer section ── */}
           {disclaimerSection && (
