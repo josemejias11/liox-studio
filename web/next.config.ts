@@ -55,9 +55,9 @@ const STUDIO_CSP = [
   "style-src 'self' 'unsafe-inline'",
   `img-src ${SHARED_IMG_SRC}`,
   "font-src 'self' https://fonts.gstatic.com",
-  "connect-src 'self' https://api.sanity.io https://*.api.sanity.io wss://*.api.sanity.io https://cdn.sanity.io",
+  "connect-src 'self' https://api.sanity.io https://*.api.sanity.io wss://*.api.sanity.io https://cdn.sanity.io https://accounts.sanity.io",
   "worker-src 'self' blob:",
-  "frame-src 'self'",
+  "frame-src 'self' https://accounts.sanity.io",
   "frame-ancestors 'self'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -99,7 +99,7 @@ const nextConfig: NextConfig = {
     return [
       // ── Sanity Studio — relaxed policy (must come first; more-specific match) ──
       {
-        source: '/studio/(.*)',
+        source: '/studio(.*)',
         headers: [
           ...COMMON_HEADERS,
           { key: 'Content-Security-Policy', value: STUDIO_CSP },
@@ -107,9 +107,9 @@ const nextConfig: NextConfig = {
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
         ],
       },
-      // ── Main application — strict policy ────────────────────────────────────
+      // ── Main application — strict policy (excludes /studio/* to prevent overwrite) ──
       {
-        source: '/(.*)',
+        source: '/((?!studio).*)',
         headers: [
           ...COMMON_HEADERS,
           { key: 'Content-Security-Policy', value: MAIN_CSP },
