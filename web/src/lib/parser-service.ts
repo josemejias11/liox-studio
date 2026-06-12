@@ -1,8 +1,8 @@
 // ── Server-to-server client for the self-hosted FastAPI parser/RAG service ───
-// SERVER-ONLY. The parser service (Ollama on AWS) is never called from the
-// browser: all traffic proxies through the Next.js route handlers in
-// src/app/api/{chat,quiz,upload}. Every request carries the shared-secret
-// `X-Internal-Token` header. Env vars are intentionally NOT NEXT_PUBLIC_*.
+// SERVER-ONLY. The parser service (local Ollama in dev, self-hosted in prod) is
+// never called from the browser: all traffic proxies through the Next.js route
+// handlers in src/app/api/{chat,quiz,upload}. Every request carries the shared-
+// secret `X-Internal-Token` header. Env vars are intentionally NOT NEXT_PUBLIC_*.
 
 import { z } from 'zod';
 
