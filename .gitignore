@@ -15,5 +15,8 @@ web/.env.local
 *.db-shm
 *.db-wal
 
+# IDE
+.idea/
+
 # OS
 .DS_Store

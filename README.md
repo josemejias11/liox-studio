@@ -16,8 +16,8 @@ Next.js 16 (web/)      ───────────────────
 ─────────────────      /api/upload      markitdown + ChromaDB
 / course library       /api/chat        local Llama 3 Chat
 /course/[slug]         /api/generate-quiz local Llama 3 Quiz Gen
-/analytics 
-/studio 
+/analytics
+/studio
 ```
 
 **Data flow:**
@@ -25,7 +25,7 @@ Next.js 16 (web/)      ───────────────────
 2. The Python backend uses `markitdown` to parse the file and `langchain` + `ChromaDB` to embed and store the chunks locally.
 3. Learner explores hotspots. A floating AI Assistant (`CourseAIFab`) queries the Python `/api/chat` endpoint to get course-specific answers generated locally by `llama3`.
 4. Learner enters a Quiz Lesson. The Next.js app sends the learner's analytics (weak topics) to `/api/generate-quiz`. The Python backend searches ChromaDB for those topics and uses `llama3` to dynamically generate a structured JSON quiz.
-5. Hotspot visits and lesson progress → `/api/progress` → PostgreSQL (Supabase) via Prisma.
+5. Hotspot visits and lesson progress → `/api/progress` → local PostgreSQL via Prisma.
 
 ---
 
@@ -34,7 +34,7 @@ Next.js 16 (web/)      ───────────────────
 - **Self-Hosted AI:** All chat and quiz generation runs on your own Ollama host (`llama3`). No proprietary course files or student queries are ever sent to third-party APIs (like OpenAI or Gemini).
 - **Internal-Only AI Backend:** The browser never reaches the FastAPI service — all AI traffic proxies through Next.js route handlers carrying a shared-secret `X-Internal-Token` header.
 - **Server-Side Grading:** All quizzes (AI-generated and CMS-authored) are graded server-side; the answer key never reaches the browser.
-- **Managed Postgres:** Progress tracking and quiz attempts are stored in a Supabase PostgreSQL database using Prisma's dual-URL pattern — a PgBouncer-pooled connection (port 6543) for runtime queries and a direct connection (port 5432) for migrations only.
+- **Local Postgres:** Progress tracking and quiz attempts are stored in a local PostgreSQL database via Prisma. In production, swap for a managed PG instance (e.g. Supabase) by updating `DATABASE_URL` / `DIRECT_URL` in your environment.
 
 ---
 
@@ -43,83 +43,95 @@ Next.js 16 (web/)      ───────────────────
 ### Prerequisites
 - Node.js 20+
 - Python 3.9+
-- [Ollama](https://ollama.com/) installed and running locally with the `llama3` and `nomic-embed-text` models pulled.
-- A free [Sanity account](https://sanity.io)
-- A free [Supabase account](https://supabase.com) (PostgreSQL database)
+- [Ollama](https://ollama.com/) installed and running locally
+- A [Sanity](https://sanity.io) account (free tier works)
+- PostgreSQL running locally (any installation — Postgres.app, Homebrew, Docker, or WebStorm's built-in DB tool)
 
 ```bash
-# 1. Start the Ollama background service (if not using the Mac/Windows desktop app)
-ollama serve &
-
-# 2. Open a new terminal and download the required local models
+# Pull the required AI models
 ollama pull llama3
 ollama pull nomic-embed-text
 ```
 
 ---
 
-### 1. Start the Python AI Backend
+### 1. Clone and configure environment
 
-The service requires a shared secret (`PARSER_SERVICE_TOKEN`) and refuses to start without one. The Next.js server sends it as the `X-Internal-Token` header on every request — the browser never talks to this service directly, so bind it to localhost.
+```bash
+git clone https://github.com/josemejias11/moto-ai.git
+cd moto-ai
+```
+
+Copy the example env file and fill in your local values:
+
+```bash
+cp web/.env.example web/.env.local
+```
+
+Edit `web/.env.local` — the minimum required for local dev:
+
+```env
+# Local PostgreSQL — match your local instance credentials
+DATABASE_URL="postgresql://<user>:<password>@localhost:5432/moto_ai_dev"
+DIRECT_URL="postgresql://<user>:<password>@localhost:5432/moto_ai_dev"
+
+# Sanity — get from sanity.io/manage → your project → API → Tokens (Editor role)
+SANITY_API_TOKEN="your-editor-token"
+
+# FastAPI shared secret — must match PARSER_SERVICE_TOKEN below
+PARSER_SERVICE_URL="http://localhost:8000"
+PARSER_SERVICE_TOKEN="dev-secret-change-me"
+```
+
+Create the local database (once):
+
+```bash
+psql -U <user> -d postgres -c "CREATE DATABASE moto_ai_dev;"
+```
+
+---
+
+### 2. Start the Python AI Backend
 
 ```bash
 cd parser-service
 python3 -m venv venv
-source venv/bin/activate
+source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 export PARSER_SERVICE_TOKEN="dev-secret-change-me"   # must match web/.env.local
 uvicorn main:app --host 127.0.0.1 --port 8000
 ```
 
+Verify it's healthy:
+```bash
+curl http://localhost:8000/health
+# {"status":"ok","ollama_reachable":true,"chroma_dir_writable":true,...}
+```
+
 ---
 
-### 2. Install and run Next.js Frontend
+### 3. Start the Next.js Frontend
 
-Open a new terminal window:
+Open a new terminal:
 
 ```bash
 cd web
 npm install
-npm run db:migrate   # applies Prisma migrations to your Supabase database
+npm run db:migrate   # applies Prisma migrations to local PostgreSQL
 npm run dev
-# http://localhost:3000
+# → http://localhost:3000
 ```
-
-> Run `npm run db:migrate` once after every fresh clone (requires `DATABASE_URL` and `DIRECT_URL` set in `web/.env.local`).
 
 ---
 
-### 3. Connect Sanity
+### 4. Connect Sanity Studio
 
-1. Go to [sanity.io/manage](https://sanity.io/manage) → **Create new project** → copy the **Project ID**
-2. Update `web/.env` with your project ID:
+The Sanity project ID is already set in `web/.env` (`e7l925v5`). You only need to:
 
-```env
-NEXT_PUBLIC_SANITY_PROJECT_ID="your-project-id"
-NEXT_PUBLIC_SANITY_DATASET="production"
-```
+1. Add your **API Token** to `web/.env.local` (see step 1 above).
+2. Add `http://localhost:3000` to **CORS Origins** in [sanity.io/manage](https://sanity.io/manage) → your project → **API → CORS Origins** with **Allow credentials** checked.
 
-3. Create `web/.env.local` with your secrets:
-
-```env
-SANITY_API_TOKEN="your-editor-token"
-PARSER_SERVICE_URL="http://localhost:8000"           # AI backend (Ollama host) base URL
-PARSER_SERVICE_TOKEN="dev-secret-change-me"          # must match the parser-service token
-
-# Supabase PostgreSQL — pooled (runtime) and direct (migrations only)
-DATABASE_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1"
-DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:5432/postgres"
-```
-
-#### CORS Origins
-In **sanity.io/manage → your project → API → CORS Origins**, add with **Allow credentials** checked:
-
-| Origin | Purpose |
-|--------|---------|
-| `http://localhost:3000` | Embedded Studio + learner player |
-
-#### API Token
-In **sanity.io/manage → your project → API → Tokens** → **Add API token** → Permissions: **Editor**
+The embedded Studio is then available at `http://localhost:3000/studio`.
 
 ---
 
@@ -143,7 +155,7 @@ Strict 16:9 interactive player with animated lesson transitions, hotspot-gated n
 ### Sanity Studio — authoring tool
 `http://localhost:3000/studio`
 
-Where instructional designers create and publish course content. Now includes the **Course Uploader** component, allowing admins to upload `.pdf`, `.docx`, and `.pptx` directly into the local ChromaDB for the AI to learn from.
+Where instructional designers create and publish course content. Includes the **Course Uploader** component — upload `.pdf`, `.docx`, and `.pptx` directly into local ChromaDB for the AI to learn from.
 
 ### Instructor Dashboard — analytics
 `http://localhost:3000/analytics`
@@ -153,6 +165,8 @@ Server-rendered dashboard reading directly from PostgreSQL via Prisma:
 - **Top Features bar chart** — top 8 most-visited hotspots with CSS progress bars
 - **Recent Sessions table** — last 12 sessions with lesson count, hotspot count, status, and relative time
 
+Password is set via `ANALYTICS_PASSWORD` in your env (any value works locally).
+
 ---
 
 ## API Routes
@@ -160,10 +174,10 @@ Server-rendered dashboard reading directly from PostgreSQL via Prisma:
 ### Python FastAPI (`localhost:8000` — internal only, requires `X-Internal-Token`)
 | Method | Path | Description |
 |--------|------|-------------|
+| `GET`  | `/health` | Readiness probe — Ollama reachability + ChromaDB writable. No auth. |
 | `POST` | `/api/upload` | Parses DOCX/PDF/PPTX and upserts into ChromaDB. |
 | `POST` | `/api/chat` | Queries ChromaDB context + `llama3` to answer course questions. |
 | `POST` | `/api/generate-quiz` | Analyzes weak topics and generates a JSON adaptive quiz via `llama3`. |
-| `GET`  | `/health` | Readiness probe (Ollama reachability + ChromaDB dir writable). No auth. |
 
 ### Next.js (`localhost:3000`)
 The browser only ever calls these routes; the AI routes proxy server-to-server to the FastAPI service.
@@ -175,7 +189,7 @@ The browser only ever calls these routes; the AI routes proxy server-to-server t
 | `POST` | `/api/chat` | Proxies course Q&A to the parser service |
 | `POST` | `/api/quiz` | Generates an AI quiz; answer key stays server-side |
 | `POST` | `/api/quiz/grade` | Grades AI or CMS quizzes server-side and records the attempt |
-| `POST` | `/api/upload` | Proxies course-material uploads (50MB cap) |
+| `POST` | `/api/upload` | Proxies course-material uploads (50 MB cap) |
 
 ---
 
@@ -185,7 +199,19 @@ The browser only ever calls these routes; the AI routes proxy server-to-server t
 |-------|-----------|
 | CMS | Sanity (headless) + embedded Studio via `next-sanity` |
 | Frontend | Next.js 16, React 19, TypeScript (strict) |
-| Styling | Tailwind CSS v4, `tw-animate-css`, shadcn/ui v4, MotoSans font |
+| Styling | Tailwind CSS v4, `tw-animate-css`, shadcn/ui v4 |
 | AI Backend | Python 3.9+, FastAPI, Uvicorn |
-| AI Models | Ollama (`llama3`), Langchain, ChromaDB, `markitdown` |
-| Database | PostgreSQL (Supabase) + Prisma ORM v5 (progress tracking, quiz attempts) |
+| AI Models | Ollama (`llama3` + `nomic-embed-text`), LangChain, ChromaDB, `markitdown` |
+| Database | PostgreSQL (local dev) + Prisma ORM v5 |
+| Rate Limiting | Upstash Redis (gracefully disabled when env vars are unset) |
+
+---
+
+## Dev vs Production
+
+| Config | Dev (local) | Production |
+|--------|-------------|------------|
+| PostgreSQL | Local instance (`localhost:5432`) | Managed PG, e.g. Supabase (update `DATABASE_URL`/`DIRECT_URL`) |
+| AI backend | Local Ollama (`localhost:11434`) | Self-hosted Ollama server (update `PARSER_SERVICE_URL`) |
+| Rate limiting | Disabled (empty Upstash env vars) | Upstash Redis (`UPSTASH_REDIS_REST_URL` + `_TOKEN`) |
+| Analytics password | Any value | Strong secret in hosting env vars |
