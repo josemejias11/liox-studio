@@ -567,3 +567,8 @@ def health_check():
         "llm_model": LLM_MODEL,
         "embedding_model": EMBEDDING_MODEL,
     }
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
