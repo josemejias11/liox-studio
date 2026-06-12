@@ -1,27 +1,19 @@
 import { expect, test, describe } from 'vitest';
-import {
-  courseNavigationReducer,
-  type CourseNavState,
-  type CoursePhase,
-} from './useCourseNavigation';
-import { deriveCourseStructure, type CourseStructure } from '../lib/course-structure';
-import type { LessonSection } from '../lib/contracts/sanity';
+import { courseNavigationReducer, type CourseNavState } from './useCourseNavigation';
+import { deriveCourseStructure } from '../lib/course-structure';
+import { lessonSchema, type LessonSection } from '../lib/contracts/sanity';
 
 describe('courseNavigationReducer', () => {
-  const mockLesson1: LessonSection = {
-    sectionType: 'lesson',
-    headline: 'Lesson 1',
+  // Built through the real schema so fixtures stay valid as the contract evolves.
+  const makeLesson = (key: string, headline: string): LessonSection => ({
+    ...lessonSchema.parse({ sectionType: 'lesson', _key: key, headline }),
     chapterIndex: 0,
     chapterTitle: 'Chapter 1',
-  } as any;
-  const mockLesson2: LessonSection = {
-    sectionType: 'lesson',
-    headline: 'Lesson 2',
-    chapterIndex: 0,
-    chapterTitle: 'Chapter 1',
-  } as any;
-  // @ts-ignore
-  const structure = deriveCourseStructure([mockLesson1, mockLesson2]);
+  });
+  const structure = deriveCourseStructure([
+    makeLesson('lesson-1', 'Lesson 1'),
+    makeLesson('lesson-2', 'Lesson 2'),
+  ]);
 
   test('NEXT from cover goes to first lesson', () => {
     const initialState: CourseNavState = {

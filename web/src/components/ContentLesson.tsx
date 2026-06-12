@@ -15,8 +15,8 @@ interface ContentLessonProps {
   hotspots: SanityHotspot[];
   visitedLabels: Set<string>;
   onVisit: (label: string) => void;
-  courseTitle: string;
-  courseDescription?: string;
+  /** Forwarded to DiscoveryPanel for its AI chat calls. */
+  courseId?: string;
 }
 
 interface ActivePanel {
@@ -35,8 +35,6 @@ export function ContentLesson({
   hotspots,
   visitedLabels,
   onVisit,
-  courseTitle,
-  courseDescription,
   courseId,
 }: ContentLessonProps) {
   const [activePanel, setActivePanel] = useState<ActivePanel | null>(null);
@@ -191,8 +189,6 @@ export function ContentLesson({
         x={activePanel?.x}
         y={activePanel?.y}
         mode="popover"
-        courseTitle={courseTitle}
-        courseDescription={courseDescription}
         courseId={courseId}
       />
     </>

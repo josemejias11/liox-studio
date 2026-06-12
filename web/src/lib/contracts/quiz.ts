@@ -10,6 +10,19 @@ import { z } from 'zod';
 //                         Sanity for CMS quizzes) and records the attempt.
 //   3. QuizLesson.tsx   — consumes ClientQuizSchema and the grade responses.
 
+// ── Generate request (browser → /api/quiz) ────────────────────────────────────
+// /api/quiz proxies to the parser service's /api/generate-quiz (server-to-server)
+// with { course_id, weak_topics }, persists the full quiz (answer key included)
+// in Prisma, and returns the client-safe projection below.
+
+export const GenerateQuizRequestSchema = z.object({
+  courseId: z.string().min(1).max(100),
+  /** Topics the learner has not explored yet — steers the RAG quiz generation. */
+  weakTopics: z.array(z.string().min(1).max(200)).max(20).optional(),
+});
+
+export type GenerateQuizRequest = z.infer<typeof GenerateQuizRequestSchema>;
+
 // ── Server-side AI quiz (full payload — NEVER sent to the browser) ────────────
 
 export const ServerAiQuizSchema = z.object({

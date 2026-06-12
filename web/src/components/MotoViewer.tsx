@@ -92,7 +92,11 @@ export default function MotoViewer({
     window.addEventListener(CONSENT_EVENT, onConsentChange);
     return () => window.removeEventListener(CONSENT_EVENT, onConsentChange);
   }, []);
-  const { visited, markVisited: baseMarkVisited } = useLessonProgress(sessionId, persistSession);
+  const {
+    visited,
+    markVisited: baseMarkVisited,
+    error: progressError,
+  } = useLessonProgress(sessionId, persistSession);
 
   // ── Current lesson (chapter phase only) ───────────────────────────────────
   const currentLesson =
@@ -122,21 +126,19 @@ export default function MotoViewer({
     0,
   );
 
-  // ── Context for lesson-type AI quizzes ────────────────────────────────────
-  const buildQuizContext = () =>
-    [
-      `Product: ${course.title}`,
-      `Features: ${structure.lessonSections
-        .flatMap((s) => s.hotspots ?? [])
-        .map((h) => h.topic || h.label)
-        .filter(Boolean)
-        .join(', ')}`,
-      `Explored by learner: ${
-        Object.values(visited)
-          .flatMap((labels) => Array.from(labels))
-          .join(', ') || 'none yet'
-      }`,
-    ].join('\n');
+  // ── Weak topics for lesson-type AI quizzes ────────────────────────────────
+  // Real learner data: hotspot topics not yet explored in this session steer
+  // the RAG quiz generation toward the learner's gaps.
+  const buildWeakTopics = () => {
+    const topics = new Set<string>();
+    for (const s of structure.lessonSections) {
+      for (const h of s.hotspots ?? []) {
+        const topic = (h.topic || h.label).trim();
+        if (topic && !visited[s._key]?.has(h.label)) topics.add(topic);
+      }
+    }
+    return Array.from(topics).slice(0, 10);
+  };
 
   // ── Phase switch — slide key + screen content ─────────────────────────────
   function renderPhase(): { slideKey: string; screen: React.ReactNode } {
@@ -239,8 +241,6 @@ export default function MotoViewer({
                   onVisit={markVisited}
                   onNext={goNext}
                   onPrev={goPrev}
-                  courseTitle={course.title}
-                  courseDescription={course.description}
                   courseId={course._id}
                 />
               ),
@@ -262,7 +262,7 @@ export default function MotoViewer({
               slideKey: `quiz-lesson-${currentLesson._key}`,
               screen: (
                 <QuizLesson
-                  context={buildQuizContext()}
+                  weakTopics={buildWeakTopics()}
                   onPass={goNext} // lesson-type quiz advances on pass and fail (no gate)
                   onFail={goNext}
                   sessionId={persistSession ? sessionId : undefined}
@@ -279,8 +279,6 @@ export default function MotoViewer({
                   hotspots={hotspots}
                   visitedLabels={visited[lessonKey] ?? new Set()}
                   onVisit={markVisited}
-                  courseTitle={course.title}
-                  courseDescription={course.description}
                   courseId={course._id}
                 />
               ),
@@ -353,6 +351,16 @@ export default function MotoViewer({
        phase.phase !== 'quiz' && 
        currentLesson?.lessonType !== 'quiz' && (
          <CourseAIFab courseId={course._id} />
+      )}
+
+      {/* Progress sync failure — non-blocking notice; optimistic updates roll back */}
+      {progressError && persistSession && (
+        <div
+          role="status"
+          className="bg-card/90 text-muted-foreground border-border/20 fixed bottom-4 left-4 z-50 rounded-full border px-4 py-2 text-xs shadow-lg backdrop-blur-sm"
+        >
+          Progress sync is unavailable — your progress may not be saved.
+        </div>
       )}
 
       <CompletionBurst active={showBurst} />

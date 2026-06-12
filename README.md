@@ -31,9 +31,9 @@ Next.js 16 (web/)      ───────────────────
 
 ## Performance & Privacy
 
-- **Fully Local AI:** All chat and quiz generation occurs locally on the machine using `llama3` and Ollama. No proprietary course files or student queries are ever sent to third-party APIs (like OpenAI or Gemini).
-- **Rate Limiting:** A custom in-memory rate limiter protects the few Next.js endpoints remaining to prevent abuse.
-- **Server-Side Grading:** Quizzes are graded securely on the client/server depending on the quiz type.
+- **Self-Hosted AI:** All chat and quiz generation runs on your own Ollama host (`llama3`). No proprietary course files or student queries are ever sent to third-party APIs (like OpenAI or Gemini).
+- **Internal-Only AI Backend:** The browser never reaches the FastAPI service — all AI traffic proxies through Next.js route handlers carrying a shared-secret `X-Internal-Token` header.
+- **Server-Side Grading:** All quizzes (AI-generated and CMS-authored) are graded server-side; the answer key never reaches the browser.
 - **SQLite WAL Mode:** Enabled Write-Ahead Logging (WAL) and increased `busy_timeout` (5000ms) on the Prisma SQLite connection to smoothly handle concurrent telemetry and progress writes without database locks.
 
 ---
@@ -47,7 +47,10 @@ Next.js 16 (web/)      ───────────────────
 - A free [Sanity account](https://sanity.io)
 
 ```bash
-# Prepare local models
+# 1. Start the Ollama background service (if not using the Mac/Windows desktop app)
+ollama serve &
+
+# 2. Open a new terminal and download the required local models
 ollama pull llama3
 ollama pull nomic-embed-text
 ```
@@ -56,12 +59,15 @@ ollama pull nomic-embed-text
 
 ### 1. Start the Python AI Backend
 
+The service requires a shared secret (`PARSER_SERVICE_TOKEN`) and refuses to start without one. The Next.js server sends it as the `X-Internal-Token` header on every request — the browser never talks to this service directly, so bind it to localhost.
+
 ```bash
 cd parser-service
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-uvicorn main:app --host 0.0.0.0 --port 8000
+export PARSER_SERVICE_TOKEN="dev-secret-change-me"   # must match web/.env.local
+uvicorn main:app --host 127.0.0.1 --port 8000
 ```
 
 ---
@@ -97,6 +103,8 @@ DATABASE_URL="file:./prisma/dev.db"
 
 ```env
 SANITY_API_TOKEN="your-editor-token"
+PARSER_SERVICE_URL="http://localhost:8000"           # AI backend (Ollama host) base URL
+PARSER_SERVICE_TOKEN="dev-secret-change-me"          # must match the parser-service token
 ```
 
 #### CORS Origins
@@ -145,18 +153,25 @@ Server-rendered dashboard reading directly from SQLite:
 
 ## API Routes
 
-### Python FastAPI (`localhost:8000`)
+### Python FastAPI (`localhost:8000` — internal only, requires `X-Internal-Token`)
 | Method | Path | Description |
 |--------|------|-------------|
 | `POST` | `/api/upload` | Parses DOCX/PDF/PPTX and upserts into ChromaDB. |
 | `POST` | `/api/chat` | Queries ChromaDB context + `llama3` to answer course questions. |
 | `POST` | `/api/generate-quiz` | Analyzes weak topics and generates a JSON adaptive quiz via `llama3`. |
+| `GET`  | `/health` | Readiness probe (Ollama reachability + ChromaDB dir writable). No auth. |
 
 ### Next.js (`localhost:3000`)
+The browser only ever calls these routes; the AI routes proxy server-to-server to the FastAPI service.
+
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET`  | `/api/progress?sessionId=` | Returns lesson and layer progress for a session |
-| `POST` | `/api/progress` | Upserts lesson/layer progress or hotspot visits |
+| `GET`  | `/api/progress?sessionId=` | Returns lesson progress for a session |
+| `POST` | `/api/progress` | Upserts lesson progress and hotspot visits |
+| `POST` | `/api/chat` | Proxies course Q&A to the parser service |
+| `POST` | `/api/quiz` | Generates an AI quiz; answer key stays server-side |
+| `POST` | `/api/quiz/grade` | Grades AI or CMS quizzes server-side and records the attempt |
+| `POST` | `/api/upload` | Proxies course-material uploads (50MB cap) |
 
 ---
 

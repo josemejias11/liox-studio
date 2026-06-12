@@ -3,6 +3,11 @@ import { Bot, Users, Zap, Trophy, BookOpen, ArrowLeft } from 'lucide-react';
 import { getAnalyticsData } from '@/services/analytics.service';
 import React from 'react';
 
+// Always render fresh data — without this the dashboard would be frozen at
+// build time. TODO(auth): gate this instructor dashboard behind authentication
+// in a later phase; it is currently public.
+export const dynamic = 'force-dynamic';
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function relativeTime(date: Date): string {

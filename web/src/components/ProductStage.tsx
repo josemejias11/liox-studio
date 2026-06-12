@@ -21,8 +21,6 @@ interface ProductStageProps {
   onVisit: (label: string) => void;
   onNext: () => void;
   onPrev?: () => void;
-  courseTitle?: string;
-  courseDescription?: string;
   courseId: string;
 }
 
@@ -37,8 +35,6 @@ export function ProductStage({
   onVisit,
   onNext,
   onPrev,
-  courseTitle,
-  courseDescription,
   courseId,
 }: ProductStageProps) {
   const [activePanel, setActivePanel] = useState<{
@@ -449,8 +445,6 @@ export function ProductStage({
         x={activePanel?.x}
         y={activePanel?.y}
         mode="popover"
-        courseTitle={courseTitle}
-        courseDescription={courseDescription}
         courseId={courseId}
       />
     </div>

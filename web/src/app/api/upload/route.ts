@@ -1,0 +1,55 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { MAX_UPLOAD_BYTES } from '@/lib/contracts/upload';
+import { parserPost, ParserUploadResponseSchema, ParserServiceError } from '@/lib/parser-service';
+
+// Proxies course-material uploads (multipart form: course_id + file) to the
+// self-hosted parser service, server-to-server. Enforces the 50MB cap before
+// forwarding anything upstream.
+
+const USER_SAFE_UNAVAILABLE =
+  'The upload service is temporarily unavailable. Please try again in a moment.';
+
+export async function POST(req: NextRequest) {
+  let formData: FormData;
+  try {
+    formData = await req.formData();
+  } catch {
+    return NextResponse.json({ error: 'Expected a multipart form body' }, { status: 400 });
+  }
+
+  const file = formData.get('file');
+  const courseId = formData.get('course_id');
+
+  if (!(file instanceof File) || file.size === 0) {
+    return NextResponse.json({ error: 'A non-empty "file" field is required' }, { status: 400 });
+  }
+  if (typeof courseId !== 'string' || courseId.length === 0 || courseId.length > 100) {
+    return NextResponse.json({ error: 'A valid "course_id" field is required' }, { status: 400 });
+  }
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return NextResponse.json(
+      { error: `File exceeds the ${Math.floor(MAX_UPLOAD_BYTES / 1024 / 1024)}MB upload limit` },
+      { status: 413 },
+    );
+  }
+
+  const upstream = new FormData();
+  upstream.append('course_id', courseId);
+  upstream.append('file', file, file.name);
+
+  try {
+    const raw = await parserPost('/api/upload', { body: upstream, timeoutMs: 120_000 });
+    const parsed = ParserUploadResponseSchema.safeParse(raw);
+    if (!parsed.success) {
+      return NextResponse.json({ error: USER_SAFE_UNAVAILABLE }, { status: 502 });
+    }
+    return NextResponse.json(parsed.data);
+  } catch (err: unknown) {
+    if (err instanceof ParserServiceError) {
+      console.error('[api/upload] parser service error:', err.message);
+      return NextResponse.json({ error: USER_SAFE_UNAVAILABLE }, { status: 502 });
+    }
+    console.error('[api/upload] unexpected error:', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

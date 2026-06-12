@@ -12,18 +12,8 @@ const LessonProgressSchema = z.object({
 // server-side by /api/quiz/grade so a client can never supply its own
 // `passed` / `score` (see contracts/quiz.ts).
 
-const LayerProgressSchema = z.object({
-  type: z.literal('layer'),
-  sessionId: z.string().uuid('Invalid session ID format'),
-  lessonId: z.string().min(1).max(100),
-  layerId: z.string().min(1).max(100),
-  visitedHotspots: z.array(z.string().max(200)).max(50).optional(),
-  completed: z.boolean().optional(),
-});
-
-export const ProgressRequestSchema = z.discriminatedUnion('type', [
-  LessonProgressSchema,
-  LayerProgressSchema,
-]);
+// Kept as a discriminated union so future progress types slot in without
+// changing the route's parse logic.
+export const ProgressRequestSchema = z.discriminatedUnion('type', [LessonProgressSchema]);
 
 export type ProgressRequestBody = z.infer<typeof ProgressRequestSchema>;

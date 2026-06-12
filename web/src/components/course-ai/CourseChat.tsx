@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Sparkles, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ChatResponseSchema } from '@/lib/contracts/chat';
 
 type Message = {
   id: string;
@@ -10,7 +11,10 @@ type Message = {
   content: string;
 };
 
-export function CourseChat({ courseId = 'course_123' }: { courseId?: string }) {
+const USER_SAFE_ERROR =
+  "Sorry — I couldn't reach the assistant just now. Please try again in a moment.";
+
+export function CourseChat({ courseId }: { courseId?: string }) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -46,40 +50,46 @@ export function CourseChat({ courseId = 'course_123' }: { courseId?: string }) {
     setIsLoading(true);
 
     try {
-      // Simulate API call to the local python backend
-      const res = await fetch('http://localhost:8000/api/chat', {
+      if (!courseId) throw new Error('Missing courseId');
+
+      // Proxied through the Next.js route handler — the browser never calls
+      // the parser service directly.
+      const res = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          course_id: courseId,
+          courseId,
           query: userMsg.content,
         }),
       });
 
       if (!res.ok) {
-        throw new Error('Chat request failed');
+        throw new Error(`Chat request failed (${res.status})`);
       }
 
-      const data = await res.json();
+      const parsed = ChatResponseSchema.safeParse(await res.json());
+      if (!parsed.success) {
+        throw new Error('Chat response failed validation');
+      }
 
       setMessages((prev) => [
         ...prev,
         {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: data.answer || "I received your question but couldn't parse the response.",
+          content: parsed.data.answer,
         },
       ]);
-    } catch (error: any) {
-      console.warn('API chat failed:', error);
+    } catch (error: unknown) {
+      console.warn('Chat request failed:', error instanceof Error ? error.message : error);
       setMessages((prev) => [
         ...prev,
         {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: `Error communicating with the backend: ${error.message}. Please check the Python server logs.`,
+          content: USER_SAFE_ERROR,
         },
       ]);
     } finally {

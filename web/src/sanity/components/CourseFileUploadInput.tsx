@@ -1,47 +1,60 @@
 import React, { useState, useCallback } from 'react';
-import { StringInputProps, set, unset, useFormValue } from 'sanity';
+import { StringInputProps, set, useFormValue } from 'sanity';
 import { Button, Card, Flex, Text, Box, Stack, Badge } from '@sanity/ui';
+import { MAX_UPLOAD_BYTES, UploadResponseSchema } from '@/lib/contracts/upload';
 
 export function CourseFileUploadInput(props: StringInputProps) {
   const { value, onChange } = props;
-  const document = useFormValue([]) as any;
+  const document = useFormValue([]) as { _id?: string } | undefined;
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
-  const courseId = document._id?.replace(/^drafts\./, '');
+  const courseId = document?._id?.replace(/^drafts\./, '');
 
-  const handleFileChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !courseId) return;
+  const handleFileChange = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file || !courseId) return;
 
-    setIsUploading(true);
-    setUploadStatus('idle');
-
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('course_id', courseId);
-
-    try {
-      // Simulate an upload to POST http://localhost:8000/api/upload
-      const response = await fetch('http://localhost:8000/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (response.ok) {
-        setUploadStatus('success');
-        // Optionally update the Sanity field with a reference or file name
-        onChange(set(`Uploaded: ${file.name}`));
-      } else {
+      if (file.size > MAX_UPLOAD_BYTES) {
         setUploadStatus('error');
+        return;
       }
-    } catch (error) {
-      console.error('Upload failed:', error);
-      setUploadStatus('error');
-    } finally {
-      setIsUploading(false);
-    }
-  }, [courseId, onChange]);
+
+      setIsUploading(true);
+      setUploadStatus('idle');
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('course_id', courseId);
+
+      try {
+        // Proxied through the Next.js route handler — the Studio never calls
+        // the parser service directly.
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const parsed = response.ok
+          ? UploadResponseSchema.safeParse(await response.json())
+          : undefined;
+
+        if (parsed?.success) {
+          setUploadStatus('success');
+          onChange(set(`Uploaded: ${parsed.data.filename} (${parsed.data.chunks_stored} chunks)`));
+        } else {
+          setUploadStatus('error');
+        }
+      } catch (error) {
+        console.error('Upload failed:', error);
+        setUploadStatus('error');
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [courseId, onChange],
+  );
 
   return (
     <Card padding={4} radius={2} shadow={1} border>

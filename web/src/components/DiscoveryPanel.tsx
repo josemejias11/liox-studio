@@ -5,7 +5,8 @@ import { X, Send, Sparkles } from 'lucide-react';
 import { PhotoCardStack } from './PhotoCardStack';
 import { useFocusTrap } from '@/lib/useFocusTrap';
 import { PortableText } from '@portabletext/react';
-import { toPlainText, type RichText, type SanityPhoto } from '@/lib/contracts/sanity';
+import { ChatResponseSchema } from '@/lib/contracts/chat';
+import type { RichText, SanityPhoto } from '@/lib/contracts/sanity';
 import { cssAspectRatio } from '@/lib/utils';
 
 type Message = { role: 'assistant' | 'user'; text: string; streaming?: boolean };
@@ -23,8 +24,6 @@ interface DiscoveryPanelProps {
   x?: number;
   y?: number;
   mode?: 'sidebar' | 'popover';
-  courseTitle?: string;
-  courseDescription?: string;
   courseId?: string;
 }
 
@@ -75,8 +74,6 @@ export function DiscoveryPanel({
   x,
   y,
   mode,
-  courseTitle,
-  courseDescription,
   courseId,
 }: DiscoveryPanelProps) {
   const hasVideo = !!videoFile?.asset?.url;
@@ -187,21 +184,17 @@ export function DiscoveryPanel({
 
     let fullResponse = '';
 
-    // Extract plain text from PortableText array for the AI
-    const plainTextBody =
-      typeof body === 'string'
-        ? body
-        : Array.isArray(body)
-          ? body.map((b) => toPlainText([b])).join('\n')
-          : '';
-
     try {
-      const res = await fetch('http://localhost:8000/api/chat', {
+      if (!courseId) throw new Error('Missing courseId');
+
+      // Proxied through the Next.js route handler — the browser never calls
+      // the parser service directly.
+      const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          course_id: courseId || 'course_123',
-          query: `Context regarding ${topic || 'the feature'}:\n${queryText}`,
+          courseId,
+          query: topic ? `Regarding the "${topic}" feature: ${queryText}` : queryText,
         }),
         signal: controller.signal,
       });
@@ -210,9 +203,12 @@ export function DiscoveryPanel({
         throw new Error(`Chat request failed (${res.status})`);
       }
 
-      const data = await res.json();
-      fullResponse = data.answer || "I received your question but couldn't parse the response.";
-      
+      const parsed = ChatResponseSchema.safeParse(await res.json());
+      if (!parsed.success) {
+        throw new Error('Chat response failed validation');
+      }
+      fullResponse = parsed.data.answer;
+
       setMessages((prev) => {
         const msgs = [...prev];
         msgs[msgs.length - 1] = { role: 'assistant', text: fullResponse, streaming: true };

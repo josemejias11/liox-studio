@@ -11,7 +11,9 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "postinstall": "prisma generate",
-    "db:migrate": "prisma migrate dev",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:generate": "prisma generate",
     "db:studio": "prisma studio"
   },
   "dependencies": {
@@ -21,7 +23,8 @@
     "@prisma/client": "^5.22.0",
     "@sanity/image-url": "^2.1.1",
     "@sanity/vision": "^5.30.0",
-    "@supabase/supabase-js": "^2.108.1",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.0",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

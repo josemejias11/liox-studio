@@ -4,8 +4,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")       // pooled (PgBouncer) URL for runtime queries
+  directUrl = env("DIRECT_URL")         // direct connection for migrations only
 }
 
 // Tracks user sessions
@@ -14,7 +15,6 @@ model Session {
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt // Tracks last activity
   progress    LessonProgress[]
-  layerProg   LayerProgress[]
   quizzes     QuizAttempt[]
   hotspots    HotspotVisit[]
 }
@@ -29,19 +29,6 @@ model LessonProgress {
   session         Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@id([sessionId, lessonId])
-}
-
-// Tracks per-layer progress for a session
-model LayerProgress {
-  sessionId       String
-  lessonId        String
-  layerId         String
-  completed       Boolean  @default(false)
-  updatedAt       DateTime @updatedAt
-
-  session         Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-
-  @@id([sessionId, lessonId, layerId])
 }
 
 // Normalized Hotspot Visits

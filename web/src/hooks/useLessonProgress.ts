@@ -2,7 +2,11 @@ import { useMemo } from 'react';
 import useSWR from 'swr';
 import { ProgressRequestBody } from '@/lib/contracts/progress';
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Progress request failed (${res.status})`);
+  return res.json();
+};
 
 interface LessonData {
   visitedHotspots?: string[];
@@ -70,14 +74,16 @@ export function useLessonProgress(sessionId: string, persist: boolean = true) {
 
     // Optimistically update the SWR cache; only POST when consent allows
     // persistence (otherwise progress lives solely in this tab's memory).
-    mutate(
+    // Throwing on non-2xx is what makes rollbackOnError actually roll back.
+    await mutate(
       persist
         ? async () => {
-            await fetch('/api/progress', {
+            const res = await fetch('/api/progress', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload),
             });
+            if (!res.ok) throw new Error(`Progress save failed (${res.status})`);
             return optimisticData;
           }
         : optimisticData,
@@ -87,7 +93,11 @@ export function useLessonProgress(sessionId: string, persist: boolean = true) {
         populateCache: true,
         revalidate: false,
       },
-    );
+    ).catch((err: unknown) => {
+      // The optimistic update has been rolled back; callers fire-and-forget,
+      // so swallow here and let the SWR `error` state surface read failures.
+      console.error('Failed to persist progress:', err);
+    });
   };
 
   return {
