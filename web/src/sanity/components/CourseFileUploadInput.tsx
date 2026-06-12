@@ -1,47 +1,56 @@
 import React, { useRef, useState, useCallback } from 'react';
-import { StringInputProps, set, useFormValue } from 'sanity';
+import { ArrayOfObjectsInputProps, PatchEvent, insert, set, unset, useFormValue } from 'sanity';
 import { Button, Card, Flex, Text, Box, Stack, Badge } from '@sanity/ui';
 import { MAX_UPLOAD_BYTES, UploadResponseSchema } from '@/lib/contracts/upload';
 
-type FileStatus = {
+type UploadedFile = {
+  _key: string;
+  _type: 'uploadedFile';
+  filename: string;
+  chunks: number;
+  uploadedAt: string;
+};
+
+type SessionFileStatus = {
   name: string;
   state: 'pending' | 'uploading' | 'success' | 'error';
   chunks?: number;
 };
 
-export function CourseFileUploadInput(props: StringInputProps) {
+export function CourseFileUploadInput(props: ArrayOfObjectsInputProps) {
   const { value, onChange } = props;
+  const indexedFiles = (value ?? []) as UploadedFile[];
+
   const document = useFormValue([]) as { _id?: string } | undefined;
-  const [fileStatuses, setFileStatuses] = useState<FileStatus[]>([]);
+  const courseId = document?._id?.replace(/^drafts\./, '');
+
+  const [sessionStatuses, setSessionStatuses] = useState<SessionFileStatus[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  const courseId = document?._id?.replace(/^drafts\./, '');
 
   const handleFileChange = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(event.target.files ?? []);
-      // Reset the input so the same files can be re-selected after an error.
       if (inputRef.current) inputRef.current.value = '';
       if (files.length === 0 || !courseId) return;
 
-      const initial: FileStatus[] = files.map((f) => ({ name: f.name, state: 'pending' }));
-      setFileStatuses(initial);
+      const initial: SessionFileStatus[] = files.map((f) => ({ name: f.name, state: 'pending' }));
+      setSessionStatuses(initial);
       setIsUploading(true);
 
-      const results: FileStatus[] = [...initial];
+      const results: SessionFileStatus[] = [...initial];
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
 
         if (file.size > MAX_UPLOAD_BYTES) {
           results[i] = { name: file.name, state: 'error' };
-          setFileStatuses([...results]);
+          setSessionStatuses([...results]);
           continue;
         }
 
         results[i] = { name: file.name, state: 'uploading' };
-        setFileStatuses([...results]);
+        setSessionStatuses([...results]);
 
         try {
           const formData = new FormData();
@@ -55,6 +64,29 @@ export function CourseFileUploadInput(props: StringInputProps) {
 
           if (parsed?.success) {
             results[i] = { name: file.name, state: 'success', chunks: parsed.data.chunks_stored };
+            const existing = indexedFiles.find((f) => f.filename === file.name);
+            if (existing) {
+              // Same filename re-uploaded — update the existing row in-place.
+              onChange(
+                PatchEvent.from(
+                  set(
+                    { ...existing, chunks: parsed.data.chunks_stored, uploadedAt: new Date().toISOString() },
+                    [{ _key: existing._key }],
+                  ),
+                ),
+              );
+            } else {
+              // New file — append to the persistent array.
+              onChange(
+                PatchEvent.from(
+                  insert(
+                    [{ _type: 'uploadedFile', filename: file.name, chunks: parsed.data.chunks_stored, uploadedAt: new Date().toISOString() }],
+                    'after',
+                    [-1],
+                  ),
+                ),
+              );
+            }
           } else {
             results[i] = { name: file.name, state: 'error' };
           }
@@ -62,19 +94,28 @@ export function CourseFileUploadInput(props: StringInputProps) {
           results[i] = { name: file.name, state: 'error' };
         }
 
-        setFileStatuses([...results]);
+        setSessionStatuses([...results]);
       }
 
       setIsUploading(false);
+    },
+    [courseId, onChange],
+  );
 
-      // Persist a summary string to the Sanity field.
-      const succeeded = results.filter((r) => r.state === 'success');
-      if (succeeded.length > 0) {
-        const detail = succeeded
-          .map((r) => `${r.name} (${r.chunks} chunks)`)
-          .join(', ');
-        onChange(set(`${succeeded.length} file${succeeded.length > 1 ? 's' : ''}: ${detail}`));
+  const handleRemove = useCallback(
+    async (file: UploadedFile) => {
+      if (courseId) {
+        try {
+          await fetch('/api/upload', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ course_id: courseId, filename: file.filename }),
+          });
+        } catch {
+          // Non-blocking: remove the Sanity record even if the API call fails.
+        }
       }
+      onChange(PatchEvent.from(unset([{ _key: file._key }])));
     },
     [courseId, onChange],
   );
@@ -82,15 +123,17 @@ export function CourseFileUploadInput(props: StringInputProps) {
   return (
     <Card padding={4} radius={2} shadow={1} border>
       <Stack space={4}>
+        {/* Header */}
         <Box>
           <Text size={1} weight="medium">
-            Upload Course Material (PDF, PPTX, DOCX, XLSX)
+            Course Material (PDF, PPTX, DOCX, XLSX)
           </Text>
           <Text size={1} muted style={{ marginTop: '8px' }}>
-            Select one or more files. Each is uploaded and indexed separately.
+            All indexed files are listed below. Uploading again replaces that file's chunks.
           </Text>
         </Box>
 
+        {/* Upload button */}
         <Flex align="center" gap={3}>
           <input
             ref={inputRef}
@@ -105,16 +148,17 @@ export function CourseFileUploadInput(props: StringInputProps) {
           <Button
             as="label"
             htmlFor="course-file-upload"
-            text={isUploading ? 'Uploading…' : 'Select Files'}
+            text={isUploading ? 'Uploading…' : 'Add Files'}
             mode="ghost"
             disabled={isUploading || !courseId}
             style={{ cursor: isUploading || !courseId ? 'not-allowed' : 'pointer' }}
           />
         </Flex>
 
-        {fileStatuses.length > 0 && (
+        {/* In-progress session status */}
+        {sessionStatuses.length > 0 && (
           <Stack space={2}>
-            {fileStatuses.map((f, i) => (
+            {sessionStatuses.map((f, i) => (
               <Flex key={i} align="center" gap={2}>
                 <Badge
                   tone={
@@ -141,12 +185,39 @@ export function CourseFileUploadInput(props: StringInputProps) {
           </Stack>
         )}
 
-        {value && (
-          <Box padding={3} style={{ backgroundColor: '#f4f5f7', borderRadius: '4px' }}>
-            <Text size={1} muted>
-              Last upload: {value}
+        {/* Persistent indexed file library */}
+        {indexedFiles.length > 0 && (
+          <Stack space={1}>
+            <Text size={0} weight="semibold" muted style={{ textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Indexed files ({indexedFiles.length})
             </Text>
-          </Box>
+            {indexedFiles.map((f) => (
+              <Flex key={f._key} align="center" gap={2} style={{ paddingTop: '6px' }}>
+                <Box flex={1} style={{ minWidth: 0 }}>
+                  <Text size={1} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {f.filename}
+                  </Text>
+                  <Text size={0} muted>
+                    {f.chunks} chunks · {new Date(f.uploadedAt).toLocaleDateString()}
+                  </Text>
+                </Box>
+                <Button
+                  text="✕"
+                  mode="bleed"
+                  tone="critical"
+                  padding={2}
+                  fontSize={1}
+                  onClick={() => handleRemove(f)}
+                  title={`Remove ${f.filename}`}
+                  style={{ flexShrink: 0 }}
+                />
+              </Flex>
+            ))}
+          </Stack>
+        )}
+
+        {indexedFiles.length === 0 && sessionStatuses.length === 0 && (
+          <Text size={1} muted>No files indexed yet. Add files above to populate the AI knowledge base.</Text>
         )}
       </Stack>
     </Card>

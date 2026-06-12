@@ -14,17 +14,17 @@ Sanity CMS (headless) ───────┐ (uploads course files)
        ▼               Python FastAPI (parser-service)
 Next.js 16 (web/)      ─────────────────────────────
 ─────────────────      /api/upload      markitdown + ChromaDB
-/ course library       /api/chat        local Llama 3 Chat
-/course/[slug]         /api/generate-quiz local Llama 3 Quiz Gen
-/analytics
+/ course library       /api/document   chunk deletion
+/course/[slug]         /api/chat        local Llama 3 Chat
+/analytics             /api/generate-quiz local Llama 3 Quiz Gen
 /studio
 ```
 
 **Data flow:**
-1. Content is authored in Sanity Studio. Course files (PDF, PPTX, DOCX) are uploaded directly via a custom Studio component, hitting the Python `/api/upload` endpoint.
+1. Content is authored in Sanity Studio. Course files (PDF, PPTX, DOCX, **XLSX**) are uploaded via a persistent file library in the Studio. Each file is proxied through Next.js to the Python `/api/upload` endpoint and indexed into ChromaDB. Re-uploading the same filename replaces its chunks; deleting a file purges its chunks via `/api/document`.
 2. The Python backend uses `markitdown` to parse the file and `langchain` + `ChromaDB` to embed and store the chunks locally.
 3. Learner explores hotspots. A floating AI Assistant (`CourseAIFab`) queries the Python `/api/chat` endpoint to get course-specific answers generated locally by `llama3`.
-4. Learner enters a Quiz Lesson. The Next.js app sends the learner's analytics (weak topics) to `/api/generate-quiz`. The Python backend searches ChromaDB for those topics and uses `llama3` to dynamically generate a structured JSON quiz.
+4. Learner enters a Quiz phase. The Next.js app sends the learner's **weak topics** (hotspots not yet visited) to `/api/generate-quiz`. The Python backend searches ChromaDB for those topics and uses `llama3` to dynamically generate a structured adaptive quiz. The course-level quiz always uses the AI path — no CMS-authored quiz required.
 5. Hotspot visits and lesson progress → `/api/progress` → local PostgreSQL via Prisma.
 
 ---
@@ -99,7 +99,13 @@ python3 -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 export PARSER_SERVICE_TOKEN="dev-secret-change-me"   # must match web/.env.local
-uvicorn main:app --host 127.0.0.1 --port 8000
+python main.py
+```
+
+`python main.py` always binds to `http://127.0.0.1:8000`. To expose on all interfaces (e.g. for a networked dev setup):
+
+```bash
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 Verify it's healthy:
@@ -149,13 +155,16 @@ Strict 16:9 interactive player with animated lesson transitions, hotspot-gated n
 | `CourseAIFab` | Floating AI Assistant powered by Python `llama3` — available anywhere |
 | `DiscoveryPanel` | Shows learn content + allows chatting with AI about specific features |
 | `ProductStage` | 3D-style product view with floating hotspots and a completion burst animation |
-| `QuizLesson` | Dynamically generates an AI quiz based on the learner's weakest topics |
-| `NavMap` | Full-course map with type icons and completion dots |
+| `CourseQuiz` | Adaptive AI quiz — always shown at course completion, steered by the learner's unvisited hotspot topics |
+| `SanityQuizPlayer` | Static CMS-authored quiz — shown only when a quiz document is explicitly attached to the course |
+| `NavMap` | Full-course map with type icons and completion dots; Knowledge Check entry always visible |
 
 ### Sanity Studio — authoring tool
 `http://localhost:3000/studio`
 
-Where instructional designers create and publish course content. Includes the **Course Uploader** component — upload `.pdf`, `.docx`, and `.pptx` directly into local ChromaDB for the AI to learn from.
+Where instructional designers create and publish course content.
+
+**Course Material file library** — the Course document includes a persistent, additive file library. Upload `.pdf`, `.docx`, `.pptx`, and `.xlsx` files directly into ChromaDB for the AI to learn from. Each upload appends an entry; re-uploading the same filename replaces its chunks without adding a duplicate row. The ✕ button removes the Sanity record **and** purges the file's chunks from ChromaDB in one action.
 
 ### Instructor Dashboard — analytics
 `http://localhost:3000/analytics`
@@ -174,22 +183,24 @@ Password is set via `ANALYTICS_PASSWORD` in your env (any value works locally).
 ### Python FastAPI (`localhost:8000` — internal only, requires `X-Internal-Token`)
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET`  | `/health` | Readiness probe — Ollama reachability + ChromaDB writable. No auth. |
-| `POST` | `/api/upload` | Parses DOCX/PDF/PPTX and upserts into ChromaDB. |
-| `POST` | `/api/chat` | Queries ChromaDB context + `llama3` to answer course questions. |
-| `POST` | `/api/generate-quiz` | Analyzes weak topics and generates a JSON adaptive quiz via `llama3`. |
+| `GET`    | `/health` | Readiness probe — Ollama reachability + ChromaDB writable. No auth. |
+| `POST`   | `/api/upload` | Parses DOCX/PDF/PPTX/XLSX and upserts into ChromaDB. Re-uploading replaces previous chunks for that filename. |
+| `DELETE` | `/api/document` | Removes all ChromaDB chunks for a given `course_id` + `filename`. |
+| `POST`   | `/api/chat` | Queries ChromaDB context + `llama3` to answer course questions. |
+| `POST`   | `/api/generate-quiz` | Analyzes weak topics and generates a JSON adaptive quiz via `llama3`. |
 
 ### Next.js (`localhost:3000`)
 The browser only ever calls these routes; the AI routes proxy server-to-server to the FastAPI service.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET`  | `/api/progress?sessionId=` | Returns lesson progress for a session |
-| `POST` | `/api/progress` | Upserts lesson progress and hotspot visits |
-| `POST` | `/api/chat` | Proxies course Q&A to the parser service |
-| `POST` | `/api/quiz` | Generates an AI quiz; answer key stays server-side |
-| `POST` | `/api/quiz/grade` | Grades AI or CMS quizzes server-side and records the attempt |
-| `POST` | `/api/upload` | Proxies course-material uploads (50 MB cap) |
+| `GET`    | `/api/progress?sessionId=` | Returns lesson progress for a session |
+| `POST`   | `/api/progress` | Upserts lesson progress and hotspot visits |
+| `POST`   | `/api/chat` | Proxies course Q&A to the parser service |
+| `POST`   | `/api/quiz` | Generates an AI quiz; answer key stays server-side |
+| `POST`   | `/api/quiz/grade` | Grades AI or CMS quizzes server-side and records the attempt |
+| `POST`   | `/api/upload` | Proxies course-material uploads to the parser service (50 MB cap per file) |
+| `DELETE` | `/api/upload` | Proxies chunk deletion to the parser service |
 
 ---
 

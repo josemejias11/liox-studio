@@ -1,4 +1,4 @@
-import { defineType, defineField } from 'sanity';
+import { defineType, defineField, defineArrayMember } from 'sanity';
 import { CourseFileUploadInput } from '../components/CourseFileUploadInput';
 
 export const courseType = defineType({
@@ -63,8 +63,19 @@ export const courseType = defineType({
     defineField({
       name: 'courseMaterial',
       title: 'Course Material',
-      type: 'string',
+      type: 'array',
       group: 'content',
+      of: [
+        defineArrayMember({
+          type: 'object',
+          name: 'uploadedFile',
+          fields: [
+            defineField({ name: 'filename', type: 'string', title: 'Filename' }),
+            defineField({ name: 'chunks', type: 'number', title: 'Chunks' }),
+            defineField({ name: 'uploadedAt', type: 'string', title: 'Uploaded At' }),
+          ],
+        }),
+      ],
       components: {
         input: CourseFileUploadInput,
       },

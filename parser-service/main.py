@@ -537,6 +537,43 @@ Output the JSON object now:"""
         raise HTTPException(status_code=500, detail="Internal server error generating quiz.")
 
 
+class DeleteDocumentRequest(BaseModel):
+    course_id: str
+    filename: str
+
+    _check_course_id = field_validator("course_id")(_validate_course_id)
+
+
+@app.delete(
+    "/api/document",
+    dependencies=[Depends(require_internal_token)],
+)
+def delete_document(request: DeleteDocumentRequest):
+    """Remove all ChromaDB chunks for a specific file within a course."""
+    logger.info("Delete request: course=%s file=%s", request.course_id, request.filename)
+
+    if not collection_exists(request.course_id):
+        return {"status": "not_found", "filename": request.filename}
+
+    vs = get_vectorstore(request.course_id)
+    try:
+        vs._collection.delete(where={"source": request.filename})
+    except Exception:
+        logger.warning(
+            "Could not delete chunks for %s in course %s",
+            request.filename,
+            request.course_id,
+            exc_info=True,
+        )
+        raise HTTPException(status_code=500, detail="Failed to delete document chunks.")
+
+    with _vectorstores_lock:
+        _vectorstores.pop(request.course_id, None)
+
+    logger.info("Deleted chunks for %s in course %s", request.filename, request.course_id)
+    return {"status": "deleted", "filename": request.filename}
+
+
 @app.get("/health")
 def health_check():
     """Readiness check: Ollama reachability and ChromaDB directory writability."""

@@ -69,6 +69,44 @@ export async function parserPost(
   }
 }
 
+/**
+ * DELETE to the parser service with the internal token attached.
+ * Always sends a JSON body. Throws ParserServiceError on failure.
+ */
+export async function parserDelete(
+  path: string,
+  { json, timeoutMs = 30_000 }: { json: unknown; timeoutMs?: number },
+): Promise<unknown> {
+  const headers: Record<string, string> = {
+    'X-Internal-Token': PARSER_SERVICE_TOKEN,
+    'Content-Type': 'application/json',
+  };
+
+  let res: Response;
+  try {
+    res = await fetch(`${PARSER_SERVICE_URL}${path}`, {
+      method: 'DELETE',
+      headers,
+      body: JSON.stringify(json),
+      signal: AbortSignal.timeout(timeoutMs),
+      cache: 'no-store',
+    });
+  } catch (err: unknown) {
+    const reason = err instanceof Error ? err.message : 'network error';
+    throw new ParserServiceError(`Parser service unreachable: ${reason}`);
+  }
+
+  if (!res.ok) {
+    throw new ParserServiceError(`Parser service responded ${res.status}`, res.status);
+  }
+
+  try {
+    return await res.json();
+  } catch {
+    throw new ParserServiceError('Parser service returned a non-JSON response');
+  }
+}
+
 // ── Parser wire contracts (mirror of the FastAPI response models) ─────────────
 
 /** POST {PARSER_SERVICE_URL}/api/chat → */

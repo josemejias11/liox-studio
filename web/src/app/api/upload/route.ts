@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MAX_UPLOAD_BYTES } from '@/lib/contracts/upload';
-import { parserPost, ParserUploadResponseSchema, ParserServiceError } from '@/lib/parser-service';
+import { parserPost, parserDelete, ParserUploadResponseSchema, ParserServiceError } from '@/lib/parser-service';
 
 // Proxies course-material uploads (multipart form: course_id + file) to the
 // self-hosted parser service, server-to-server. Enforces the 50MB cap before
@@ -8,6 +8,37 @@ import { parserPost, ParserUploadResponseSchema, ParserServiceError } from '@/li
 
 const USER_SAFE_UNAVAILABLE =
   'The upload service is temporarily unavailable. Please try again in a moment.';
+
+export async function DELETE(req: NextRequest) {
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Expected a JSON body' }, { status: 400 });
+  }
+
+  const { course_id, filename } =
+    body && typeof body === 'object' ? (body as Record<string, unknown>) : {};
+
+  if (typeof course_id !== 'string' || course_id.length === 0) {
+    return NextResponse.json({ error: 'A valid "course_id" field is required' }, { status: 400 });
+  }
+  if (typeof filename !== 'string' || filename.length === 0) {
+    return NextResponse.json({ error: 'A valid "filename" field is required' }, { status: 400 });
+  }
+
+  try {
+    const raw = await parserDelete('/api/document', { json: { course_id, filename } });
+    return NextResponse.json(raw);
+  } catch (err: unknown) {
+    if (err instanceof ParserServiceError) {
+      console.error('[api/upload DELETE] parser service error:', err.message);
+      return NextResponse.json({ error: USER_SAFE_UNAVAILABLE }, { status: 502 });
+    }
+    console.error('[api/upload DELETE] unexpected error:', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
 
 export async function POST(req: NextRequest) {
   let formData: FormData;
