@@ -18,5 +18,8 @@ web/.env.local
 # IDE
 .idea/
 
+# Local Claude Code config (agents, commands, runners — not committed)
+.claude/
+
 # OS
 .DS_Store
