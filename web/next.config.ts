@@ -11,6 +11,7 @@ const SHARED_IMG_SRC = [
   'blob:',
   'https://cdn.sanity.io',
   'https://github.com',
+  'https://avatars.githubusercontent.com',
 ].join(' ');
 
 /**
@@ -108,9 +109,9 @@ const nextConfig: NextConfig = {
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
         ],
       },
-      // ── Main application — strict policy (excludes /studio/* to prevent overwrite) ──
+      // ── Main application — strict policy (excludes /studio/* and internal Next.js assets to prevent overwrite/HMR breaking) ──
       {
-        source: '/((?!studio).*)',
+        source: '/((?!studio|_next/static|_next/image|favicon.ico).*)',
         headers: [
           ...COMMON_HEADERS,
           { key: 'Content-Security-Policy', value: MAIN_CSP },

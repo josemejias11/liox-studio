@@ -182,7 +182,7 @@ export function CourseFileUploadInput(props: ArrayOfObjectsInputProps) {
                         ? 'failed'
                         : 'queued'}
                 </Badge>
-                <Text size={1} muted style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <Text size={1} muted textOverflow="ellipsis">
                   {f.name}
                 </Text>
               </Flex>
@@ -193,19 +193,19 @@ export function CourseFileUploadInput(props: ArrayOfObjectsInputProps) {
         {/* Persistent indexed file library */}
         {indexedFiles.length > 0 && (
           <Stack space={1}>
-            <Text size={0} weight="semibold" muted style={{ textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <Text size={0} weight="semibold" muted style={{ textTransform: 'uppercase', letterSpacing: '0.08em', padding: '2px 0' }}>
               Indexed files ({indexedFiles.length})
             </Text>
             {indexedFiles.map((f) => (
               <Flex key={f._key} align="center" gap={2} style={{ paddingTop: '6px' }}>
-                <Box flex={1} style={{ minWidth: 0 }}>
-                  <Text size={1} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <Flex direction="column" gap={2} flex={1} style={{ minWidth: 0 }}>
+                  <Text size={1} textOverflow="ellipsis">
                     {f.filename}
                   </Text>
                   <Text size={0} muted>
                     {f.chunks} chunks · {new Date(f.uploadedAt).toLocaleDateString()}
                   </Text>
-                </Box>
+                </Flex>
                 <Button
                   text="✕"
                   mode="bleed"
