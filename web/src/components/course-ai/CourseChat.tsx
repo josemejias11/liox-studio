@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Sparkles, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChatResponseSchema } from '@/lib/contracts/chat';
+import { ChatResponseSchema } from '@/lib/contracts/api';
 
 type Message = {
   id: string;

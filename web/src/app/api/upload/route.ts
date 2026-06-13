@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MAX_UPLOAD_BYTES } from '@/lib/contracts/upload';
+import { MAX_UPLOAD_BYTES } from '@/lib/contracts/api';
 import { parserPost, parserDelete, ParserUploadResponseSchema, ParserServiceError } from '@/lib/parser-service';
 
 // Proxies course-material uploads (multipart form: course_id + file) to the

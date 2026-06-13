@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import useSWR from 'swr';
-import { ProgressRequestBody } from '@/lib/contracts/progress';
+import { ProgressRequestBody } from '@/lib/contracts/api';
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);

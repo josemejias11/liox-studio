@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { ChatRequestSchema, type ChatRequest } from '@/lib/contracts/chat';
+import { ChatRequestSchema, type ChatRequest } from '@/lib/contracts/api';
 import { parserPost, ParserChatResponseSchema, ParserServiceError } from '@/lib/parser-service';
 
 // Server-to-server proxy in front of the self-hosted parser/RAG service.

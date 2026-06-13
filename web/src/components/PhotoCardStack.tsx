@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { titleFromFilename } from '@/lib/utils';
@@ -8,141 +8,138 @@ import type { SanityPhoto } from '@/lib/contracts/sanity';
 
 interface PhotoCardStackProps {
   photos: SanityPhoto[];
+  autoScrollInterval?: number;
 }
 
-export function PhotoCardStack({ photos = [] }: PhotoCardStackProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
+export function PhotoCardStack({ photos = [], autoScrollInterval = 3500 }: PhotoCardStackProps) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+  
+  // Touch swipe state
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
-  // validPhotos derived before hooks so its length is stable across renders
   const validPhotos = (photos || []).filter((p) => p.asset?.url);
+  const isSingle = validPhotos.length <= 1;
 
-  // Track which slide is centred using IntersectionObserver — always invoked
-  // (guard inside the effect body) so hook order is unconditional and rule-compliant.
+  // Auto-scroll logic
   useEffect(() => {
-    const container = scrollRef.current;
-    if (!container || validPhotos.length <= 1) return;
+    if (isSingle || isHovered) return;
+    const timer = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % validPhotos.length);
+    }, autoScrollInterval);
+    return () => clearInterval(timer);
+  }, [validPhotos.length, isHovered, isSingle, autoScrollInterval]);
 
-    const cards = Array.from(container.querySelectorAll<HTMLElement>('[data-card]'));
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (visible) {
-          const idx = cards.indexOf(visible.target as HTMLElement);
-          if (idx !== -1) setActiveIndex(idx);
-        }
-      },
-      { root: container, threshold: 0.6 },
-    );
-
-    cards.forEach((c) => observer.observe(c));
-    return () => observer.disconnect();
-  }, [validPhotos.length]);
-
-  // Early return AFTER all hooks — rules-of-hooks compliant
   if (!validPhotos.length) return null;
 
-  function scrollTo(idx: number) {
-    const container = scrollRef.current;
-    if (!container) return;
-    const card = container.querySelectorAll<HTMLElement>('[data-card]')[idx];
-    if (card) {
-      card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    }
-  }
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+    setIsHovered(true);
+  };
 
-  const isSingle = validPhotos.length === 1;
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    setIsHovered(false);
+    if (touchStart === null || touchEnd === null) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe && activeIndex < validPhotos.length - 1) {
+      setActiveIndex((prev) => prev + 1);
+    } else if (isRightSwipe && activeIndex > 0) {
+      setActiveIndex((prev) => prev - 1);
+    }
+    
+    // Reset after swipe
+    setTouchStart(null);
+    setTouchEnd(null);
+  };
 
   return (
-    <div className="group/stack relative select-none">
-      {/* Photo row — GPU-composited horizontal scroll, no card background */}
-      <div
-        ref={scrollRef}
-        className={`flex snap-x snap-mandatory gap-6 overflow-x-auto pb-1 ${
-          isSingle ? 'justify-center' : ''
-        }`}
-        style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
-      >
-        {validPhotos.map((p, i) => {
-          const title = titleFromFilename(p.asset?.originalFilename);
-          return (
-            <div
-              key={i}
-              data-card
-              className={`flex shrink-0 snap-center flex-col items-center gap-2 ${
-                isSingle ? 'w-auto' : 'w-[70%]'
-              }`}
-            >
-              {/*
-               * Frameless photo — no container background so the phone render
-               * floats directly against the dark panel surface. The glow element
-               * is a blurred accent circle positioned behind the device.
-               * drop-shadow on <img> follows the PNG alpha silhouette rather
-               * than boxing the rectangle — critical for transparent product renders.
-               */}
+    <div 
+      className="group/stack relative w-full select-none"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Carousel Track */}
+      <div className="overflow-hidden w-full relative rounded-2xl">
+        <div
+          className="flex transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]"
+          style={{ transform: `translateX(-${activeIndex * 100}%)` }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          {validPhotos.map((p, i) => {
+            const title = titleFromFilename(p.asset?.originalFilename);
+            return (
               <div
-                className={`relative flex items-center justify-center ${
-                  isSingle ? 'max-w-[400px]' : 'w-full'
-                }`}
+                key={i}
+                className="flex w-full shrink-0 flex-col items-center gap-3 pb-1"
               >
-                <Image
-                  src={p.asset!.url!}
-                  alt={title || `Product photo ${i + 1}`}
-                  width={600}
-                  height={600}
-                  className="block h-auto w-full object-contain"
-                  draggable={false}
-                  loading="lazy"
-                />
+                <div className="relative flex w-full max-w-[480px] items-center justify-center">
+                  <Image
+                    src={p.asset!.url!}
+                    alt={title || `Product photo ${i + 1}`}
+                    width={800}
+                    height={800}
+                    className="block h-auto w-full max-h-[50vh] object-contain pointer-events-none drop-shadow-xl"
+                    draggable={false}
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                    priority={i === 0}
+                  />
+                </div>
+                {title && (
+                  <p className="text-muted-foreground px-4 text-center text-[12px] font-medium leading-relaxed tracking-wide">
+                    {title}
+                  </p>
+                )}
               </div>
-
-              {/* Caption — below the image, never overlaid on the product */}
-              {title && (
-                <p className="text-muted-foreground/80 px-2 text-center text-[11px] leading-tight tracking-wide">
-                  {title}
-                </p>
-              )}
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
-      {/* Prev / next arrows — hover-revealed, positioned at image mid-height */}
-      {validPhotos.length > 1 && (
+      {/* Navigation Arrows */}
+      {!isSingle && (
         <>
           <button
-            onClick={() => scrollTo(Math.max(0, activeIndex - 1))}
+            onClick={() => setActiveIndex(Math.max(0, activeIndex - 1))}
             disabled={activeIndex === 0}
-            className="text-foreground/60 hover:text-foreground absolute top-[42%] left-0 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/8 opacity-0 backdrop-blur-sm transition-opacity duration-150 group-hover/stack:opacity-100 hover:bg-white/16 active:scale-90 disabled:opacity-0"
+            className="text-foreground hover:text-foreground absolute top-[40%] left-2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-background/50 backdrop-blur-md shadow-lg transition-all hover:bg-background/80 active:scale-90 disabled:opacity-0 z-10 md:opacity-0 md:group-hover/stack:opacity-100"
             aria-label="Previous photo"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-5 w-5 ml-[-2px]" />
           </button>
           <button
-            onClick={() => scrollTo(Math.min(validPhotos.length - 1, activeIndex + 1))}
+            onClick={() => setActiveIndex(Math.min(validPhotos.length - 1, activeIndex + 1))}
             disabled={activeIndex === validPhotos.length - 1}
-            className="text-foreground/60 hover:text-foreground absolute top-[42%] right-0 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/8 opacity-0 backdrop-blur-sm transition-opacity duration-150 group-hover/stack:opacity-100 hover:bg-white/16 active:scale-90 disabled:opacity-0"
+            className="text-foreground hover:text-foreground absolute top-[40%] right-2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-background/50 backdrop-blur-md shadow-lg transition-all hover:bg-background/80 active:scale-90 disabled:opacity-0 z-10 md:opacity-0 md:group-hover/stack:opacity-100"
             aria-label="Next photo"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-5 w-5 mr-[-2px]" />
           </button>
         </>
       )}
 
-      {/* Dot indicators */}
-      {validPhotos.length > 1 && (
-        <div className="mt-2 flex justify-center gap-1.5">
+      {/* Pagination Dots */}
+      {!isSingle && (
+        <div className="mt-3 flex justify-center gap-2 z-10">
           {validPhotos.map((_, i) => (
             <button
               key={i}
-              onClick={() => scrollTo(i)}
+              onClick={() => setActiveIndex(i)}
               aria-label={`Go to photo ${i + 1}`}
-              className={`rounded-full transition-all duration-200 ${
+              className={`rounded-full transition-all duration-300 ${
                 i === activeIndex
-                  ? 'bg-accent h-1.5 w-3'
-                  : 'bg-foreground/20 hover:bg-foreground/40 h-1.5 w-1.5'
+                  ? 'bg-accent h-2 w-5'
+                  : 'bg-foreground/20 hover:bg-foreground/40 h-2 w-2'
               }`}
             />
           ))}

@@ -1,7 +1,7 @@
 import { headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { ProgressRequestSchema } from '@/lib/contracts/progress';
+import { ProgressRequestSchema } from '@/lib/contracts/api';
 import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function GET(req: NextRequest) {

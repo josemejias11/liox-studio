@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback } from 'react';
 import { ArrayOfObjectsInputProps, PatchEvent, insert, set, setIfMissing, unset, useFormValue } from 'sanity';
 import { randomKey } from '@sanity/util/content';
 import { Button, Card, Flex, Text, Box, Stack, Badge } from '@sanity/ui';
-import { MAX_UPLOAD_BYTES, UploadResponseSchema } from '@/lib/contracts/upload';
+import { MAX_UPLOAD_BYTES, UploadResponseSchema } from '@/lib/contracts/api';
 
 type UploadedFile = {
   _key: string;

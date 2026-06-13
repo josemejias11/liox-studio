@@ -5,7 +5,7 @@ import { X, Send, Sparkles } from 'lucide-react';
 import { PhotoCardStack } from './PhotoCardStack';
 import { useFocusTrap } from '@/lib/useFocusTrap';
 import { PortableText } from '@portabletext/react';
-import { ChatResponseSchema } from '@/lib/contracts/chat';
+import { ChatResponseSchema } from '@/lib/contracts/api';
 import type { RichText, SanityPhoto } from '@/lib/contracts/sanity';
 import { cssAspectRatio } from '@/lib/utils';
 
@@ -443,9 +443,9 @@ export function DiscoveryPanel({
                   {/* Separator — visually bridges learn content and AI chat section */}
                   <div className="mt-1 mb-1 flex items-center gap-3">
                     <div className="h-px flex-1 bg-white/8" />
-                    <span className="text-muted-foreground flex items-center gap-1.5 text-[9px] font-semibold tracking-widest uppercase">
-                      <Sparkles className="h-2.5 w-2.5" />
-                      AI Assistant
+                    <span className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-semibold tracking-widest uppercase">
+                      <Sparkles className="h-3 w-3" />
+                      Course AI Assistant
                     </span>
                     <div className="h-px flex-1 bg-white/8" />
                   </div>
@@ -538,7 +538,7 @@ export function DiscoveryPanel({
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                   placeholder="Ask about this feature…"
-                  aria-label="Ask the AI assistant about this feature"
+                  aria-label="Ask the Course AI Assistant about this feature"
                   disabled={streaming}
                   className="bg-foreground/6 text-foreground placeholder:text-muted-foreground focus:ring-accent/60 flex-1 rounded-full px-4 py-2.5 text-sm transition-all duration-200 outline-none focus:ring-2 focus:ring-offset-0 disabled:opacity-40"
                 />

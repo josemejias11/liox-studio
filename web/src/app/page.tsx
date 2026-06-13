@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { readClient } from '@/sanity/lib/client';
 import { COURSES_QUERY } from '@/sanity/lib/queries';
-import { ThemeToggle } from '@/components/ThemeToggle';
+import { ThemeToggle } from '@/components/theme';
 
 export const revalidate = 60;
 
