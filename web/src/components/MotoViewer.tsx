@@ -21,6 +21,9 @@ const ProductStage = dynamic(() =>
   import('./ProductStage').then((m) => ({ default: m.ProductStage })),
 );
 const QuizLesson = dynamic(() => import('./QuizLesson').then((m) => ({ default: m.QuizLesson })));
+const CourseQuizDynamic = dynamic(() =>
+  import('./course-ai/CourseQuiz').then((m) => ({ default: m.CourseQuiz })),
+);
 const VideoLesson = dynamic(() =>
   import('./VideoLesson').then((m) => ({ default: m.VideoLesson })),
 );
@@ -328,13 +331,15 @@ export default function MotoViewer({
             return {
               slideKey: `quiz-lesson-${currentLesson._key}`,
               screen: (
-                <QuizLesson
-                  weakTopics={weakTopics}
-                  onPass={goNext} // lesson-type quiz advances on pass and fail (no gate)
-                  onFail={goNext}
-                  sessionId={persistSession ? sessionId : undefined}
-                  courseId={course._id}
-                />
+                <div className="bg-background absolute inset-0 flex items-center justify-center overflow-y-auto p-6">
+                  <CourseQuizDynamic
+                    weakTopics={weakTopics}
+                    onPass={goNext}
+                    onFail={goNext}
+                    sessionId={persistSession ? sessionId : undefined}
+                    courseId={course._id}
+                  />
+                </div>
               ),
             };
           case 'colorSwitcher':

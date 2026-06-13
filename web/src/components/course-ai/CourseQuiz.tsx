@@ -166,16 +166,16 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
   const currentResult = results[currentQIndex];
 
   return (
-    <div className="mx-auto flex h-[600px] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200/50 bg-white/70 shadow-xl backdrop-blur-xl dark:border-slate-800/50 dark:bg-slate-900/70">
-      <div className="flex items-center border-b border-slate-200/50 bg-white/50 px-6 py-4 dark:border-slate-800/50 dark:bg-slate-900/50">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+    <div className="mx-auto flex h-[600px] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border/20 bg-background shadow-xl backdrop-blur-xl">
+      <div className="flex items-center border-b border-border/20 bg-background/50 px-6 py-4">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-background shadow-md">
           <Brain className="h-5 w-5" />
         </div>
         <div className="ml-4">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
+          <h2 className="text-lg font-semibold text-foreground">
             Adaptive AI Quiz
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Personalized learning path</p>
+          <p className="text-xs text-muted-foreground">Personalized learning path</p>
         </div>
       </div>
 
@@ -189,25 +189,25 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
               exit={{ opacity: 0, scale: 0.9 }}
               className="text-center"
             >
-              <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
-                <BarChart2 className="h-12 w-12 text-emerald-600 dark:text-emerald-400" />
+              <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-accent/10">
+                <BarChart2 className="h-12 w-12 text-accent" />
               </div>
-              <h3 className="mb-2 text-2xl font-bold text-slate-800 dark:text-slate-100">
+              <h3 className="mb-2 text-2xl font-bold text-foreground">
                 Ready to test your knowledge?
               </h3>
-              <p className="mb-8 text-slate-600 dark:text-slate-400">
+              <p className="mb-8 text-muted-foreground">
                 {weakTopics && weakTopics.length > 0
                   ? 'Your quiz will focus on the topics you have explored the least.'
                   : 'A short quiz will be generated from your course materials.'}
               </p>
               {errorMsg && (
-                <p role="alert" className="mb-6 text-sm font-medium text-red-600 dark:text-red-400">
+                <p role="alert" className="mb-6 text-sm font-medium text-destructive">
                   {errorMsg}
                 </p>
               )}
               <button
                 onClick={() => void generateQuiz()}
-                className="group relative inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-8 py-3.5 text-sm font-medium text-white transition-all hover:bg-slate-800 hover:shadow-lg dark:bg-emerald-600 dark:hover:bg-emerald-500"
+                className="group relative inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-8 py-3.5 text-sm font-medium text-background transition-all hover:bg-foreground/90 hover:shadow-lg"
               >
                 <span>{errorMsg ? 'Try Again' : 'Generate Quiz'}</span>
                 <Sparkles className="h-4 w-4 transition-transform group-hover:scale-110" />
@@ -223,22 +223,22 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
               exit={{ opacity: 0 }}
               className="flex flex-col items-center text-center"
             >
-              <Loader2 className="mb-6 h-12 w-12 animate-spin text-emerald-500" />
-              <h3 className="mb-2 text-xl font-bold text-slate-800 dark:text-slate-100">
+              <Loader2 className="mb-6 h-12 w-12 animate-spin text-accent" />
+              <h3 className="mb-2 text-xl font-bold text-foreground">
                 Generating Custom Quiz…
               </h3>
               {weakTopics && weakTopics.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-emerald-800 dark:border-emerald-800/50 dark:bg-emerald-900/20 dark:text-emerald-300"
+                  className="mt-4 rounded-xl border border-accent/20 bg-accent/8 p-4 text-accent"
                 >
                   <p className="mb-2 text-sm font-semibold">Focus topics:</p>
                   <div className="flex flex-wrap justify-center gap-2">
                     {weakTopics.map((topic) => (
                       <span
                         key={topic}
-                        className="rounded-full bg-emerald-200/50 px-3 py-1 text-xs font-medium dark:bg-emerald-800/50"
+                        className="rounded-full bg-accent/15 px-3 py-1 text-xs font-medium"
                       >
                         {topic}
                       </span>
@@ -257,18 +257,18 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
               exit={{ opacity: 0, scale: 0.9 }}
               className="text-center"
             >
-              <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
-                <CheckCircle className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
+              <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-accent/10">
+                <CheckCircle className="h-10 w-10 text-accent" />
               </div>
-              <h3 className="mb-4 text-2xl font-bold text-slate-800 dark:text-slate-100">
+              <h3 className="mb-4 text-2xl font-bold text-foreground">
                 Your custom quiz is ready!
               </h3>
-              <p className="mb-8 text-slate-600 dark:text-slate-400">
+              <p className="mb-8 text-muted-foreground">
                 {questions.length} questions tailored to your learning gaps.
               </p>
               <button
                 onClick={() => setStep('playing')}
-                className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-8 py-3.5 text-sm font-medium text-white transition-all hover:bg-emerald-500 hover:shadow-lg"
+                className="inline-flex items-center justify-center rounded-full bg-accent px-8 py-3.5 text-sm font-medium text-background transition-all hover:bg-accent/90 hover:shadow-lg"
               >
                 Start Quiz
               </button>
@@ -284,20 +284,20 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
               className="w-full"
             >
               <div className="mb-6 flex items-center justify-between">
-                <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                <span className="text-sm font-medium text-muted-foreground">
                   Question {currentQIndex + 1} of {questions.length}
                 </span>
                 <div className="flex gap-1">
                   {questions.map((_, i) => (
                     <div
                       key={i}
-                      className={`h-2 w-8 rounded-full ${i <= currentQIndex ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'}`}
+                      className={`h-2 w-8 rounded-full ${i <= currentQIndex ? 'bg-accent' : 'bg-border'}`}
                     />
                   ))}
                 </div>
               </div>
 
-              <h3 className="mb-8 text-xl font-medium text-slate-800 dark:text-slate-100">
+              <h3 className="mb-8 text-xl font-medium text-foreground">
                 {currentQuestion.question}
               </h3>
 
@@ -316,31 +316,31 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
                       disabled={selectedIndex !== null || grading}
                       className={`relative flex w-full items-center justify-between rounded-xl border p-4 text-left transition-all ${
                         selectedIndex === null
-                          ? 'border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 dark:border-slate-700 dark:hover:border-emerald-500 dark:hover:bg-emerald-900/20'
+                          ? 'border-border hover:border-accent/50 hover:bg-accent/8'
                           : showCorrect
-                            ? 'border-emerald-500 bg-emerald-50 dark:border-emerald-500 dark:bg-emerald-900/30'
+                            ? 'border-accent/65 bg-accent/12'
                             : showWrong
-                              ? 'border-red-500 bg-red-50 dark:border-red-500 dark:bg-red-900/30'
-                              : 'border-slate-200 opacity-50 dark:border-slate-800'
+                              ? 'border-destructive/60 bg-destructive/8'
+                              : 'border-border opacity-50'
                       }`}
                     >
                       <span
-                        className={`font-medium ${showCorrect ? 'text-emerald-700 dark:text-emerald-300' : showWrong ? 'text-red-700 dark:text-red-300' : 'text-slate-700 dark:text-slate-200'}`}
+                        className={`font-medium ${showCorrect ? 'text-accent' : showWrong ? 'text-destructive' : 'text-foreground/80'}`}
                       >
                         {option}
                       </span>
                       {grading && isSelected && (
-                        <Loader2 className="h-5 w-5 animate-spin text-emerald-500" />
+                        <Loader2 className="h-5 w-5 animate-spin text-accent" />
                       )}
-                      {showCorrect && <CheckCircle className="h-5 w-5 text-emerald-500" />}
-                      {showWrong && <XCircle className="h-5 w-5 text-red-500" />}
+                      {showCorrect && <CheckCircle className="h-5 w-5 text-accent" />}
+                      {showWrong && <XCircle className="h-5 w-5 text-destructive" />}
                     </button>
                   );
                 })}
               </div>
 
               {errorMsg && (
-                <p role="alert" className="mt-4 text-sm font-medium text-red-600 dark:text-red-400">
+                <p role="alert" className="mt-4 text-sm font-medium text-destructive">
                   {errorMsg}
                 </p>
               )}
@@ -359,21 +359,21 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
                 <>
                   <p
                     role="alert"
-                    className="mb-6 text-sm font-medium text-red-600 dark:text-red-400"
+                    className="mb-6 text-sm font-medium text-destructive"
                   >
                     {errorMsg}
                   </p>
                   <button
                     onClick={() => void submitQuiz(answers)}
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 px-8 py-3 text-sm font-medium text-white transition-all hover:bg-emerald-500"
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-accent px-8 py-3 text-sm font-medium text-background transition-all hover:bg-accent/90"
                   >
                     <RefreshCw className="h-4 w-4" /> Try Again
                   </button>
                 </>
               ) : (
                 <>
-                  <Loader2 className="mb-6 h-12 w-12 animate-spin text-emerald-500" />
-                  <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">
+                  <Loader2 className="mb-6 h-12 w-12 animate-spin text-accent" />
+                  <h3 className="text-xl font-bold text-foreground">
                     Scoring your answers…
                   </h3>
                 </>
@@ -390,23 +390,21 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
             >
               <div
                 className={`mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full shadow-lg ${
-                  summary.passed
-                    ? 'bg-gradient-to-br from-emerald-400 to-teal-500'
-                    : 'bg-gradient-to-br from-slate-400 to-slate-500'
+                  summary.passed ? 'bg-accent' : 'bg-muted'
                 }`}
               >
-                <span className="text-3xl font-bold text-white">
+                <span className="text-3xl font-bold text-background">
                   {Math.round((summary.score / summary.total) * 100)}%
                 </span>
               </div>
-              <h3 className="mb-2 text-2xl font-bold text-slate-800 dark:text-slate-100">
+              <h3 className="mb-2 text-2xl font-bold text-foreground">
                 {summary.passed ? 'Quiz Passed!' : 'Not Quite There Yet'}
               </h3>
-              <p className="text-slate-600 dark:text-slate-400">
+              <p className="text-muted-foreground">
                 You got {summary.score} out of {summary.total} questions correct.
               </p>
               {!summary.passed && (
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Passing score: {summary.passingScore}%
                 </p>
               )}
@@ -418,7 +416,7 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
                     if (onPass) onPass(Math.round((summary.score / summary.total) * 100));
                     else reset();
                   }}
-                  className="inline-flex items-center justify-center rounded-full border-2 border-emerald-500 bg-transparent px-8 py-3 text-sm font-medium text-emerald-600 transition-all hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+                  className="inline-flex items-center justify-center rounded-full border-2 border-accent bg-transparent px-8 py-3 text-sm font-medium text-accent transition-all hover:bg-accent/8"
                 >
                   {onPass ? 'Continue' : 'Try Another Quiz'}
                 </button>
@@ -426,14 +424,14 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
                 <div className="flex flex-col items-center gap-3">
                   <button
                     onClick={reset}
-                    className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-emerald-500 bg-transparent px-8 py-3 text-sm font-medium text-emerald-600 transition-all hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+                    className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-accent bg-transparent px-8 py-3 text-sm font-medium text-accent transition-all hover:bg-accent/8"
                   >
                     <RefreshCw className="h-4 w-4" /> Try Again
                   </button>
                   {onFail && (
                     <button
                       onClick={onFail}
-                      className="text-sm font-medium text-slate-500 underline underline-offset-4 transition-colors hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                      className="text-sm font-medium text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
                     >
                       Continue without passing
                     </button>
