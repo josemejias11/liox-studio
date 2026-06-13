@@ -213,6 +213,7 @@ const chapterSchema = z.object({
   title: opt(z.string()),
   estimatedDuration: opt(z.number()),
   lessons: opt(z.array(lessonSchema)),
+  quickCheck: opt(quizDocSchema),
 });
 
 export const courseSchema = z.object({
@@ -227,7 +228,6 @@ export const courseSchema = z.object({
   learningObjectives: opt(z.array(z.string())),
   chapters: opt(z.array(chapterSchema)),
   specifications: opt(z.array(specificationSchema)),
-  quiz: opt(quizDocSchema),
   disclaimer: opt(disclaimerSchema),
 });
 export type SanityCourse = z.output<typeof courseSchema>;

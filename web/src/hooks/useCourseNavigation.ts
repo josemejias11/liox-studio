@@ -8,6 +8,7 @@ import { getChapterLessons, type CourseStructure } from '@/lib/course-structure'
 export type CoursePhase =
   | { phase: 'cover' }
   | { phase: 'chapter'; chapterIndex: number; lessonIndex: number }
+  | { phase: 'chapter-quiz'; chapterIndex: number }
   | { phase: 'specifications'; specIndex: number }
   | { phase: 'quiz' }
   | { phase: 'disclaimer' }
@@ -24,6 +25,7 @@ export type CourseNavAction =
   | { type: 'PREV' }
   | { type: 'GO_TO_SECTION'; index: number }
   | { type: 'QUIZ_DONE' }
+  | { type: 'CHAPTER_QUIZ_DONE'; chapterIndex: number }
   | { type: 'DISMISS_CHAPTER_INTRO' }
   | { type: 'RESTART' };
 
@@ -44,6 +46,13 @@ export function getSectionIndex(structure: CourseStructure, phase: CoursePhase):
         (ls) => ls.chapterIndex < phase.chapterIndex,
       ).length;
       return lessonsBeforeThisChapter + phase.lessonIndex;
+    }
+    case 'chapter-quiz': {
+      const lessonsBeforeThisChapter = structure.lessonSections.filter(
+        (ls) => ls.chapterIndex < phase.chapterIndex,
+      ).length;
+      const chapterLessons = getChapterLessons(structure, phase.chapterIndex);
+      return lessonsBeforeThisChapter + Math.max(0, chapterLessons.length - 1);
     }
     case 'specifications':
       return structure.specOffset + phase.specIndex;
@@ -119,7 +128,14 @@ function reduceNext(
           lessonIndex: phase.lessonIndex + 1,
         });
       }
-      // Last lesson of this chapter — cross into the next chapter if it exists.
+      // Last lesson of this chapter — inject quick check if present.
+      const currentChapterGroup = structure.chapters.find(
+        (c) => c.chapterIndex === phase.chapterIndex,
+      );
+      if (currentChapterGroup?.quickCheck) {
+        return forward({ phase: 'chapter-quiz', chapterIndex: phase.chapterIndex });
+      }
+      // No quick check — cross into the next chapter if it exists.
       const nextChapterIndex = phase.chapterIndex + 1;
       if (getChapterLessons(structure, nextChapterIndex).length > 0) {
         return forward({ phase: 'chapter', chapterIndex: nextChapterIndex, lessonIndex: 0 }, true);
@@ -179,6 +195,15 @@ function reducePrev(structure: CourseStructure, state: CourseNavState): CourseNa
         return back({ phase: 'specifications', specIndex: phase.specIndex - 1 });
       }
       return back(lastChapterOrCover(structure));
+
+    case 'chapter-quiz': {
+      const chapterLessons = getChapterLessons(structure, phase.chapterIndex);
+      return back({
+        phase: 'chapter',
+        chapterIndex: phase.chapterIndex,
+        lessonIndex: Math.max(0, chapterLessons.length - 1),
+      });
+    }
 
     case 'quiz':
       return back(phaseBeforeQuiz(structure));
@@ -258,6 +283,21 @@ export function courseNavigationReducer(
         navDirection: 1,
         showChapterIntro: false,
       };
+    case 'CHAPTER_QUIZ_DONE': {
+      const nextChapterIndex = action.chapterIndex + 1;
+      if (getChapterLessons(structure, nextChapterIndex).length > 0) {
+        return {
+          phase: { phase: 'chapter', chapterIndex: nextChapterIndex, lessonIndex: 0 },
+          navDirection: 1,
+          showChapterIntro: true,
+        };
+      }
+      return {
+        phase: postChapterPhase(structure),
+        navDirection: 1,
+        showChapterIntro: false,
+      };
+    }
     case 'DISMISS_CHAPTER_INTRO':
       return { ...state, showChapterIntro: false };
     case 'RESTART':
@@ -293,6 +333,10 @@ export function useCourseNavigation(structure: CourseStructure) {
     [],
   );
   const finishQuiz = useCallback(() => dispatch({ type: 'QUIZ_DONE' }), []);
+  const finishChapterQuiz = useCallback(
+    (chapterIndex: number) => dispatch({ type: 'CHAPTER_QUIZ_DONE', chapterIndex }),
+    [],
+  );
   const dismissChapterIntro = useCallback(() => dispatch({ type: 'DISMISS_CHAPTER_INTRO' }), []);
   const restart = useCallback(() => dispatch({ type: 'RESTART' }), []);
 
@@ -306,6 +350,7 @@ export function useCourseNavigation(structure: CourseStructure) {
     goPrev,
     navigateToSection,
     finishQuiz,
+    finishChapterQuiz,
     dismissChapterIntro,
     restart,
   };

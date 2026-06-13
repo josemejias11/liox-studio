@@ -85,6 +85,7 @@ const CHAPTER_FIELDS = groq`
   "lessons": lessons[]->{
     ${LESSON_FIELDS}
   },
+  "quickCheck": quickCheck->{ ${QUIZ_FIELDS} },
 `;
 
 // ── Queries ───────────────────────────────────────────────────────────────────
@@ -119,7 +120,6 @@ export const COURSE_BY_SLUG_QUERY = groq`
       ${CHAPTER_FIELDS}
     },
     "specifications": specifications[]->{${SPEC_FIELDS}},
-    "quiz": quiz->{${QUIZ_FIELDS}},
     "disclaimer": disclaimer->{${DISCLAIMER_FIELDS}},
   }
 `;

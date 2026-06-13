@@ -163,7 +163,6 @@ export function NavMap({
   const {
     lessonSections,
     specSections,
-    quizSection,
     disclaimerSection,
     chapters: chapterGroups,
     specOffset,
@@ -265,7 +264,7 @@ export function NavMap({
             glyphSrText="Quiz section"
             icon={SECTION_TYPE_META.quiz.icon}
             iconColor={SECTION_TYPE_META.quiz.color}
-            title={quizSection?.title ?? 'Knowledge Check'}
+            title="Knowledge Check"
             isCurrent={quizOffset === currentSectionIndex}
             onClick={() => onNavigate(quizOffset)}
           />

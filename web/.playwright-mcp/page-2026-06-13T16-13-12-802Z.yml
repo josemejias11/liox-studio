@@ -1,0 +1,16 @@
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e44] [cursor=pointer]:
+    - img [ref=e45]
+  - alert [ref=e48]
+  - generic [ref=e74]:
+    - generic [ref=e77]:
+      - img "Course cover" [ref=e79]
+      - generic [ref=e81]:
+        - generic [ref=e82]: Course Introduction
+        - heading "motorola Qira" [level=1] [ref=e83]
+      - button "start course" [ref=e85]:
+        - generic [ref=e87]: start course
+        - img [ref=e89]
+    - generic [ref=e91]:
+      - paragraph [ref=e92]: You are learning about
+      - paragraph [ref=e93]: motorola Qira

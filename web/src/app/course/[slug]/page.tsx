@@ -40,7 +40,6 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
   const sections: CourseSection[] = [
     ...lessonSections,
     ...(course.specifications ?? []),
-    ...(course.quiz ? [course.quiz] : []),
     ...(course.disclaimer ? [course.disclaimer] : []),
   ];
 

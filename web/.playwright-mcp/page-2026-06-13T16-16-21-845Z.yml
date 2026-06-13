@@ -1,0 +1,51 @@
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e7] [cursor=pointer]:
+    - img [ref=e8]
+  - alert [ref=e11]
+  - generic [ref=e14]:
+    - generic [ref=e15]:
+      - generic [ref=e58]:
+        - button "Go to previous lesson" [ref=e59]:
+          - img [ref=e60]
+          - text: Back
+        - img "Style Sync - Create Avatar" [ref=e66]
+        - button "Discover Any look, on the phone." [ref=e67]:
+          - generic: Any look, on the phone.
+        - generic [ref=e69]:
+          - generic [ref=e70]: 0 / 1
+          - img "0 of 1 discovered" [ref=e72]
+        - generic:
+          - paragraph: Discover
+          - heading "Style Sync - Create Avatar" [level=2]
+          - generic:
+            - paragraph: Snap an outfit and instantly match the phone to it— from wallpaper to theme, everything in sync.
+        - generic: Tap a hotspot to explore
+        - generic:
+          - generic: Closed .
+          - dialog:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - img
+                - button "Close panel":
+                  - img
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - img
+                  - paragraph: Ask me anything about
+            - generic:
+              - generic:
+                - textbox "Ask the Course AI Assistant about this feature":
+                  - /placeholder: Ask about this feature…
+                - button "Send" [disabled]:
+                  - img
+      - button [ref=e47]:
+        - img [ref=e48]
+      - button "Open course navigation" [ref=e75]:
+        - img [ref=e76]
+    - generic [ref=e31]:
+      - paragraph [ref=e32]: You are learning about
+      - paragraph [ref=e33]: motorola Qira

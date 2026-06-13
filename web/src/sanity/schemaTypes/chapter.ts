@@ -75,6 +75,13 @@ export const chapterType = defineType({
         },
       ],
     }),
+    defineField({
+      name: 'quickCheck',
+      title: 'Quick Check',
+      description: 'Optional short quiz shown after learners complete this chapter.',
+      type: 'reference',
+      to: [{ type: 'quiz' }],
+    }),
   ],
   preview: {
     select: { title: 'title', subtitle: 'estimatedDuration' },

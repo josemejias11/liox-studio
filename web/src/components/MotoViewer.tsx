@@ -64,7 +64,10 @@ export default function MotoViewer({
   sections: CourseSection[];
 }) {
   // One source of truth for section grouping/indexing (shared with NavMap)
-  const structure = useMemo(() => deriveCourseStructure(sections), [sections]);
+  const structure = useMemo(
+    () => deriveCourseStructure(sections, course.chapters ?? []),
+    [sections, course.chapters],
+  );
   const nav = useCourseNavigation(structure);
   const { phase, navDirection, showChapterIntro, showBurst } = nav;
 
@@ -175,6 +178,7 @@ export default function MotoViewer({
 
   const isQuizPhase =
     phase.phase === 'quiz' ||
+    phase.phase === 'chapter-quiz' ||
     (phase.phase === 'chapter' && currentLesson?.lessonType === 'quiz');
 
   useEffect(() => {
@@ -246,16 +250,38 @@ export default function MotoViewer({
         return {
           slideKey: 'quiz',
           screen: (
-            <QuizLesson
-              sanityQuiz={structure.quizSection}
-              weakTopics={weakTopics}
-              onPass={nav.finishQuiz}
-              onFail={nav.finishQuiz}
-              sessionId={persistSession ? sessionId : undefined}
-              courseId={course._id}
-            />
+            <div className="bg-background absolute inset-0 flex items-center justify-center overflow-y-auto p-6">
+              <CourseQuizDynamic
+                weakTopics={weakTopics}
+                onPass={nav.finishQuiz}
+                onFail={nav.finishQuiz}
+                sessionId={persistSession ? sessionId : undefined}
+                courseId={course._id}
+              />
+            </div>
           ),
         };
+
+      case 'chapter-quiz': {
+        const chapterGroup = structure.chapters.find(
+          (c) => c.chapterIndex === phase.chapterIndex,
+        );
+        return {
+          slideKey: `chapter-quiz-${phase.chapterIndex}`,
+          screen: (
+            <div className="bg-background absolute inset-0 flex items-center justify-center overflow-y-auto p-6">
+              <QuizLesson
+                sanityQuiz={chapterGroup?.quickCheck}
+                weakTopics={weakTopics}
+                onPass={() => nav.finishChapterQuiz(phase.chapterIndex)}
+                onFail={() => nav.finishChapterQuiz(phase.chapterIndex)}
+                sessionId={persistSession ? sessionId : undefined}
+                courseId={course._id}
+              />
+            </div>
+          ),
+        };
+      }
 
       case 'disclaimer':
         return {
@@ -459,8 +485,9 @@ export default function MotoViewer({
       )}
 
       {/* Floating AI Assistant Widget */}
-      {phase.phase !== 'cover' && 
-       phase.phase !== 'quiz' && 
+      {phase.phase !== 'cover' &&
+       phase.phase !== 'quiz' &&
+       phase.phase !== 'chapter-quiz' &&
        currentLesson?.lessonType !== 'quiz' && (
          <CourseAIFab courseId={course._id} />
       )}
