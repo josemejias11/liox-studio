@@ -78,8 +78,8 @@ export async function POST(req: NextRequest) {
 
         await tx.lessonProgress.upsert({
           where: { sessionId_lessonId: { sessionId, lessonId } },
-          update: { completed: completed ?? false },
-          create: { sessionId, lessonId, completed: completed ?? false },
+          update: { completed: completed ?? false, courseId: body.courseId ?? '', viewCount: { increment: 1 } },
+          create: { sessionId, lessonId, courseId: body.courseId ?? '', completed: completed ?? false },
         });
 
         if (visitedHotspots && visitedHotspots.length > 0) {

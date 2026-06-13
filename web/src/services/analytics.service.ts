@@ -1,5 +1,17 @@
 import { prisma } from '@/lib/db';
 
+export async function getLessonEngagement(
+  courseId: string,
+): Promise<Array<{ lessonId: string; viewCount: number }>> {
+  const rows = await prisma.lessonProgress.groupBy({
+    by: ['lessonId'],
+    where: courseId ? { courseId } : { NOT: { courseId: '' } },
+    _sum: { viewCount: true },
+    orderBy: { _sum: { viewCount: 'asc' } },
+  });
+  return rows.map((r) => ({ lessonId: r.lessonId, viewCount: r._sum.viewCount ?? 0 }));
+}
+
 type SessionData = {
   id: string;
   lessonCount: number;
@@ -10,7 +22,7 @@ type SessionData = {
 
 export async function getAnalyticsData() {
   try {
-    const [sessions, allQuizzes, totalHotspotsVisited, topHotspots, totalSessions] =
+    const [sessions, allQuizzes, totalHotspotsVisited, topHotspots, totalSessions, lessonEngagement] =
       await Promise.all([
         prisma.session.findMany({
           orderBy: { updatedAt: 'desc' },
@@ -29,6 +41,7 @@ export async function getAnalyticsData() {
           take: 8,
         }),
         prisma.session.count(),
+        getLessonEngagement(''),
       ]);
 
     const recentSessions: SessionData[] = sessions.map((s) => ({
@@ -77,6 +90,7 @@ export async function getAnalyticsData() {
       scoreBuckets,
       recentSessions,
       totalQuizzes: allQuizzes.length,
+      lessonEngagement,
     };
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : 'Database error';

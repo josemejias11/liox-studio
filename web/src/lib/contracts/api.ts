@@ -26,6 +26,7 @@ const LessonProgressSchema = z.object({
   type: z.literal('lesson'),
   sessionId: z.string().uuid('Invalid session ID format'),
   lessonId: z.string().min(1).max(100),
+  courseId: z.string().min(1).max(100).optional(),
   visitedHotspots: z.array(z.string().max(200)).max(50).optional(),
   completed: z.boolean().optional(),
 });
@@ -53,3 +54,31 @@ export const UploadResponseSchema = z.object({
 });
 
 export type UploadResponse = z.infer<typeof UploadResponseSchema>;
+
+// ── Weak-topics contract (browser ⇄ /api/analytics/weak-topics) ───────────────
+// Called by MotoViewer before quiz generation to fetch cross-session engagement
+// signals. The client sends lesson metadata so the server can map lessonIds to
+// human-readable topics without a Sanity round-trip.
+
+export const WeakTopicsRequestSchema = z.object({
+  courseId: z.string().min(1).max(100),
+  lessons: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(100),
+        headline: z.string().max(300),
+        topics: z.array(z.string().max(200)),
+      }),
+    )
+    .min(1)
+    .max(100),
+});
+
+export type WeakTopicsRequest = z.infer<typeof WeakTopicsRequestSchema>;
+
+export const WeakTopicsResponseSchema = z.object({
+  weakTopics: z.array(z.string()),
+  engagement: z.array(z.object({ lessonId: z.string(), viewCount: z.number() })),
+});
+
+export type WeakTopicsResponse = z.infer<typeof WeakTopicsResponseSchema>;

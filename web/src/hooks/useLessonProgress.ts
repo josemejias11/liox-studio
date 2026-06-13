@@ -25,6 +25,15 @@ interface ProgressData {
  *                  server-side or on the device.
  */
 export function useLessonProgress(sessionId: string, persist: boolean = true) {
+  const markLessonViewed = async (lessonId: string, courseId: string) => {
+    if (!sessionId || !persist) return;
+    const payload: ProgressRequestBody = { type: 'lesson', sessionId, lessonId, courseId };
+    await fetch('/api/progress', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).catch(() => {});
+  };
   const { data, error, isLoading, mutate } = useSWR<ProgressData>(
     sessionId ? `/api/progress?sessionId=${sessionId}` : null,
     fetcher,
@@ -103,6 +112,7 @@ export function useLessonProgress(sessionId: string, persist: boolean = true) {
   return {
     visited,
     markVisited,
+    markLessonViewed,
     isLoading,
     error,
   };

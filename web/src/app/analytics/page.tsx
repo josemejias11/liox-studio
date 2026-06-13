@@ -53,6 +53,7 @@ export default async function AnalyticsPage() {
     scoreBuckets,
     recentSessions,
     totalQuizzes,
+    lessonEngagement,
   } = await getAnalyticsData();
 
   const maxCount = topHotspots[0]?.count ?? 1;
@@ -206,6 +207,53 @@ export default async function AnalyticsPage() {
                 )}
               </section>
             </div>
+
+            {/* ── Lesson engagement panel ── */}
+            <section
+              aria-label="Lesson engagement"
+              className="bg-card border-border flex flex-col gap-5 rounded-2xl border p-6"
+            >
+              <div className="flex items-center justify-between">
+                <h2 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
+                  Lesson Engagement — Least Viewed First
+                </h2>
+                <span className="text-muted-foreground/50 text-[10px] tracking-wide uppercase">
+                  All courses · all sessions
+                </span>
+              </div>
+
+              {lessonEngagement.length === 0 ? (
+                <p className="text-muted-foreground text-sm italic">No lesson data yet.</p>
+              ) : (
+                <ul className="flex flex-col gap-3" role="list">
+                  {lessonEngagement.map(({ lessonId, viewCount }) => {
+                    const maxViews = lessonEngagement[lessonEngagement.length - 1]?.viewCount ?? 1;
+                    return (
+                      <li key={lessonId} className="flex items-center gap-3">
+                        <span className="text-muted-foreground w-28 shrink-0 truncate font-mono text-xs">
+                          {lessonId.slice(0, 10)}…
+                        </span>
+                        <div
+                          className="bg-secondary h-1.5 flex-1 overflow-hidden rounded-full"
+                          role="progressbar"
+                          aria-valuenow={viewCount}
+                          aria-valuemax={maxViews}
+                          aria-label={`${lessonId}: ${viewCount} views`}
+                        >
+                          <div
+                            className="bg-accent/60 h-full rounded-full transition-[width] duration-700"
+                            style={{ width: `${Math.round((viewCount / maxViews) * 100)}%` }}
+                          />
+                        </div>
+                        <span className="text-muted-foreground w-8 shrink-0 text-right text-xs tabular-nums">
+                          {viewCount}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </section>
 
             {/* ── Recent sessions table ── */}
             <section aria-label="Recent learner sessions">

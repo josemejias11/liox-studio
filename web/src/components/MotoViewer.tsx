@@ -107,6 +107,7 @@ export default function MotoViewer({
   const {
     visited,
     markVisited: baseMarkVisited,
+    markLessonViewed,
     error: progressError,
   } = useLessonProgress(sessionId, persistSession);
 
@@ -144,10 +145,21 @@ export default function MotoViewer({
     0,
   );
 
-  // ── Weak topics for lesson-type AI quizzes ────────────────────────────────
-  // Real learner data: hotspot topics not yet explored in this session steer
-  // the RAG quiz generation toward the learner's gaps.
-  const buildWeakTopics = () => {
+  // ── Lesson view tracking ──────────────────────────────────────────────────
+  // Fire once each time the learner lands on a new lesson (any type).
+  useEffect(() => {
+    if (!lessonKey || phase.phase !== 'chapter' || showChapterIntro) return;
+    markLessonViewed(lessonKey, course._id);
+    // lessonKey changes on every navigation — markLessonViewed is stable
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lessonKey]);
+
+  // ── Weak topics for AI quiz generation ───────────────────────────────────
+  // Seed from session-local unvisited hotspots; augment with cross-session
+  // population data from /api/analytics/weak-topics when the quiz phase loads.
+  const [weakTopics, setWeakTopics] = useState<string[]>([]);
+
+  const sessionWeakTopics = useMemo(() => {
     const topics = new Set<string>();
     for (const s of structure.lessonSections) {
       for (const h of s.hotspots ?? []) {
@@ -156,7 +168,42 @@ export default function MotoViewer({
       }
     }
     return Array.from(topics).slice(0, 10);
-  };
+  }, [structure.lessonSections, visited]);
+
+  const isQuizPhase =
+    phase.phase === 'quiz' ||
+    (phase.phase === 'chapter' && currentLesson?.lessonType === 'quiz');
+
+  useEffect(() => {
+    if (!isQuizPhase) return;
+    setWeakTopics(sessionWeakTopics);
+
+    const lessonMeta = structure.lessonSections.map((s) => ({
+      id: s._key,
+      headline: s.headline,
+      topics: [
+        ...(s.hotspots ?? []).map((h) => h.topic || h.label).filter(Boolean),
+        s.headline,
+      ],
+    }));
+
+    fetch('/api/analytics/weak-topics', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ courseId: course._id, lessons: lessonMeta }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data?.weakTopics?.length) return;
+        setWeakTopics((prev) => {
+          const merged = new Set([...prev, ...data.weakTopics]);
+          return Array.from(merged).slice(0, 15);
+        });
+      })
+      .catch(() => {});
+  // Only re-fetch when the quiz phase first becomes active
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isQuizPhase]);
 
   // ── Phase switch — slide key + screen content ─────────────────────────────
   function renderPhase(): { slideKey: string; screen: React.ReactNode } {
@@ -198,7 +245,7 @@ export default function MotoViewer({
           screen: (
             <QuizLesson
               sanityQuiz={structure.quizSection}
-              weakTopics={buildWeakTopics()}
+              weakTopics={weakTopics}
               onPass={nav.finishQuiz}
               onFail={nav.finishQuiz}
               sessionId={persistSession ? sessionId : undefined}
@@ -282,7 +329,7 @@ export default function MotoViewer({
               slideKey: `quiz-lesson-${currentLesson._key}`,
               screen: (
                 <QuizLesson
-                  weakTopics={buildWeakTopics()}
+                  weakTopics={weakTopics}
                   onPass={goNext} // lesson-type quiz advances on pass and fail (no gate)
                   onFail={goNext}
                   sessionId={persistSession ? sessionId : undefined}
