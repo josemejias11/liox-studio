@@ -1,6 +1,7 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { motion, useScroll, useTransform, useReducedMotion } from 'framer-motion';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
+import { motion, AnimatePresence, useScroll, useTransform, useReducedMotion } from 'framer-motion';
 import { PortableText } from '@portabletext/react';
+import { CheckCircle2 } from 'lucide-react';
 import { SanityLesson } from '@/lib/contracts/sanity';
 import Image from 'next/image';
 
@@ -12,7 +13,7 @@ interface ScrollStoryLessonProps {
 
 export default function ScrollStoryLesson({ lesson, isCompleted, onComplete }: ScrollStoryLessonProps) {
   const { headline, scrollChapters = [], media } = lesson;
-  
+
   const containerRef = useRef<HTMLDivElement>(null);
   const shouldReduceMotion = useReducedMotion();
 
@@ -24,14 +25,25 @@ export default function ScrollStoryLesson({ lesson, isCompleted, onComplete }: S
     offset: ["start start", "end end"]
   });
 
+  const [activeChapter, setActiveChapter] = useState(0);
+  const [showCompletionOverlay, setShowCompletionOverlay] = useState(false);
+
   useEffect(() => {
     const unsub = scrollYProgress.on("change", (v) => {
-      if (v > 0.85 && !isCompleted) {
-        onComplete();
+      if (v > 0.85 && !isCompleted) onComplete();
+      if (!shouldReduceMotion) {
+        setActiveChapter(Math.min(chaptersCount - 1, Math.floor(v * chaptersCount)));
       }
     });
     return () => unsub();
-  }, [scrollYProgress, isCompleted, onComplete]);
+  }, [scrollYProgress, isCompleted, onComplete, chaptersCount, shouldReduceMotion]);
+
+  useEffect(() => {
+    if (!isCompleted) return;
+    setShowCompletionOverlay(true);
+    const t = setTimeout(() => setShowCompletionOverlay(false), 1500);
+    return () => clearTimeout(t);
+  }, [isCompleted]);
 
   const progressPoints = scrollChapters.map((_, i) => i / Math.max(1, chaptersCount - 1));
   const safeProgressPoints = progressPoints.length > 1 ? progressPoints : [0, 1];
@@ -54,11 +66,9 @@ export default function ScrollStoryLesson({ lesson, isCompleted, onComplete }: S
   const y = useTransform(scrollYProgress, safeProgressPoints, safeYs);
 
   // Reduced motion: track active chapter via intersection observer
-  const [activeChapter, setActiveChapter] = useState(0);
-
   useEffect(() => {
     if (!shouldReduceMotion) return;
-    
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach(entry => {
@@ -77,58 +87,103 @@ export default function ScrollStoryLesson({ lesson, isCompleted, onComplete }: S
     return () => observer.disconnect();
   }, [shouldReduceMotion, scrollChapters.length]);
 
+  // Walk backwards from activeChapter to find nearest chapter with an image; fall back to hero
+  const activeImageUrl = useMemo(() => {
+    for (let i = activeChapter; i >= 0; i--) {
+      const url = scrollChapters[i]?.image?.asset?.url;
+      if (url) return url;
+    }
+    return media?.asset?.url;
+  }, [activeChapter, scrollChapters, media]);
+
+  const imgDuration = shouldReduceMotion ? 0 : 0.4;
+
+  const crossfadeImage = activeImageUrl ? (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={activeImageUrl}
+        className="absolute inset-0"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: imgDuration }}
+      >
+        <Image fill src={activeImageUrl} alt={headline || 'Story Hero'} className="object-contain" />
+      </motion.div>
+    </AnimatePresence>
+  ) : null;
+
   return (
     <div ref={containerRef} style={{ height: containerHeight }} className="relative w-full bg-background">
-      
+
       {/* Sticky Hero Image Background */}
       <div className="sticky top-0 h-screen w-full overflow-hidden flex items-center justify-center -z-10">
-        {media?.asset?.url && (
-          shouldReduceMotion ? (
-            <motion.div 
-              className="relative w-full h-[80vh] flex items-center justify-center"
-              initial={false}
-              animate={{
-                scale: safeScales[activeChapter],
-                rotate: safeRotates[activeChapter],
-                x: safeXs[activeChapter],
-                y: safeYs[activeChapter],
-              }}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
-            >
-              <Image fill 
-                src={media.asset.url} 
-                alt={headline || 'Story Hero'} 
-                className="object-contain"
-              />
-            </motion.div>
-          ) : (
-            <motion.div 
-              style={{ scale, rotate, x, y }}
-              className="relative w-full h-[80vh] flex items-center justify-center will-change-transform"
-            >
-              <Image fill 
-                src={media.asset.url} 
-                alt={headline || 'Story Hero'} 
-                className="object-contain"
-              />
-            </motion.div>
-          )
+        {shouldReduceMotion ? (
+          <motion.div
+            className="relative w-full h-[80vh] flex items-center justify-center"
+            initial={false}
+            animate={{
+              scale: safeScales[activeChapter],
+              rotate: safeRotates[activeChapter],
+              x: safeXs[activeChapter],
+              y: safeYs[activeChapter],
+            }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+          >
+            {crossfadeImage}
+          </motion.div>
+        ) : (
+          <motion.div
+            style={{ scale, rotate, x, y }}
+            className="relative w-full h-[80vh] flex items-center justify-center will-change-transform"
+          >
+            {crossfadeImage}
+          </motion.div>
         )}
+
+        {/* Chapter progress dots */}
+        {scrollChapters.length > 1 && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2">
+            {scrollChapters.map((_, i) => (
+              <div
+                key={i}
+                className={`w-2 h-2 rounded-full border border-accent transition-colors ${
+                  i === activeChapter ? 'bg-accent' : 'bg-transparent'
+                }`}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Completion overlay */}
+        <AnimatePresence>
+          {showCompletionOverlay && (
+            <motion.div
+              className="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <CheckCircle2 className="w-16 h-16 text-accent mb-2" />
+              <span className="text-foreground font-semibold text-lg">Complete</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Chapters Foreground */}
       <div className="relative z-10 w-full flex flex-col md:items-end pointer-events-none">
         {scrollChapters.map((chapter, i) => (
-          <div 
-            key={i} 
+          <div
+            key={i}
             data-index={i}
             className="chapter-block min-h-screen flex items-center justify-center md:justify-end md:pr-[10%] w-full md:w-1/2 p-6 pointer-events-auto"
           >
-            <ChapterBlock 
-              chapter={chapter} 
-              index={i} 
-              chaptersCount={chaptersCount} 
-              scrollYProgress={scrollYProgress} 
+            <ChapterBlock
+              chapter={chapter}
+              index={i}
+              chaptersCount={chaptersCount}
+              scrollYProgress={scrollYProgress}
               shouldReduceMotion={shouldReduceMotion}
               isActive={activeChapter === i}
             />
@@ -151,12 +206,12 @@ function ChapterBlock({ chapter, index, chaptersCount, scrollYProgress, shouldRe
   const pEnd = index === chaptersCount - 1 ? 1 : end;
 
   const safePoints = [pStart, center, pEnd];
-  
+
   const opacity = useTransform(scrollYProgress, safePoints, [0.3, 1, 0]);
   const translateY = useTransform(scrollYProgress, safePoints, [40, 0, -40]);
 
   return (
-    <motion.article 
+    <motion.article
       style={shouldReduceMotion ? {} : { opacity, y: translateY }}
       initial={shouldReduceMotion ? { opacity: 0.3 } : false}
       animate={shouldReduceMotion ? { opacity: isActive ? 1 : 0.3, y: 0 } : undefined}

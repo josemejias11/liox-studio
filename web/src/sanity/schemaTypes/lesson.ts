@@ -27,6 +27,7 @@ export const lessonType = defineType({
       title: 'Body Copy',
       type: 'array',
       group: 'content',
+      hidden: ({ parent }) => parent?.lessonType === 'scrollStory',
       of: [
         {
           type: 'block',
@@ -374,10 +375,11 @@ export const lessonType = defineType({
           fields: [
             defineField({ name: 'heading', title: 'Heading', type: 'string', validation: (r) => r.required() }),
             defineField({ name: 'body', title: 'Body Text', type: 'array', of: [{ type: 'block' }] }),
-            defineField({ name: 'targetScale', title: 'Target Scale', type: 'number', initialValue: 1 }),
-            defineField({ name: 'targetRotation', title: 'Target Rotation (deg)', type: 'number', initialValue: 0 }),
-            defineField({ name: 'targetX', title: 'Target X Offset (px)', type: 'number', initialValue: 0 }),
-            defineField({ name: 'targetY', title: 'Target Y Offset (px)', type: 'number', initialValue: 0 }),
+            defineField({ name: 'image', title: 'Chapter Image', description: "Overrides the hero image for this chapter. Leave blank to inherit the previous chapter's image.", type: 'image', options: { hotspot: true } }),
+            defineField({ name: 'targetScale', title: 'Target Scale', type: 'number', initialValue: 1, description: '1 = original size. 1.2 zooms in 20%.' }),
+            defineField({ name: 'targetRotation', title: 'Target Rotation (deg)', type: 'number', initialValue: 0, description: 'Degrees. Positive = clockwise.' }),
+            defineField({ name: 'targetX', title: 'Target X Offset (px)', type: 'number', initialValue: 0, description: 'Pixel offset from centre. Positive X moves right; positive Y moves down.' }),
+            defineField({ name: 'targetY', title: 'Target Y Offset (px)', type: 'number', initialValue: 0, description: 'Pixel offset from centre. Positive X moves right; positive Y moves down.' }),
           ],
           preview: {
             select: { title: 'heading' },

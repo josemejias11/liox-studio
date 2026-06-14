@@ -31,7 +31,7 @@ const LESSON_FIELDS = groq`
   splitReverseLayout,
   dropZones[] { id, label, correctChipId, xPositionPct, yPositionPct },
   chips[] { id, text },
-  scrollChapters[] { heading, body, targetScale, targetRotation, targetX, targetY },
+  scrollChapters[] { heading, body, image { asset->{ url } }, targetScale, targetRotation, targetX, targetY },
 `;
 
 const SPEC_FIELDS = groq`

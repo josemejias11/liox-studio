@@ -117,6 +117,7 @@ export const lessonSchema = z.object({
   scrollChapters: opt(z.array(z.object({
     heading: z.string().catch(''),
     body: opt(richTextSchema),
+    image: opt(imageSchema),
     targetScale: opt(z.number()),
     targetRotation: opt(z.number()),
     targetX: opt(z.number()),
