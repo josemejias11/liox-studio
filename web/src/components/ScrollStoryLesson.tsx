@@ -141,14 +141,27 @@ export default function ScrollStoryLesson({ lesson, isCompleted, onComplete }: S
           </motion.div>
         )}
 
-        {/* Chapter progress dots */}
+        {/* Sleek Continuous Progress Bar */}
+        <motion.div 
+          className="absolute top-0 left-0 right-0 h-1 bg-accent z-30 origin-left"
+          style={{ scaleX: scrollYProgress }}
+        />
+
+        {/* Chapter progress dots (Interactive) */}
         {scrollChapters.length > 1 && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2">
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-3">
             {scrollChapters.map((_, i) => (
-              <div
+              <button
                 key={i}
-                className={`w-2 h-2 rounded-full border border-accent transition-colors ${
-                  i === activeChapter ? 'bg-accent' : 'bg-transparent'
+                onClick={() => {
+                  const blocks = document.querySelectorAll('.chapter-block');
+                  if (blocks[i]) {
+                    blocks[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }
+                }}
+                aria-label={`Scroll to chapter ${i + 1}`}
+                className={`w-3 h-3 rounded-full border-2 border-accent transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background hover:scale-125 ${
+                  i === activeChapter ? 'bg-accent scale-110 shadow-[0_0_10px_rgba(var(--accent),0.8)]' : 'bg-transparent cursor-pointer'
                 }`}
               />
             ))}
@@ -209,14 +222,17 @@ function ChapterBlock({ chapter, index, chaptersCount, scrollYProgress, shouldRe
 
   const opacity = useTransform(scrollYProgress, safePoints, [0.3, 1, 0]);
   const translateY = useTransform(scrollYProgress, safePoints, [40, 0, -40]);
+  const scale = useTransform(scrollYProgress, safePoints, [0.9, 1, 0.9]);
 
   return (
     <motion.article
-      style={shouldReduceMotion ? {} : { opacity, y: translateY }}
-      initial={shouldReduceMotion ? { opacity: 0.3 } : false}
-      animate={shouldReduceMotion ? { opacity: isActive ? 1 : 0.3, y: 0 } : undefined}
-      transition={{ duration: 0.3 }}
-      className="backdrop-blur-xl bg-background/80 md:bg-background/90 p-8 rounded-2xl shadow-xl max-w-lg w-full text-foreground border border-border/50"
+      style={shouldReduceMotion ? {} : { opacity, y: translateY, scale }}
+      initial={shouldReduceMotion ? { opacity: 0.3, scale: 0.95 } : false}
+      animate={shouldReduceMotion ? { opacity: isActive ? 1 : 0.3, scale: isActive ? 1 : 0.95, y: 0 } : undefined}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className={`backdrop-blur-xl bg-background/80 md:bg-background/90 p-8 rounded-2xl max-w-lg w-full text-foreground border transition-all duration-500 ${
+        isActive ? 'border-accent/50 shadow-[0_0_30px_rgba(var(--accent),0.15)]' : 'border-border/50 shadow-xl'
+      }`}
       aria-labelledby={`chapter-heading-${index}`}
     >
       <h3 id={`chapter-heading-${index}`} className="text-2xl font-bold mb-4">{chap.heading}</h3>
