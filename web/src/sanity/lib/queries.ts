@@ -81,7 +81,6 @@ const DISCLAIMER_FIELDS = groq`
 const CHAPTER_FIELDS = groq`
   _id,
   title,
-  slug,
   estimatedDuration,
   "lessons": lessons[]->{
     ${LESSON_FIELDS}
@@ -109,7 +108,6 @@ export const COURSE_BY_SLUG_QUERY = groq`
   *[_type == "course" && slug.current == $slug && published == true][0] {
     _id,
     title,
-    slug,
     description,
     thumbnail { asset->{ url } },
     coverImage { asset->{ url } },

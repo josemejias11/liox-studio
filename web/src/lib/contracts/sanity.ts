@@ -236,3 +236,16 @@ export type SanityCourse = z.output<typeof courseSchema>;
 
 /** Flat discriminated union of every section type in the course flow. */
 export type CourseSection = LessonSection | SanitySpecification | SanityQuizDoc | SanityDisclaimer;
+
+// ── Course summary (COURSES_QUERY) ────────────────────────────────────────────
+
+export const courseSummarySchema = z.object({
+  _id: z.string(),
+  title: z.string().catch(''),
+  slug: z.object({ current: z.string() }),
+  description: opt(z.string()),
+  thumbnail: opt(imageSchema),
+  learningObjectives: opt(z.array(z.string())),
+  chapterCount: z.number().catch(0),
+});
+export type CourseSummary = z.output<typeof courseSummarySchema>;

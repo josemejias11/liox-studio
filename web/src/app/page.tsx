@@ -5,21 +5,21 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { readClient } from '@/sanity/lib/client';
 import { COURSES_QUERY } from '@/sanity/lib/queries';
+import { courseSummarySchema, type CourseSummary } from '@/lib/contracts/sanity';
 import { ThemeToggle } from '@/components/Theme';
 
 export const revalidate = 60;
 
-export interface CourseSummary {
-  _id: string;
-  title: string;
-  slug: { current: string };
-  description?: string;
-  thumbnail?: { asset?: { url?: string } };
-  chapterCount: number;
-}
-
 export default async function Home() {
-  const courses = await readClient.fetch<CourseSummary[]>(COURSES_QUERY);
+  const raw = await readClient.fetch<unknown[]>(COURSES_QUERY);
+  const courses: CourseSummary[] = (raw ?? []).flatMap((item) => {
+    const result = courseSummarySchema.safeParse(item);
+    if (!result.success) {
+      console.error('[home] course summary failed contract validation:', result.error.issues);
+      return [];
+    }
+    return [result.data];
+  });
 
   return (
     <div className="bg-background flex min-h-screen flex-col">
