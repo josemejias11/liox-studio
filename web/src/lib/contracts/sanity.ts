@@ -200,7 +200,8 @@ export const disclaimerSchema = z.object({
   _key: opt(z.string()),
   title: opt(z.string()),
   category: opt(z.enum(['legal', 'safety', 'regulatory', 'warranty', 'general'])),
-  body: portableTextSchema.catch([]),
+  body: z.string().catch(''),
+  disclaimers: opt(z.array(z.string())),
   acknowledgementRequired: opt(z.boolean()),
   acknowledgementLabel: opt(z.string()),
 });

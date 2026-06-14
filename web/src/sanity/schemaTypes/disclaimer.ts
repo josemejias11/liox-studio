@@ -1,4 +1,4 @@
-import { defineType, defineField } from 'sanity';
+import { defineType, defineField, defineArrayMember } from 'sanity';
 import { ShieldAlert } from 'lucide-react';
 
 export const disclaimerType = defineType({
@@ -39,11 +39,18 @@ export const disclaimerType = defineType({
     defineField({
       name: 'body',
       title: 'Disclaimer Body',
-      description: 'Full disclaimer text. Supports rich text formatting.',
+      description: 'Introductory paragraph shown above the numbered disclaimers.',
+      type: 'text',
+      group: 'content',
+      validation: (r) => r.required(),
+    }),
+    defineField({
+      name: 'disclaimers',
+      title: 'Disclaimers',
+      description: 'Each entry becomes a numbered item.',
       type: 'array',
       group: 'content',
-      of: [{ type: 'block' }],
-      validation: (r) => r.required(),
+      of: [defineArrayMember({ type: 'string' })],
     }),
     defineField({
       name: 'acknowledgementRequired',

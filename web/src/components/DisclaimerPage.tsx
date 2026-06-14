@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { ChevronRight, CheckCircle2 } from 'lucide-react';
-import { PortableText } from '@portabletext/react';
 import { motion } from 'framer-motion';
 import type { SanityDisclaimer } from '@/lib/contracts/sanity';
 
@@ -99,13 +98,23 @@ export function DisclaimerPage({ disclaimer, onNext }: DisclaimerPageProps) {
             )}
           </motion.header>
 
-          {/* PortableText body */}
-          <motion.div
-            variants={itemVariants}
-            className="prose prose-sm md:prose-base dark:prose-invert prose-p:text-muted-foreground prose-headings:text-foreground prose-a:text-accent prose-strong:text-foreground max-w-none leading-relaxed"
-          >
-            <PortableText value={disclaimer.body} />
+          {/* Intro body paragraph */}
+          <motion.div variants={itemVariants}>
+            <p className="text-muted-foreground text-base leading-relaxed">{disclaimer.body}</p>
           </motion.div>
+
+          {/* Numbered disclaimers list */}
+          {disclaimer.disclaimers && disclaimer.disclaimers.length > 0 && (
+            <motion.div variants={itemVariants} className="mt-6">
+              <ol className="list-decimal list-outside space-y-3 pl-6">
+                {disclaimer.disclaimers.map((item, i) => (
+                  <li key={i} className="text-muted-foreground leading-relaxed">
+                    {item}
+                  </li>
+                ))}
+              </ol>
+            </motion.div>
+          )}
 
           {/* Scroll sentinel — IntersectionObserver target */}
           <div ref={sentinelRef} aria-hidden="true" className="mt-2 h-px w-full" />

@@ -73,6 +73,7 @@ const DISCLAIMER_FIELDS = groq`
   title,
   category,
   body,
+  disclaimers,
   acknowledgementRequired,
   acknowledgementLabel,
 `;
