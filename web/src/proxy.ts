@@ -1,5 +1,5 @@
 /**
- * Next.js edge middleware — protects the /analytics instructor dashboard.
+ * Next.js proxy — protects the /analytics instructor dashboard.
  *
  * Guard: checks for an httpOnly cookie `analytics_token` whose value must
  * match the ANALYTICS_PASSWORD environment variable. Any mismatch or absence
@@ -12,7 +12,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-export function middleware(req: NextRequest): NextResponse {
+export function proxy(req: NextRequest): NextResponse {
   const token = req.cookies.get('analytics_token')?.value;
   const expected = process.env.ANALYTICS_PASSWORD;
 
