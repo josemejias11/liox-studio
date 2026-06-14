@@ -126,7 +126,7 @@ export default function MotoViewer({
   const hotspots = useMemo(() => currentLesson?.hotspots ?? [], [currentLesson]);
   const visitedOnLesson = visited[lessonKey]?.size ?? 0;
   
-  const isSpecialLesson = currentLesson?.lessonType === 'dragDrop' || currentLesson?.lessonType === 'scrollStory';
+  const isSpecialLesson = currentLesson?.lessonType === 'dragDrop';
   const isSpecialComplete = visited[lessonKey]?.has('completed');
   
   const nextLocked = 
@@ -412,7 +412,7 @@ export default function MotoViewer({
                 <ScrollStoryLesson
                   lesson={currentLesson}
                   isCompleted={isSpecialComplete ?? false}
-                  onComplete={() => markVisited('completed')}
+                  onComplete={() => baseMarkVisited(lessonKey, 'completed', 1)}
                 />
               ),
             };
@@ -458,7 +458,7 @@ export default function MotoViewer({
             nextDisabled: nextLocked,
             onToggleNavMap: () => setShowNavMap((v) => !v),
             moduleTitle: course.title,
-            completionHint: nextLocked
+            completionHint: nextLocked && hotspots.length > 0
               ? `Tap all ${hotspots.length} features to continue (${visitedOnLesson} / ${hotspots.length})`
               : undefined,
           }

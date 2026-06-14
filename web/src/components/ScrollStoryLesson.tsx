@@ -14,15 +14,14 @@ interface ScrollStoryLessonProps {
 export default function ScrollStoryLesson({ lesson, isCompleted, onComplete }: ScrollStoryLessonProps) {
   const { headline, scrollChapters = [], media } = lesson;
 
-  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const shouldReduceMotion = useReducedMotion();
 
   const chaptersCount = Math.max(1, scrollChapters.length);
   const containerHeight = `${chaptersCount * 100}vh`;
 
   const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end end"]
+    container: scrollContainerRef,
   });
 
   const [activeChapter, setActiveChapter] = useState(0);
@@ -81,7 +80,7 @@ export default function ScrollStoryLesson({ lesson, isCompleted, onComplete }: S
       { threshold: 0.5 }
     );
 
-    const blocks = document.querySelectorAll('.chapter-block');
+    const blocks = scrollContainerRef.current?.querySelectorAll('.chapter-block') ?? [];
     blocks.forEach(b => observer.observe(b));
 
     return () => observer.disconnect();
@@ -114,10 +113,11 @@ export default function ScrollStoryLesson({ lesson, isCompleted, onComplete }: S
   ) : null;
 
   return (
-    <div ref={containerRef} style={{ height: containerHeight }} className="relative w-full bg-background">
+    <div ref={scrollContainerRef} className="relative w-full h-full overflow-y-scroll">
+    <div style={{ height: containerHeight }} className="relative w-full bg-background">
 
       {/* Sticky Hero Image Background */}
-      <div className="sticky top-0 h-screen w-full overflow-hidden flex items-center justify-center -z-10">
+      <div className="sticky top-0 h-full w-full overflow-hidden flex items-center justify-center -z-10">
         {shouldReduceMotion ? (
           <motion.div
             className="relative w-full h-[80vh] flex items-center justify-center"
@@ -154,9 +154,9 @@ export default function ScrollStoryLesson({ lesson, isCompleted, onComplete }: S
               <button
                 key={i}
                 onClick={() => {
-                  const blocks = document.querySelectorAll('.chapter-block');
-                  if (blocks[i]) {
-                    blocks[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  const blocks = scrollContainerRef.current?.querySelectorAll('.chapter-block');
+                  if (blocks?.[i]) {
+                    (blocks[i] as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
                   }
                 }}
                 aria-label={`Scroll to chapter ${i + 1}`}
@@ -203,6 +203,7 @@ export default function ScrollStoryLesson({ lesson, isCompleted, onComplete }: S
           </div>
         ))}
       </div>
+    </div>
     </div>
   );
 }
