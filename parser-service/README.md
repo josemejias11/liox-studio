@@ -35,10 +35,15 @@ Start the FastAPI application (recommended — always binds to port 8000):
 python main.py
 ```
 
-Or invoke uvicorn directly (useful when you need to bind to all interfaces):
+Or invoke uvicorn directly:
 ```bash
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn main:app --host 127.0.0.1 --port 8000
 ```
+
+> **Production note:** bind to `127.0.0.1` (not `0.0.0.0`) so the service is
+> reachable only from the local Next.js process, not from external network
+> interfaces. Never use `--reload` in production — it watches the filesystem
+> for changes and is a dev-only flag.
 
 The API will be available at `http://localhost:8000`.
 You can view the interactive API documentation (Swagger UI) at `http://localhost:8000/docs`.

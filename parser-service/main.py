@@ -17,6 +17,7 @@ import secrets
 import shutil
 import tempfile
 import uuid
+from collections import OrderedDict
 from contextlib import asynccontextmanager
 from threading import Lock
 from typing import Optional
@@ -115,8 +116,45 @@ class _Runtime:
 
 runtime = _Runtime()
 
-_vectorstores: dict[str, Chroma] = {}
-_vectorstores_lock = Lock()
+_VECTORSTORE_CACHE_MAXSIZE = int(os.environ.get("VECTORSTORE_CACHE_SIZE", "50"))
+
+
+class _LRUVectorstoreCache:
+    """Thread-safe LRU cache for per-course Chroma vectorstore instances."""
+
+    def __init__(self, maxsize: int = _VECTORSTORE_CACHE_MAXSIZE) -> None:
+        self._cache: OrderedDict[str, Chroma] = OrderedDict()
+        self._maxsize = maxsize
+        self._lock = Lock()
+
+    def get(self, key: str) -> Optional[Chroma]:
+        with self._lock:
+            if key not in self._cache:
+                return None
+            self._cache.move_to_end(key)
+            return self._cache[key]
+
+    def set(self, key: str, value: Chroma) -> None:
+        with self._lock:
+            if key in self._cache:
+                self._cache.move_to_end(key)
+            else:
+                if len(self._cache) >= self._maxsize:
+                    evicted = next(iter(self._cache))
+                    del self._cache[evicted]
+                    logger.debug("Evicted vectorstore cache entry: %s", evicted)
+            self._cache[key] = value
+
+    def pop(self, key: str) -> None:
+        with self._lock:
+            self._cache.pop(key, None)
+
+    def clear(self) -> None:
+        with self._lock:
+            self._cache.clear()
+
+
+_vectorstore_cache = _LRUVectorstoreCache()
 
 
 @asynccontextmanager
@@ -210,7 +248,7 @@ class UploadResponse(BaseModel):
 
 class ChatRequest(BaseModel):
     course_id: str
-    query: str
+    query: str = Field(max_length=2000)
 
     _check_course_id = field_validator("course_id")(_validate_course_id)
 
@@ -246,23 +284,28 @@ def collection_exists(course_id: str) -> bool:
     try:
         runtime.chroma_client.get_collection(course_id)
         return True
-    except Exception:
-        return False
+    except Exception as e:
+        # Swallow only "collection not found" errors; re-raise storage/config failures
+        # so callers see a real 500 rather than a misleading "no documents" response.
+        err_str = str(e).lower()
+        if "does not exist" in err_str or "invalidcollection" in type(e).__name__.lower():
+            return False
+        logger.error("ChromaDB error checking collection %s: %s", course_id, e)
+        raise
 
 
 def get_vectorstore(course_id: str) -> Chroma:
-    """Cached per-course Chroma vectorstore (creates the collection)."""
-    with _vectorstores_lock:
-        vs = _vectorstores.get(course_id)
-        if vs is None:
-            vs = Chroma(
-                client=runtime.chroma_client,
-                collection_name=course_id,
-                embedding_function=runtime.embeddings,
-                collection_metadata={"hnsw:space": "cosine"},
-            )
-            _vectorstores[course_id] = vs
-        return vs
+    """LRU-cached per-course Chroma vectorstore (creates the collection if needed)."""
+    vs = _vectorstore_cache.get(course_id)
+    if vs is None:
+        vs = Chroma(
+            client=runtime.chroma_client,
+            collection_name=course_id,
+            embedding_function=runtime.embeddings,
+            collection_metadata={"hnsw:space": "cosine"},
+        )
+        _vectorstore_cache.set(course_id, vs)
+    return vs
 
 
 def chunk_ids(course_id: str, filename: str, count: int) -> list[str]:
@@ -567,8 +610,7 @@ def delete_document(request: DeleteDocumentRequest):
         )
         raise HTTPException(status_code=500, detail="Failed to delete document chunks.")
 
-    with _vectorstores_lock:
-        _vectorstores.pop(request.course_id, None)
+    _vectorstore_cache.pop(request.course_id)
 
     logger.info("Deleted chunks for %s in course %s", request.filename, request.course_id)
     return {"status": "deleted", "filename": request.filename}
