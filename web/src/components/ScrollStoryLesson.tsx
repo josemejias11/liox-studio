@@ -117,7 +117,7 @@ export default function ScrollStoryLesson({ lesson, isCompleted, onComplete }: S
     <div style={{ height: containerHeight }} className="relative w-full bg-background">
 
       {/* Sticky Hero Image Background */}
-      <div className="sticky top-0 h-full w-full overflow-hidden flex items-center justify-center -z-10">
+      <div className="sticky top-0 h-screen w-full overflow-hidden flex items-center justify-center -z-10">
         {shouldReduceMotion ? (
           <motion.div
             className="relative w-full h-[80vh] flex items-center justify-center"
