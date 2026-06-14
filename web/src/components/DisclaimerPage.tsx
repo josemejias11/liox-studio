@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ChevronRight, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { SanityDisclaimer } from '@/lib/contracts/sanity';
 
@@ -10,6 +9,7 @@ type DisclaimerCategory = NonNullable<SanityDisclaimer['category']>;
 interface DisclaimerPageProps {
   disclaimer: SanityDisclaimer;
   onNext: () => void;
+  onCanProceedChange?: (canProceed: boolean) => void;
 }
 
 // ── Category display labels ────────────────────────────────────────────────
@@ -24,13 +24,12 @@ const CATEGORY_LABELS: Record<DisclaimerCategory, string> = {
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export function DisclaimerPage({ disclaimer, onNext }: DisclaimerPageProps) {
+export function DisclaimerPage({ disclaimer, onNext, onCanProceedChange }: DisclaimerPageProps) {
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const requiresAck = disclaimer.acknowledgementRequired === true;
-  const ackLabel = disclaimer.acknowledgementLabel ?? 'I Acknowledge';
   const categoryLabel = disclaimer.category
     ? CATEGORY_LABELS[disclaimer.category]
     : CATEGORY_LABELS.general;
@@ -60,6 +59,10 @@ export function DisclaimerPage({ disclaimer, onNext }: DisclaimerPageProps) {
   }, [requiresAck]);
 
   const canProceed = !requiresAck || hasScrolledToBottom;
+
+  useEffect(() => {
+    onCanProceedChange?.(canProceed);
+  }, [canProceed, onCanProceedChange]);
 
   const itemVariants = {
     hidden: { opacity: 0, y: 15 },
@@ -119,45 +122,10 @@ export function DisclaimerPage({ disclaimer, onNext }: DisclaimerPageProps) {
           {/* Scroll sentinel — IntersectionObserver target */}
           <div ref={sentinelRef} aria-hidden="true" className="mt-2 h-px w-full" />
 
-          {/* Bottom padding so content clears the nav */}
+          {/* Bottom padding so content clears LessonFrame's nav bar */}
           <div className="h-28" aria-hidden="true" />
         </div>
       </div>
-
-      {/* ── Floating Glassmorphic Nav & Action Pill ── */}
-      <motion.nav
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.4, type: 'spring', damping: 25 }}
-        className="bg-background/70 border-border/20 absolute right-4 bottom-4 z-20 flex items-center gap-2 rounded-full border p-1.5 shadow-2xl backdrop-blur-xl md:right-8 md:bottom-8"
-      >
-        {/* Acknowledge / Continue Button */}
-        {requiresAck ? (
-          <motion.button
-            whileHover={canProceed ? { scale: 1.02 } : {}}
-            whileTap={canProceed ? { scale: 0.98 } : {}}
-            onClick={onNext}
-            disabled={!canProceed}
-            className={`flex h-10 items-center justify-center gap-2 rounded-full px-6 text-sm font-semibold transition-colors duration-300 ${
-              canProceed
-                ? 'bg-accent text-accent-foreground shadow-[0_0_24px_rgba(104,91,199,0.3)]'
-                : 'bg-foreground/20 text-foreground/60 cursor-not-allowed'
-            }`}
-          >
-            {canProceed && <CheckCircle2 className="h-4 w-4 shrink-0" />}
-            {ackLabel}
-          </motion.button>
-        ) : (
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onNext}
-            className="bg-foreground text-background hover:bg-foreground/90 flex h-10 items-center justify-center gap-2 rounded-full px-6 text-sm font-bold shadow-xl transition-transform duration-150 active:scale-95"
-          >
-            End Course <ChevronRight className="h-4 w-4 shrink-0" />
-          </motion.button>
-        )}
-      </motion.nav>
     </motion.div>
   );
 }

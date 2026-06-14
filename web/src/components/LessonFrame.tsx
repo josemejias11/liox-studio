@@ -50,7 +50,7 @@ export function LessonFrame({
   moduleTitle,
   sectionType = 'lesson',
 }: LessonFrameProps) {
-  const showNav = currentLesson !== undefined && totalLessons !== undefined;
+  const showNav = (currentLesson !== undefined && totalLessons !== undefined) || onNext !== undefined;
 
   const showProgress =
     currentLesson !== undefined && totalLessons !== undefined && totalLessons > 0;
@@ -111,14 +111,16 @@ export function LessonFrame({
               <div className="flex-1" />
 
               {/* Right cluster — prev / counter / next */}
-              <button
-                onClick={onPrev}
-                disabled={currentLesson === 1}
-                className="text-foreground/60 hover:text-foreground hover:bg-foreground/10 flex h-10 w-10 items-center justify-center rounded-full transition-all disabled:cursor-not-allowed disabled:opacity-25"
-                aria-label="Previous lesson"
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </button>
+              {onPrev !== undefined && (
+                <button
+                  onClick={onPrev}
+                  disabled={currentLesson === 1}
+                  className="text-foreground/60 hover:text-foreground hover:bg-foreground/10 flex h-10 w-10 items-center justify-center rounded-full transition-all disabled:cursor-not-allowed disabled:opacity-25"
+                  aria-label="Previous lesson"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+              )}
 
               {/* Counter — visible only for lesson sections */}
               {isLessonType && (
@@ -150,19 +152,21 @@ export function LessonFrame({
             </div>
 
             {/* Progress bar — 1px stripe along the very bottom edge */}
-            <div
-              role="progressbar"
-              aria-valuenow={currentLesson}
-              aria-valuemin={1}
-              aria-valuemax={totalLessons}
-              aria-label="Course progress"
-              className="bg-foreground/10 absolute right-0 bottom-0 left-0 z-30 h-px"
-            >
+            {currentLesson !== undefined && totalLessons !== undefined && (
               <div
-                className="bg-accent h-full transition-[width] duration-500 ease-out"
-                style={{ width: `${(currentLesson / totalLessons) * 100}%` }}
-              />
-            </div>
+                role="progressbar"
+                aria-valuenow={currentLesson}
+                aria-valuemin={1}
+                aria-valuemax={totalLessons}
+                aria-label="Course progress"
+                className="bg-foreground/10 absolute right-0 bottom-0 left-0 z-30 h-px"
+              >
+                <div
+                  className="bg-accent h-full transition-[width] duration-500 ease-out"
+                  style={{ width: `${(currentLesson / totalLessons) * 100}%` }}
+                />
+              </div>
+            )}
           </>
         )}
       </div>

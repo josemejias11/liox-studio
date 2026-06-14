@@ -140,6 +140,9 @@ export default function MotoViewer({
   const goPrev = nav.goPrev;
 
   function navigateToSection(i: number) {
+    // Respect the hotspot / interaction lock — forward jumps are blocked while
+    // the current lesson requires completion before advancing.
+    if (nextLocked && i > nav.currentSectionIndex) return;
     setShowNavMap(false);
     nav.navigateToSection(i);
   }
@@ -163,6 +166,7 @@ export default function MotoViewer({
   // ── Weak topics for AI quiz generation ───────────────────────────────────
   // Seed from session-local unvisited hotspots; augment with cross-session
   // population data from /api/analytics/weak-topics when the quiz phase loads.
+  const [disclaimerCanProceed, setDisclaimerCanProceed] = useState(true);
   const [weakTopics, setWeakTopics] = useState<string[]>([]);
 
   const sessionWeakTopics = useMemo(() => {
@@ -287,7 +291,11 @@ export default function MotoViewer({
         return {
           slideKey: 'disclaimer',
           screen: structure.disclaimerSection ? (
-            <DisclaimerPage disclaimer={structure.disclaimerSection} onNext={goNext} />
+            <DisclaimerPage
+              disclaimer={structure.disclaimerSection}
+              onNext={goNext}
+              onCanProceedChange={setDisclaimerCanProceed}
+            />
           ) : null,
         };
 
@@ -454,7 +462,15 @@ export default function MotoViewer({
               ? `Tap all ${hotspots.length} features to continue (${visitedOnLesson} / ${hotspots.length})`
               : undefined,
           }
-        : { onToggleNavMap: () => setShowNavMap((v) => !v), moduleTitle: course.title };
+        : phase.phase === 'disclaimer'
+          ? {
+              sectionType: 'disclaimer' as const,
+              onNext: goNext,
+              nextDisabled: !disclaimerCanProceed,
+              onToggleNavMap: () => setShowNavMap((v) => !v),
+              moduleTitle: course.title,
+            }
+          : { onToggleNavMap: () => setShowNavMap((v) => !v), moduleTitle: course.title };
 
   // ── Render — one persistent AnimatePresence across all phases ─────────────
   return (
