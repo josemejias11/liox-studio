@@ -9,7 +9,17 @@ import { parserPost, parserDelete, ParserUploadResponseSchema, ParserServiceErro
 const USER_SAFE_UNAVAILABLE =
   'The upload service is temporarily unavailable. Please try again in a moment.';
 
+function isAuthorized(req: NextRequest): boolean {
+  const token = req.cookies.get('analytics_token')?.value;
+  const expected = process.env.ANALYTICS_PASSWORD;
+  return !!expected && token === expected;
+}
+
 export async function DELETE(req: NextRequest) {
+  if (!isAuthorized(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   let body: unknown;
   try {
     body = await req.json();
@@ -41,6 +51,10 @@ export async function DELETE(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  if (!isAuthorized(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   let formData: FormData;
   try {
     formData = await req.formData();
