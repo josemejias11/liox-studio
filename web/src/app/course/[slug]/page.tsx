@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { readClient } from '@/sanity/lib/client';
 import { COURSE_BY_SLUG_QUERY } from '@/sanity/lib/queries';
-import MotoViewer from '@/components/MotoViewer';
+import MotoViewer from '@/player/MotoViewer';
 import { courseSchema, type CourseSection, type LessonSection } from '@/lib/contracts/sanity';
 
 export default async function CoursePage({ params }: { params: Promise<{ slug: string }> }) {

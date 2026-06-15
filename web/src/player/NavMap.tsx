@@ -12,7 +12,7 @@ import {
   CircleCheck,
 } from 'lucide-react';
 import { useFocusTrap } from '@/lib/useFocusTrap';
-import { ThemeToggle } from './Theme';
+import { ThemeToggle } from '@/components/Theme';
 import type { LessonSection } from '@/lib/contracts/sanity';
 import type { CourseStructure } from '@/lib/course-structure';
 

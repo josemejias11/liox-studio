@@ -1,7 +1,7 @@
 import { expect, test, describe } from 'vitest';
 import { courseNavigationReducer, type CourseNavState } from './useCourseNavigation';
-import { deriveCourseStructure } from '../lib/course-structure';
-import { lessonSchema, type LessonSection } from '../lib/contracts/sanity';
+import { deriveCourseStructure } from '../../lib/course-structure';
+import { lessonSchema, type LessonSection } from '../../lib/contracts/sanity';
 
 describe('courseNavigationReducer', () => {
   // Built through the real schema so fixtures stay valid as the contract evolves.

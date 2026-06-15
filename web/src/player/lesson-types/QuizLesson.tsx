@@ -3,7 +3,7 @@
 import { CourseQuiz } from '@/components/course-ai/CourseQuiz';
 import type { SanityQuizDoc } from '@/lib/contracts/sanity';
 
-import { SanityQuizPlayer } from './SanityQuizPlayer';
+import { SanityQuizPlayer } from '@/components/SanityQuizPlayer';
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 

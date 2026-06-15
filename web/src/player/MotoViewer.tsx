@@ -4,46 +4,30 @@ import React, { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LessonFrame } from './LessonFrame';
-import { CourseCover } from './CourseCover';
-import { CourseComplete } from './CourseComplete';
+import { CourseCover } from '@/components/CourseCover';
+import { CourseComplete } from '@/components/CourseComplete';
 import { ChapterIntro } from './ChapterIntro';
 import { NavMap } from './NavMap';
-import { CompletionBurst } from './CompletionBurst';
-import { ContentLesson } from './ContentLesson';
-import { CourseAIFab } from './CourseAIFab';
-import { useLessonProgress } from '@/hooks/useLessonProgress';
-import { useCourseNavigation } from '@/hooks/useCourseNavigation';
+import { CompletionBurst } from '@/components/CompletionBurst';
+import { CourseAIFab } from '@/components/CourseAIFab';
+import { LessonRenderer } from './LessonRenderer';
+import { useLessonProgress } from './hooks/useLessonProgress';
+import { useCourseNavigation } from './hooks/useCourseNavigation';
 import { deriveCourseStructure, getChapterLessons } from '@/lib/course-structure';
 import { CONSENT_EVENT, SESSION_KEY, getConsent, type ConsentStatus } from '@/lib/consent';
 import type { CourseSection, SanityCourse } from '@/lib/contracts/sanity';
 
-const ProductStage = dynamic(() =>
-  import('./ProductStage').then((m) => ({ default: m.ProductStage })),
-);
-const QuizLesson = dynamic(() => import('./QuizLesson').then((m) => ({ default: m.QuizLesson })));
 const CourseQuizDynamic = dynamic(() =>
-  import('./course-ai/CourseQuiz').then((m) => ({ default: m.CourseQuiz })),
+  import('@/components/course-ai/CourseQuiz').then((m) => ({ default: m.CourseQuiz })),
 );
-const VideoLesson = dynamic(() =>
-  import('./VideoLesson').then((m) => ({ default: m.VideoLesson })),
+const QuizLessonDynamic = dynamic(() =>
+  import('./lesson-types/QuizLesson').then((m) => ({ default: m.QuizLesson })),
 );
 const SpecificationPage = dynamic(() =>
-  import('./SpecificationPage').then((m) => ({ default: m.SpecificationPage })),
+  import('@/components/SpecificationPage').then((m) => ({ default: m.SpecificationPage })),
 );
 const DisclaimerPage = dynamic(() =>
-  import('./DisclaimerPage').then((m) => ({ default: m.DisclaimerPage })),
-);
-const ColorSwitcherLesson = dynamic(() =>
-  import('./ColorSwitcherLesson').then((m) => ({ default: m.ColorSwitcherLesson })),
-);
-const SplitScreenLesson = dynamic(() =>
-  import('./SplitScreenLesson').then((m) => ({ default: m.SplitScreenLesson })),
-);
-const DragDropLesson = dynamic(() =>
-  import('./DragDropLesson').then((m) => ({ default: m.default })),
-);
-const ScrollStoryLesson = dynamic(() =>
-  import('./ScrollStoryLesson').then((m) => ({ default: m.default })),
+  import('@/components/DisclaimerPage').then((m) => ({ default: m.DisclaimerPage })),
 );
 
 // ── Framer Motion slide variants ─────────────────────────────────────────────
@@ -63,7 +47,6 @@ export default function MotoViewer({
   course: SanityCourse;
   sections: CourseSection[];
 }) {
-  // One source of truth for section grouping/indexing (shared with NavMap)
   const structure = useMemo(
     () => deriveCourseStructure(sections, course.chapters ?? []),
     [sections, course.chapters],
@@ -74,10 +57,6 @@ export default function MotoViewer({
   const [showNavMap, setShowNavMap] = useState(false);
 
   // ── Session ───────────────────────────────────────────────────────────────
-  // Initialize as "" so SSR and the first client render agree (no hydration
-  // mismatch); the UUID is resolved on the client. Persistence is gated on
-  // cookie consent: without "accepted", the id is ephemeral (in-memory only)
-  // and no progress/quiz data is written to localStorage or the server.
   const [sessionId, setSessionId] = useState<string>('');
   const [persistSession, setPersistSession] = useState(false);
   useEffect(() => {
@@ -91,9 +70,6 @@ export default function MotoViewer({
     setSessionId(sid ?? crypto.randomUUID());
     setPersistSession(consent === 'accepted');
 
-    // If the user accepts mid-session, start persisting the current id so
-    // progress carries across visits; on decline, stop persisting immediately
-    // (setConsent already removed the stored id).
     function onConsentChange(e: Event) {
       const status = (e as CustomEvent<ConsentStatus>).detail;
       if (status === 'accepted') {
@@ -110,6 +86,7 @@ export default function MotoViewer({
     window.addEventListener(CONSENT_EVENT, onConsentChange);
     return () => window.removeEventListener(CONSENT_EVENT, onConsentChange);
   }, []);
+
   const {
     visited,
     markVisited: baseMarkVisited,
@@ -125,23 +102,22 @@ export default function MotoViewer({
   const lessonKey = currentLesson?._key ?? '';
   const hotspots = useMemo(() => currentLesson?.hotspots ?? [], [currentLesson]);
   const visitedOnLesson = visited[lessonKey]?.size ?? 0;
-  
+
   const isSpecialLesson = currentLesson?.lessonType === 'dragDrop';
   const isSpecialComplete = visited[lessonKey]?.has('completed');
-  
-  const nextLocked = 
+
+  const nextLocked =
     (hotspots.length > 0 && hotspots.some((h) => !visited[lessonKey]?.has(h.label))) ||
     (isSpecialLesson && !isSpecialComplete);
 
-  const markVisited = (label: string) => baseMarkVisited(lessonKey, label, isSpecialLesson ? 1 : hotspots.length);
+  const markVisited = (label: string) =>
+    baseMarkVisited(lessonKey, label, isSpecialLesson ? 1 : hotspots.length);
 
-  // ── Navigation wrappers (close transient overlays before moving) ──────────
+  // ── Navigation wrappers ───────────────────────────────────────────────────
   const goNext = () => nav.goNext(nextLocked);
   const goPrev = nav.goPrev;
 
   function navigateToSection(i: number) {
-    // Respect the hotspot / interaction lock — forward jumps are blocked while
-    // the current lesson requires completion before advancing.
     if (nextLocked && i > nav.currentSectionIndex) return;
     setShowNavMap(false);
     nav.navigateToSection(i);
@@ -155,17 +131,13 @@ export default function MotoViewer({
   );
 
   // ── Lesson view tracking ──────────────────────────────────────────────────
-  // Fire once each time the learner lands on a new lesson (any type).
   useEffect(() => {
     if (!lessonKey || phase.phase !== 'chapter' || showChapterIntro) return;
     markLessonViewed(lessonKey, course._id);
-    // lessonKey changes on every navigation — markLessonViewed is stable
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lessonKey]);
 
   // ── Weak topics for AI quiz generation ───────────────────────────────────
-  // Seed from session-local unvisited hotspots; augment with cross-session
-  // population data from /api/analytics/weak-topics when the quiz phase loads.
   const [disclaimerCanProceed, setDisclaimerCanProceed] = useState(true);
   const [weakTopics, setWeakTopics] = useState<string[]>([]);
 
@@ -212,11 +184,10 @@ export default function MotoViewer({
         });
       })
       .catch(() => {});
-  // Only re-fetch when the quiz phase first becomes active
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isQuizPhase]);
 
-  // ── Phase switch — slide key + screen content ─────────────────────────────
+  // ── Phase switch ──────────────────────────────────────────────────────────
   function renderPhase(): { slideKey: string; screen: React.ReactNode } {
     switch (phase.phase) {
       case 'cover': {
@@ -274,7 +245,7 @@ export default function MotoViewer({
           slideKey: `chapter-quiz-${phase.chapterIndex}`,
           screen: (
             <div className="bg-background absolute inset-0 flex items-center justify-center overflow-y-auto p-6">
-              <QuizLesson
+              <QuizLessonDynamic
                 sanityQuiz={chapterGroup?.quickCheck}
                 weakTopics={weakTopics}
                 onPass={() => nav.finishChapterQuiz(phase.chapterIndex)}
@@ -328,108 +299,26 @@ export default function MotoViewer({
           };
         }
 
-        switch (currentLesson.lessonType) {
-          case 'stage':
-            return {
-              slideKey: `stage-${currentLesson._key}`,
-              screen: (
-              <ProductStage
-                  headline={currentLesson.headline}
-                  body={currentLesson.body}
-                  productImage={currentLesson.media?.asset?.url}
-                  stageBackground={currentLesson.stageBackground?.asset?.url}
-                  enableCompletionAnimation={currentLesson.enableCompletionAnimation}
-                  completionTransition={currentLesson.completionTransition}
-                  hotspots={hotspots}
-                  visited={visited[lessonKey] ?? new Set()}
-                  onVisit={markVisited}
-                  onNext={goNext}
-                  onPrev={goPrev}
-                  courseId={course._id}
-                />
-              ),
-            };
-          case 'video':
-            return {
-              slideKey: `video-${currentLesson._key}`,
-              screen: (
-                <VideoLesson
-                  headline={currentLesson.headline}
-                  videoFileUrl={currentLesson.videoFile?.asset?.url}
-                  videoAspectRatio={currentLesson.videoAspectRatio}
-                  onNext={goNext}
-                />
-              ),
-            };
-          case 'quiz':
-            return {
-              slideKey: `quiz-lesson-${currentLesson._key}`,
-              screen: (
-                <div className="bg-background absolute inset-0 flex items-center justify-center overflow-y-auto p-6">
-                  <CourseQuizDynamic
-                    weakTopics={weakTopics}
-                    onPass={goNext}
-                    onFail={goNext}
-                    sessionId={persistSession ? sessionId : undefined}
-                    courseId={course._id}
-                  />
-                </div>
-              ),
-            };
-          case 'colorSwitcher':
-            return {
-              slideKey: `colorSwitcher-${currentLesson._key}`,
-              screen: (
-                <ColorSwitcherLesson
-                  lesson={currentLesson}
-                />
-              ),
-            };
-          case 'splitScreen':
-            return {
-              slideKey: `splitScreen-${currentLesson._key}`,
-              screen: (
-                <SplitScreenLesson
-                  lesson={currentLesson}
-                />
-              ),
-            };
-          case 'dragDrop':
-            return {
-              slideKey: `dragDrop-${currentLesson._key}`,
-              screen: (
-                <DragDropLesson
-                  lesson={currentLesson}
-                  isCompleted={isSpecialComplete ?? false}
-                  onComplete={() => markVisited('completed')}
-                />
-              ),
-            };
-          case 'scrollStory':
-            return {
-              slideKey: `scrollStory-${currentLesson._key}`,
-              screen: (
-                <ScrollStoryLesson
-                  lesson={currentLesson}
-                  isCompleted={isSpecialComplete ?? false}
-                  onComplete={() => baseMarkVisited(lessonKey, 'completed', 1)}
-                />
-              ),
-            };
-          default:
-            return {
-              slideKey: `lesson-${currentLesson._key}`,
-              screen: (
-                <ContentLesson
-                  lesson={currentLesson}
-                  hotspots={hotspots}
-                  visitedLabels={visited[lessonKey] ?? new Set()}
-                  onVisit={markVisited}
-                  courseId={course._id}
-                />
-              ),
-            };
-        }
+        return {
+          slideKey: `lesson-${currentLesson._key}`,
+          screen: (
+            <LessonRenderer
+              lesson={currentLesson}
+              lessonKey={lessonKey}
+              hotspots={hotspots}
+              visited={visited[lessonKey] ?? new Set()}
+              isSpecialComplete={isSpecialComplete ?? false}
+              goNext={goNext}
+              goPrev={goPrev}
+              markVisited={markVisited}
+              baseMarkVisited={baseMarkVisited}
+              weakTopics={weakTopics}
+              sessionId={sessionId}
+              persistSession={persistSession}
+              courseId={course._id}
+            />
+          ),
+        };
       }
     }
   }
@@ -448,9 +337,6 @@ export default function MotoViewer({
       ? { moduleTitle: course.title }
       : isContentLesson
         ? {
-            // True totals — LessonFrame no longer infers "last lesson" from the
-            // count; the navigation reducer owns that boundary and nextDisabled
-            // covers the hotspot gate.
             currentLesson: nav.currentSectionIndex >= 0 ? nav.currentSectionIndex + 1 : 1,
             totalLessons: structure.totalSections,
             onPrev: goPrev,
@@ -458,9 +344,10 @@ export default function MotoViewer({
             nextDisabled: nextLocked,
             onToggleNavMap: () => setShowNavMap((v) => !v),
             moduleTitle: course.title,
-            completionHint: nextLocked && hotspots.length > 0
-              ? `Tap all ${hotspots.length} features to continue (${visitedOnLesson} / ${hotspots.length})`
-              : undefined,
+            completionHint:
+              nextLocked && hotspots.length > 0
+                ? `Tap all ${hotspots.length} features to continue (${visitedOnLesson} / ${hotspots.length})`
+                : undefined,
           }
         : phase.phase === 'disclaimer'
           ? {
@@ -472,7 +359,7 @@ export default function MotoViewer({
             }
           : { onToggleNavMap: () => setShowNavMap((v) => !v), moduleTitle: course.title };
 
-  // ── Render — one persistent AnimatePresence across all phases ─────────────
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <LessonFrame {...frameProps}>
       <AnimatePresence mode="wait" custom={navDirection}>
@@ -500,15 +387,11 @@ export default function MotoViewer({
         />
       )}
 
-      {/* Floating AI Assistant Widget */}
       {phase.phase !== 'cover' &&
-       phase.phase !== 'quiz' &&
-       phase.phase !== 'chapter-quiz' &&
-       currentLesson?.lessonType !== 'quiz' && (
-         <CourseAIFab courseId={course._id} />
-      )}
+        phase.phase !== 'quiz' &&
+        phase.phase !== 'chapter-quiz' &&
+        currentLesson?.lessonType !== 'quiz' && <CourseAIFab courseId={course._id} />}
 
-      {/* Progress sync failure — non-blocking notice; optimistic updates roll back */}
       {progressError && persistSession && (
         <div
           role="status"
