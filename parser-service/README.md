@@ -30,12 +30,18 @@ This is the Python FastAPI microservice for Moto AI. It handles document parsing
 
 ## Running the Service
 
-Start the FastAPI application (recommended — always binds to port 8000):
+Use either of these canonical commands (both always bind to port 8000):
+
 ```bash
 python main.py
+# or
+bash run.sh
 ```
 
-Or invoke uvicorn directly:
+Both commands read an optional `PORT` environment variable (default `8000`) and
+will exit immediately with a clear error if `PORT` is set below 1024.
+
+If you need to invoke uvicorn directly (e.g. for production without `--reload`):
 ```bash
 uvicorn main:app --host 127.0.0.1 --port 8000
 ```

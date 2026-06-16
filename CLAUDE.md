@@ -53,7 +53,7 @@ npm run db:studio    # Prisma Studio GUI
 
 ```bash
 pip install -r requirements.txt
-uvicorn main:app --reload   # localhost:8000
+python main.py              # localhost:8000 (always; reads $PORT, guards < 1024)
 ```
 
 Requires Ollama running locally (`llama3` for LLM, `nomic-embed-text` for embeddings). The service is **server-to-server only** — never called from the browser. All requests carry `X-Internal-Token` matching `PARSER_SERVICE_TOKEN` in `.env.local`.
