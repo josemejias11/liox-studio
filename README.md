@@ -98,14 +98,14 @@ cd parser-service
 python3 -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-export PARSER_SERVICE_TOKEN="dev-secret-change-me"   # must match web/.env.local
+cp .env.example .env            # one-time: token and tunables loaded automatically
 python main.py
 ```
 
-`python main.py` always binds to `http://127.0.0.1:8000`. To expose on all interfaces (e.g. for a networked dev setup):
+`python main.py` always binds to `http://127.0.0.1:8000`. To use a different port set `PARSER_PORT` (not `PORT`, which collides with Node):
 
 ```bash
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+PARSER_PORT=9000 python main.py
 ```
 
 Verify it's healthy:
