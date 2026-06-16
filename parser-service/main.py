@@ -63,9 +63,15 @@ COURSE_ID_PATTERN = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._-]{1,61}[a-zA-Z0-9]$")
 # second line of defense for borderline hits.
 RELEVANCE_THRESHOLD = float(os.environ.get("RELEVANCE_THRESHOLD", "0.45"))
 
-RETRIEVAL_K_CHAT = 5
+RETRIEVAL_K_CHAT = int(os.environ.get("RETRIEVAL_K_CHAT", "5"))
 RETRIEVAL_K_PER_TOPIC = 4
 QUIZ_MAX_CONTEXT_DOCS = 12
+
+# Document chunking, applied at upload time. Changing these only affects
+# newly (re-)uploaded documents — existing chunks keep their original size.
+# Tuned via the eval harness (see eval/).
+CHUNK_SIZE = int(os.environ.get("CHUNK_SIZE", "1000"))
+CHUNK_OVERLAP = int(os.environ.get("CHUNK_OVERLAP", "200"))
 
 NO_MATERIALS_ANSWER = (
     "No materials have been uploaded for this course yet, "
@@ -328,6 +334,14 @@ def format_context(docs: list) -> str:
     )
 
 
+def build_text_splitter() -> RecursiveCharacterTextSplitter:
+    return RecursiveCharacterTextSplitter(
+        chunk_size=CHUNK_SIZE,
+        chunk_overlap=CHUNK_OVERLAP,
+        separators=["\n\n", "\n", " ", ""],
+    )
+
+
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
@@ -387,11 +401,7 @@ def upload_file(course_id: str = Form(...), file: UploadFile = File(...)):
         if not text_content or not text_content.strip():
             raise HTTPException(status_code=400, detail="Could not extract text from the file.")
 
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=200,
-            separators=["\n\n", "\n", " ", ""],
-        )
+        text_splitter = build_text_splitter()
         chunks = text_splitter.split_text(text_content)
 
         logger.info("Storing %d chunks in ChromaDB (collection: %s)...", len(chunks), course_id)

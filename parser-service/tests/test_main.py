@@ -406,6 +406,23 @@ class TestCollectionExists:
 
 
 # ---------------------------------------------------------------------------
+# build_text_splitter — chunking is env-configurable
+# ---------------------------------------------------------------------------
+
+class TestBuildTextSplitter:
+    def test_uses_configured_chunk_size_and_overlap(self):
+        with patch.object(main, "CHUNK_SIZE", 300), patch.object(main, "CHUNK_OVERLAP", 50):
+            splitter = main.build_text_splitter()
+        assert splitter._chunk_size == 300
+        assert splitter._chunk_overlap == 50
+
+    def test_defaults_match_documented_values(self):
+        splitter = main.build_text_splitter()
+        assert splitter._chunk_size == main.CHUNK_SIZE
+        assert splitter._chunk_overlap == main.CHUNK_OVERLAP
+
+
+# ---------------------------------------------------------------------------
 # _LRUVectorstoreCache
 # ---------------------------------------------------------------------------
 
