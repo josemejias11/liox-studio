@@ -135,7 +135,7 @@
   --secondary: oklch(0.2 0.007 264);
   --secondary-foreground: oklch(0.934 0.012 264);
   --muted: oklch(0.2 0.007 264);
-  --muted-foreground: oklch(0.461 0.024 264); /* Slate */
+  --muted-foreground: oklch(0.705 0.015 264); /* Lighter Slate for contrast */
   --accent: oklch(0.499 0.172 282); /* Moto Indigo */
   --accent-foreground: oklch(0.934 0.012 264);
   --destructive: oklch(0.704 0.191 22.216);

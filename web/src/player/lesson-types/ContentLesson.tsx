@@ -108,7 +108,7 @@ export function ContentLesson({
           <div
             className={`pointer-events-auto w-full ${imageUrl ? overlayWidth : 'flex max-w-xl flex-col gap-4'} ${
               imageUrl
-                ? 'bg-card/60 rounded-[2rem] border border-white/10 p-6 shadow-2xl backdrop-blur-2xl md:p-8'
+                ? 'bg-card/60 dark:bg-card/95 rounded-[2rem] border border-white/10 p-6 shadow-2xl backdrop-blur-2xl md:p-8'
                 : ''
             }`}
           >

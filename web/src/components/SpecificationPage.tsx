@@ -1,20 +1,16 @@
 'use client';
 
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import type { SanitySpecification } from '@/lib/contracts/sanity';
 
 interface SpecificationPageProps {
   spec: SanitySpecification;
-  onNext: () => void;
-  onPrev: () => void;
-  showPrev: boolean;
 }
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export function SpecificationPage({ spec, onNext, onPrev, showPrev }: SpecificationPageProps) {
+export function SpecificationPage({ spec }: SpecificationPageProps) {
   const heroUrl = spec.heroImage?.asset?.url;
 
   const containerVariants = {
@@ -133,35 +129,6 @@ export function SpecificationPage({ spec, onNext, onPrev, showPrev }: Specificat
           </div>
         </motion.div>
       </div>
-
-      {/* ── Navigation bar ── */}
-      <motion.nav
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.4, type: 'spring', damping: 25 }}
-        className="bg-background/70 border-border/20 absolute bottom-8 left-1/2 z-20 flex -translate-x-1/2 items-center rounded-full border p-1.5 shadow-2xl backdrop-blur-xl"
-      >
-        {showPrev && (
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={onPrev}
-            className="text-foreground hover:bg-foreground/10 flex h-10 w-10 items-center justify-center rounded-full transition-colors"
-            aria-label="Previous section"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </motion.button>
-        )}
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={onNext}
-          className="text-foreground hover:bg-foreground/10 flex h-10 w-10 items-center justify-center rounded-full transition-colors"
-          aria-label="Next section"
-        >
-          <ChevronRight className="h-5 w-5" />
-        </motion.button>
-      </motion.nav>
     </div>
   );
 }

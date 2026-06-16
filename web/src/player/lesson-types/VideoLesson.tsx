@@ -8,17 +8,15 @@ interface VideoLessonProps {
   headline: string;
   videoFileUrl?: string;
   videoAspectRatio?: string;
-  onNext: () => void;
+  onComplete?: () => void;
 }
 
 export function VideoLesson({
   headline,
   videoFileUrl,
   videoAspectRatio = '16:9',
-  onNext,
+  onComplete,
 }: VideoLessonProps) {
-  const [hasEnded, setHasEnded] = useState(false);
-
   const src = videoFileUrl;
   const aspectRatio = cssAspectRatio(videoAspectRatio);
 
@@ -31,17 +29,14 @@ export function VideoLesson({
           No video source configured for this lesson.
         </p>
         <button
-          onClick={onNext}
+          onClick={() => onComplete?.()}
           className="text-foreground/50 hover:text-foreground border-border/10 hover:border-border/25 mt-2 flex items-center gap-1.5 rounded-full border px-4 py-2 text-[12px] font-semibold transition-all duration-200 active:scale-95"
         >
-          Continue <ChevronRight className="h-3.5 w-3.5" />
+          Mark Complete <ChevronRight className="h-3.5 w-3.5" />
         </button>
       </div>
     );
   }
-
-  // Without external embeds, we strictly rely on HTML5 video events
-  const canContinue = hasEnded;
 
   return (
     <div className="bg-background absolute inset-0 flex flex-col select-none">
@@ -58,28 +53,9 @@ export function VideoLesson({
             playsInline
             className="h-full w-full object-contain"
             style={{ aspectRatio }}
-            onEnded={() => setHasEnded(true)}
+            onEnded={() => onComplete?.()}
           />
         </div>
-      </div>
-
-      {/* ── Footer: headline + continue ── */}
-      <div className="flex shrink-0 items-center justify-between gap-4 px-5 py-3">
-        <p className="text-foreground/35 flex-1 truncate text-[11px] font-medium">{headline}</p>
-
-        <button
-          onClick={onNext}
-          disabled={!canContinue}
-          className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-[12px] font-semibold transition-all duration-300 active:scale-95 ${
-            canContinue
-              ? 'bg-background text-foreground hover:bg-background/90 cursor-pointer shadow-lg'
-              : 'bg-background/8 text-foreground/25 cursor-default'
-          }`}
-          title={canContinue ? undefined : 'Watch the video to continue'}
-        >
-          {canContinue ? 'Continue' : 'Watch to continue'}
-          <ChevronRight className="h-3.5 w-3.5" />
-        </button>
       </div>
     </div>
   );

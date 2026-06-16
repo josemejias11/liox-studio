@@ -216,17 +216,6 @@ export function ProductStage({
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
-      {/* ── Back button ── */}
-      {onPrev && (
-        <button
-          onClick={onPrev}
-          className="bg-background/60 border-border/20 text-foreground/70 hover:text-foreground hover:bg-background/80 focus-visible:ring-accent absolute top-4 left-4 z-30 flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium backdrop-blur-sm transition-all focus-visible:ring-2 focus-visible:outline-none"
-          aria-label="Go to previous lesson"
-        >
-          <ChevronLeft className="h-3.5 w-3.5" />
-          Back
-        </button>
-      )}
 
       {/* ── Background — fades in, counter-drifts ── */}
       {stageBackground ? (
@@ -331,54 +320,66 @@ export function ProductStage({
       ))}
 
       {/* ── Progress arc — top right ── */}
-      <div className="stage-enter-top absolute top-3 right-3 z-20 flex items-center gap-1.5">
-        <span
-          className={`text-[10px] font-medium tabular-nums transition-colors duration-500 select-none ${allDiscovered ? 'text-accent/80' : 'text-foreground/40'}`}
-        >
-          {discoveredCount} / {total}
-        </span>
-        <div className="relative">
-          <svg
-            width="38"
-            height="38"
-            viewBox="0 0 44 44"
-            className="-rotate-90"
-            aria-label={`${discoveredCount} of ${total} discovered`}
+      <div className="stage-enter-top absolute top-3 right-3 z-20 flex flex-col items-end gap-2">
+        <div className="flex items-center gap-1.5">
+          <span
+            className={`text-[10px] font-medium tabular-nums transition-colors duration-500 select-none ${allDiscovered ? 'text-accent/80' : 'text-foreground/40'}`}
           >
-            <circle
-              cx="22"
-              cy="22"
-              r={radius}
-              fill="none"
-              stroke="rgba(233,234,242,0.08)"
-              strokeWidth="2.5"
-            />
-            <circle
-              cx="22"
-              cy="22"
-              r={radius}
-              fill="none"
-              stroke="rgb(104,91,199)"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeDasharray={circumference}
-              strokeDashoffset={strokeOffset}
-              className="transition-all duration-500 ease-out"
-              style={
-                allDiscovered ? { filter: 'drop-shadow(0 0 4px rgb(104 91 199 / 0.6))' } : undefined
-              }
-            />
-          </svg>
-          {allDiscovered && (
-            <div className="stage-check-pop absolute inset-0 flex items-center justify-center">
-              <Check className="text-accent h-3.5 w-3.5 stroke-3" />
-            </div>
-          )}
+            {discoveredCount} / {total}
+          </span>
+          <div className="relative">
+            <svg
+              width="38"
+              height="38"
+              viewBox="0 0 44 44"
+              className="-rotate-90"
+              aria-label={`${discoveredCount} of ${total} discovered`}
+            >
+              <circle
+                cx="22"
+                cy="22"
+                r={radius}
+                fill="none"
+                stroke="rgba(233,234,242,0.08)"
+                strokeWidth="2.5"
+              />
+              <circle
+                cx="22"
+                cy="22"
+                r={radius}
+                fill="none"
+                stroke="rgb(104,91,199)"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeDasharray={circumference}
+                strokeDashoffset={strokeOffset}
+                className="transition-all duration-500 ease-out"
+                style={
+                  allDiscovered ? { filter: 'drop-shadow(0 0 4px rgb(104 91 199 / 0.6))' } : undefined
+                }
+              />
+            </svg>
+            {allDiscovered && (
+              <div className="stage-check-pop absolute inset-0 flex items-center justify-center">
+                <Check className="text-accent h-3.5 w-3.5 stroke-3" />
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* ── Completion badge ── */}
+        {allDiscovered && (
+          <div className="completion-badge bg-accent/15 border-accent/35 flex items-center gap-1.5 rounded-full border px-3 py-1.5">
+            <CheckCircle2 className="text-accent h-3.5 w-3.5 shrink-0" />
+            <span className="text-foreground text-xs font-semibold tracking-wide whitespace-nowrap">
+              All {total} features discovered
+            </span>
+          </div>
+        )}
       </div>
 
       {/* ── Keyboard hint — bottom left of arc ── */}
-      {!activePanel && hotspots.length > 1 && (
+      {!activePanel && !allDiscovered && hotspots.length > 1 && (
         <div
           className="stage-enter-top pointer-events-none absolute top-13 right-3 z-20"
           style={{ animationDelay: '200ms' }}
@@ -389,42 +390,25 @@ export function ProductStage({
         </div>
       )}
 
-      {/* ── Lesson label — bottom left ── */}
+      {/* ── Lesson label — top left ── */}
       <div
-        className="stage-enter-bottom pointer-events-none absolute bottom-16 left-5 z-20"
+        className="stage-enter-top pointer-events-none absolute top-6 left-6 z-20 max-w-md md:max-w-xl pr-6"
         style={{ animationDelay: '380ms' }}
       >
-        <p className="text-foreground/25 mb-1 text-[10px] font-semibold tracking-[0.15em] uppercase">
+        <p className="text-foreground/40 mb-1.5 text-[10px] font-bold tracking-[0.2em] uppercase">
           Discover
         </p>
-        <h2 className="text-foreground/90 max-w-[40%] text-2xl leading-tight font-bold mb-2">
+        <h2 className="text-foreground/90 text-2xl md:text-3xl leading-tight font-bold mb-3">
           {headline}
         </h2>
         {body && (
-          <div className="text-foreground/70 prose prose-sm prose-invert max-w-sm">
+          <div className="text-foreground/70 prose prose-sm md:prose-base prose-invert max-w-none font-light leading-relaxed">
             {typeof body === 'string' ? <p>{body}</p> : <PortableText value={body as import('sanity').PortableTextBlock[]} />}
           </div>
         )}
       </div>
 
-      {/* ── Continue ── */}
-      {allDiscovered && (
-        <div className="stage-rise absolute right-4 bottom-8 z-20 flex flex-col items-end gap-2">
-          <div className="completion-badge bg-accent/15 border-accent/35 flex items-center gap-1.5 rounded-full border px-3 py-1.5">
-            <CheckCircle2 className="text-accent h-3.5 w-3.5 shrink-0" />
-            <span className="text-foreground text-xs font-semibold tracking-wide whitespace-nowrap">
-              All {total} features discovered
-            </span>
-          </div>
-          <button
-            onClick={onNext}
-            className="completion-button-glow bg-background text-foreground shadow-moto-black/40 hover:bg-background/90 flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold shadow-2xl transition-transform duration-150 active:scale-95"
-          >
-            Continue
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-      )}
+
 
       {/* ── Discover hint ── */}
       {discoveredCount === 0 && total > 0 && (

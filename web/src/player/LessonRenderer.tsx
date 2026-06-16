@@ -68,7 +68,7 @@ export function LessonRenderer({
           headline={lesson.headline}
           videoFileUrl={lesson.videoFile?.asset?.url}
           videoAspectRatio={lesson.videoAspectRatio}
-          onNext={goNext}
+          onComplete={() => baseMarkVisited(lessonKey, 'completed', 1)}
         />
       );
 

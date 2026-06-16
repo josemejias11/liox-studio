@@ -143,7 +143,7 @@ export function LessonFrame({
                 className={`flex h-10 w-10 items-center justify-center rounded-full transition-all ${
                   nextDisabled 
                     ? 'text-foreground/40 bg-foreground/5 cursor-not-allowed' 
-                    : 'text-foreground hover:bg-foreground/10 bg-accent/10 shadow-[0_0_15px_rgba(104,91,199,0.3)]'
+                    : 'text-foreground hover:bg-foreground/10 bg-accent/10 completion-button-glow'
                 }`}
                 aria-label="Next lesson"
               >

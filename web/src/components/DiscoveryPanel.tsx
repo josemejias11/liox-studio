@@ -349,19 +349,19 @@ export function DiscoveryPanel({
         // Desktop/tablet floating panel — maxHeight is set via floatingStyle (dynamic, based on hotspot position).
         // Widen or narrow to accommodate the specific video aspect ratio.
         const floatingClasses = `absolute ${panelWidthClass} rounded-3xl flex flex-col
-          bg-card/80 backdrop-blur-3xl border border-white/10
+          bg-card/80 dark:bg-card/95 backdrop-blur-3xl border border-white/10
           shadow-2xl transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${originClass}
           ${open ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.3] pointer-events-none'}`;
 
         // Mobile bottom-sheet — slides up from the bottom, full width, ~72 % of viewport height.
         const mobileClasses = `absolute bottom-0 left-0 right-0 w-full h-[72vh] rounded-t-3xl flex flex-col
-          bg-card/80 backdrop-blur-3xl border-t border-white/10
+          bg-card/80 dark:bg-card/95 backdrop-blur-3xl border-t border-white/10
           shadow-2xl transition-transform duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]
           ${open ? 'translate-y-0' : 'translate-y-full pointer-events-none'}`;
 
         // Sidebar (non-lesson / explicit sidebar mode) — slightly wider than before.
         const sidebarClasses = `absolute top-0 right-0 bottom-0 w-[48%] flex flex-col
-          bg-card/80 backdrop-blur-2xl border-l border-white/10
+          bg-card/80 dark:bg-card/95 backdrop-blur-2xl border-l border-white/10
           shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]
           ${open ? 'translate-x-0' : 'translate-x-full'}`;
 

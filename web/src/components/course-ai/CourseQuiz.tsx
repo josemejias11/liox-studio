@@ -390,10 +390,10 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
             >
               <div
                 className={`mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full shadow-lg ${
-                  summary.passed ? 'bg-accent' : 'bg-muted'
+                  summary.passed ? 'bg-accent text-accent-foreground' : 'bg-muted text-foreground'
                 }`}
               >
-                <span className="text-3xl font-bold text-background">
+                <span className="text-3xl font-bold">
                   {Math.round((summary.score / summary.total) * 100)}%
                 </span>
               </div>

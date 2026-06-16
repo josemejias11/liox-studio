@@ -59,7 +59,7 @@ export function ColorSwitcherLesson({ lesson }: ColorSwitcherLessonProps) {
 
       {/* Control Area */}
       <div className="absolute bottom-12 left-0 right-0 z-10 flex flex-col items-center justify-center px-6">
-        <div className="w-full max-w-md bg-card/60 backdrop-blur-xl p-6 rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-4">
+        <div className="w-full max-w-md bg-card/60 dark:bg-card/95 backdrop-blur-xl p-6 rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-4">
           <div className="flex justify-between items-center px-1">
             <h2 className="text-xl font-semibold text-foreground">{lesson.headline}</h2>
             <div className="flex items-center gap-2">

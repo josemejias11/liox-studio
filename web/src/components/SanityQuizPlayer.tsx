@@ -10,8 +10,6 @@ import {
   Loader2,
   ChevronRight,
   Trophy,
-  Star,
-  ThumbsUp,
   RefreshCw,
 } from 'lucide-react';
 
@@ -29,40 +27,7 @@ import { sanityImageLoader } from '@/lib/sanity-image-loader';
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
-const SCORE_TIERS = [
-  {
-    min: 1.0,
-    icon: Trophy,
-    color: 'text-muted-foreground',
-    label: 'Perfect Score!',
-    message: "You're a certified product expert.",
-    emoji: '🏆',
-  },
-  {
-    min: 0.8,
-    icon: Star,
-    color: 'text-accent',
-    label: 'Excellent!',
-    message: 'Almost flawless — great retention.',
-    emoji: '⭐',
-  },
-  {
-    min: 0.6,
-    icon: ThumbsUp,
-    color: 'text-accent',
-    label: 'Good Work!',
-    message: 'Solid grasp of the key features.',
-    emoji: '👍',
-  },
-  {
-    min: 0,
-    icon: RefreshCw,
-    color: 'text-muted-foreground',
-    label: 'Keep Exploring!',
-    message: 'Revisit the features and give it another go.',
-    emoji: '🔁',
-  },
-];
+
 
 // Transform the client-safe Sanity projection into the shared wire shape.
 // (No correctness data exists here — grading happens in /api/quiz/grade.)
@@ -107,7 +72,6 @@ export function SanityQuizPlayer({
   /** Server-graded final result — the only source of score/passed. */
   const [summary, setSummary] = useState<SubmitQuizResponse | null>(null);
   const [submitErr, setSubmitErr] = useState<string | null>(null);
-  const [isReviewing, setIsReviewing] = useState(false);
   const [isShaking, setIsShaking] = useState(false);
   const [started, setStarted] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -123,7 +87,7 @@ export function SanityQuizPlayer({
 
   // ── Answer selection — graded server-side per question ────────────────────
   async function handleSelect(optionIndex: number) {
-    if (selected !== null || isReviewing || grading) return;
+    if (selected !== null || grading) return;
     setSelected(optionIndex);
     setGrading(true);
     setGradeErr(null);
@@ -167,7 +131,6 @@ export function SanityQuizPlayer({
   // ── Final submission — server computes score / passed and records it ──────
   async function submitQuiz(answers: number[]) {
     setDone(true);
-    setIsReviewing(false);
     setSubmitErr(null);
 
     try {
@@ -188,9 +151,9 @@ export function SanityQuizPlayer({
       if (!parsed.success) throw new Error('Submit response failed validation');
 
       setSummary(parsed.data);
-      if (parsed.data.passed) {
-        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-      }
+      const pct = parsed.data.total > 0 ? parsed.data.score / parsed.data.total : 0;
+      const pctScore = Math.round(pct * 100);
+      onPass(pctScore);
     } catch {
       setSubmitErr("Couldn't score your quiz.");
     }
@@ -218,7 +181,6 @@ export function SanityQuizPlayer({
     setDone(false);
     setSummary(null);
     setSubmitErr(null);
-    setIsReviewing(false);
     setStarted(false);
   }
 
@@ -247,7 +209,7 @@ export function SanityQuizPlayer({
   }
 
   // ── Scoring state — waiting for (or retrying) the server grade ────────────
-  if (done && !isReviewing && !summary) {
+  if (done && !summary) {
     return (
       <div className="bg-background absolute inset-0 flex flex-col items-center justify-center gap-4">
         {submitErr ? (
@@ -270,106 +232,12 @@ export function SanityQuizPlayer({
     );
   }
 
-  // ── Score screen — rendered exclusively from the server-graded summary ────
-  if (done && !isReviewing && summary) {
-    const pct = summary.total > 0 ? summary.score / summary.total : 0;
-    const pctScore = Math.round(pct * 100);
-    const passed = summary.passed;
-    const tier = SCORE_TIERS.find((t) => pct >= t.min) ?? SCORE_TIERS[SCORE_TIERS.length - 1];
-    const Icon = tier.icon;
-    const barColor =
-      pct >= 0.8 ? 'rgb(104 91 199)' : pct >= 0.6 ? 'rgb(104 91 199)' : 'rgb(122 118 112)';
 
-    return (
-      <div
-        role="status"
-        aria-label={`${tier.label} You scored ${summary.score} out of ${summary.total}`}
-        className="bg-background absolute inset-0 flex flex-col items-center justify-center gap-5 px-8"
-      >
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_50%_at_50%_45%,rgba(104,91,199,0.07),transparent)]" />
-
-        {/* Tier icon + emoji */}
-        <div className="quiz-score-in flex flex-col items-center gap-1">
-          <span className="text-[52px] leading-none">{tier.emoji}</span>
-          <Icon className={`h-5 w-5 ${tier.color} mt-1`} />
-        </div>
-
-        {/* Score number */}
-        <div className="quiz-score-in text-center" style={{ animationDelay: '90ms' }}>
-          <p className="text-foreground text-[64px] leading-none font-bold tabular-nums">
-            {summary.score}
-            <span className="text-foreground/25 text-3xl font-normal">/{summary.total}</span>
-          </p>
-          <p className={`mt-1.5 text-base font-semibold ${tier.color}`}>{tier.label}</p>
-          <p className="text-foreground/35 mt-0.5 text-[12px]">{tier.message}</p>
-          {!passed && (
-            <p className="text-foreground/30 mt-1.5 text-[11px]">
-              Passing score: {summary.passingScore}%
-            </p>
-          )}
-        </div>
-
-        {/* Score bar */}
-        <div
-          className="quiz-score-in bg-background/8 h-1.5 w-36 overflow-hidden rounded-full"
-          style={{ animationDelay: '180ms' }}
-        >
-          <div
-            className="h-full rounded-full"
-            style={{
-              width: `${pct * 100}%`,
-              background: barColor,
-              transition: 'width 0.8s cubic-bezier(0.34, 1.2, 0.64, 1) 0.4s',
-            }}
-          />
-        </div>
-
-        {/* Action button — pass → continue, fail+retry → try again, fail+no retry → continue (onFail) */}
-        <div
-          className="quiz-score-in flex flex-col items-center gap-2"
-          style={{ animationDelay: '270ms' }}
-        >
-          {passed ? (
-            <button
-              onClick={() => onPass(pctScore)}
-              className="bg-background text-foreground hover:bg-background/90 flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-bold shadow-2xl transition-transform duration-150 active:scale-95"
-            >
-              Continue <ChevronRight className="h-4 w-4" />
-            </button>
-          ) : allowRetry ? (
-            <button
-              onClick={handleRetry}
-              className="bg-background text-foreground hover:bg-background/90 flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-bold shadow-2xl transition-transform duration-150 active:scale-95"
-            >
-              <RefreshCw className="h-4 w-4" /> Try Again
-            </button>
-          ) : (
-            <button
-              onClick={() => onFail()}
-              className="bg-background text-foreground hover:bg-background/90 flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-bold shadow-2xl transition-transform duration-150 active:scale-95"
-            >
-              Continue <ChevronRight className="h-4 w-4" />
-            </button>
-          )}
-
-          <button
-            onClick={() => {
-              setIsReviewing(true);
-              setCurrentQ(0);
-            }}
-            className="text-foreground/70 hover:text-foreground mt-4 text-base font-bold underline underline-offset-4 transition-colors"
-          >
-            Review Answers
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   // ── Question view ─────────────────────────────────────────────────────────
   const q = quiz.questions[currentQ];
   const result = results[currentQ];
-  const revealed = isReviewing ? result !== undefined : selected !== null && result !== undefined;
+  const revealed = selected !== null && result !== undefined;
 
   return (
     <div className="bg-background absolute inset-0 flex flex-col select-none">
@@ -435,8 +303,7 @@ export function SanityQuizPlayer({
           transition={{ duration: 0.4 }}
         >
           {q.options.map((option, i) => {
-            const activeSelected = isReviewing ? userAnswers[currentQ] : selected;
-            const isSelected = activeSelected === i;
+            const isSelected = selected === i;
             const isCorrect = result !== undefined && i === result.correctIndex;
             const showGreen = revealed && isCorrect;
             const showRed = revealed && isSelected && !isCorrect;
@@ -462,7 +329,7 @@ export function SanityQuizPlayer({
               <button
                 key={`${i}-${option}`}
                 onClick={() => void handleSelect(i)}
-                disabled={selected !== null || isReviewing || grading}
+                disabled={selected !== null || grading}
                 role="radio"
                 aria-checked={isSelected}
                 aria-label={`${OPTION_LABELS[i] ?? i + 1}: ${option}${
@@ -535,9 +402,7 @@ export function SanityQuizPlayer({
           <>
             <div className="quiz-enter bg-background/5 border-border/8 mt-2 shrink-0 rounded-2xl border px-5 py-4">
               {(() => {
-                const isCorrect = isReviewing
-                  ? userAnswers[currentQ] === result.correctIndex
-                  : result.correct;
+                const isCorrect = result.correct;
                 return (
                   <div
                     className={`mb-2 flex items-center gap-1.5 ${isCorrect ? 'text-accent' : 'text-destructive'}`}
@@ -558,7 +423,6 @@ export function SanityQuizPlayer({
               </p>
             </div>
 
-            {!isReviewing ? (
               <motion.button
                 autoFocus
                 initial={{ opacity: 0, y: 10 }}
@@ -571,32 +435,6 @@ export function SanityQuizPlayer({
                 {currentQ + 1 >= total ? 'Finish Quiz' : 'Next Question'}
                 <ChevronRight className="h-5 w-5" />
               </motion.button>
-            ) : (
-              <div className="mt-6 flex items-center justify-between">
-                <button
-                  onClick={() => setCurrentQ((prev) => Math.max(0, prev - 1))}
-                  disabled={currentQ === 0}
-                  className="border-foreground/30 text-foreground hover:border-foreground/50 hover:bg-foreground/5 rounded-full border-2 px-5 py-2.5 text-base font-black transition-all disabled:opacity-50"
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={() => {
-                    setIsReviewing(false);
-                  }}
-                  className="bg-foreground text-background hover:bg-foreground/90 rounded-full px-6 py-2.5 text-base font-black shadow-lg transition-all"
-                >
-                  Back to Score
-                </button>
-                <button
-                  onClick={() => setCurrentQ((prev) => Math.min(total - 1, prev + 1))}
-                  disabled={currentQ === total - 1}
-                  className="border-foreground/30 text-foreground hover:border-foreground/50 hover:bg-foreground/5 rounded-full border-2 px-5 py-2.5 text-base font-black transition-all disabled:opacity-50"
-                >
-                  Next
-                </button>
-              </div>
-            )}
           </>
         )}
       </div>

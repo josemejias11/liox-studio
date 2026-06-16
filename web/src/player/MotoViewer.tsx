@@ -103,7 +103,7 @@ export default function MotoViewer({
   const hotspots = useMemo(() => currentLesson?.hotspots ?? [], [currentLesson]);
   const visitedOnLesson = visited[lessonKey]?.size ?? 0;
 
-  const isSpecialLesson = currentLesson?.lessonType === 'dragDrop';
+  const isSpecialLesson = ['dragDrop', 'video'].includes(currentLesson?.lessonType ?? '');
   const isSpecialComplete = visited[lessonKey]?.has('completed');
 
   const nextLocked =
@@ -216,7 +216,7 @@ export default function MotoViewer({
         return {
           slideKey: `spec-${phase.specIndex}`,
           screen: spec ? (
-            <SpecificationPage spec={spec} onNext={goNext} onPrev={goPrev} showPrev={true} />
+            <SpecificationPage spec={spec} />
           ) : null,
         };
       }
@@ -330,7 +330,7 @@ export default function MotoViewer({
     phase.phase === 'chapter' &&
     !showChapterIntro &&
     currentLesson !== undefined &&
-    !['stage', 'video', 'quiz'].includes(currentLesson.lessonType);
+    currentLesson.lessonType !== 'quiz';
 
   const frameProps =
     phase.phase === 'cover'
@@ -354,6 +354,14 @@ export default function MotoViewer({
               sectionType: 'disclaimer' as const,
               onNext: goNext,
               nextDisabled: !disclaimerCanProceed,
+              onToggleNavMap: () => setShowNavMap((v) => !v),
+              moduleTitle: course.title,
+            }
+          : phase.phase === 'specifications'
+          ? {
+              sectionType: 'specification' as const,
+              onPrev: goPrev,
+              onNext: goNext,
               onToggleNavMap: () => setShowNavMap((v) => !v),
               moduleTitle: course.title,
             }
