@@ -28,6 +28,17 @@ This is the Python FastAPI microservice for Moto AI. It handles document parsing
     pip install -r requirements.txt
     ```
 
+## First-time Setup
+
+Copy the example env file and set your token (one-off step before first run):
+
+```bash
+cp .env.example .env
+# Edit .env and set PARSER_SERVICE_TOKEN to a strong shared secret
+```
+
+The service reads `parser-service/.env` automatically via `python-dotenv`. Shell exports always win over the file (`override=False`), so `PARSER_SERVICE_TOKEN=x python main.py` still works as expected.
+
 ## Running the Service
 
 Use either of these canonical commands (both always bind to port 8000):

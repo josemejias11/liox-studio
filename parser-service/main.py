@@ -22,6 +22,9 @@ from contextlib import asynccontextmanager
 from threading import Lock
 from typing import Optional
 
+from dotenv import load_dotenv
+load_dotenv(override=False)
+
 import chromadb
 import httpx
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile

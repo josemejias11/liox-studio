@@ -51,6 +51,11 @@ npm run db:studio    # Prisma Studio GUI
 
 ## Parser service (run from `parser-service/`)
 
+**First-time setup (one-off):**
+```bash
+cp parser-service/.env.example parser-service/.env   # then edit PARSER_SERVICE_TOKEN
+```
+
 ```bash
 pip install -r requirements.txt
 python main.py              # localhost:8000 (always; reads $PORT, guards < 1024)

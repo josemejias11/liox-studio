@@ -10,6 +10,9 @@ web/.next/
 web/node_modules/
 web/.env.local
 
+# Parser service secrets
+parser-service/.env
+
 # SQLite
 *.db
 *.db-shm
