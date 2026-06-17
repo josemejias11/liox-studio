@@ -25,6 +25,7 @@
 * **`lib/parser-service.ts` is server-only** — import only in route handlers.
 * **Course section order:** `deriveCourseStructure` builds flat `sections` as lessons → specifications → disclaimer. Absolute index drives navigation. Do not reorder.
 * **Sanity schema changes:** after editing `web/src/sanity/schemaTypes/`, run `cd web && npx sanity@latest schema deploy`. Stage prod dataset migrations as drafts; review before publish.
+* **Sanity CLI:** `web/sanity.cli.ts` configures the CLI (project `e7l925v5`, dataset `production`). All `npx sanity` commands must be run from `web/`.
 * **No comments** unless WHY is non-obvious. Zod at all boundaries; `opt()` normalizes `null → undefined`.
 
 ## 3. Delegation Matrix

@@ -7,24 +7,24 @@
 Fleet health hardening + RAG eval on real corpus
 
 ## 1. What Was Just Completed (last ~5 — prune older)
-* Fleet Health: `fleet: ✓ engine ok · 5 run(s) · last pass · $0.41` (last `/standup`)
-* TASK-0004 done & verified: python-dotenv support added to parser-service — `python main.py` loads token from `.env` without shell export; `cp .env.example .env` is the one-time setup step. (`b9b5bec`)
-* PORT → PARSER_PORT rename: ambient `PORT=9000` (Node) was overriding the default 8000; scoped to `PARSER_PORT` so Node/Heroku tooling can't interfere. (`de910a6`)
-* TASK-0003 done & verified: `parser-service/run.sh` + `__main__` port guard — blocks privileged ports (< 1024), CLAUDE.md and README updated to `python main.py`. (`fe25f83`)
-* README.md updated: Step 2 startup instructions reflect dotenv workflow, `PARSER_PORT` override documented. (`7e1c504`)
-* Fleet verify gate wired: `docs/fleet/verify.sh` runs web typecheck+test and parser-service pytest. (`e9a4f1f`)
+* Fleet Health: `fleet: ✓ engine ok · 6 run(s) · last pass · $0.71` (last `/commit`)
+* TASK-0005 done & verified: Sanity CMS health check — all 7 checks pass (env vars, live GROQ round-trip, GROQ↔Zod parity, lessonType enum sync, QUIZ_GRADING_QUERY isolation, schema deployment, typecheck). (`c3eb894`)
+* `web/sanity.cli.ts` created — unblocks CLI tooling (`sanity schema extract`, `sanity dataset export`); confirmed working. (`c3eb894`)
+* TASK-0004 done: python-dotenv support in parser-service; .env.example → .env one-time setup. (`b9b5bec`)
+* PORT → PARSER_PORT rename to prevent Node/Heroku ambient env collision. (`de910a6`)
 
 ## 2. Immediate Next Priority (the one active task)
-* Run `/route` to brief **RAG eval on real corpus** — re-run `parser-service/eval/` against production Sanity content; chunk size is the likeliest quality knob (deferred from TASK-0001). Parser service is now stable enough to support this work.
+* Run `/route` to brief **RAG eval on real corpus** — re-run `parser-service/eval/` against production Sanity content ("motorola Qira", 3 chapters); chunk size is the likeliest quality knob (deferred from TASK-0001). Parser service is stable; Sanity integration is verified healthy.
 
 ## 3. Open Blockers / Known Issues
-* none
+* QA agent deleted `CLAUDE.md` during TASK-0005 run (restored from HEAD before commit). Root cause: agent had write permissions to the repo root. Consider scoping forge permissions or adding a git pre-commit guard if this recurs.
+* `web/tmp/` directory created by agent (sanity schema extract output) — untracked, safe to add to `.gitignore`.
 
 ## 4. Recent Architectural Decisions (ADRs)
-* `PARSER_PORT` (not `PORT`) is the env var to override the parser service port. `PORT` is ambient in Node/Heroku environments and must never be used for this service.
-* python-dotenv loads with `override=False` — shell exports always win over the `.env` file. This means `PARSER_SERVICE_TOKEN=x python main.py` still works without editing the file.
-* RAG tuning is eval-gated: tunable changes must beat a recorded baseline on `parser-service/eval/` without lowering faithfulness/refusal rate (TASK-0001). Defaults stay env-configurable.
-* Player rendering now keyed off a lesson-type registry in `src/player/` — new lesson types register there.
+* `sanity.cli.ts` lives at `web/sanity.cli.ts` (not repo root) — Sanity CLI must be run from `web/`.
+* `PARSER_PORT` (not `PORT`) is the env var to override the parser service port.
+* python-dotenv loads with `override=False` — shell exports always win over the `.env` file.
+* RAG tuning is eval-gated: tunable changes must beat a recorded baseline on `parser-service/eval/` without lowering faithfulness/refusal rate (TASK-0001).
 
 ---
 **Agent instruction:** on `/commit`, move done work into §1, prune §1 to ~5
