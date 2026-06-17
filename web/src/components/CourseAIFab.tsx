@@ -1,15 +1,29 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X } from 'lucide-react';
 import { CourseChat } from './course-ai/CourseChat';
 
 export function CourseAIFab({ courseId }: { courseId?: string }) {
   const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (isOpen && containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
 
   return (
-    <>
+    <div ref={containerRef}>
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -35,6 +49,6 @@ export function CourseAIFab({ courseId }: { courseId?: string }) {
       >
         {isOpen ? <X className="h-6 w-6" /> : <Sparkles className="h-6 w-6" />}
       </motion.button>
-    </>
+    </div>
   );
 }

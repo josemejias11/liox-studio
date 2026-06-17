@@ -350,20 +350,26 @@ export function DiscoveryPanel({
         // Widen or narrow to accommodate the specific video aspect ratio.
         const floatingClasses = `absolute ${panelWidthClass} rounded-3xl flex flex-col
           bg-card/80 dark:bg-card/95 backdrop-blur-3xl border border-white/10
-          shadow-2xl transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${originClass}
-          ${open ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.3] pointer-events-none'}`;
+          shadow-2xl transition-[opacity,transform] ${originClass}
+          ${open
+            ? 'opacity-100 scale-100 duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)]'
+            : 'opacity-0 scale-[0.88] pointer-events-none duration-[200ms] ease-[cubic-bezier(0.32,0.72,0,1)]'
+          }`;
 
         // Mobile bottom-sheet — slides up from the bottom, full width, ~72 % of viewport height.
         const mobileClasses = `absolute bottom-0 left-0 right-0 w-full h-[72vh] rounded-t-3xl flex flex-col
           bg-card/80 dark:bg-card/95 backdrop-blur-3xl border-t border-white/10
-          shadow-2xl transition-transform duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]
-          ${open ? 'translate-y-0' : 'translate-y-full pointer-events-none'}`;
+          shadow-2xl transition-[transform] ease-[cubic-bezier(0.16,1,0.3,1)]
+          ${open
+            ? 'translate-y-0 duration-[320ms]'
+            : 'translate-y-full pointer-events-none duration-[200ms]'
+          }`;
 
         // Sidebar (non-lesson / explicit sidebar mode) — slightly wider than before.
         const sidebarClasses = `absolute top-0 right-0 bottom-0 w-[48%] flex flex-col
           bg-card/80 dark:bg-card/95 backdrop-blur-2xl border-l border-white/10
-          shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]
-          ${open ? 'translate-x-0' : 'translate-x-full'}`;
+          shadow-2xl transition-[transform] ease-[cubic-bezier(0.32,0.72,0,1)]
+          ${open ? 'translate-x-0 duration-[280ms]' : 'translate-x-full duration-[200ms]'}`;
 
         return (
           <div

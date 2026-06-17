@@ -33,9 +33,23 @@ const DisclaimerPage = dynamic(() =>
 // ── Framer Motion slide variants ─────────────────────────────────────────────
 
 const slideVariants = {
-  enter: (direction: number) => ({ x: direction > 0 ? '50%' : '-50%', opacity: 0 }),
-  center: { x: 0, opacity: 1 },
-  exit: (direction: number) => ({ x: direction < 0 ? '50%' : '-50%', opacity: 0 }),
+  enter: (direction: number) => ({
+    x: direction > 0 ? 24 : -24,
+    opacity: 0,
+    scale: 0.98,
+  }),
+  center: {
+    x: 0,
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.32, ease: [0.34, 1.15, 0.64, 1] as [number, number, number, number] },
+  },
+  exit: (direction: number) => ({
+    x: direction < 0 ? 24 : -24,
+    opacity: 0,
+    scale: 0.98,
+    transition: { duration: 0.18, ease: [0.32, 0.72, 0, 1] as [number, number, number, number] },
+  }),
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -378,7 +392,6 @@ export default function MotoViewer({
           initial="enter"
           animate="center"
           exit="exit"
-          transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
           className="absolute inset-0"
         >
           {screen}

@@ -60,7 +60,9 @@ export function ProductStage({
   // zero React re-renders. Per-layer springs replicate the easing the old CSS
   // transitions applied (bg 0.3s / glow 0.45s / product 0.15s, all ease-out).
   const [entered, setEntered] = useState(false);
+  const [imageRect, setImageRect] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const imageWrapperRef = useRef<HTMLDivElement>(null);
 
   const parallaxX = useMotionValue(0);
   const parallaxY = useMotionValue(0);
@@ -76,12 +78,9 @@ export function ProductStage({
   const bgTranslateX = useTransform(bgX, (v) => v * -6);
   const bgTranslateY = useTransform(bgY, (v) => v * -4);
 
-  // Cursor-reactive ambient glow position.
-  const glowBackground = useTransform(
-    [glowX, glowY],
-    (latest: number[]) =>
-      `radial-gradient(ellipse 62% 52% at ${50 + (latest[0] ?? 0) * 10}% ${50 + (latest[1] ?? 0) * 7}%, rgba(104,91,199,0.09), transparent)`,
-  );
+  // Cursor-reactive ambient glow position — uses transform (GPU-composited) not background.
+  const glowTranslateX = useTransform(glowX, (v) => `${v * 10}%`);
+  const glowTranslateY = useTransform(glowY, (v) => `${v * 7}%`);
 
   // Product parallax is disabled once all hotspots are discovered (the
   // completion spin/rise/breathe layer then animates from a neutral origin).
@@ -128,6 +127,30 @@ export function ProductStage({
     const t = setTimeout(() => setEntered(true), 60);
     return () => clearTimeout(t);
   }, []);
+
+  // ── Image bounds — track rendered image rect relative to stage container ──
+
+  useEffect(() => {
+    const wrapper = imageWrapperRef.current;
+    const container = containerRef.current;
+    if (!wrapper || !container) return;
+
+    function measure() {
+      const wRect = wrapper!.getBoundingClientRect();
+      const cRect = container!.getBoundingClientRect();
+      setImageRect({
+        left: wRect.left - cRect.left,
+        top: wRect.top - cRect.top,
+        width: wRect.width,
+        height: wRect.height,
+      });
+    }
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(wrapper);
+    return () => ro.disconnect();
+  }, [productImage]);
 
   // ── Completion burst ───────────────────────────────────────────────────────
 
@@ -237,10 +260,14 @@ export function ProductStage({
         <div className="bg-background stage-enter-bg absolute inset-0" />
       )}
 
-      {/* ── Cursor-reactive ambient glow ── */}
+      {/* ── Cursor-reactive ambient glow — static gradient moved via transform (GPU-composited) ── */}
       <motion.div
-        className="pointer-events-none absolute inset-0"
-        style={{ background: glowBackground }}
+        className="pointer-events-none absolute inset-[-50%]"
+        style={{
+          background: 'radial-gradient(ellipse 62% 52% at center, rgba(104,91,199,0.09), transparent)',
+          x: glowTranslateX,
+          y: glowTranslateY,
+        }}
       />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_40%_40%_at_50%_82%,rgba(15,23,42,0.65),transparent)]" />
 
@@ -248,7 +275,7 @@ export function ProductStage({
       {productImage && (
         <div
           className={`stage-enter-product absolute top-0 bottom-0 left-0 flex items-center justify-center transition-[right,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${shouldAnimateCompletion && completionTransition === 'fade' ? 'opacity-80' : ''} `}
-          style={{ right: '0%' }}
+          style={{ right: '0%', willChange: 'transform, opacity, filter' }}
         >
           {/* Parallax layer */}
           <motion.div
@@ -257,6 +284,7 @@ export function ProductStage({
           >
             {/* Breathe / spin layer */}
             <div
+              ref={imageWrapperRef}
               className={
                 shouldAnimateCompletion && completionTransition === 'spin'
                   ? 'stage-spin-anim'
@@ -265,11 +293,25 @@ export function ProductStage({
                     : 'stage-product-breathe'
               }
             >
+              {/* Glow overlay — composited opacity animation, replaces filter: brightness/drop-shadow */}
+              {shouldAnimateCompletion && (
+                <div
+                  aria-hidden="true"
+                  className={`pointer-events-none absolute inset-0 rounded-full ${
+                    completionTransition === 'spin' ? 'stage-spin-glow' : 'stage-rise-glow'
+                  }`}
+                  style={{
+                    background: 'radial-gradient(ellipse 70% 70% at 50% 50%, rgba(255,255,255,0.6), transparent)',
+                  }}
+                />
+              )}
               <Image
                 src={productImage}
                 alt={headline}
                 width={1200}
                 height={1200}
+                loader={sanityImageLoader}
+                sizes="(max-width: 768px) 100vw, 80vw"
                 className="h-[78vh] max-h-full w-auto object-contain drop-shadow-[0_24px_64px_rgba(0,0,0,0.75)]"
               />
             </div>
@@ -278,46 +320,97 @@ export function ProductStage({
       )}
 
       {/* ── Hotspots — staggered entrance, keyboard-focus ring ── */}
-      {hotspots.map((h, i) => (
-        <div
-          key={h._key}
-          className="absolute"
-          style={{
-            left: `${h.x}%`,
-            top: `${h.y}%`,
-            opacity: entered ? 1 : 0,
-            transform: entered ? 'scale(1)' : 'scale(0.2)',
-            transition: `opacity 0.4s ease-out ${240 + i * 110}ms, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) ${240 + i * 110}ms`,
-          }}
-        >
-          <Hotspot
-            ref={(el) => {
-              hotspotRefs.current[i] = el;
-            }}
-            x={0}
-            y={0}
-            label={h.label}
-            visited={visited.has(h.label)}
-            variant="pulse"
-            onVisit={() => onVisit(h.label)}
-            onOpen={() =>
-              setActivePanel({
-                label: h.label,
-                topic: h.topic ?? '',
-                body: h.body,
-                photos: h.photos,
-                videoFile: h.videoFile,
-                videoAspectRatio: h.videoAspectRatio,
-                x: h.x,
-                y: h.y,
-              })
-            }
-            // Roving tabindex — exactly one hotspot is in the tab order.
-            tabIndex={i === (focusedHotspotIndex ?? 0) ? 0 : -1}
-            onFocus={() => setFocusedHotspotIndex(i)}
-          />
-        </div>
-      ))}
+      {imageRect
+        ? hotspots.map((h, i) => (
+            <div
+              key={h._key}
+              className="absolute pointer-events-none"
+              style={{
+                left: imageRect.left,
+                top: imageRect.top,
+                width: imageRect.width,
+                height: imageRect.height,
+                zIndex: 10,
+              }}
+            >
+              <div
+                className="absolute"
+                style={{
+                  left: `${h.x}%`,
+                  top: `${h.y}%`,
+                  opacity: entered ? 1 : 0,
+                  transform: entered ? 'scale(1)' : 'scale(0.2)',
+                  transition: `opacity 0.4s ease-out ${240 + i * 110}ms, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) ${240 + i * 110}ms`,
+                  pointerEvents: 'auto',
+                }}
+              >
+                <Hotspot
+                  ref={(el) => {
+                    hotspotRefs.current[i] = el;
+                  }}
+                  x={0}
+                  y={0}
+                  label={h.label}
+                  visited={visited.has(h.label)}
+                  variant="pulse"
+                  onVisit={() => onVisit(h.label)}
+                  onOpen={() =>
+                    setActivePanel({
+                      label: h.label,
+                      topic: h.topic ?? '',
+                      body: h.body,
+                      photos: h.photos,
+                      videoFile: h.videoFile,
+                      videoAspectRatio: h.videoAspectRatio,
+                      x: h.x,
+                      y: h.y,
+                    })
+                  }
+                  tabIndex={i === (focusedHotspotIndex ?? 0) ? 0 : -1}
+                  onFocus={() => setFocusedHotspotIndex(i)}
+                />
+              </div>
+            </div>
+          ))
+        : hotspots.map((h, i) => (
+            <div
+              key={h._key}
+              className="absolute"
+              style={{
+                left: `${h.x}%`,
+                top: `${h.y}%`,
+                opacity: entered ? 1 : 0,
+                transform: entered ? 'scale(1)' : 'scale(0.2)',
+                transition: `opacity 0.4s ease-out ${240 + i * 110}ms, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) ${240 + i * 110}ms`,
+              }}
+            >
+              <Hotspot
+                ref={(el) => {
+                  hotspotRefs.current[i] = el;
+                }}
+                x={0}
+                y={0}
+                label={h.label}
+                visited={visited.has(h.label)}
+                variant="pulse"
+                onVisit={() => onVisit(h.label)}
+                onOpen={() =>
+                  setActivePanel({
+                    label: h.label,
+                    topic: h.topic ?? '',
+                    body: h.body,
+                    photos: h.photos,
+                    videoFile: h.videoFile,
+                    videoAspectRatio: h.videoAspectRatio,
+                    x: h.x,
+                    y: h.y,
+                  })
+                }
+                tabIndex={i === (focusedHotspotIndex ?? 0) ? 0 : -1}
+                onFocus={() => setFocusedHotspotIndex(i)}
+              />
+            </div>
+          ))}
 
       {/* ── Progress arc — top right ── */}
       <div className="stage-enter-top absolute top-3 right-3 z-20 flex flex-col items-end gap-2">
@@ -354,9 +447,6 @@ export function ProductStage({
                 strokeDasharray={circumference}
                 strokeDashoffset={strokeOffset}
                 className="transition-all duration-500 ease-out"
-                style={
-                  allDiscovered ? { filter: 'drop-shadow(0 0 4px rgb(104 91 199 / 0.6))' } : undefined
-                }
               />
             </svg>
             {allDiscovered && (

@@ -174,7 +174,8 @@ function HotspotMap({ hotspots, imageUrl, itemTypeName, onChange }: HotspotMapPr
           cursor: dragging !== null ? 'grabbing' : imageUrl ? 'crosshair' : 'default',
           background: '#111',
           userSelect: 'none',
-          minHeight: 140,
+          paddingBottom: '56.25%',
+          minHeight: 0,
         }}
       >
         {imageUrl ? (
@@ -183,12 +184,13 @@ function HotspotMap({ hotspots, imageUrl, itemTypeName, onChange }: HotspotMapPr
             src={imageUrl}
             alt="Product"
             draggable={false}
-            style={{ display: 'block', width: '100%', pointerEvents: 'none' }}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }}
           />
         ) : (
           <div
             style={{
-              height: 180,
+              position: 'absolute',
+              inset: 0,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

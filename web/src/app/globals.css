@@ -7,6 +7,7 @@
   src: url('/fonts/MotoSans-Regular.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
+  font-display: optional;
 }
 
 @font-face {
@@ -14,6 +15,7 @@
   src: url('/fonts/MotoSans-Italic.otf') format('opentype');
   font-weight: normal;
   font-style: italic;
+  font-display: optional;
 }
 
 @custom-variant dark (&:is(.dark *));
@@ -172,20 +174,18 @@
 
 @layer utilities {
   .bg-glass-gradient {
-    background: linear-gradient(-45deg, var(--background), var(--muted), var(--secondary), var(--background));
-    background-size: 400% 400%;
-    animation: dynamic-gradient 20s ease infinite;
+    background: linear-gradient(
+      -45deg,
+      var(--background) 0%,
+      var(--muted) 50%,
+      var(--background) 100%
+    );
+    /* dynamic-gradient animation removed — background-position is not GPU-composited */
   }
-  
+
   .glass-panel {
     @apply bg-white/40 backdrop-blur-xl border border-white/30 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:bg-black/40 dark:border-white/10 dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)];
   }
-}
-
-@keyframes dynamic-gradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
 }
 
 /* ── Product Stage animations ──────────────────────────────────────────────── */
@@ -193,10 +193,10 @@
 @keyframes stage-wave {
   0% {
     transform: scale(1);
-    opacity: 0.65;
+    opacity: 0.5;
   }
   100% {
-    transform: scale(2.8);
+    transform: scale(2.2);
     opacity: 0;
   }
 }
@@ -224,29 +224,25 @@
 }
 
 @keyframes stage-product-spin {
-  0% {
-    transform: scale(1);
-    filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0)) brightness(1);
-  }
-  35% {
-    transform: scale(1.035);
-    filter: drop-shadow(0 0 45px rgba(255, 255, 255, 0.35)) brightness(1.15);
-  }
-  100% {
-    transform: scale(1);
-    filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0)) brightness(1);
-  }
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.035); }
+  100% { transform: scale(1); }
 }
 
 @keyframes stage-product-rise {
-  0% {
-    transform: translateY(0) scale(1);
-    filter: brightness(1);
-  }
-  100% {
-    transform: translateY(-24px) scale(1.02);
-    filter: brightness(1.08);
-  }
+  0%   { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-24px) scale(1.02); }
+}
+
+/* Composited glow overlays — opacity only, replaces filter: drop-shadow/brightness */
+@keyframes stage-product-spin-glow {
+  0%, 100% { opacity: 0; }
+  35%       { opacity: 0.35; }
+}
+
+@keyframes stage-product-rise-glow {
+  0%   { opacity: 0; }
+  100% { opacity: 0.22; }
 }
 
 @keyframes stage-check-pop {
@@ -270,14 +266,11 @@
   border-radius: 9999px;
   border-width: 2px;
   border-style: solid;
-  animation: stage-wave 2.4s ease-out infinite;
+  animation: stage-wave 3.0s ease-out infinite;
   pointer-events: none;
 }
 .stage-ring-2 {
-  animation-delay: 0.7s;
-}
-.stage-ring-3 {
-  animation-delay: 1.4s;
+  animation-delay: 1.0s;
 }
 
 .stage-burst {
@@ -298,6 +291,12 @@
 }
 .stage-rise-anim {
   animation: stage-product-rise 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+.stage-spin-glow {
+  animation: stage-product-spin-glow 1.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+.stage-rise-glow {
+  animation: stage-product-rise-glow 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 .stage-check-pop {
   animation: stage-check-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
@@ -414,14 +413,14 @@
 }
 @keyframes stage-enter-product {
   0% {
-    transform: translateY(34px) scale(0.92);
+    transform: translateY(20px) scale(0.94);
     opacity: 0;
-    filter: blur(8px);
+    filter: blur(6px);
   }
   100% {
     transform: translateY(0) scale(1);
     opacity: 1;
-    filter: blur(0);
+    filter: blur(0px);
   }
 }
 @keyframes stage-enter-bottom {
@@ -458,13 +457,13 @@
   animation: stage-enter-bg 0.7s ease-out both;
 }
 .stage-enter-product {
-  animation: stage-enter-product 0.9s cubic-bezier(0.34, 1.15, 0.64, 1) 0.08s both;
+  animation: stage-enter-product 0.65s cubic-bezier(0.34, 1.15, 0.64, 1) 0.08s both;
 }
 .stage-enter-bottom {
-  animation: stage-enter-bottom 0.55s ease-out both;
+  animation: stage-enter-bottom 0.45s ease-out both;
 }
 .stage-enter-top {
-  animation: stage-enter-top 0.5s ease-out both;
+  animation: stage-enter-top 0.4s ease-out both;
 }
 .stage-product-breathe {
   animation: stage-product-breathe 4.5s ease-in-out infinite;
@@ -533,62 +532,6 @@
 }
 .quiz-score-in {
   animation: quiz-score-in 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
-/* ── Phase 10 — Lesson transitions ──────────────────────────────────────── */
-
-@keyframes lesson-enter-forward {
-  0% {
-    opacity: 0;
-    transform: translateX(28px) scale(0.98);
-  }
-  100% {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes lesson-exit-forward {
-  0% {
-    opacity: 1;
-    transform: none;
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(-28px) scale(0.98);
-  }
-}
-@keyframes lesson-enter-backward {
-  0% {
-    opacity: 0;
-    transform: translateX(-28px) scale(0.98);
-  }
-  100% {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes lesson-exit-backward {
-  0% {
-    opacity: 1;
-    transform: none;
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(28px) scale(0.98);
-  }
-}
-
-.lesson-enter-forward {
-  animation: lesson-enter-forward 0.32s cubic-bezier(0.34, 1.15, 0.64, 1) both;
-}
-.lesson-exit-forward {
-  animation: lesson-exit-forward 0.2s ease-in forwards;
-}
-.lesson-enter-backward {
-  animation: lesson-enter-backward 0.32s cubic-bezier(0.34, 1.15, 0.64, 1) both;
-}
-.lesson-exit-backward {
-  animation: lesson-exit-backward 0.2s ease-in forwards;
 }
 
 /* ── Phase 10 — Course completion ──────────────────────────────────────── */

@@ -44,7 +44,7 @@ export function VideoLesson({
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_40%,rgba(104,91,199,0.05),transparent)]" />
 
       {/* ── Video area ── */}
-      <div className="flex min-h-0 flex-1 items-center justify-center px-5 pt-5 pb-2">
+      <div className="flex min-h-0 flex-1 items-center justify-center px-5 pt-5 pb-24">
         <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-xl bg-black shadow-2xl shadow-black/70">
           <video
             src={src}

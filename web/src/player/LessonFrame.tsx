@@ -75,7 +75,7 @@ export function LessonFrame({
             onClick={onToggleNavMap}
             aria-label="Open course navigation"
             title="Course map"
-            className="bg-background/50 text-foreground/40 hover:text-foreground hover:bg-background/80 absolute bottom-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-full shadow-md backdrop-blur-sm transition-all duration-150"
+            className="bg-background/50 text-foreground/40 hover:text-foreground hover:bg-background/80 absolute bottom-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-full shadow-md backdrop-blur-sm transition-[color,background-color,opacity] duration-150"
           >
             <LayoutGrid className="h-5 w-5" />
           </button>
@@ -87,68 +87,69 @@ export function LessonFrame({
             {/* Completion hint */}
             {nextDisabled && completionHint && (
               <div className="pointer-events-none absolute right-0 bottom-24 left-0 z-10 flex justify-center">
-                <span className="glass-panel text-foreground rounded-full px-5 py-2 text-sm font-medium">
+                <span className="glass-panel text-foreground rounded-full px-5 py-2 text-sm font-medium shadow-xl">
                   {completionHint}
                 </span>
               </div>
             )}
 
-            <div
-              className="absolute right-4 bottom-4 left-4 z-20 flex h-14 items-center gap-3 px-6 glass-panel rounded-full"
-            >
+            <div className="pointer-events-none absolute right-4 bottom-6 left-4 z-20 flex items-end justify-between">
               {/* Left cluster — map + notes */}
-              {onToggleNavMap && (
+              {onToggleNavMap ? (
                 <button
                   onClick={onToggleNavMap}
                   aria-label="Open course navigation"
                   title="Course map"
-                  className="text-foreground/40 hover:text-foreground hover:bg-foreground/10 flex h-10 w-10 items-center justify-center rounded-full transition-all"
+                  className="pointer-events-auto glass-panel text-foreground/60 hover:text-foreground flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-[color,background-color,opacity,transform] hover:scale-105 active:scale-95"
                 >
                   <LayoutGrid className="h-5 w-5" />
                 </button>
+              ) : (
+                <div />
               )}
-
-              <div className="flex-1" />
 
               {/* Right cluster — prev / counter / next */}
-              {onPrev !== undefined && (
-                <button
-                  onClick={onPrev}
-                  disabled={currentLesson === 1}
-                  className="text-foreground/60 hover:text-foreground hover:bg-foreground/10 flex h-10 w-10 items-center justify-center rounded-full transition-all disabled:cursor-not-allowed disabled:opacity-25"
-                  aria-label="Previous lesson"
-                >
-                  <ChevronLeft className="h-6 w-6" />
-                </button>
-              )}
-
-              {/* Counter — visible only for lesson sections */}
-              {isLessonType && (
-                <>
-                  <span
-                    className="text-foreground/80 min-w-12 text-center text-sm font-medium tabular-nums select-none"
-                    aria-hidden="true"
+              <div className="pointer-events-auto glass-panel flex h-14 items-center gap-2 rounded-full px-2 shadow-lg">
+                {onPrev !== undefined && (
+                  <button
+                    onClick={onPrev}
+                    disabled={currentLesson === 1}
+                    className="text-foreground/60 hover:text-foreground hover:bg-foreground/10 flex h-10 w-10 items-center justify-center rounded-full transition-[color,background-color,opacity] disabled:cursor-not-allowed disabled:opacity-25"
+                    aria-label="Previous lesson"
                   >
-                    {currentLesson} / {totalLessons}
-                  </span>
-                  <span aria-live="polite" aria-atomic="true" className="sr-only">
-                    Lesson {currentLesson} of {totalLessons}
-                  </span>
-                </>
-              )}
+                    <ChevronLeft className="h-6 w-6" />
+                  </button>
+                )}
 
-              <button
-                onClick={onNext}
-                disabled={nextDisabled}
-                className={`flex h-10 w-10 items-center justify-center rounded-full transition-all ${
-                  nextDisabled 
-                    ? 'text-foreground/40 bg-foreground/5 cursor-not-allowed' 
-                    : 'text-foreground hover:bg-foreground/10 bg-accent/10 completion-button-glow'
-                }`}
-                aria-label="Next lesson"
-              >
-                {nextDisabled ? <Lock className="h-4 w-4" /> : <ChevronRight className="h-6 w-6" />}
-              </button>
+                {/* Counter — visible only for lesson sections */}
+                {isLessonType && (
+                  <>
+                    <span
+                      className="text-foreground/80 min-w-10 text-center text-sm font-medium tabular-nums select-none"
+                      aria-hidden="true"
+                    >
+                      {currentLesson} / {totalLessons}
+                    </span>
+                    <span aria-live="polite" aria-atomic="true" className="sr-only">
+                      Lesson {currentLesson} of {totalLessons}
+                    </span>
+                  </>
+                )}
+
+                {/* Next Button */}
+                <button
+                  onClick={onNext}
+                  disabled={nextDisabled}
+                  className={`flex h-10 w-10 items-center justify-center rounded-full transition-[color,background-color,opacity] ${
+                    nextDisabled 
+                      ? 'text-foreground/40 bg-foreground/5 cursor-not-allowed' 
+                      : 'text-foreground hover:bg-foreground/10 bg-accent/10 completion-button-glow'
+                  }`}
+                  aria-label="Next lesson"
+                >
+                  {nextDisabled ? <Lock className="h-4 w-4" /> : <ChevronRight className="h-6 w-6" />}
+                </button>
+              </div>
             </div>
 
             {/* Progress bar — 1px stripe along the very bottom edge */}

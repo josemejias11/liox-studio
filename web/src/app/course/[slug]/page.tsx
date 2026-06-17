@@ -7,9 +7,11 @@ import { courseSchema, type CourseSection, type LessonSection } from '@/lib/cont
 export default async function CoursePage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = await params;
 
-  const raw = await readClient.fetch<unknown>(COURSE_BY_SLUG_QUERY, {
-    slug: resolvedParams.slug,
-  });
+  const raw = await readClient.fetch<unknown>(
+    COURSE_BY_SLUG_QUERY,
+    { slug: resolvedParams.slug },
+    { next: { revalidate: 300 } },
+  );
 
   if (!raw) {
     notFound();

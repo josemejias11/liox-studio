@@ -131,18 +131,17 @@ export function Hotspot({
       onFocus={onFocus}
       onClick={handleClick}
       style={{ left: `${x}%`, top: `${y}%` }}
-      className={`group focus-visible:ring-accent absolute z-10 -translate-x-1/2 -translate-y-1/2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${className}`}
+      className={`group focus-visible:ring-accent absolute z-10 -translate-x-1/2 -translate-y-1/2 min-h-11 min-w-11 flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${className}`}
       aria-label={`${styles.ariaPrefix} ${label}`}
-      whileHover={{ scale: 1.15 }}
+      whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
-      transition={{ type: "spring", stiffness: 400, damping: 17 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
     >
-      {/* Wave rings — 3 staggered continuous waves, hidden once visited */}
+      {/* Wave rings — 2 staggered continuous waves, hidden once visited */}
       {!visited && (
         <>
           <span className={`stage-ring stage-ring-1 ${ringClass}`} />
           <span className={`stage-ring stage-ring-2 ${ringClass}`} />
-          <span className={`stage-ring stage-ring-3 ${ringClass}`} />
         </>
       )}
 
@@ -151,10 +150,10 @@ export function Hotspot({
 
       {/* Visited glow halo */}
       {styles.visitedHalo && visited && (
-        <motion.span 
+        <motion.span
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-accent/20 pointer-events-none absolute -inset-1.5 rounded-full blur-sm" 
+          className="bg-accent/20 pointer-events-none absolute -inset-1.5 rounded-full blur-sm"
         />
       )}
 

@@ -113,97 +113,104 @@ export default function ScrollStoryLesson({ lesson, isCompleted, onComplete }: S
   ) : null;
 
   return (
-    <div ref={scrollContainerRef} className="relative w-full h-full overflow-y-scroll">
-    <div style={{ height: containerHeight }} className="relative w-full">
+    <div ref={scrollContainerRef} className="relative w-full h-full overflow-y-scroll bg-[#0f0f11] text-white">
+      <div style={{ height: containerHeight }} className="relative w-full">
 
-      {/* Sticky Hero Image Background */}
-      <div className="sticky top-0 h-screen w-full overflow-hidden flex items-center justify-center z-0 bg-background">
-        {shouldReduceMotion ? (
-          <motion.div
-            className="relative w-full h-[80vh] flex items-center justify-center"
-            initial={false}
-            animate={{
-              scale: safeScales[activeChapter],
-              rotate: safeRotates[activeChapter],
-              x: safeXs[activeChapter],
-              y: safeYs[activeChapter],
-            }}
-            transition={{ duration: 0.5, ease: "easeInOut" }}
-          >
-            {crossfadeImage}
-          </motion.div>
-        ) : (
-          <motion.div
-            style={{ scale, rotate, x, y }}
-            className="relative w-full h-[80vh] flex items-center justify-center will-change-transform"
-          >
-            {crossfadeImage}
-          </motion.div>
-        )}
+        {/* Sticky Hero Image Background - Image on the right half */}
+        <div className="sticky top-0 h-screen w-full overflow-hidden flex z-0">
+          
+          {/* Left spacer for text */}
+          <div className="hidden md:block w-1/2 h-full" />
 
-        {/* Sleek Continuous Progress Bar */}
-        <motion.div 
-          className="absolute top-0 left-0 right-0 h-1 bg-accent z-30 origin-left"
-          style={{ scaleX: scrollYProgress }}
-        />
-
-        {/* Chapter progress dots (Interactive) */}
-        {scrollChapters.length > 1 && (
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-3">
-            {scrollChapters.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => {
-                  const blocks = scrollContainerRef.current?.querySelectorAll('.chapter-block');
-                  if (blocks?.[i]) {
-                    (blocks[i] as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }
+          {/* Right side visual */}
+          <div className="relative w-full md:w-1/2 h-full flex items-center justify-center p-8">
+            {shouldReduceMotion ? (
+              <motion.div
+                className="relative w-full h-full flex items-center justify-center"
+                initial={false}
+                animate={{
+                  scale: safeScales[activeChapter],
+                  rotate: safeRotates[activeChapter],
+                  x: safeXs[activeChapter],
+                  y: safeYs[activeChapter],
                 }}
-                aria-label={`Scroll to chapter ${i + 1}`}
-                className={`w-3 h-3 rounded-full border-2 border-accent transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background hover:scale-125 ${
-                  i === activeChapter ? 'bg-accent scale-110 shadow-[0_0_10px_rgba(var(--accent),0.8)]' : 'bg-transparent cursor-pointer'
-                }`}
-              />
-            ))}
+                transition={{ duration: 0.5, ease: "easeInOut" }}
+              >
+                {crossfadeImage}
+              </motion.div>
+            ) : (
+              <motion.div
+                style={{ scale, rotate, x, y }}
+                className="relative w-full h-[80vh] flex items-center justify-center will-change-transform"
+              >
+                {crossfadeImage}
+              </motion.div>
+            )}
           </div>
-        )}
 
-        {/* Completion overlay */}
-        <AnimatePresence>
-          {showCompletionOverlay && (
-            <motion.div
-              className="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <CheckCircle2 className="w-16 h-16 text-accent mb-2" />
-              <span className="text-foreground font-semibold text-lg">Complete</span>
-            </motion.div>
+          {/* Sleek Continuous Progress Bar */}
+          <motion.div 
+            className="absolute top-0 left-0 right-0 h-1 bg-[#f5d061] z-30 origin-left"
+            style={{ scaleX: scrollYProgress }}
+          />
+
+          {/* Chapter progress dots (Interactive) */}
+          {scrollChapters.length > 1 && (
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-3">
+              {scrollChapters.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => {
+                    const blocks = scrollContainerRef.current?.querySelectorAll('.chapter-block');
+                    if (blocks?.[i]) {
+                      (blocks[i] as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                  }}
+                  aria-label={`Scroll to chapter ${i + 1}`}
+                  className={`w-3 h-3 rounded-full border-2 border-[#f5d061] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#f5d061] focus:ring-offset-2 focus:ring-offset-[#0f0f11] hover:scale-125 ${
+                    i === activeChapter ? 'bg-[#f5d061] scale-110 shadow-[0_0_10px_rgba(245,208,97,0.8)]' : 'bg-transparent cursor-pointer'
+                  }`}
+                />
+              ))}
+            </div>
           )}
-        </AnimatePresence>
-      </div>
 
-      {/* Chapters Foreground */}
-      <div className="relative z-10 w-full flex flex-col md:items-end pointer-events-none">
-        {scrollChapters.map((chapter, i) => (
-          <div
-            key={i}
-            data-index={i}
-            className="chapter-block min-h-screen flex items-center justify-center md:justify-end md:pr-[10%] w-full md:w-1/2 p-6 pointer-events-auto"
-          >
-            <ChapterBlock
-              chapter={chapter}
-              index={i}
-              chaptersCount={chaptersCount}
-              scrollYProgress={scrollYProgress}
-              shouldReduceMotion={shouldReduceMotion}
-              isActive={activeChapter === i}
-            />
-          </div>
-        ))}
+          {/* Completion overlay */}
+          <AnimatePresence>
+            {showCompletionOverlay && (
+              <motion.div
+                className="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none bg-[#0f0f11]/80 backdrop-blur-sm"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <CheckCircle2 className="w-16 h-16 text-[#f5d061] mb-2" />
+                <span className="text-white font-serif font-semibold text-2xl">Complete</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Chapters Foreground - Text on the left half */}
+        <div className="relative z-10 w-full flex flex-col md:items-start pointer-events-none -mt-[100vh]">
+          {scrollChapters.map((chapter, i) => (
+            <div
+              key={i}
+              data-index={i}
+              className="chapter-block min-h-screen flex items-center justify-center md:justify-start md:pl-[10%] md:pr-10 w-full md:w-1/2 p-8 pointer-events-auto"
+            >
+              <ChapterBlock
+                chapter={chapter}
+                index={i}
+                chaptersCount={chaptersCount}
+                scrollYProgress={scrollYProgress}
+                shouldReduceMotion={shouldReduceMotion}
+                isActive={activeChapter === i}
+              />
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
     </div>
   );
 }
@@ -221,24 +228,23 @@ function ChapterBlock({ chapter, index, chaptersCount, scrollYProgress, shouldRe
 
   const safePoints = [pStart, center, pEnd];
 
-  const opacity = useTransform(scrollYProgress, safePoints, [0.3, 1, 0]);
+  const opacity = useTransform(scrollYProgress, safePoints, [0.2, 1, 0]);
   const translateY = useTransform(scrollYProgress, safePoints, [40, 0, -40]);
-  const scale = useTransform(scrollYProgress, safePoints, [0.9, 1, 0.9]);
 
   return (
     <motion.article
-      style={shouldReduceMotion ? {} : { opacity, y: translateY, scale }}
-      initial={shouldReduceMotion ? { opacity: 0.3, scale: 0.95 } : false}
-      animate={shouldReduceMotion ? { opacity: isActive ? 1 : 0.3, scale: isActive ? 1 : 0.95, y: 0 } : undefined}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className={`backdrop-blur-xl bg-background/80 md:bg-background/90 p-8 rounded-2xl max-w-lg w-full text-foreground border transition-all duration-500 ${
-        isActive ? 'border-accent/50 shadow-[0_0_30px_rgba(var(--accent),0.15)]' : 'border-border/50 shadow-xl'
-      }`}
+      style={shouldReduceMotion ? {} : { opacity, y: translateY }}
+      initial={shouldReduceMotion ? { opacity: 0.2 } : false}
+      animate={shouldReduceMotion ? { opacity: isActive ? 1 : 0.2, y: 0 } : undefined}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className={`max-w-xl w-full text-white transition-all duration-700`}
       aria-labelledby={`chapter-heading-${index}`}
     >
-      <h3 id={`chapter-heading-${index}`} className="text-2xl font-bold mb-4">{chap.heading}</h3>
+      <h3 id={`chapter-heading-${index}`} className="text-4xl md:text-5xl lg:text-6xl font-serif mb-6 leading-tight tracking-tight">
+        {chap.heading}
+      </h3>
       {chap.body && (
-        <div className="prose prose-invert max-w-none text-muted-foreground">
+        <div className="prose prose-invert prose-lg max-w-none text-white/70 leading-relaxed font-light">
           {typeof chap.body === 'string' ? <p>{chap.body}</p> : <PortableText value={chap.body as import('sanity').PortableTextBlock[]} />}
         </div>
       )}

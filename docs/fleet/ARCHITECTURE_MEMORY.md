@@ -26,6 +26,7 @@
 * **Course section order:** `deriveCourseStructure` builds flat `sections` as lessons → specifications → disclaimer. Absolute index drives navigation. Do not reorder.
 * **Sanity schema changes:** after editing `web/src/sanity/schemaTypes/`, run `cd web && npx sanity@latest schema deploy`. Stage prod dataset migrations as drafts; review before publish.
 * **Sanity CLI:** `web/sanity.cli.ts` configures the CLI (project `e7l925v5`, dataset `production`). All `npx sanity` commands must be run from `web/`.
+* **`filter` + compositor layer = GPU-composited:** `filter` on an element with `transform` / `will-change: transform` runs on the GPU. Add `will-change: transform, opacity, filter` — never remove the filter to "improve perf." `background-position` is never GPU-composited; static gradients are always correct.
 * **No comments** unless WHY is non-obvious. Zod at all boundaries; `opt()` normalizes `null → undefined`.
 
 ## 3. Delegation Matrix
@@ -35,3 +36,4 @@
 * **ai-ml-engineer:** RAG pipeline, chat/quiz generation, parser-service, Ollama integration.
 * **qa-automation-engineer:** Vitest units, Playwright E2E, RTM against acceptance criteria.
 * **product-designer:** lesson UX, design specs (feeds web-engineer).
+* **systems-performance-engineer:** CSS/JS performance profiling, GPU compositing audits. **Must be called BEFORE web-engineer removes visual effects** — stripping without profiling data is wrong by default.
