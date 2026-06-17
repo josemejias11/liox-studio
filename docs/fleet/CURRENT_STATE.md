@@ -7,6 +7,7 @@
 Fleet health hardening + RAG eval on real corpus
 
 ## 1. What Was Just Completed (last ~5 — prune older)
+* Fleet Health: `fleet: ✓ engine ok · 5 run(s) · last pass · $0.41` (last `/standup`)
 * TASK-0004 done & verified: python-dotenv support added to parser-service — `python main.py` loads token from `.env` without shell export; `cp .env.example .env` is the one-time setup step. (`b9b5bec`)
 * PORT → PARSER_PORT rename: ambient `PORT=9000` (Node) was overriding the default 8000; scoped to `PARSER_PORT` so Node/Heroku tooling can't interfere. (`de910a6`)
 * TASK-0003 done & verified: `parser-service/run.sh` + `__main__` port guard — blocks privileged ports (< 1024), CLAUDE.md and README updated to `python main.py`. (`fe25f83`)
