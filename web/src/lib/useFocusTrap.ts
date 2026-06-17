@@ -22,7 +22,7 @@ export function useFocusTrap(containerRef: { current: HTMLElement | null }, acti
 
     // Move focus into the trapped region immediately
     const first = el.querySelector<HTMLElement>(FOCUSABLE);
-    first?.focus();
+    first?.focus({ preventScroll: true });
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key !== 'Tab') return;
@@ -40,12 +40,12 @@ export function useFocusTrap(containerRef: { current: HTMLElement | null }, acti
       if (e.shiftKey) {
         if (document.activeElement === firstEl) {
           e.preventDefault();
-          lastEl.focus();
+          lastEl.focus({ preventScroll: true });
         }
       } else {
         if (document.activeElement === lastEl) {
           e.preventDefault();
-          firstEl.focus();
+          firstEl.focus({ preventScroll: true });
         }
       }
     }
@@ -54,7 +54,7 @@ export function useFocusTrap(containerRef: { current: HTMLElement | null }, acti
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       // Return focus to wherever the user was before
-      prevFocusRef.current?.focus();
+      prevFocusRef.current?.focus({ preventScroll: true });
     };
   }, [active, containerRef]);
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import Image from 'next/image';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Check, CheckCircle2 } from 'lucide-react';
@@ -128,12 +128,15 @@ export function ProductStage({
     return () => clearTimeout(t);
   }, []);
 
-  // ── Image bounds — track rendered image rect relative to stage container ──
+  // ── Layout calculations ───────────────────────────────────────────────────
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const wrapper = imageWrapperRef.current;
     const container = containerRef.current;
     if (!wrapper || !container) return;
+
+    // Reset scrollTop just in case focus stealing or browser quirks scroll the container
+    container.scrollTop = 0;
 
     function measure() {
       const wRect = wrapper!.getBoundingClientRect();
@@ -144,6 +147,7 @@ export function ProductStage({
         width: wRect.width,
         height: wRect.height,
       });
+      container!.scrollTop = 0; // ensure it stays at 0 on resize
     }
 
     measure();
@@ -238,6 +242,9 @@ export function ProductStage({
       className="absolute inset-0 overflow-hidden"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
+      onScroll={(e) => {
+        if (e.currentTarget.scrollTop !== 0) e.currentTarget.scrollTop = 0;
+      }}
     >
 
       {/* ── Background — fades in, counter-drifts ── */}
