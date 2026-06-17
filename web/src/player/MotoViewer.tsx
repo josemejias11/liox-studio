@@ -153,7 +153,7 @@ export default function MotoViewer({
 
   // ── Weak topics for AI quiz generation ───────────────────────────────────
   const [disclaimerCanProceed, setDisclaimerCanProceed] = useState(true);
-  const [weakTopics, setWeakTopics] = useState<string[]>([]);
+  const [apiWeakTopics, setApiWeakTopics] = useState<string[]>([]);
 
   const sessionWeakTopics = useMemo(() => {
     const topics = new Set<string>();
@@ -171,9 +171,14 @@ export default function MotoViewer({
     phase.phase === 'chapter-quiz' ||
     (phase.phase === 'chapter' && currentLesson?.lessonType === 'quiz');
 
+  const weakTopics = useMemo(() => {
+    if (!isQuizPhase) return [];
+    const merged = new Set([...sessionWeakTopics, ...apiWeakTopics]);
+    return Array.from(merged).slice(0, 15);
+  }, [isQuizPhase, sessionWeakTopics, apiWeakTopics]);
+
   useEffect(() => {
     if (!isQuizPhase) return;
-    setWeakTopics(sessionWeakTopics);
 
     const lessonMeta = structure.lessonSections.map((s) => ({
       id: s._key,
@@ -192,10 +197,7 @@ export default function MotoViewer({
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!data?.weakTopics?.length) return;
-        setWeakTopics((prev) => {
-          const merged = new Set([...prev, ...data.weakTopics]);
-          return Array.from(merged).slice(0, 15);
-        });
+        setApiWeakTopics(data.weakTopics);
       })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
