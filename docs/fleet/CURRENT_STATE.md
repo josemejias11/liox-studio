@@ -4,27 +4,27 @@
 > copies. Reference task briefs by path; don't inline them.
 
 ## Active Phase
-Fleet health hardening + RAG eval on real corpus
+RAG eval on real corpus (post-clean-slate)
 
 ## 1. What Was Just Completed (last ~5 — prune older)
-* Fleet Health: `fleet: ✓ engine ok · 6 run(s) · last pass · $0.71` (last `/commit`)
-* TASK-0005 done & verified: Sanity CMS health check — all 7 checks pass (env vars, live GROQ round-trip, GROQ↔Zod parity, lessonType enum sync, QUIZ_GRADING_QUERY isolation, schema deployment, typecheck). (`c3eb894`)
-* `web/sanity.cli.ts` created — unblocks CLI tooling (`sanity schema extract`, `sanity dataset export`); confirmed working. (`c3eb894`)
-* TASK-0004 done: python-dotenv support in parser-service; .env.example → .env one-time setup. (`b9b5bec`)
-* PORT → PARSER_PORT rename to prevent Node/Heroku ambient env collision. (`de910a6`)
+* TASK-0006 done: clean-slate reset — 18 sessions / 149 analytics rows wiped from Postgres; 15 Sanity docs deleted; ChromaDB wiped. `reset-all.sh` (repo root) handles all three layers idempotently. (`dev` branch)
+* `web/scripts/reset-db.ts` + `web/scripts/reset-sanity.ts` created; typecheck + vitest (5/5) pass.
+* `web/.gitignore` updated: `/tmp/` added.
+* TASK-0005 done & verified: Sanity CMS health check — all 7 checks pass. (`c3eb894`)
+* `web/sanity.cli.ts` created — unblocks CLI tooling. (`c3eb894`)
 
 ## 2. Immediate Next Priority (the one active task)
-* Run `/route` to brief **RAG eval on real corpus** — re-run `parser-service/eval/` against production Sanity content ("motorola Qira", 3 chapters); chunk size is the likeliest quality knob (deferred from TASK-0001). Parser service is stable; Sanity integration is verified healthy.
+* Run `/route` to brief **RAG eval on real corpus** — author fresh Sanity content first (Motorola Qira course), then re-run `parser-service/eval/` to baseline chunk quality.
 
 ## 3. Open Blockers / Known Issues
-* QA agent deleted `CLAUDE.md` during TASK-0005 run (restored from HEAD before commit). Root cause: agent had write permissions to the repo root. Consider scoping forge permissions or adding a git pre-commit guard if this recurs.
-* `web/tmp/` directory created by agent (sanity schema extract output) — untracked, safe to add to `.gitignore`.
+* QA agent deleted `CLAUDE.md` during TASK-0005 run (restored). Consider scoping forge write permissions.
+* ChromaDB is now empty — parser-service will recreate `chroma_db/` on next upload.
 
 ## 4. Recent Architectural Decisions (ADRs)
+* `reset-all.sh` is the canonical one-command reset — loads `web/.env` + `web/.env.local`, runs tsx scripts, then `rm -rf parser-service/chroma_db`.
 * `sanity.cli.ts` lives at `web/sanity.cli.ts` (not repo root) — Sanity CLI must be run from `web/`.
 * `PARSER_PORT` (not `PORT`) is the env var to override the parser service port.
-* python-dotenv loads with `override=False` — shell exports always win over the `.env` file.
-* RAG tuning is eval-gated: tunable changes must beat a recorded baseline on `parser-service/eval/` without lowering faithfulness/refusal rate (TASK-0001).
+* RAG tuning is eval-gated: tunable changes must beat recorded baseline on `parser-service/eval/`.
 
 ---
 **Agent instruction:** on `/commit`, move done work into §1, prune §1 to ~5

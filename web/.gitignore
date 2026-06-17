@@ -53,3 +53,6 @@ next-env.d.ts
 *.db-shm
 *.db-wal
 
+# sanity schema extract output
+/tmp/
+
