@@ -9,6 +9,7 @@ import { DiscoveryPanel } from '@/components/DiscoveryPanel';
 import { CompletionBurst } from '@/components/CompletionBurst';
 import { sanityImageLoader } from '@/lib/sanity-image-loader';
 import { PortableText } from '@portabletext/react';
+import { supMark } from '@/lib/portable-text-components';
 import type { RichText, SanityHotspot, SanityPhoto } from '@/lib/contracts/sanity';
 
 interface ProductStageProps {
@@ -500,7 +501,7 @@ export function ProductStage({
         </h2>
         {body && (
           <div className="text-foreground/70 prose prose-sm md:prose-base prose-invert max-w-none font-light leading-relaxed">
-            {typeof body === 'string' ? <p>{body}</p> : <PortableText value={body as import('sanity').PortableTextBlock[]} />}
+            {typeof body === 'string' ? <p>{body}</p> : <PortableText value={body as import('sanity').PortableTextBlock[]} components={{ marks: supMark }} />}
           </div>
         )}
       </div>

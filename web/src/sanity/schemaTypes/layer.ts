@@ -30,7 +30,14 @@ export const layerType = defineType({
       name: 'body',
       title: 'Body Copy',
       type: 'array',
-      of: [{ type: 'block' }],
+      of: [{ type: 'block', marks: { decorators: [
+        { title: 'Strong', value: 'strong' },
+        { title: 'Emphasis', value: 'em' },
+        { title: 'Underline', value: 'underline' },
+        { title: 'Strike', value: 'strike-through' },
+        { title: 'Code', value: 'code' },
+        { title: 'Superscript', value: 'sup' },
+      ] } }],
       hidden: ({ parent }) => parent?.layerType === 'interaction' || parent?.layerType === 'video',
     }),
     defineField({

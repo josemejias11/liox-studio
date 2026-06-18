@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform, useReducedMotion } from 'framer-motion';
 import { PortableText } from '@portabletext/react';
+import { supMark } from '@/lib/portable-text-components';
 import { CheckCircle2 } from 'lucide-react';
 import { SanityLesson } from '@/lib/contracts/sanity';
 import Image from 'next/image';
@@ -245,7 +246,7 @@ function ChapterBlock({ chapter, index, chaptersCount, scrollYProgress, shouldRe
       </h3>
       {chap.body && (
         <div className="prose prose-invert prose-lg max-w-none text-white/70 leading-relaxed font-light">
-          {typeof chap.body === 'string' ? <p>{chap.body}</p> : <PortableText value={chap.body as import('sanity').PortableTextBlock[]} />}
+          {typeof chap.body === 'string' ? <p>{chap.body}</p> : <PortableText value={chap.body as import('sanity').PortableTextBlock[]} components={{ marks: supMark }} />}
         </div>
       )}
     </motion.article>

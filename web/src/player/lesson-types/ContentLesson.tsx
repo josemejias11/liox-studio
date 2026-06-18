@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { PlayCircle } from 'lucide-react';
 import { PortableText, type PortableTextMarkComponent } from '@portabletext/react';
+import { supMark } from '@/lib/portable-text-components';
 import { Hotspot } from '@/components/Hotspot';
 import { DiscoveryPanel } from '@/components/DiscoveryPanel';
 import { sanityImageLoader } from '@/lib/sanity-image-loader';
@@ -122,7 +123,7 @@ export function ContentLesson({
                 ) : (
                   <PortableText
                     value={lesson.body}
-                    components={{ marks: { layerLink: LayerLinkMark } }}
+                    components={{ marks: { layerLink: LayerLinkMark, ...supMark } }}
                   />
                 )}
               </div>

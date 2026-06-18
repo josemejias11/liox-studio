@@ -3,6 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { PortableText } from '@portabletext/react';
+import { supMark } from '@/lib/portable-text-components';
 import { sanityImageLoader } from '@/lib/sanity-image-loader';
 import type { SanityLesson } from '@/lib/contracts/sanity';
 
@@ -55,7 +56,7 @@ export function SplitScreenLesson({ lesson }: SplitScreenLessonProps) {
               {typeof lesson.body === 'string' ? (
                 <p>{lesson.body}</p>
               ) : (
-                <PortableText value={lesson.body} />
+                <PortableText value={lesson.body} components={{ marks: supMark }} />
               )}
             </div>
           )}

@@ -7,27 +7,28 @@
 Content entry + RAG eval on real corpus (post-visual-polish)
 
 ## 1. What Was Just Completed (last ~5 — prune older)
-Fleet Health: fleet: ✓ engine ok · 12 run(s) · last pass · $0.3163608
+Fleet Health: fleet: ✓ engine ok · 14 run(s) · last pass · $0.6022935
 
-* fix(player): `weakTopics` in `MotoViewer.tsx` — replaced synchronous `setWeakTopics()` inside `useEffect` with a derived `useMemo` merging `sessionWeakTopics` + `apiWeakTopics`. Eliminates `react-hooks/set-state-in-effect` lint error. (`66d95f1`, `dev`)
-* TASK-0010 done: Restored premium visual effects with GPU layer promotion — `filter: blur(6px)` + `willChange: 'transform, opacity, filter'` on entrance wrapper; `blur-sm` restored to visited hotspot halo.
-* TASK-0009 done: Performance + motion polish — GPU-composited ambient glow, `font-display: optional`, loading skeletons, asymmetric panel timing, `revalidate: 300` on Sanity fetch.
-* TASK-0007 done: Hotspot positioning accuracy — 16:9 CMS preview, ResizeObserver for image bounds in `ProductStage.tsx`, `sanityImageLoader` + `sizes` on product `<Image>`.
-* TASK-0006 done: Clean-slate reset — Postgres wiped, 15 Sanity docs deleted, ChromaDB wiped. `reset-all.sh` handles all three layers idempotently.
+* TASK-0012 done: Added `sup` (superscript) decorator to all Portable Text block fields (`lesson.body`, `hotspot.body`, `scrollChapter.body` in `lesson.ts`; `layer.body` in `layer.ts`). Created shared `supMark` in `web/src/lib/portable-text-components.tsx`; wired into all 6 `PortableText` callsites. Schema deployed to Sanity.
+* TASK-0011 done: Fixed upload failure — root cause was 401 (missing `analytics_token` cookie). Added `errorReason` to `SessionFileStatus` in `CourseFileUploadInput.tsx`; maps HTTP status codes to readable badge labels.
+* docs: Added analytics login requirement to README.md (Studio uploads section); expanded `ARCHITECTURE_MEMORY.md` with dev startup, env vars, auth gate section, and `analytics_token` scope invariant.
+* fix(player): `weakTopics` in `MotoViewer.tsx` — replaced synchronous `setWeakTopics()` inside `useEffect` with a derived `useMemo`. Eliminates `react-hooks/set-state-in-effect` lint error.
+* TASK-0010 done: Restored premium visual effects with GPU layer promotion — `filter: blur(6px)` + `willChange: 'transform, opacity, filter'` on entrance wrapper.
 
 ## 2. Immediate Next Priority (the one active task)
-* Author fresh Sanity content (Motorola Qira course) — Sanity is empty from TASK-0006, hotspot positioning is fixed from TASK-0007. Then run `/route` to brief **RAG eval on real corpus** using `parser-service/eval/`.
+* Author fresh Sanity content (Motorola Qira course) — Sanity is empty from TASK-0006 reset, hotspot positioning is fixed (TASK-0007), uploads now work (TASK-0011), superscript works in editor (TASK-0012). Then run `/route` to brief **RAG eval on real corpus** using `parser-service/eval/`.
 
 ## 3. Open Blockers / Known Issues
 * ChromaDB is empty — parser-service will recreate `chroma_db/` on next upload.
 * No content in Sanity — must author a course before RAG eval is meaningful.
+* **Upload prereq:** must visit `http://localhost:3000/analytics/login` (password = `ANALYTICS_PASSWORD`) before Studio uploads work — analytics_token cookie gates the upload route.
 
 ## 4. Recent Architectural Decisions (ADRs)
-* **`weakTopics` pattern:** never set state synchronously inside `useEffect`. Derive via `useMemo` instead; only call `setState` in async callbacks. (`react-hooks/set-state-in-effect`)
+* **Portable Text mark components:** shared mark renderers live in `web/src/lib/portable-text-components.tsx` (e.g., `supMark`). Import from there; do not inline mark components at callsites.
+* **Portable Text decorators — always list defaults:** when adding `marks.decorators` to a `type: 'block'` field that previously omitted it, the full default set must be listed (strong, em, underline, strike-through, code) plus any additions — omitting `decorators` uses Sanity defaults; adding it overrides them entirely.
+* **analytics_token scope:** gates both `/analytics` dashboard pages AND `POST /api/upload` + `DELETE /api/upload`. Do not remove the auth gate from the upload route.
+* **`weakTopics` pattern:** never set state synchronously inside `useEffect`. Derive via `useMemo` instead; only call `setState` in async callbacks.
 * **CSS perf routing rule:** route performance reviews to `systems-performance-engineer` (profiling) BEFORE `web-engineer` removes visual effects. Stripping effects without profiling data is wrong by default.
-* **`filter` + compositor layer = GPU-composited:** `filter` on an element with `transform` / `will-change: transform` runs on the GPU. Add `will-change: transform, opacity, filter` — never remove the filter.
-* **`background-position` is never GPU-composited:** `dynamic-gradient` on `bg-glass-gradient` stays removed. Static gradient is correct.
-* **ProductStage hotspot positioning:** ResizeObserver on image wrapper, bounds measured relative to `containerRef`. `imageRect === null` SSR fallback to full-container.
 * `reset-all.sh` is the canonical one-command reset — loads `web/.env` + `web/.env.local`, runs tsx scripts, then `rm -rf parser-service/chroma_db`.
 * RAG tuning is eval-gated: tunable changes must beat recorded baseline on `parser-service/eval/`.
 

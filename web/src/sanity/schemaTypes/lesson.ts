@@ -32,6 +32,14 @@ export const lessonType = defineType({
         {
           type: 'block',
           marks: {
+            decorators: [
+              { title: 'Strong', value: 'strong' },
+              { title: 'Emphasis', value: 'em' },
+              { title: 'Underline', value: 'underline' },
+              { title: 'Strike', value: 'strike-through' },
+              { title: 'Code', value: 'code' },
+              { title: 'Superscript', value: 'sup' },
+            ],
             annotations: [
               {
                 name: 'layerLink',
@@ -227,7 +235,14 @@ export const lessonType = defineType({
               name: 'body',
               title: 'Body Text',
               type: 'array',
-              of: [{ type: 'block' }],
+              of: [{ type: 'block', marks: { decorators: [
+                { title: 'Strong', value: 'strong' },
+                { title: 'Emphasis', value: 'em' },
+                { title: 'Underline', value: 'underline' },
+                { title: 'Strike', value: 'strike-through' },
+                { title: 'Code', value: 'code' },
+                { title: 'Superscript', value: 'sup' },
+              ] } }],
             }),
             defineField({
               name: 'photos',
@@ -374,7 +389,14 @@ export const lessonType = defineType({
           type: 'object',
           fields: [
             defineField({ name: 'heading', title: 'Heading', type: 'string', validation: (r) => r.required() }),
-            defineField({ name: 'body', title: 'Body Text', type: 'array', of: [{ type: 'block' }] }),
+            defineField({ name: 'body', title: 'Body Text', type: 'array', of: [{ type: 'block', marks: { decorators: [
+              { title: 'Strong', value: 'strong' },
+              { title: 'Emphasis', value: 'em' },
+              { title: 'Underline', value: 'underline' },
+              { title: 'Strike', value: 'strike-through' },
+              { title: 'Code', value: 'code' },
+              { title: 'Superscript', value: 'sup' },
+            ] } }] }),
             defineField({ name: 'image', title: 'Chapter Image', description: "Overrides the hero image for this chapter. Leave blank to inherit the previous chapter's image.", type: 'image', options: { hotspot: true } }),
             defineField({ name: 'targetScale', title: 'Target Scale', type: 'number', initialValue: 1, description: '1 = original size. 1.2 zooms in 20%.' }),
             defineField({ name: 'targetRotation', title: 'Target Rotation (deg)', type: 'number', initialValue: 0, description: 'Degrees. Positive = clockwise.' }),

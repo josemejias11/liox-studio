@@ -5,6 +5,7 @@ import { X, Send, Sparkles } from 'lucide-react';
 import { PhotoCardStack } from './PhotoCardStack';
 import { useFocusTrap } from '@/lib/useFocusTrap';
 import { PortableText } from '@portabletext/react';
+import { supMark } from '@/lib/portable-text-components';
 import { ChatResponseSchema } from '@/lib/contracts/api';
 import type { RichText, SanityPhoto } from '@/lib/contracts/sanity';
 import { cssAspectRatio } from '@/lib/utils';
@@ -443,7 +444,7 @@ export function DiscoveryPanel({
                   ) : null}
                   {body && (
                     <div className="text-foreground prose prose-sm prose-invert max-w-none text-[16px] leading-relaxed">
-                      {typeof body === 'string' ? body : <PortableText value={body} />}
+                      {typeof body === 'string' ? body : <PortableText value={body} components={{ marks: supMark }} />}
                     </div>
                   )}
                   {/* Separator — visually bridges learn content and AI chat section */}

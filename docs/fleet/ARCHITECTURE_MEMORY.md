@@ -60,6 +60,7 @@ Health check: `curl http://localhost:8000/health` must return `"status":"ok"` be
 * **`filter` + compositor layer = GPU-composited:** `filter` on an element with `transform` / `will-change: transform` runs on the GPU. Add `will-change: transform, opacity, filter` — never remove the filter to "improve perf." `background-position` is never GPU-composited; static gradients are always correct.
 * **No comments** unless WHY is non-obvious. Zod at all boundaries; `opt()` normalizes `null → undefined`.
 * **analytics_token scope:** guards both `/analytics` pages AND `/api/upload`. Do not remove the auth gate from the upload route.
+* **Portable Text mark components:** shared renderers live in `web/src/lib/portable-text-components.tsx` (e.g., `supMark`). Import from there; never inline mark components at callsites. When adding `marks.decorators` to a block that previously omitted it, list the full default set (strong, em, underline, strike-through, code) plus additions — adding the key overrides the Sanity defaults entirely.
 
 ## 6. Key Utilities
 * **`reset-all.sh`** (repo root) — canonical one-command full reset: wipes Postgres, deletes Sanity docs, removes `parser-service/chroma_db`. Loads `web/.env` + `web/.env.local`. Use before a clean content-entry run.
@@ -67,10 +68,15 @@ Health check: `curl http://localhost:8000/health` must return `"status":"ok"` be
 * **`web/src/proxy.ts`** — Next.js middleware that guards `/analytics` (but not `/analytics/login`). Not a route handler — it runs before the page.
 
 ## 7. Delegation Matrix
-* **Tech Lead (orchestrator):** routes tasks, writes ADRs, cross-stack decisions. Dispatches via `/forge`; rarely implements.
-* **web-engineer:** Next.js/React UI, lesson components, App Router, CMS integration.
-* **api-services-engineer:** API routes, Prisma schema/migrations, server contracts.
-* **ai-ml-engineer:** RAG pipeline, chat/quiz generation, parser-service, Ollama integration.
-* **qa-automation-engineer:** Vitest units, Playwright E2E, RTM against acceptance criteria.
-* **product-designer:** lesson UX, design specs (feeds web-engineer).
-* **systems-performance-engineer:** CSS/JS performance profiling, GPU compositing audits. **Must be called BEFORE web-engineer removes visual effects** — stripping without profiling data is wrong by default.
+
+Agents are puppeteers: they invoke skills as their execution layer. Skills encode curated best practices; project invariants here always override skill guidance.
+
+| Agent | Domain | Skills to invoke |
+|---|---|---|
+| **Tech Lead** | Routes tasks, ADRs, cross-stack decisions. Dispatches via `/forge`; rarely implements. | — |
+| **web-engineer** | Next.js/React UI, lesson components, App Router, CMS integration | `nextjs-app-router-patterns`, `react-best-practices`, `typescript-pro`, `tailwind-patterns`, `zod-validation-expert`; `react-component-performance` / `web-performance-optimization` for perf work; `vercel-deployment` for deploy |
+| **api-services-engineer** | API routes, Prisma schema/migrations, server contracts | `api-design-principles`, `prisma-expert`, `postgresql`, `zod-validation-expert`; `fastapi-pro` for parser-service route work |
+| **ai-ml-engineer** | RAG pipeline, chat/quiz generation, parser-service, Ollama integration | `rag-engineer`, `rag-implementation`, `embedding-strategies`, `vector-database-engineer`; `python-pro`, `fastapi-pro`, `pydantic-models-py`; `claude-api` for Anthropic/model specifics |
+| **qa-automation-engineer** | Vitest units, Playwright E2E, RTM | `javascript-testing-patterns`, `python-testing-patterns`, `e2e-testing`, `playwright-skill` |
+| **product-designer** | Lesson UX, design specs (feeds web-engineer) | `frontend-design` |
+| **systems-performance-engineer** | CSS/JS perf profiling, GPU compositing audits. **Must be called BEFORE web-engineer removes visual effects.** | `react-component-performance`, `web-performance-optimization` |

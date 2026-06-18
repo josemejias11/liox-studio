@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, PanInfo } from 'framer-motion';
 import { PortableText } from '@portabletext/react';
+import { supMark } from '@/lib/portable-text-components';
 import { SanityLesson } from '@/lib/contracts/sanity';
 import Image from 'next/image';
 import { CheckCircle2 } from 'lucide-react';
@@ -161,7 +162,7 @@ export default function DragDropLesson({ lesson, isCompleted, onComplete }: Drag
         <h2 className="text-3xl font-bold mb-4">{headline}</h2>
         {body && (
           <div className="prose prose-invert max-w-none text-muted-foreground mb-8">
-            {typeof body === 'string' ? <p>{body}</p> : <PortableText value={body as import('sanity').PortableTextBlock[]} />}
+            {typeof body === 'string' ? <p>{body}</p> : <PortableText value={body as import('sanity').PortableTextBlock[]} components={{ marks: supMark }} />}
           </div>
         )}
 

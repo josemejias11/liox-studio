@@ -40,6 +40,8 @@ Next.js 16 (web/)      ───────────────────
 
 ## Getting Started
 
+> **Four processes must run simultaneously.** The platform requires PostgreSQL, Ollama, the Python parser-service, and Next.js all running at once. Steps 2–4 below each start one process; open a new terminal for each.
+
 ### Prerequisites
 - Node.js 20+
 - Python 3.9+
@@ -168,6 +170,22 @@ Where instructional designers create and publish course content.
 
 > **Before uploading files from Studio:** you must first log in to the Instructor Dashboard at `http://localhost:3000/analytics/login` (password = `ANALYTICS_PASSWORD` from your `.env.local`). The upload endpoint shares the same auth cookie as the analytics dashboard. Once logged in the cookie lasts 7 days — you will not need to repeat this unless it expires or you clear your cookies.
 
+**Lesson types** — each Lesson document has a `Lesson Type` field that controls which player component renders:
+
+| Type | Component | Use for |
+|------|-----------|---------|
+| `content` | `ContentLesson` | Headline + body text, optional background image and hotspots |
+| `interaction` | `ContentLesson` | Same as content but hotspots are required; drives the discovery flow |
+| `stage` | `ProductStage` | Full-bleed product image with floating hotspots and optional completion animation |
+| `video` | `ContentLesson` | MP4 playback; supports 16:9, 1:1, 4:5, 9:16 aspect ratios |
+| `splitScreen` | `SplitScreenLesson` | Left/right split — text on one side, video on the other |
+| `quiz` | in-lesson quiz | CMS-authored quiz embedded inside the lesson flow |
+| `colorSwitcher` | `ContentLesson` | Up to 4 color variants with swappable product images |
+| `dragDrop` | `DragDropLesson` | Drag chip to drop zone interaction with correctness feedback |
+| `scrollStory` | `ScrollStoryLesson` | Scroll-driven chapters with parallax image pan/zoom/rotate |
+
+**Rich text** — all body fields support standard decorators (bold, italic, underline, strike, code) plus **superscript** (`x²`, spec callouts like `5G¹`). Use the `Sup` button in the toolbar.
+
 ### Instructor Dashboard — analytics
 `http://localhost:3000/analytics`
 
@@ -217,6 +235,18 @@ The browser only ever calls these routes; the AI routes proxy server-to-server t
 | AI Models | Ollama (`llama3` + `nomic-embed-text`), LangChain, ChromaDB, `markitdown` |
 | Database | PostgreSQL (local dev) + Prisma ORM v5 |
 | Rate Limiting | Upstash Redis (gracefully disabled when env vars are unset) |
+
+---
+
+## Full Reset
+
+`reset-all.sh` (repo root) is the canonical one-command teardown for a clean content-entry run. It wipes the PostgreSQL database, deletes all Sanity documents, and removes `parser-service/chroma_db`. Run it before starting a fresh authoring session:
+
+```bash
+./reset-all.sh
+```
+
+Loads credentials from `web/.env` + `web/.env.local`. After reset: restart the parser-service (so ChromaDB is recreated), run `npm run db:migrate` from `web/`, then author and upload fresh content.
 
 ---
 
