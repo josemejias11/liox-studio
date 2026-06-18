@@ -1,9 +1,9 @@
-import React, { useRef, useEffect, useState, useMemo } from 'react';
-import { motion, AnimatePresence, useScroll, useTransform, useReducedMotion } from 'framer-motion';
+import { useRef, useEffect, useState } from 'react';
+import { motion, AnimatePresence, useScroll, useReducedMotion } from 'framer-motion';
 import { PortableText } from '@portabletext/react';
 import { supMark } from '@/lib/portable-text-components';
 import { CheckCircle2 } from 'lucide-react';
-import { SanityLesson } from '@/lib/contracts/sanity';
+import type { SanityLesson } from '@/lib/contracts/sanity';
 import Image from 'next/image';
 
 interface ScrollStoryLessonProps {
@@ -12,6 +12,9 @@ interface ScrollStoryLessonProps {
   onComplete: () => void;
 }
 
+const BASE_TOP_PX = 16;
+const STACK_STEP_PX = 12;
+
 export default function ScrollStoryLesson({ lesson, isCompleted, onComplete }: ScrollStoryLessonProps) {
   const { headline, scrollChapters = [], media } = lesson;
 
@@ -19,24 +22,22 @@ export default function ScrollStoryLesson({ lesson, isCompleted, onComplete }: S
   const shouldReduceMotion = useReducedMotion();
 
   const chaptersCount = Math.max(1, scrollChapters.length);
-  const containerHeight = `${chaptersCount * 100}vh`;
+  const lastIndex = chaptersCount - 1;
 
-  const { scrollYProgress } = useScroll({
-    container: scrollContainerRef,
-  });
+  const { scrollYProgress } = useScroll({ container: scrollContainerRef });
 
   const [activeChapter, setActiveChapter] = useState(0);
   const [showCompletionOverlay, setShowCompletionOverlay] = useState(false);
 
+  const hasChapterImages = scrollChapters.some(c => c.image?.asset?.url);
+
   useEffect(() => {
-    const unsub = scrollYProgress.on("change", (v) => {
+    const unsub = scrollYProgress.on('change', (v) => {
       if (v > 0.85 && !isCompleted) onComplete();
-      if (!shouldReduceMotion) {
-        setActiveChapter(Math.min(chaptersCount - 1, Math.floor(v * chaptersCount)));
-      }
+      setActiveChapter(Math.min(chaptersCount - 1, Math.floor(v * chaptersCount)));
     });
     return () => unsub();
-  }, [scrollYProgress, isCompleted, onComplete, chaptersCount, shouldReduceMotion]);
+  }, [scrollYProgress, isCompleted, onComplete, chaptersCount]);
 
   useEffect(() => {
     if (!isCompleted) return;
@@ -45,210 +46,123 @@ export default function ScrollStoryLesson({ lesson, isCompleted, onComplete }: S
     return () => clearTimeout(t);
   }, [isCompleted]);
 
-  const progressPoints = scrollChapters.map((_, i) => i / Math.max(1, chaptersCount - 1));
-  const safeProgressPoints = progressPoints.length > 1 ? progressPoints : [0, 1];
-
-  const scales = scrollChapters.map(c => c.targetScale ?? 1);
-  const safeScales = scales.length > 1 ? scales : [scales[0] ?? 1, scales[0] ?? 1];
-
-  const rotates = scrollChapters.map(c => c.targetRotation ?? 0);
-  const safeRotates = rotates.length > 1 ? rotates : [rotates[0] ?? 0, rotates[0] ?? 0];
-
-  const xs = scrollChapters.map(c => c.targetX ?? 0);
-  const safeXs = xs.length > 1 ? xs : [xs[0] ?? 0, xs[0] ?? 0];
-
-  const ys = scrollChapters.map(c => c.targetY ?? 0);
-  const safeYs = ys.length > 1 ? ys : [ys[0] ?? 0, ys[0] ?? 0];
-
-  const scale = useTransform(scrollYProgress, safeProgressPoints, safeScales);
-  const rotate = useTransform(scrollYProgress, safeProgressPoints, safeRotates);
-  const x = useTransform(scrollYProgress, safeProgressPoints, safeXs);
-  const y = useTransform(scrollYProgress, safeProgressPoints, safeYs);
-
-  // Reduced motion: track active chapter via intersection observer
-  useEffect(() => {
-    if (!shouldReduceMotion) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const index = Number(entry.target.getAttribute('data-index'));
-            setActiveChapter(index);
-          }
-        });
-      },
-      { threshold: 0.5 }
-    );
-
-    const blocks = scrollContainerRef.current?.querySelectorAll('.chapter-block') ?? [];
-    blocks.forEach(b => observer.observe(b));
-
-    return () => observer.disconnect();
-  }, [shouldReduceMotion, scrollChapters.length]);
-
-  // Walk backwards from activeChapter to find nearest chapter with an image; fall back to hero
-  const activeImageUrl = useMemo(() => {
-    for (let i = activeChapter; i >= 0; i--) {
-      const url = scrollChapters[i]?.image?.asset?.url;
-      if (url) return url;
-    }
-    return media?.asset?.url;
-  }, [activeChapter, scrollChapters, media]);
-
-  const imgDuration = shouldReduceMotion ? 0 : 0.4;
-
-  const crossfadeImage = activeImageUrl ? (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={activeImageUrl}
-        className="absolute inset-0"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: imgDuration }}
-      >
-        <Image fill src={activeImageUrl} alt={headline || 'Story Hero'} className="object-contain" />
-      </motion.div>
-    </AnimatePresence>
-  ) : null;
-
   return (
     <div ref={scrollContainerRef} className="relative w-full h-full overflow-y-scroll bg-[#0f0f11] text-white">
-      <div style={{ height: containerHeight }} className="relative w-full">
 
-        {/* Sticky Hero Image Background - Image on the right half */}
-        <div className="sticky top-0 h-screen w-full overflow-hidden flex z-0">
-          
-          {/* Left spacer for text */}
-          <div className="hidden md:block w-1/2 h-full" />
+      {/* Sticky navigation layer — zero document height, content overflows visibly */}
+      <div className="sticky top-0 h-0 z-50 overflow-visible pointer-events-none">
 
-          {/* Right side visual */}
-          <div className="relative w-full md:w-1/2 h-full flex items-center justify-center p-8">
-            {shouldReduceMotion ? (
-              <motion.div
-                className="relative w-full h-full flex items-center justify-center"
-                initial={false}
-                animate={{
-                  scale: safeScales[activeChapter],
-                  rotate: safeRotates[activeChapter],
-                  x: safeXs[activeChapter],
-                  y: safeYs[activeChapter],
+        {/* Gold progress bar */}
+        <motion.div
+          className="absolute top-0 left-0 right-0 h-1 bg-[#f5d061] origin-left"
+          style={{ scaleX: scrollYProgress }}
+        />
+
+        {/* Chapter progress dots */}
+        {scrollChapters.length > 1 && (
+          <div
+            className="absolute right-4 flex flex-col gap-3 pointer-events-auto"
+            style={{ top: '50vh', transform: 'translateY(-50%)' }}
+          >
+            {scrollChapters.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => {
+                  const blocks = scrollContainerRef.current?.querySelectorAll('.chapter-block');
+                  if (blocks?.[i]) {
+                    (blocks[i] as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
                 }}
-                transition={{ duration: 0.5, ease: "easeInOut" }}
-              >
-                {crossfadeImage}
-              </motion.div>
-            ) : (
-              <motion.div
-                style={{ scale, rotate, x, y }}
-                className="relative w-full h-[80vh] flex items-center justify-center will-change-transform"
-              >
-                {crossfadeImage}
-              </motion.div>
-            )}
-          </div>
-
-          {/* Sleek Continuous Progress Bar */}
-          <motion.div 
-            className="absolute top-0 left-0 right-0 h-1 bg-[#f5d061] z-30 origin-left"
-            style={{ scaleX: scrollYProgress }}
-          />
-
-          {/* Chapter progress dots (Interactive) */}
-          {scrollChapters.length > 1 && (
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-3">
-              {scrollChapters.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => {
-                    const blocks = scrollContainerRef.current?.querySelectorAll('.chapter-block');
-                    if (blocks?.[i]) {
-                      (blocks[i] as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                  }}
-                  aria-label={`Scroll to chapter ${i + 1}`}
-                  className={`w-3 h-3 rounded-full border-2 border-[#f5d061] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#f5d061] focus:ring-offset-2 focus:ring-offset-[#0f0f11] hover:scale-125 ${
-                    i === activeChapter ? 'bg-[#f5d061] scale-110 shadow-[0_0_10px_rgba(245,208,97,0.8)]' : 'bg-transparent cursor-pointer'
-                  }`}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Completion overlay */}
-          <AnimatePresence>
-            {showCompletionOverlay && (
-              <motion.div
-                className="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none bg-[#0f0f11]/80 backdrop-blur-sm"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <CheckCircle2 className="w-16 h-16 text-[#f5d061] mb-2" />
-                <span className="text-white font-serif font-semibold text-2xl">Complete</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Chapters Foreground - Text on the left half */}
-        <div className="relative z-10 w-full flex flex-col md:items-start pointer-events-none -mt-[100vh]">
-          {scrollChapters.map((chapter, i) => (
-            <div
-              key={i}
-              data-index={i}
-              className="chapter-block min-h-screen flex items-center justify-center md:justify-start md:pl-[10%] md:pr-10 w-full md:w-1/2 p-8 pointer-events-auto"
-            >
-              <ChapterBlock
-                chapter={chapter}
-                index={i}
-                chaptersCount={chaptersCount}
-                scrollYProgress={scrollYProgress}
-                shouldReduceMotion={shouldReduceMotion}
-                isActive={activeChapter === i}
+                aria-label={`Scroll to chapter ${i + 1}`}
+                className={`w-3 h-3 rounded-full border-2 border-[#f5d061] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#f5d061] focus:ring-offset-2 focus:ring-offset-[#0f0f11] hover:scale-125 ${
+                  i === activeChapter
+                    ? 'bg-[#f5d061] scale-110 shadow-[0_0_10px_rgba(245,208,97,0.8)]'
+                    : 'bg-transparent cursor-pointer'
+                }`}
               />
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
+
+        {/* Completion overlay */}
+        <AnimatePresence>
+          {showCompletionOverlay && (
+            <motion.div
+              className="absolute inset-x-0 top-0 flex flex-col items-center justify-center bg-[#0f0f11]/80 backdrop-blur-sm"
+              style={{ height: '100vh' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: shouldReduceMotion ? 0 : 0.3 }}
+            >
+              <CheckCircle2 className="w-16 h-16 text-[#f5d061] mb-2" />
+              <span className="text-white font-serif font-semibold text-2xl">Complete</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-    </div>
-  );
-}
 
-import type { RichText } from '@/lib/contracts/sanity';
-
-function ChapterBlock({ chapter, index, chaptersCount, scrollYProgress, shouldReduceMotion, isActive }: { chapter: { heading: string, body?: RichText, [key: string]: unknown }, index: number, chaptersCount: number, scrollYProgress: import('framer-motion').MotionValue<number>, shouldReduceMotion: boolean | null, isActive?: boolean }) {
-  const chap = chapter;
-  const start = Math.max(0, (index - 0.5) / chaptersCount);
-  const center = index / Math.max(1, chaptersCount - 1);
-  const end = Math.min(1, (index + 0.5) / chaptersCount);
-
-  const pStart = index === 0 ? 0 : start;
-  const pEnd = index === chaptersCount - 1 ? 1 : end;
-
-  const safePoints = [pStart, center, pEnd];
-
-  const opacity = useTransform(scrollYProgress, safePoints, [0.2, 1, 0]);
-  const translateY = useTransform(scrollYProgress, safePoints, [40, 0, -40]);
-
-  return (
-    <motion.article
-      style={shouldReduceMotion ? {} : { opacity, y: translateY }}
-      initial={shouldReduceMotion ? { opacity: 0.2 } : false}
-      animate={shouldReduceMotion ? { opacity: isActive ? 1 : 0.2, y: 0 } : undefined}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-      className={`max-w-xl w-full text-white transition-all duration-700`}
-      aria-labelledby={`chapter-heading-${index}`}
-    >
-      <h3 id={`chapter-heading-${index}`} className="text-4xl md:text-5xl lg:text-6xl font-serif mb-6 leading-tight tracking-tight">
-        {chap.heading}
-      </h3>
-      {chap.body && (
-        <div className="prose prose-invert prose-lg max-w-none text-white/70 leading-relaxed font-light">
-          {typeof chap.body === 'string' ? <p>{chap.body}</p> : <PortableText value={chap.body as import('sanity').PortableTextBlock[]} components={{ marks: supMark }} />}
+      {/* Hero fallback image — only shown when no chapter has its own image */}
+      {!hasChapterImages && media?.asset?.url && (
+        <div className="px-4 md:px-8 pt-8">
+          <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-8">
+            <Image
+              src={media.asset.url}
+              alt={headline || 'Story Hero'}
+              fill
+              className="object-contain"
+            />
+          </div>
         </div>
       )}
-    </motion.article>
+
+      {/* Stacking cards */}
+      <div className="px-4 md:px-8 pb-8">
+        {scrollChapters.map((chapter, i) => (
+          <div
+            key={i}
+            data-index={i}
+            className="chapter-block sticky rounded-3xl bg-[#1a1a1e] border border-white/10 shadow-[0_-20px_40px_-20px_rgba(0,0,0,0.8)] p-8 md:p-12"
+            style={{
+              top: `${BASE_TOP_PX + i * STACK_STEP_PX}px`,
+              zIndex: i + 1,
+              marginBottom: i < lastIndex ? '50vh' : 0,
+            }}
+          >
+            {/* Per-card image */}
+            {chapter.image?.asset?.url && (
+              <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-6">
+                <Image
+                  src={chapter.image.asset.url}
+                  alt={chapter.heading}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            )}
+
+            {/* Heading */}
+            <h3 className="text-4xl md:text-5xl font-serif mb-6 text-white leading-tight tracking-tight">
+              {chapter.heading}
+            </h3>
+
+            {/* Body */}
+            {chapter.body && (
+              <div className="prose prose-invert prose-lg max-w-none text-white/70 leading-relaxed font-light">
+                {typeof chapter.body === 'string' ? (
+                  <p>{chapter.body}</p>
+                ) : (
+                  <PortableText
+                    value={chapter.body as import('sanity').PortableTextBlock[]}
+                    components={{ marks: supMark }}
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+    </div>
   );
 }
