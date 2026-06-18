@@ -26,3 +26,4 @@ parser-service/.env
 
 # OS
 .DS_Store
+.playwright-mcp/
