@@ -16,7 +16,15 @@ type SessionFileStatus = {
   name: string;
   state: 'pending' | 'uploading' | 'success' | 'error';
   chunks?: number;
+  errorReason?: string;
 };
+
+function uploadErrorReason(status: number): string {
+  if (status === 401) return 'Not logged in — visit /analytics/login first';
+  if (status === 413) return 'File too large (50 MB limit)';
+  if (status === 502) return 'Upload service unavailable';
+  return `Upload failed (HTTP ${status})`;
+}
 
 export function CourseFileUploadInput(props: ArrayOfObjectsInputProps) {
   const { value, onChange } = props;
@@ -49,7 +57,7 @@ export function CourseFileUploadInput(props: ArrayOfObjectsInputProps) {
         const file = files[i];
 
         if (file.size > MAX_UPLOAD_BYTES) {
-          results[i] = { name: file.name, state: 'error' };
+          results[i] = { name: file.name, state: 'error', errorReason: 'File too large (50 MB limit)' };
           setSessionStatuses([...results]);
           continue;
         }
@@ -93,10 +101,14 @@ export function CourseFileUploadInput(props: ArrayOfObjectsInputProps) {
               knownFiles.set(file.name, added);
             }
           } else {
-            results[i] = { name: file.name, state: 'error' };
+            results[i] = {
+              name: file.name,
+              state: 'error',
+              errorReason: uploadErrorReason(response.status),
+            };
           }
         } catch {
-          results[i] = { name: file.name, state: 'error' };
+          results[i] = { name: file.name, state: 'error', errorReason: 'Network error' };
         }
 
         setSessionStatuses([...results]);
@@ -179,7 +191,7 @@ export function CourseFileUploadInput(props: ArrayOfObjectsInputProps) {
                     : f.state === 'success'
                       ? `✓ ${f.chunks} chunks`
                       : f.state === 'error'
-                        ? 'failed'
+                        ? (f.errorReason ?? 'failed')
                         : 'queued'}
                 </Badge>
                 <Text size={1} muted textOverflow="ellipsis">

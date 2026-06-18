@@ -6,12 +6,43 @@
 ## 1. The Stack
 * **Frontend:** Next.js 16 (App Router), React, TypeScript, Tailwind. Lives in `web/`.
 * **Backend:** Next.js API routes (`web/src/app/api/**`) + self-hosted FastAPI RAG service (`parser-service/`, Python).
-* **Database:** PostgreSQL via Prisma. Models: `Session`, `LessonProgress`, `HotspotVisit`, `GeneratedQuiz`.
+* **Database:** PostgreSQL via Prisma. Models: `Session`, `LessonProgress`, `HotspotVisit`, `GeneratedQuiz`, `QuizAttempt`. Schema at `web/prisma/schema.prisma`.
 * **Testing:** Vitest (`npm run test`) for units · `npm run typecheck` (tsc --noEmit) before every commit.
 * **Infra / deploy:** Vercel (web). Parser service self-hosted; needs local Ollama (`llama3` + `nomic-embed-text`).
 * **External services:** Sanity CMS (project `e7l925v5`, dataset `production`, Studio at `/studio`); Upstash Redis (rate limiting, gracefully disabled if unset); Ollama (LLM + embeddings).
 
-## 2. Operational Directives
+## 2. Dev Startup Sequence (4 processes, all required)
+```
+1. PostgreSQL      → local instance on :5432  (Postgres.app / Homebrew / Docker)
+2. Ollama          → ollama serve              (pulls llama3 + nomic-embed-text once)
+3. parser-service  → cd parser-service && source venv/bin/activate && python main.py
+4. Next.js         → cd web && npm run dev     (http://localhost:3000)
+```
+Health check: `curl http://localhost:8000/health` must return `"status":"ok"` before uploads/chat work.
+
+## 3. Key Environment Variables
+`web/.env.local` (secrets; `web/.env` holds safe local defaults):
+| Variable | Required | Notes |
+|---|---|---|
+| `DATABASE_URL` | yes | Pooled PG URL |
+| `DIRECT_URL` | yes | Direct PG URL (migrations) |
+| `SANITY_API_TOKEN` | yes | Editor token from sanity.io/manage |
+| `PARSER_SERVICE_URL` | yes | `http://localhost:8000` in dev |
+| `PARSER_SERVICE_TOKEN` | yes | Shared secret — must match `parser-service/.env` |
+| `ANALYTICS_PASSWORD` | yes | Gates `/analytics` dashboard **and** `/api/upload` |
+| `UPSTASH_REDIS_REST_URL/TOKEN` | no | Rate limiting; disabled when unset |
+
+`parser-service/.env` (copy from `.env.example`):
+`PARSER_SERVICE_TOKEN`, `OLLAMA_BASE_URL`, `LLM_MODEL`, `EMBEDDING_MODEL`, `CHROMA_DIR`
+
+## 4. Auth Gate — Critical
+`analytics_token` httpOnly cookie (set at `POST /analytics/login`, lasts 7 days) guards **two** things:
+1. All `/analytics` pages (via `web/src/proxy.ts` middleware matcher).
+2. `POST /api/upload` and `DELETE /api/upload` route handlers.
+
+**You must visit `/analytics/login` before Studio uploads will work.** This is the #1 cause of upload failures in Studio — the cookie is not automatically set by the Sanity session.
+
+## 5. Operational Directives
 * **Artifact-Driven Memory:** Never rely on chat history. Decisions, contracts, and state live in `docs/fleet/` and `docs/tasks/`.
 * **Before mutating state:** read `CURRENT_STATE.md` for the active context.
 * **Distillation (`/commit`):** roll `CURRENT_STATE.md` forward — a *rolling window*, not an append log.
@@ -28,8 +59,14 @@
 * **Sanity CLI:** `web/sanity.cli.ts` configures the CLI (project `e7l925v5`, dataset `production`). All `npx sanity` commands must be run from `web/`.
 * **`filter` + compositor layer = GPU-composited:** `filter` on an element with `transform` / `will-change: transform` runs on the GPU. Add `will-change: transform, opacity, filter` — never remove the filter to "improve perf." `background-position` is never GPU-composited; static gradients are always correct.
 * **No comments** unless WHY is non-obvious. Zod at all boundaries; `opt()` normalizes `null → undefined`.
+* **analytics_token scope:** guards both `/analytics` pages AND `/api/upload`. Do not remove the auth gate from the upload route.
 
-## 3. Delegation Matrix
+## 6. Key Utilities
+* **`reset-all.sh`** (repo root) — canonical one-command full reset: wipes Postgres, deletes Sanity docs, removes `parser-service/chroma_db`. Loads `web/.env` + `web/.env.local`. Use before a clean content-entry run.
+* **`parser-service/eval/run_eval.py`** — RAG eval harness. Results land in `eval/results/`. RAG tuning changes must beat the recorded baseline before merging.
+* **`web/src/proxy.ts`** — Next.js middleware that guards `/analytics` (but not `/analytics/login`). Not a route handler — it runs before the page.
+
+## 7. Delegation Matrix
 * **Tech Lead (orchestrator):** routes tasks, writes ADRs, cross-stack decisions. Dispatches via `/forge`; rarely implements.
 * **web-engineer:** Next.js/React UI, lesson components, App Router, CMS integration.
 * **api-services-engineer:** API routes, Prisma schema/migrations, server contracts.

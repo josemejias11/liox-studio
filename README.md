@@ -166,6 +166,8 @@ Where instructional designers create and publish course content.
 
 **Course Material file library** — the Course document includes a persistent, additive file library. Upload `.pdf`, `.docx`, `.pptx`, and `.xlsx` files directly into ChromaDB for the AI to learn from. Each upload appends an entry; re-uploading the same filename replaces its chunks without adding a duplicate row. The ✕ button removes the Sanity record **and** purges the file's chunks from ChromaDB in one action.
 
+> **Before uploading files from Studio:** you must first log in to the Instructor Dashboard at `http://localhost:3000/analytics/login` (password = `ANALYTICS_PASSWORD` from your `.env.local`). The upload endpoint shares the same auth cookie as the analytics dashboard. Once logged in the cookie lasts 7 days — you will not need to repeat this unless it expires or you clear your cookies.
+
 ### Instructor Dashboard — analytics
 `http://localhost:3000/analytics`
 
