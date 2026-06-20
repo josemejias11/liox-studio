@@ -298,6 +298,7 @@ class QuizResponse(BaseModel):
 
 def collection_exists(course_id: str) -> bool:
     try:
+        assert runtime.chroma_client is not None
         runtime.chroma_client.get_collection(course_id)
         return True
     except Exception as e:
@@ -314,6 +315,8 @@ def get_vectorstore(course_id: str) -> Chroma:
     """LRU-cached per-course Chroma vectorstore (creates the collection if needed)."""
     vs = _vectorstore_cache.get(course_id)
     if vs is None:
+        assert runtime.chroma_client is not None
+        assert runtime.embeddings is not None
         vs = Chroma(
             client=runtime.chroma_client,
             collection_name=course_id,
@@ -492,6 +495,7 @@ Question:
 Answer:"""
 
         logger.info("Generating response with local LLM...")
+        assert runtime.llm is not None
         answer = runtime.llm.invoke(prompt).strip()
 
         # If the model refused for lack of context, do not cite sources.
@@ -579,6 +583,7 @@ Output the JSON object now:"""
         last_error: Exception | None = None
         for attempt in range(2):
             logger.info("Generating quiz with local LLM (attempt %d)...", attempt + 1)
+            assert runtime.quiz_llm is not None
             response = runtime.quiz_llm.invoke(prompt)
             try:
                 parsed = json.loads(response)
