@@ -16,7 +16,6 @@ import re
 import secrets
 import shutil
 import tempfile
-import uuid
 from collections import OrderedDict
 from contextlib import asynccontextmanager
 from threading import Lock
@@ -162,7 +161,7 @@ _vectorstore_cache = _LRUVectorstoreCache()
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_fastapi_app: FastAPI):
     # Configure logging here so it applies once at startup, not on every import.
     logging.basicConfig(level=logging.INFO)
     token = os.environ.get("PARSER_SERVICE_TOKEN")
@@ -193,6 +192,7 @@ async def lifespan(app: FastAPI):
         )
         os.makedirs(CHROMA_DIR, exist_ok=True)
         runtime.chroma_client = chromadb.PersistentClient(path=CHROMA_DIR)
+    # noinspection PyBroadException
     except Exception:
         logger.exception(
             "Failed to initialize Ollama clients or ChromaDB at %s. "
@@ -301,6 +301,7 @@ def collection_exists(course_id: str) -> bool:
         assert runtime.chroma_client is not None
         runtime.chroma_client.get_collection(course_id)
         return True
+    # noinspection PyBroadException
     except Exception as e:
         # Swallow only "collection not found" errors; re-raise storage/config failures
         # so callers see a real 500 rather than a misleading "no documents" response.
@@ -389,7 +390,7 @@ def upload_file(course_id: str = Form(...), file: UploadFile = File(...)):  # no
     # Server-generated temp path: the client filename is never used on the
     # filesystem (path-traversal defense); it is kept only as metadata.
     temp_dir = tempfile.mkdtemp(prefix="moto-upload-")
-    temp_file_path = os.path.join(temp_dir, uuid.uuid4().hex + ext)
+    temp_file_path = os.path.join(temp_dir, secrets.token_hex(16) + ext)
 
     try:
         # Stream to disk with a hard size cap (do not trust Content-Length).
@@ -424,7 +425,9 @@ def upload_file(course_id: str = Form(...), file: UploadFile = File(...)):  # no
         # Replace any previous chunks for this file, then add with
         # deterministic IDs so re-uploads never duplicate.
         try:
+            # noinspection PyProtectedMember
             vectorstore._collection.delete(where={"source": original_filename})
+        # noinspection PyBroadException
         except Exception:
             logger.warning("Could not delete previous chunks for %s", original_filename, exc_info=True)
 
@@ -444,6 +447,7 @@ def upload_file(course_id: str = Form(...), file: UploadFile = File(...)):  # no
 
     except HTTPException:
         raise
+    # noinspection PyBroadException
     except Exception as e:
         logger.exception("Error processing upload for course %s", course_id)
         raise HTTPException(status_code=500, detail="Internal server error processing file.") from e
@@ -509,6 +513,7 @@ Answer:"""
 
     except HTTPException:
         raise
+    # noinspection PyBroadException
     except Exception as e:
         logger.exception("Error during chat generation for course %s", request.course_id)
         raise HTTPException(status_code=500, detail="Internal server error generating response.") from e
@@ -586,6 +591,7 @@ Output the JSON object now:"""
             assert runtime.quiz_llm is not None
             response = runtime.quiz_llm.invoke(prompt)
             try:
+                # noinspection PyUnresolvedReferences
                 parsed = json.loads(response)
                 questions = parsed.get("questions") if isinstance(parsed, dict) else None
                 if isinstance(questions, list) and len(questions) > 5:
@@ -603,6 +609,7 @@ Output the JSON object now:"""
 
     except HTTPException:
         raise
+    # noinspection PyBroadException
     except Exception as e:
         logger.exception("Error during quiz generation for course %s", request.course_id)
         raise HTTPException(status_code=500, detail="Internal server error generating quiz.") from e
@@ -632,7 +639,9 @@ def delete_document(request: DeleteDocumentRequest):
 
     vs = get_vectorstore(request.course_id)
     try:
+        # noinspection PyProtectedMember
         vs._collection.delete(where={"source": request.filename})
+    # noinspection PyBroadException
     except Exception as e:
         logger.warning(
             "Could not delete chunks for %s in course %s",
@@ -661,7 +670,7 @@ def health_check():
     chroma_writable = False
     try:
         os.makedirs(CHROMA_DIR, exist_ok=True)
-        probe_path = os.path.join(CHROMA_DIR, f".probe-{uuid.uuid4().hex}")
+        probe_path = os.path.join(CHROMA_DIR, f".probe-{secrets.token_hex(16)}")
         with open(probe_path, "w") as probe:
             probe.write("ok")
         os.remove(probe_path)
