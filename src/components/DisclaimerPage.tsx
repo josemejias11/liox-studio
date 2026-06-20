@@ -24,7 +24,7 @@ const CATEGORY_LABELS: Record<DisclaimerCategory, string> = {
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export function DisclaimerPage({ disclaimer, onNext, onCanProceedChange }: DisclaimerPageProps) {
+export function DisclaimerPage({ disclaimer, onCanProceedChange }: DisclaimerPageProps) {
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);

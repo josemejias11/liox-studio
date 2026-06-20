@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import Image from 'next/image';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Check, CheckCircle2 } from 'lucide-react';
+import { Check, CheckCircle2 } from 'lucide-react';
 import { Hotspot } from '@/components/Hotspot';
 import { DiscoveryPanel } from '@/components/DiscoveryPanel';
 import { CompletionBurst } from '@/components/CompletionBurst';
@@ -37,8 +37,6 @@ export function ProductStage({
   hotspots,
   visited,
   onVisit,
-  onNext,
-  onPrev,
   courseId,
 }: ProductStageProps) {
   const [activePanel, setActivePanel] = useState<{

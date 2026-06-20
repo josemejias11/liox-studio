@@ -41,6 +41,7 @@ export default function ScrollStoryLesson({ lesson, isCompleted, onComplete }: S
 
   useEffect(() => {
     if (!isCompleted) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setShowCompletionOverlay(true);
     const t = setTimeout(() => setShowCompletionOverlay(false), 1500);
     return () => clearTimeout(t);

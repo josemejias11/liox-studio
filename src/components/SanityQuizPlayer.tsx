@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import confetti from 'canvas-confetti';
+
 import {
   CheckCircle2,
   XCircle,
@@ -48,7 +48,7 @@ function toClientQuiz(sanityQuiz: SanityQuizDoc): ClientQuiz {
 export interface SanityQuizPlayerProps {
   sanityQuiz: SanityQuizDoc;
   onPass: (score: number) => void;
-  onFail: () => void;
+
   sessionId?: string;
   courseId?: string;
 }
@@ -56,7 +56,7 @@ export interface SanityQuizPlayerProps {
 export function SanityQuizPlayer({
   sanityQuiz,
   onPass,
-  onFail,
+
   sessionId,
   courseId,
 }: SanityQuizPlayerProps) {
@@ -76,8 +76,6 @@ export function SanityQuizPlayer({
   const [started, setStarted] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  // Retry is controlled by Sanity config
-  const allowRetry = sanityQuiz.allowRetry ?? false;
 
   // Clear any pending shake timers on unmount
   useEffect(() => {
@@ -170,19 +168,6 @@ export function SanityQuizPlayer({
     }
   }
 
-  function handleRetry() {
-    timers.current.forEach(clearTimeout);
-    setCurrentQ(0);
-    setSelected(null);
-    setGrading(false);
-    setGradeErr(null);
-    setResults([]);
-    setUserAnswers([]);
-    setDone(false);
-    setSummary(null);
-    setSubmitErr(null);
-    setStarted(false);
-  }
 
   const total = quiz.questions.length;
 

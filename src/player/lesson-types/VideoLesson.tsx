@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+
 import { ChevronRight, AlertCircle } from 'lucide-react';
 import { cssAspectRatio } from '@/lib/utils';
 
@@ -12,7 +12,6 @@ interface VideoLessonProps {
 }
 
 export function VideoLesson({
-  headline,
   videoFileUrl,
   videoAspectRatio = '16:9',
   onComplete,

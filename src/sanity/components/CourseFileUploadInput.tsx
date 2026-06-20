@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useMemo } from 'react';
 import { ArrayOfObjectsInputProps, PatchEvent, insert, set, setIfMissing, unset, useFormValue } from 'sanity';
 import { randomKey } from '@sanity/util/content';
 import { Button, Card, Flex, Text, Box, Stack, Badge } from '@sanity/ui';
@@ -28,7 +28,7 @@ function uploadErrorReason(status: number): string {
 
 export function CourseFileUploadInput(props: ArrayOfObjectsInputProps) {
   const { value, onChange } = props;
-  const indexedFiles = (value ?? []) as UploadedFile[];
+  const indexedFiles = useMemo(() => (value ?? []) as UploadedFile[], [value]);
 
   const document = useFormValue([]) as { _id?: string } | undefined;
   const courseId = document?._id?.replace(/^drafts\./, '');
