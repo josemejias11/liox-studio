@@ -5,19 +5,19 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Load env from web/ so the TypeScript scripts have DB + Sanity credentials
+# Load env from root so the TypeScript scripts have DB + Sanity credentials
 set -a
 # shellcheck disable=SC1091
-[[ -f "$REPO_ROOT/web/.env" ]]       && source "$REPO_ROOT/web/.env"
-[[ -f "$REPO_ROOT/web/.env.local" ]] && source "$REPO_ROOT/web/.env.local"
+[[ -f "$REPO_ROOT/.env" ]]       && source "$REPO_ROOT/.env"
+[[ -f "$REPO_ROOT/.env.local" ]] && source "$REPO_ROOT/.env.local"
 set +a
 
 echo "=== 1/3  Postgres reset ==="
-npx tsx "$REPO_ROOT/web/scripts/reset-db.ts"
+npx tsx "$REPO_ROOT/scripts/reset-db.ts"
 
 echo ""
 echo "=== 2/3  Sanity content wipe ==="
-npx tsx "$REPO_ROOT/web/scripts/reset-sanity.ts"
+npx tsx "$REPO_ROOT/scripts/reset-sanity.ts"
 
 echo ""
 echo "=== 3/3  ChromaDB wipe ==="
