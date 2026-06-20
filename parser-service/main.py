@@ -173,6 +173,7 @@ async def lifespan(_fastapi_app: FastAPI):
         )
     runtime.token = token
 
+    # noinspection PyBroadException
     try:
         runtime.embeddings = TaskPrefixedOllamaEmbeddings(
             model=EMBEDDING_MODEL,
@@ -192,7 +193,6 @@ async def lifespan(_fastapi_app: FastAPI):
         )
         os.makedirs(CHROMA_DIR, exist_ok=True)
         runtime.chroma_client = chromadb.PersistentClient(path=CHROMA_DIR)
-    # noinspection PyBroadException
     except Exception:
         logger.exception(
             "Failed to initialize Ollama clients or ChromaDB at %s. "
@@ -297,11 +297,11 @@ class QuizResponse(BaseModel):
 
 
 def collection_exists(course_id: str) -> bool:
+    # noinspection PyBroadException
     try:
         assert runtime.chroma_client is not None
         runtime.chroma_client.get_collection(course_id)
         return True
-    # noinspection PyBroadException
     except Exception as e:
         # Swallow only "collection not found" errors; re-raise storage/config failures
         # so callers see a real 500 rather than a misleading "no documents" response.
@@ -372,6 +372,7 @@ def upload_file(course_id: str = Form(...), file: UploadFile = File(...)):  # no
 
     Re-uploading a file with the same name replaces its previous chunks.
     """
+    # noinspection PyBroadException
     try:
         _validate_course_id(course_id)
     except ValueError as e:
@@ -424,10 +425,10 @@ def upload_file(course_id: str = Form(...), file: UploadFile = File(...)):  # no
 
         # Replace any previous chunks for this file, then add with
         # deterministic IDs so re-uploads never duplicate.
+        # noinspection PyBroadException
         try:
             # noinspection PyProtectedMember
             vectorstore._collection.delete(where={"source": original_filename})
-        # noinspection PyBroadException
         except Exception:
             logger.warning("Could not delete previous chunks for %s", original_filename, exc_info=True)
 
@@ -447,7 +448,6 @@ def upload_file(course_id: str = Form(...), file: UploadFile = File(...)):  # no
 
     except HTTPException:
         raise
-    # noinspection PyBroadException
     except Exception as e:
         logger.exception("Error processing upload for course %s", course_id)
         raise HTTPException(status_code=500, detail="Internal server error processing file.") from e
@@ -513,7 +513,6 @@ Answer:"""
 
     except HTTPException:
         raise
-    # noinspection PyBroadException
     except Exception as e:
         logger.exception("Error during chat generation for course %s", request.course_id)
         raise HTTPException(status_code=500, detail="Internal server error generating response.") from e
@@ -609,7 +608,6 @@ Output the JSON object now:"""
 
     except HTTPException:
         raise
-    # noinspection PyBroadException
     except Exception as e:
         logger.exception("Error during quiz generation for course %s", request.course_id)
         raise HTTPException(status_code=500, detail="Internal server error generating quiz.") from e
@@ -638,10 +636,10 @@ def delete_document(request: DeleteDocumentRequest):
         return {"status": "not_found", "filename": request.filename}
 
     vs = get_vectorstore(request.course_id)
+    # noinspection PyBroadException
     try:
         # noinspection PyProtectedMember
         vs._collection.delete(where={"source": request.filename})
-    # noinspection PyBroadException
     except Exception as e:
         logger.warning(
             "Could not delete chunks for %s in course %s",
