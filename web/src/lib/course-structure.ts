@@ -31,7 +31,13 @@ export interface CourseStructure {
   specOffset: number;
   /** Absolute index where the course-level AI quiz phase maps (= specOffset + specSections.length). */
   quizOffset: number;
-  /** Absolute index of the disclaimer section. */
+  /**
+   * Absolute index of the disclaimer section.
+   * Equals `quizOffset + 1` when a disclaimer section exists; equals
+   * `quizOffset` otherwise (both point past the end of the sections array,
+   * which is harmless since the disclaimer row is only rendered when
+   * `disclaimerSection` is defined).
+   */
   disclaimerOffset: number;
   totalSections: number;
 }
@@ -68,7 +74,10 @@ export function deriveCourseStructure(
 
   const specOffset = lessonSections.length;
   const quizOffset = specOffset + specSections.length;
-  const disclaimerOffset = quizOffset;
+  // The disclaimer follows the quiz in the nav sequence; giving it a distinct
+  // absolute index ensures the NavMap can correctly highlight the disclaimer
+  // row as "current" without conflating it with the quiz row.
+  const disclaimerOffset = disclaimerSection !== undefined ? quizOffset + 1 : quizOffset;
 
   return {
     sections,

@@ -20,7 +20,6 @@ import uuid
 from collections import OrderedDict
 from contextlib import asynccontextmanager
 from threading import Lock
-from typing import Optional
 
 from dotenv import load_dotenv
 load_dotenv(override=False)
@@ -32,14 +31,10 @@ from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from markitdown import MarkItDown
 from langchain_chroma import Chroma
+from langchain_core.documents import Document
 from langchain_ollama import OllamaEmbeddings, OllamaLLM
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-# ---------------------------------------------------------------------------
-# Logging
-# ---------------------------------------------------------------------------
-
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -117,10 +112,10 @@ class TaskPrefixedOllamaEmbeddings(OllamaEmbeddings):
 
 class _Runtime:
     token: str = ""
-    embeddings: Optional[TaskPrefixedOllamaEmbeddings] = None
-    llm: Optional[OllamaLLM] = None
-    quiz_llm: Optional[OllamaLLM] = None
-    chroma_client: Optional[chromadb.ClientAPI] = None
+    embeddings: TaskPrefixedOllamaEmbeddings | None = None
+    llm: OllamaLLM | None = None
+    quiz_llm: OllamaLLM | None = None
+    chroma_client: chromadb.ClientAPI | None = None
 
 
 runtime = _Runtime()
@@ -136,7 +131,7 @@ class _LRUVectorstoreCache:
         self._maxsize = maxsize
         self._lock = Lock()
 
-    def get(self, key: str) -> Optional[Chroma]:
+    def get(self, key: str) -> Chroma | None:
         with self._lock:
             if key not in self._cache:
                 return None
@@ -168,6 +163,8 @@ _vectorstore_cache = _LRUVectorstoreCache()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Configure logging here so it applies once at startup, not on every import.
+    logging.basicConfig(level=logging.INFO)
     token = os.environ.get("PARSER_SERVICE_TOKEN")
     if not token:
         raise RuntimeError(
@@ -214,11 +211,15 @@ async def lifespan(app: FastAPI):
     yield
 
 
+_is_production = os.environ.get("ENV") == "production"
 app = FastAPI(
     title="Moto AI Parser Service",
     description="Internal microservice to parse course documents and chat using a local LLM",
     version="1.1.0",
     lifespan=lifespan,
+    # Disable interactive docs in production — this is an internal-only service.
+    docs_url=None if _is_production else "/docs",
+    redoc_url=None if _is_production else "/redoc",
 )
 
 # ---------------------------------------------------------------------------
@@ -227,7 +228,7 @@ app = FastAPI(
 
 
 def require_internal_token(
-    x_internal_token: Optional[str] = Header(default=None, alias="X-Internal-Token"),
+    x_internal_token: str | None = Header(default=None, alias="X-Internal-Token"),
 ) -> None:
     if not x_internal_token or not secrets.compare_digest(
         x_internal_token.encode("utf-8"), runtime.token.encode("utf-8")
@@ -259,7 +260,10 @@ class ChatRequest(BaseModel):
     course_id: str
     query: str = Field(max_length=2000)
 
-    _check_course_id = field_validator("course_id")(_validate_course_id)
+    @field_validator("course_id")
+    @classmethod
+    def validate_course_id(cls, v: str) -> str:
+        return _validate_course_id(v)
 
 
 class ChatResponse(BaseModel):
@@ -271,7 +275,10 @@ class QuizRequest(BaseModel):
     course_id: str
     weak_topics: list[str] = Field(min_length=1)
 
-    _check_course_id = field_validator("course_id")(_validate_course_id)
+    @field_validator("course_id")
+    @classmethod
+    def validate_course_id(cls, v: str) -> str:
+        return _validate_course_id(v)
 
 
 class QuizQuestion(BaseModel):
@@ -325,12 +332,12 @@ def chunk_ids(course_id: str, filename: str, count: int) -> list[str]:
     ]
 
 
-def retrieve_relevant(vs: Chroma, query: str, k: int) -> list:
+def retrieve_relevant(vs: Chroma, query: str, k: int) -> list[Document]:
     results = vs.similarity_search_with_relevance_scores(query, k=k)
     return [doc for doc, score in results if score >= RELEVANCE_THRESHOLD]
 
 
-def format_context(docs: list) -> str:
+def format_context(docs: list[Document]) -> str:
     return "\n\n".join(
         f"--- Source: {doc.metadata.get('source', 'Unknown')} ---\n{doc.page_content}"
         for doc in docs
@@ -354,6 +361,7 @@ def build_text_splitter() -> RecursiveCharacterTextSplitter:
     "/api/upload",
     response_model=UploadResponse,
     dependencies=[Depends(require_internal_token)],
+    tags=["documents"],
 )
 def upload_file(course_id: str = Form(...), file: UploadFile = File(...)):
     """Parse a course document and store its chunk embeddings in ChromaDB.
@@ -444,6 +452,7 @@ def upload_file(course_id: str = Form(...), file: UploadFile = File(...)):
     "/api/chat",
     response_model=ChatResponse,
     dependencies=[Depends(require_internal_token)],
+    tags=["chat"],
 )
 def chat(request: ChatRequest):
     """Answer a question strictly from the course materials."""
@@ -505,6 +514,7 @@ Answer:"""
     "/api/generate-quiz",
     response_model=QuizResponse,
     dependencies=[Depends(require_internal_token)],
+    tags=["quiz"],
 )
 def generate_quiz(request: QuizRequest):
     """Generate a 5-question multiple-choice quiz targeting the weak topics."""
@@ -566,7 +576,7 @@ Output the JSON object now:"""
 
         # Ollama JSON mode guarantees syntactically valid JSON; Pydantic
         # enforces the contract shape. Retry once before giving up.
-        last_error: Optional[Exception] = None
+        last_error: Exception | None = None
         for attempt in range(2):
             logger.info("Generating quiz with local LLM (attempt %d)...", attempt + 1)
             response = runtime.quiz_llm.invoke(prompt)
@@ -597,12 +607,16 @@ class DeleteDocumentRequest(BaseModel):
     course_id: str
     filename: str
 
-    _check_course_id = field_validator("course_id")(_validate_course_id)
+    @field_validator("course_id")
+    @classmethod
+    def validate_course_id(cls, v: str) -> str:
+        return _validate_course_id(v)
 
 
 @app.delete(
     "/api/document",
     dependencies=[Depends(require_internal_token)],
+    tags=["documents"],
 )
 def delete_document(request: DeleteDocumentRequest):
     """Remove all ChromaDB chunks for a specific file within a course."""
@@ -629,7 +643,7 @@ def delete_document(request: DeleteDocumentRequest):
     return {"status": "deleted", "filename": request.filename}
 
 
-@app.get("/health")
+@app.get("/health", tags=["ops"])
 def health_check():
     """Readiness check: Ollama reachability and ChromaDB directory writability."""
     ollama_reachable = False

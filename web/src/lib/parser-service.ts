@@ -23,7 +23,7 @@ export class ParserServiceError extends Error {
   }
 }
 
-interface ParserFetchOptions {
+interface ParserRequestOptions {
   /** JSON body — mutually exclusive with `body`. */
   json?: unknown;
   /** Raw body (e.g. FormData for uploads). */
@@ -33,13 +33,15 @@ interface ParserFetchOptions {
 }
 
 /**
- * POST to the parser service with the internal token attached.
- * Throws ParserServiceError on network failure, timeout, or non-2xx status —
+ * Send an authenticated request to the parser service.
+ *
+ * Throws `ParserServiceError` on network failure, timeout, or non-2xx status —
  * callers map that to a clean 502 with a user-safe message.
  */
-export async function parserPost(
+async function parserRequest(
+  method: 'POST' | 'DELETE',
   path: string,
-  { json, body, timeoutMs = 30_000 }: ParserFetchOptions,
+  { json, body, timeoutMs = 30_000 }: ParserRequestOptions,
 ): Promise<unknown> {
   const headers: Record<string, string> = { 'X-Internal-Token': PARSER_SERVICE_TOKEN };
   if (json !== undefined) headers['Content-Type'] = 'application/json';
@@ -47,7 +49,7 @@ export async function parserPost(
   let res: Response;
   try {
     res = await fetch(`${PARSER_SERVICE_URL}${path}`, {
-      method: 'POST',
+      method,
       headers,
       body: json !== undefined ? JSON.stringify(json) : body,
       signal: AbortSignal.timeout(timeoutMs),
@@ -70,41 +72,22 @@ export async function parserPost(
 }
 
 /**
+ * POST to the parser service with the internal token attached.
+ * Throws ParserServiceError on network failure, timeout, or non-2xx status.
+ */
+export function parserPost(path: string, opts: ParserRequestOptions): Promise<unknown> {
+  return parserRequest('POST', path, opts);
+}
+
+/**
  * DELETE to the parser service with the internal token attached.
  * Always sends a JSON body. Throws ParserServiceError on failure.
  */
-export async function parserDelete(
+export function parserDelete(
   path: string,
-  { json, timeoutMs = 30_000 }: { json: unknown; timeoutMs?: number },
+  opts: { json: unknown; timeoutMs?: number },
 ): Promise<unknown> {
-  const headers: Record<string, string> = {
-    'X-Internal-Token': PARSER_SERVICE_TOKEN,
-    'Content-Type': 'application/json',
-  };
-
-  let res: Response;
-  try {
-    res = await fetch(`${PARSER_SERVICE_URL}${path}`, {
-      method: 'DELETE',
-      headers,
-      body: JSON.stringify(json),
-      signal: AbortSignal.timeout(timeoutMs),
-      cache: 'no-store',
-    });
-  } catch (err: unknown) {
-    const reason = err instanceof Error ? err.message : 'network error';
-    throw new ParserServiceError(`Parser service unreachable: ${reason}`);
-  }
-
-  if (!res.ok) {
-    throw new ParserServiceError(`Parser service responded ${res.status}`, res.status);
-  }
-
-  try {
-    return await res.json();
-  } catch {
-    throw new ParserServiceError('Parser service returned a non-JSON response');
-  }
+  return parserRequest('DELETE', path, opts);
 }
 
 // ── Parser wire contracts (mirror of the FastAPI response models) ─────────────
