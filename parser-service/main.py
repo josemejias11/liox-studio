@@ -21,19 +21,19 @@ from collections import OrderedDict
 from contextlib import asynccontextmanager
 from threading import Lock
 
-from dotenv import load_dotenv
-load_dotenv(override=False)
-
 import chromadb
 import httpx
+from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
-from pydantic import BaseModel, Field, ValidationError, field_validator
-
-from markitdown import MarkItDown
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_ollama import OllamaEmbeddings, OllamaLLM
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from markitdown import MarkItDown
+from pydantic import BaseModel, Field, ValidationError, field_validator
+
+# load_dotenv runs before any os.environ.get() call (all constants are defined below).
+load_dotenv(override=False)
 
 logger = logging.getLogger(__name__)
 
@@ -284,7 +284,7 @@ class QuizRequest(BaseModel):
 class QuizQuestion(BaseModel):
     question: str
     options: list[str] = Field(min_length=4, max_length=4)
-    correct_answer_index: int = Field(ge=0, le=3)
+    correct_answer_index: int = Field(ge=0, le=3)  # type: ignore[arg-type]
 
 
 class QuizResponse(BaseModel):
@@ -327,7 +327,7 @@ def get_vectorstore(course_id: str) -> Chroma:
 def chunk_ids(course_id: str, filename: str, count: int) -> list[str]:
     """Deterministic IDs so re-uploading a file replaces its chunks."""
     return [
-        hashlib.sha256(f"{course_id}|{filename}|{i}".encode("utf-8")).hexdigest()
+        hashlib.sha256(f"{course_id}|{filename}|{i}".encode()).hexdigest()
         for i in range(count)
     ]
 
@@ -363,7 +363,7 @@ def build_text_splitter() -> RecursiveCharacterTextSplitter:
     dependencies=[Depends(require_internal_token)],
     tags=["documents"],
 )
-def upload_file(course_id: str = Form(...), file: UploadFile = File(...)):
+def upload_file(course_id: str = Form(...), file: UploadFile = File(...)):  # noqa: B008
     """Parse a course document and store its chunk embeddings in ChromaDB.
 
     Re-uploading a file with the same name replaces its previous chunks.
@@ -371,7 +371,7 @@ def upload_file(course_id: str = Form(...), file: UploadFile = File(...)):
     try:
         _validate_course_id(course_id)
     except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e))
+        raise HTTPException(status_code=422, detail=str(e)) from e
 
     original_filename = os.path.basename(file.filename or "")
     ext = os.path.splitext(original_filename)[1].lower()
@@ -441,9 +441,9 @@ def upload_file(course_id: str = Form(...), file: UploadFile = File(...)):
 
     except HTTPException:
         raise
-    except Exception:
+    except Exception as e:
         logger.exception("Error processing upload for course %s", course_id)
-        raise HTTPException(status_code=500, detail="Internal server error processing file.")
+        raise HTTPException(status_code=500, detail="Internal server error processing file.") from e
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)
 
@@ -505,9 +505,9 @@ Answer:"""
 
     except HTTPException:
         raise
-    except Exception:
+    except Exception as e:
         logger.exception("Error during chat generation for course %s", request.course_id)
-        raise HTTPException(status_code=500, detail="Internal server error generating response.")
+        raise HTTPException(status_code=500, detail="Internal server error generating response.") from e
 
 
 @app.post(
@@ -598,9 +598,9 @@ Output the JSON object now:"""
 
     except HTTPException:
         raise
-    except Exception:
+    except Exception as e:
         logger.exception("Error during quiz generation for course %s", request.course_id)
-        raise HTTPException(status_code=500, detail="Internal server error generating quiz.")
+        raise HTTPException(status_code=500, detail="Internal server error generating quiz.") from e
 
 
 class DeleteDocumentRequest(BaseModel):
@@ -628,14 +628,14 @@ def delete_document(request: DeleteDocumentRequest):
     vs = get_vectorstore(request.course_id)
     try:
         vs._collection.delete(where={"source": request.filename})
-    except Exception:
+    except Exception as e:
         logger.warning(
             "Could not delete chunks for %s in course %s",
             request.filename,
             request.course_id,
             exc_info=True,
         )
-        raise HTTPException(status_code=500, detail="Failed to delete document chunks.")
+        raise HTTPException(status_code=500, detail="Failed to delete document chunks.") from e
 
     _vectorstore_cache.pop(request.course_id)
 
