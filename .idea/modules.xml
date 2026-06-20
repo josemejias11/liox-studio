@@ -3,6 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/moto-ai.iml" filepath="$PROJECT_DIR$/.idea/moto-ai.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/parser-service.iml" filepath="$PROJECT_DIR$/.idea/parser-service.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/py.iml" filepath="$PROJECT_DIR$/.idea/py.iml" />
     </modules>
   </component>
 </project>
