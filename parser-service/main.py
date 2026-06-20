@@ -591,7 +591,7 @@ Output the JSON object now:"""
                 if isinstance(questions, list) and len(questions) > 5:
                     questions = questions[:5]
                 return QuizResponse.model_validate({"questions": questions})
-            except (json.JSONDecodeError, ValidationError, AttributeError) as e:
+            except (ValueError, ValidationError, AttributeError) as e:
                 last_error = e
                 logger.warning("Quiz output failed validation on attempt %d: %s", attempt + 1, e)
 
