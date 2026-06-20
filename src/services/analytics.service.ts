@@ -142,3 +142,71 @@ export async function getAnalyticsData() {
     throw new Error(`Analytics data unavailable: ${message}`);
   }
 }
+
+export type LessonTopicMeta = {
+  id: string;
+  headline: string;
+  topics: string[];
+};
+
+export type WeakTopicsResult = {
+  weakTopics: string[];
+  engagement: LessonEngagementRow[];
+};
+
+/**
+ * Compute weak topics purely from lesson engagement and metadata list.
+ */
+export function computeWeakTopics(
+  engagement: LessonEngagementRow[],
+  lessons: LessonTopicMeta[],
+): string[] {
+  if (engagement.length === 0) {
+    const topicSet = new Set<string>();
+    for (const l of lessons) {
+      for (const t of l.topics) {
+        if (t.trim()) topicSet.add(t.trim());
+      }
+    }
+    return Array.from(topicSet).slice(0, 15);
+  }
+
+  // Median viewCount across all seen lessons
+  const counts = engagement.map((e) => e.viewCount).sort((a, b) => a - b);
+  const mid = Math.floor(counts.length / 2);
+  const median = counts.length % 2 === 0 ? (counts[mid - 1] + counts[mid]) / 2 : counts[mid];
+
+  // Lessons with at or below median engagement are "weak"
+  const weakIds = new Set(engagement.filter((e) => e.viewCount <= median).map((e) => e.lessonId));
+
+  // Lessons present in the request but with zero views are also weak
+  const seenIds = new Set(engagement.map((e) => e.lessonId));
+  for (const l of lessons) {
+    if (!seenIds.has(l.id)) weakIds.add(l.id);
+  }
+
+  // Collect topics from weak lessons
+  const lessonMap = new Map(lessons.map((l) => [l.id, l]));
+  const topicSet = new Set<string>();
+  for (const id of weakIds) {
+    const meta = lessonMap.get(id);
+    if (!meta) continue;
+    for (const t of meta.topics) {
+      if (t.trim()) topicSet.add(t.trim());
+    }
+  }
+
+  return Array.from(topicSet).slice(0, 15);
+}
+
+/**
+ * Return computed weak topics and engagement records for a course.
+ */
+export async function getWeakTopicsForCourse(
+  courseId: string,
+  lessons: LessonTopicMeta[],
+): Promise<WeakTopicsResult> {
+  const engagement = await getLessonEngagement(courseId);
+  const weakTopics = computeWeakTopics(engagement, lessons);
+  return { weakTopics, engagement };
+}

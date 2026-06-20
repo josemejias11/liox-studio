@@ -1,54 +1,41 @@
-// ── Server-to-server client for the self-hosted FastAPI parser/RAG service ───
-// SERVER-ONLY. The parser service (local Ollama in dev, self-hosted in prod) is
-// never called from the browser: all traffic proxies through the Next.js route
-// handlers in src/app/api/{chat,quiz,upload}. Every request carries the shared-
-// secret `X-Internal-Token` header. Env vars are intentionally NOT NEXT_PUBLIC_*.
-
 import { z } from 'zod';
 
-const PARSER_SERVICE_URL = (process.env.PARSER_SERVICE_URL ?? 'http://localhost:8000').replace(
-  /\/$/,
-  '',
-);
-const PARSER_SERVICE_TOKEN = process.env.PARSER_SERVICE_TOKEN ?? '';
+function getServiceConfig() {
+  const url = (process.env.PARSER_SERVICE_URL ?? 'http://localhost:8000').replace(/\/$/, '');
+  const token = process.env.PARSER_SERVICE_TOKEN ?? '';
+  return { url, token };
+}
 
-/** Raised when the parser service is unreachable, times out, or responds non-2xx. */
-export class ParserServiceError extends Error {
+export class RagServiceError extends Error {
   constructor(
     message: string,
     readonly status?: number,
   ) {
     super(message);
-    this.name = 'ParserServiceError';
+    this.name = 'RagServiceError';
   }
 }
 
 interface ParserRequestOptions {
-  /** JSON body — mutually exclusive with `body`. */
   json?: unknown;
-  /** Raw body (e.g. FormData for uploads). */
   body?: BodyInit;
-  /** Abort the request after this many milliseconds. */
   timeoutMs?: number;
 }
 
-/**
- * Send an authenticated request to the parser service.
- *
- * Throws `ParserServiceError` on network failure, timeout, or non-2xx status —
- * callers map that to a clean 502 with a user-safe message.
- */
 async function parserRequest(
   method: 'POST' | 'DELETE',
   path: string,
   { json, body, timeoutMs = 30_000 }: ParserRequestOptions,
+  contextName: string,
+  userSafeMessage: string,
 ): Promise<unknown> {
-  const headers: Record<string, string> = { 'X-Internal-Token': PARSER_SERVICE_TOKEN };
+  const { url, token } = getServiceConfig();
+  const headers: Record<string, string> = { 'X-Internal-Token': token };
   if (json !== undefined) headers['Content-Type'] = 'application/json';
 
   let res: Response;
   try {
-    res = await fetch(`${PARSER_SERVICE_URL}${path}`, {
+    res = await fetch(`${url}${path}`, {
       method,
       headers,
       body: json !== undefined ? JSON.stringify(json) : body,
@@ -57,49 +44,31 @@ async function parserRequest(
     });
   } catch (err: unknown) {
     const reason = err instanceof Error ? err.message : 'network error';
-    throw new ParserServiceError(`Parser service unreachable: ${reason}`);
+    console.error(`[${contextName}] parser service unreachable:`, reason);
+    throw new RagServiceError(userSafeMessage);
   }
 
   if (!res.ok) {
-    throw new ParserServiceError(`Parser service responded ${res.status}`, res.status);
+    console.error(`[${contextName}] parser service responded ${res.status}`);
+    throw new RagServiceError(userSafeMessage, res.status);
   }
 
   try {
     return await res.json();
   } catch {
-    throw new ParserServiceError('Parser service returned a non-JSON response');
+    console.error(`[${contextName}] parser service returned a non-JSON response`);
+    throw new RagServiceError(userSafeMessage);
   }
 }
 
-/**
- * POST to the parser service with the internal token attached.
- * Throws ParserServiceError on network failure, timeout, or non-2xx status.
- */
-export function parserPost(path: string, opts: ParserRequestOptions): Promise<unknown> {
-  return parserRequest('POST', path, opts);
-}
+// ── Parser wire contracts (Zod schemas kept internal to the module) ─────────────
 
-/**
- * DELETE to the parser service with the internal token attached.
- * Always sends a JSON body. Throws ParserServiceError on failure.
- */
-export function parserDelete(
-  path: string,
-  opts: { json: unknown; timeoutMs?: number },
-): Promise<unknown> {
-  return parserRequest('DELETE', path, opts);
-}
-
-// ── Parser wire contracts (mirror of the FastAPI response models) ─────────────
-
-/** POST {PARSER_SERVICE_URL}/api/chat → */
-export const ParserChatResponseSchema = z.object({
+const ParserChatResponseSchema = z.object({
   answer: z.string(),
   sources: z.array(z.string()),
 });
 
-/** POST {PARSER_SERVICE_URL}/api/generate-quiz → (contractually exactly 5 questions) */
-export const ParserQuizResponseSchema = z.object({
+const ParserQuizResponseSchema = z.object({
   questions: z
     .array(
       z.object({
@@ -111,9 +80,134 @@ export const ParserQuizResponseSchema = z.object({
     .length(5),
 });
 
-/** POST {PARSER_SERVICE_URL}/api/upload → */
-export const ParserUploadResponseSchema = z.object({
+const ParserUploadResponseSchema = z.object({
   status: z.string(),
   filename: z.string(),
   chunks_stored: z.number().int().min(0),
 });
+
+const ParserDeleteResponseSchema = z.object({
+  status: z.string(),
+  filename: z.string(),
+});
+
+// ── Deep Interface ────────────────────────────────────────────────────────────
+
+export interface RagChatResponse {
+  answer: string;
+  sources: string[];
+}
+
+export interface RagQuizQuestion {
+  question: string;
+  options: string[];
+  correctAnswerIndex: number;
+}
+
+export interface RagQuizResponse {
+  questions: RagQuizQuestion[];
+}
+
+export interface RagUploadResponse {
+  status: string;
+  filename: string;
+  chunksStored: number;
+}
+
+export interface RagDeleteResponse {
+  status: string;
+  filename: string;
+}
+
+export async function askCourseQuestion(courseId: string, query: string): Promise<RagChatResponse> {
+  const userSafe = 'The AI assistant is temporarily unavailable. Please try again in a moment.';
+  const raw = await parserRequest(
+    'POST',
+    '/api/chat',
+    { json: { course_id: courseId, query }, timeoutMs: 60_000 },
+    'api/chat',
+    userSafe,
+  );
+  
+  const parsed = ParserChatResponseSchema.safeParse(raw);
+  if (!parsed.success) {
+    console.error('[api/chat] parser response failed validation:', parsed.error.issues);
+    throw new RagServiceError(userSafe);
+  }
+
+  return parsed.data;
+}
+
+export async function generateCourseQuiz(courseId: string, weakTopics: string[]): Promise<RagQuizResponse> {
+  const userSafe = 'Quiz generation is temporarily unavailable. Please try again in a moment.';
+  const raw = await parserRequest(
+    'POST',
+    '/api/generate-quiz',
+    { json: { course_id: courseId, weak_topics: weakTopics }, timeoutMs: 120_000 },
+    'api/quiz',
+    userSafe,
+  );
+
+  const parsed = ParserQuizResponseSchema.safeParse(raw);
+  if (!parsed.success) {
+    console.error('[api/quiz] parser response failed validation:', parsed.error.issues);
+    throw new RagServiceError(userSafe);
+  }
+
+  return {
+    questions: parsed.data.questions.map((q) => ({
+      question: q.question,
+      options: q.options,
+      correctAnswerIndex: q.correct_answer_index,
+    })),
+  };
+}
+
+export async function uploadCourseDocument(courseId: string, file: File): Promise<RagUploadResponse> {
+  const userSafe = 'The upload service is temporarily unavailable. Please try again in a moment.';
+  const formData = new FormData();
+  formData.append('course_id', courseId);
+  formData.append('file', file, file.name);
+
+  const raw = await parserRequest(
+    'POST',
+    '/api/upload',
+    { body: formData, timeoutMs: 120_000 },
+    'api/upload POST',
+    userSafe,
+  );
+
+  const parsed = ParserUploadResponseSchema.safeParse(raw);
+  if (!parsed.success) {
+    console.error('[api/upload POST] parser response failed validation:', parsed.error.issues);
+    throw new RagServiceError(userSafe);
+  }
+
+  return {
+    status: parsed.data.status,
+    filename: parsed.data.filename,
+    chunksStored: parsed.data.chunks_stored,
+  };
+}
+
+export async function deleteCourseDocument(
+  courseId: string,
+  filename: string,
+): Promise<RagDeleteResponse> {
+  const userSafe = 'The upload service is temporarily unavailable. Please try again in a moment.';
+  const raw = await parserRequest(
+    'DELETE',
+    '/api/document',
+    { json: { course_id: courseId, filename } },
+    'api/upload DELETE',
+    userSafe,
+  );
+
+  const parsed = ParserDeleteResponseSchema.safeParse(raw);
+  if (!parsed.success) {
+    console.error('[api/upload DELETE] parser response failed validation:', parsed.error.issues);
+    throw new RagServiceError(userSafe);
+  }
+
+  return parsed.data;
+}

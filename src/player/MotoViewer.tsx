@@ -65,8 +65,6 @@ export default function MotoViewer({
     () => deriveCourseStructure(sections, course.chapters ?? []),
     [sections, course.chapters],
   );
-  const nav = useCourseNavigation(structure);
-  const { phase, navDirection, showChapterIntro, showBurst } = nav;
 
   const [showNavMap, setShowNavMap] = useState(false);
 
@@ -108,6 +106,9 @@ export default function MotoViewer({
     error: progressError,
   } = useLessonProgress(sessionId, persistSession);
 
+  const nav = useCourseNavigation(structure, visited);
+  const { phase, navDirection, showChapterIntro, showBurst, nextLocked } = nav;
+
   // ── Current lesson (chapter phase only) ───────────────────────────────────
   const currentLesson =
     phase.phase === 'chapter'
@@ -120,19 +121,14 @@ export default function MotoViewer({
   const isSpecialLesson = ['dragDrop', 'video'].includes(currentLesson?.lessonType ?? '');
   const isSpecialComplete = visited[lessonKey]?.has('completed');
 
-  const nextLocked =
-    (hotspots.length > 0 && hotspots.some((h) => !visited[lessonKey]?.has(h.label))) ||
-    (isSpecialLesson && !isSpecialComplete);
-
   const markVisited = (label: string) =>
     baseMarkVisited(lessonKey, label, isSpecialLesson ? 1 : hotspots.length);
 
   // ── Navigation wrappers ───────────────────────────────────────────────────
-  const goNext = () => nav.goNext(nextLocked);
+  const goNext = nav.goNext;
   const goPrev = nav.goPrev;
 
   function navigateToSection(i: number) {
-    if (nextLocked && i > nav.currentSectionIndex) return;
     setShowNavMap(false);
     nav.navigateToSection(i);
   }

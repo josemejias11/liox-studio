@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { getChapterLessons, type CourseStructure } from '@/lib/course-structure';
 
 // ── Course phase state machine ────────────────────────────────────────────────
@@ -21,9 +21,9 @@ export interface CourseNavState {
 }
 
 export type CourseNavAction =
-  | { type: 'NEXT'; nextLocked?: boolean }
+  | { type: 'NEXT'; visited?: Record<string, Set<string>> }
   | { type: 'PREV' }
-  | { type: 'GO_TO_SECTION'; index: number }
+  | { type: 'GO_TO_SECTION'; index: number; visited?: Record<string, Set<string>> }
   | { type: 'QUIZ_DONE' }
   | { type: 'CHAPTER_QUIZ_DONE'; chapterIndex: number }
   | { type: 'DISMISS_CHAPTER_INTRO' }
@@ -99,10 +99,30 @@ function phaseBeforeDisclaimer(_s: CourseStructure): CoursePhase {
 
 // ── Reducer ───────────────────────────────────────────────────────────────────
 
+export function isLessonLocked(
+  structure: CourseStructure,
+  phase: CoursePhase,
+  visited?: Record<string, Set<string>>,
+): boolean {
+  if (!visited || phase.phase !== 'chapter') return false;
+  const currentLesson = getChapterLessons(structure, phase.chapterIndex)[phase.lessonIndex];
+  if (!currentLesson) return false;
+
+  const lessonKey = currentLesson._key;
+  const hotspots = currentLesson.hotspots ?? [];
+  const isSpecialLesson = ['dragDrop', 'video'].includes(currentLesson.lessonType ?? '');
+  const isSpecialComplete = visited[lessonKey]?.has('completed');
+
+  const hotspotsLocked = hotspots.length > 0 && hotspots.some((h) => !visited[lessonKey]?.has(h.label));
+  const specialLocked = isSpecialLesson && !isSpecialComplete;
+
+  return hotspotsLocked || specialLocked;
+}
+
 function reduceNext(
   structure: CourseStructure,
   state: CourseNavState,
-  nextLocked: boolean,
+  visited?: Record<string, Set<string>>,
 ): CourseNavState {
   const { phase } = state;
   const forward = (next: CoursePhase, intro = false): CourseNavState => ({
@@ -119,7 +139,7 @@ function reduceNext(
       return forward(postChapterPhase(structure));
 
     case 'chapter': {
-      if (nextLocked) return state;
+      if (isLessonLocked(structure, phase, visited)) return state;
       const chapterLessons = getChapterLessons(structure, phase.chapterIndex);
       if (phase.lessonIndex < chapterLessons.length - 1) {
         return forward({
@@ -224,12 +244,18 @@ function reduceGoToSection(
   structure: CourseStructure,
   state: CourseNavState,
   index: number,
+  visited?: Record<string, Set<string>>,
 ): CourseNavState {
   const section = structure.sections[index];
   if (!section) return state;
 
   const currentIdx = getSectionIndex(structure, state.phase);
-  const navDirection: 1 | -1 = index > currentIdx ? 1 : -1;
+  const isForward = index > currentIdx;
+  if (isForward && isLessonLocked(structure, state.phase, visited)) {
+    return state; // Jump is blocked because current lesson is locked
+  }
+
+  const navDirection: 1 | -1 = isForward ? 1 : -1;
   const jump = (next: CoursePhase, intro = false): CourseNavState => ({
     phase: next,
     navDirection,
@@ -271,11 +297,11 @@ export function courseNavigationReducer(
 ): CourseNavState {
   switch (action.type) {
     case 'NEXT':
-      return reduceNext(structure, state, action.nextLocked ?? false);
+      return reduceNext(structure, state, action.visited);
     case 'PREV':
       return reducePrev(structure, state);
     case 'GO_TO_SECTION':
-      return reduceGoToSection(structure, state, action.index);
+      return reduceGoToSection(structure, state, action.index, action.visited);
     case 'QUIZ_DONE':
       // Pass and fail-without-retry both advance past the quiz gate.
       return {
@@ -307,7 +333,10 @@ export function courseNavigationReducer(
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
-export function useCourseNavigation(structure: CourseStructure) {
+export function useCourseNavigation(
+  structure: CourseStructure,
+  visited?: Record<string, Set<string>>,
+) {
   const [state, dispatch] = useReducer(
     (s: CourseNavState, a: CourseNavAction) => courseNavigationReducer(structure, s, a),
     INITIAL_STATE,
@@ -326,11 +355,15 @@ export function useCourseNavigation(structure: CourseStructure) {
     }
   }, [state.phase.phase]);
 
-  const goNext = useCallback((nextLocked = false) => dispatch({ type: 'NEXT', nextLocked }), []);
+  const nextLocked = useMemo(() => {
+    return isLessonLocked(structure, state.phase, visited);
+  }, [structure, state.phase, visited]);
+
+  const goNext = useCallback(() => dispatch({ type: 'NEXT', visited }), [visited]);
   const goPrev = useCallback(() => dispatch({ type: 'PREV' }), []);
   const navigateToSection = useCallback(
-    (index: number) => dispatch({ type: 'GO_TO_SECTION', index }),
-    [],
+    (index: number) => dispatch({ type: 'GO_TO_SECTION', index, visited }),
+    [visited],
   );
   const finishQuiz = useCallback(() => dispatch({ type: 'QUIZ_DONE' }), []);
   const finishChapterQuiz = useCallback(
@@ -345,6 +378,7 @@ export function useCourseNavigation(structure: CourseStructure) {
     navDirection: state.navDirection,
     showChapterIntro: state.showChapterIntro,
     showBurst,
+    nextLocked,
     currentSectionIndex: getSectionIndex(structure, state.phase),
     goNext,
     goPrev,

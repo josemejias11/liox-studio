@@ -7,15 +7,12 @@ import {
   type GenerateQuizRequest,
   type ServerAiQuiz,
 } from '@/lib/contracts/quiz';
-import { parserPost, ParserQuizResponseSchema, ParserServiceError } from '@/lib/parser-service';
+import { generateCourseQuiz, RagServiceError } from '@/lib/parser-service';
 
 // Generates an AI quiz via the self-hosted parser/RAG service (server-to-server),
 // persists the full payload — correct answers included — in Prisma, and returns
 // only the client-safe projection. The browser never sees the answer key;
 // grading happens in /api/quiz/grade against the stored record.
-
-const USER_SAFE_UNAVAILABLE =
-  'Quiz generation is temporarily unavailable. Please try again in a moment.';
 
 /**
  * Persist the full quiz (answer key included) server-side and return only the
@@ -54,33 +51,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid request payload', details }, { status: 400 });
   }
 
-  let raw: unknown;
+  let result;
   try {
-    raw = await parserPost('/api/generate-quiz', {
-      json: { course_id: body.courseId, weak_topics: body.weakTopics ?? [] },
-      timeoutMs: 120_000, // local LLM generation can be slow
-    });
+    result = await generateCourseQuiz(body.courseId, body.weakTopics ?? []);
   } catch (err: unknown) {
-    if (err instanceof ParserServiceError) {
-      console.error('[api/quiz] parser service error:', err.message);
-      return NextResponse.json({ error: USER_SAFE_UNAVAILABLE }, { status: 502 });
+    if (err instanceof RagServiceError) {
+      return NextResponse.json({ error: err.message }, { status: 502 });
     }
     console.error('[api/quiz] unexpected error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-
-  const parsed = ParserQuizResponseSchema.safeParse(raw);
-  if (!parsed.success) {
-    console.error('[api/quiz] parser response failed validation:', parsed.error.issues);
-    return NextResponse.json({ error: USER_SAFE_UNAVAILABLE }, { status: 502 });
   }
 
   // Map the parser wire shape onto the persisted ServerAiQuiz shape. The parser
   // contract has no title/explanation fields, so we synthesize neutral ones.
   const quiz: ServerAiQuiz = {
     title: 'Knowledge Check',
-    questions: parsed.data.questions.map((q) => {
-      const correct = q.options[q.correct_answer_index];
+    questions: result.questions.map((q) => {
+      const correct = q.options[q.correctAnswerIndex];
       return {
         question: q.question,
         options: q.options,

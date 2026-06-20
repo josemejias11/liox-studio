@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MAX_UPLOAD_BYTES } from '@/lib/contracts/api';
-import { parserPost, parserDelete, ParserUploadResponseSchema, ParserServiceError } from '@/lib/parser-service';
+import { uploadCourseDocument, deleteCourseDocument, RagServiceError } from '@/lib/parser-service';
 
-// Proxies course-material uploads (multipart form: course_id + file) to the
-// self-hosted parser service, server-to-server. Enforces the 50MB cap before
-// forwarding anything upstream.
-
-const USER_SAFE_UNAVAILABLE =
-  'The upload service is temporarily unavailable. Please try again in a moment.';
+// Proxies course-material uploads and deletions to the self-hosted parser service,
+// server-to-server. Enforces the 50MB cap before forwarding anything upstream.
 
 function isAuthorized(req: NextRequest): boolean {
   const token = req.cookies.get('analytics_token')?.value;
@@ -38,12 +34,11 @@ export async function DELETE(req: NextRequest) {
   }
 
   try {
-    const raw = await parserDelete('/api/document', { json: { course_id, filename } });
-    return NextResponse.json(raw);
+    const result = await deleteCourseDocument(course_id, filename);
+    return NextResponse.json(result);
   } catch (err: unknown) {
-    if (err instanceof ParserServiceError) {
-      console.error('[api/upload DELETE] parser service error:', err.message);
-      return NextResponse.json({ error: USER_SAFE_UNAVAILABLE }, { status: 502 });
+    if (err instanceof RagServiceError) {
+      return NextResponse.json({ error: err.message }, { status: 502 });
     }
     console.error('[api/upload DELETE] unexpected error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -78,21 +73,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const upstream = new FormData();
-  upstream.append('course_id', courseId);
-  upstream.append('file', file, file.name);
-
   try {
-    const raw = await parserPost('/api/upload', { body: upstream, timeoutMs: 120_000 });
-    const parsed = ParserUploadResponseSchema.safeParse(raw);
-    if (!parsed.success) {
-      return NextResponse.json({ error: USER_SAFE_UNAVAILABLE }, { status: 502 });
-    }
-    return NextResponse.json(parsed.data);
+    const result = await uploadCourseDocument(courseId, file);
+    return NextResponse.json(result);
   } catch (err: unknown) {
-    if (err instanceof ParserServiceError) {
-      console.error('[api/upload] parser service error:', err.message);
-      return NextResponse.json({ error: USER_SAFE_UNAVAILABLE }, { status: 502 });
+    if (err instanceof RagServiceError) {
+      return NextResponse.json({ error: err.message }, { status: 502 });
     }
     console.error('[api/upload] unexpected error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
