@@ -48,6 +48,7 @@ function toClientQuiz(sanityQuiz: SanityQuizDoc): ClientQuiz {
 export interface SanityQuizPlayerProps {
   sanityQuiz: SanityQuizDoc;
   onPass: (score: number) => void;
+  onFail?: () => void;
 
   sessionId?: string;
   courseId?: string;
@@ -56,6 +57,7 @@ export interface SanityQuizPlayerProps {
 export function SanityQuizPlayer({
   sanityQuiz,
   onPass,
+  onFail,
 
   sessionId,
   courseId,
@@ -151,7 +153,13 @@ export function SanityQuizPlayer({
       setSummary(parsed.data);
       const pct = parsed.data.total > 0 ? parsed.data.score / parsed.data.total : 0;
       const pctScore = Math.round(pct * 100);
-      onPass(pctScore);
+      if (parsed.data.passed) {
+        onPass(pctScore);
+      } else if (onFail) {
+        onFail();
+      } else {
+        onPass(pctScore);
+      }
     } catch {
       setSubmitErr("Couldn't score your quiz.");
     }
