@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { readClient } from '@/sanity/lib/client';
 import { COURSES_QUERY } from '@/sanity/lib/queries';
 import { courseSummarySchema, type CourseSummary } from '@/lib/contracts/sanity';
-import { ThemeToggle } from '@/components/Theme';
+import { ThemeToggle } from '@/components/theme';
 
 export const revalidate = 60;
 
