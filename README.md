@@ -12,7 +12,7 @@ The platform consists of a Next.js frontend and a Python FastAPI backend for loc
 Sanity CMS (headless) ───────┐ (uploads course files)
        │                     ▼
        ▼               Python FastAPI (parser-service)
-Next.js 16 (web/)      ─────────────────────────────
+Next.js 16 (root)      ─────────────────────────────
 ─────────────────      /api/upload      markitdown + ChromaDB
 / course library       /api/document   chunk deletion
 /course/[slug]         /api/chat        local Llama 3 Chat
@@ -67,10 +67,10 @@ cd moto-ai
 Copy the example env file and fill in your local values:
 
 ```bash
-cp web/.env.example web/.env.local
+cp .env.example .env.local
 ```
 
-Edit `web/.env.local` — the minimum required for local dev:
+Edit `.env.local` — the minimum required for local dev:
 
 ```env
 # Local PostgreSQL — match your local instance credentials
@@ -123,7 +123,6 @@ curl http://localhost:8000/health
 Open a new terminal:
 
 ```bash
-cd web
 npm install
 npm run db:migrate   # applies Prisma migrations to local PostgreSQL
 npm run dev
@@ -134,9 +133,9 @@ npm run dev
 
 ### 4. Connect Sanity Studio
 
-The Sanity project ID is already set in `web/.env` (`e7l925v5`). You only need to:
+The Sanity project ID is already set in `.env` (`e7l925v5`). You only need to:
 
-1. Add your **API Token** to `web/.env.local` (see step 1 above).
+1. Add your **API Token** to `.env.local` (see step 1 above).
 2. Add `http://localhost:3000` to **CORS Origins** in [sanity.io/manage](https://sanity.io/manage) → your project → **API → CORS Origins** with **Allow credentials** checked.
 
 The embedded Studio is then available at `http://localhost:3000/studio`.
@@ -246,7 +245,7 @@ The browser only ever calls these routes; the AI routes proxy server-to-server t
 ./reset-all.sh
 ```
 
-Loads credentials from `web/.env` + `web/.env.local`. After reset: restart the parser-service (so ChromaDB is recreated), run `npm run db:migrate` from `web/`, then author and upload fresh content.
+Loads credentials from `.env` + `.env.local`. After reset: restart the parser-service (so ChromaDB is recreated), run `npm run db:migrate`, then author and upload fresh content.
 
 ---
 
