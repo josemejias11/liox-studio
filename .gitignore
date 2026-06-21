@@ -27,6 +27,7 @@
 # ai
 .claude
 web/.claude
+.agents
 
 # debug
 npm-debug.log*
