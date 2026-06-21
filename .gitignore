@@ -59,6 +59,7 @@ next-env.d.ts
 
 # Python
 **/venv/
+/.venv
 **/__pycache__/
 parser-service/chroma_db/
 *.pyc
