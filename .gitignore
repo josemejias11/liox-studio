@@ -28,8 +28,6 @@
 .claude
 web/.claude
 .agents
-.worktrees
-.worktrees/
 
 # debug
 npm-debug.log*
