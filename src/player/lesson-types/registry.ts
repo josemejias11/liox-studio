@@ -16,10 +16,6 @@ export const VideoLessonDynamic = dynamic(
   () => import('./VideoLesson').then((m) => ({ default: m.VideoLesson })),
   { loading: LoadingSkeleton },
 );
-export const QuizLessonDynamic = dynamic(
-  () => import('./QuizLesson').then((m) => ({ default: m.QuizLesson })),
-  { loading: LoadingSkeleton },
-);
 export const ColorSwitcherLessonDynamic = dynamic(
   () => import('./ColorSwitcherLesson').then((m) => ({ default: m.ColorSwitcherLesson })),
   { loading: LoadingSkeleton },

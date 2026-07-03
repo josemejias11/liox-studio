@@ -26,6 +26,20 @@ describe('courseNavigationReducer', () => {
     makeLesson('lesson-2', 'Lesson 2'),
   ]);
 
+  const structureWithScrollStory = deriveCourseStructure([
+    {
+      ...lessonSchema.parse({
+        sectionType: 'lesson',
+        _key: 'lesson-scroll-story',
+        headline: 'Scroll Story Lesson',
+        lessonType: 'scrollStory',
+      }),
+      chapterIndex: 0,
+      chapterTitle: 'Chapter 1',
+    },
+    makeLesson('lesson-2', 'Lesson 2'),
+  ]);
+
   test('NEXT from cover goes to first lesson', () => {
     const initialState: CourseNavState = {
       phase: { phase: 'cover' },
@@ -110,5 +124,25 @@ describe('courseNavigationReducer', () => {
       visited: { 'lesson-1': new Set(['hotspot-1']) },
     });
     expect(nextState.phase).toEqual({ phase: 'chapter', chapterIndex: 0, lessonIndex: 1 });
+  });
+
+  test('NEXT from scrollStory lesson is blocked until it is marked completed', () => {
+    const initialState: CourseNavState = {
+      phase: { phase: 'chapter', chapterIndex: 0, lessonIndex: 0 },
+      navDirection: 1,
+      showChapterIntro: false,
+    };
+
+    const lockedState = courseNavigationReducer(structureWithScrollStory, initialState, {
+      type: 'NEXT',
+      visited: {},
+    });
+    expect(lockedState.phase).toEqual({ phase: 'chapter', chapterIndex: 0, lessonIndex: 0 });
+
+    const unlockedState = courseNavigationReducer(structureWithScrollStory, initialState, {
+      type: 'NEXT',
+      visited: { 'lesson-scroll-story': new Set(['completed']) },
+    });
+    expect(unlockedState.phase).toEqual({ phase: 'chapter', chapterIndex: 0, lessonIndex: 1 });
   });
 });

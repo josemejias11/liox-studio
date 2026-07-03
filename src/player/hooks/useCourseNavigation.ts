@@ -110,7 +110,7 @@ export function isLessonLocked(
 
   const lessonKey = currentLesson._key;
   const hotspots = currentLesson.hotspots ?? [];
-  const isSpecialLesson = ['dragDrop', 'video'].includes(currentLesson.lessonType ?? '');
+  const isSpecialLesson = ['dragDrop', 'video', 'scrollStory'].includes(currentLesson.lessonType ?? '');
   const isSpecialComplete = visited[lessonKey]?.has('completed');
 
   const hotspotsLocked = hotspots.length > 0 && hotspots.some((h) => !visited[lessonKey]?.has(h.label));
