@@ -28,6 +28,8 @@
 .claude
 web/.claude
 .agents
+.worktrees
+.worktrees/
 
 # debug
 npm-debug.log*
@@ -77,4 +79,3 @@ parser-service/.env
 
 # OS
 .playwright-mcp/
-

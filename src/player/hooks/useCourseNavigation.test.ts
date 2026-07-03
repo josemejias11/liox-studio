@@ -60,6 +60,7 @@ describe('courseNavigationReducer', () => {
     makeLesson('lesson-2', 'Lesson 2'),
   ]);
 
+>>>>>>> origin/main
   test('NEXT from cover goes to first lesson', () => {
     const initialState: CourseNavState = {
       phase: { phase: 'cover' },
@@ -167,4 +168,15 @@ describe('courseNavigationReducer', () => {
 
     expect(unlockedState.phase).toEqual({ phase: 'chapter', chapterIndex: 0, lessonIndex: 1 });
   });
+});
+    });
+    expect(lockedState.phase).toEqual({ phase: 'chapter', chapterIndex: 0, lessonIndex: 0 });
+
+    const unlockedState = courseNavigationReducer(structureWithScrollStory, initialState, {
+      type: 'NEXT',
+      visited: { 'lesson-scroll-story': new Set(['completed']) },
+    });
+    expect(unlockedState.phase).toEqual({ phase: 'chapter', chapterIndex: 0, lessonIndex: 1 });
+  });
+>>>>>>> origin/main
 });
