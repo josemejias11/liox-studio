@@ -1,7 +1,33 @@
 import { expect, test, describe } from 'vitest';
 import { courseNavigationReducer, type CourseNavState } from './useCourseNavigation';
-import { deriveCourseStructure } from '../../lib/course-structure';
+import { deriveCourseFlow, getNavItems } from '@/lib/course-flow';
 import { lessonSchema, type LessonSection } from '../../lib/contracts/sanity';
+
+describe('course flow', () => {
+  test('includes quiz and disclaimer as addressable course flow items', () => {
+    const flow = deriveCourseFlow(
+      [
+        { _key: 'lesson-1', sectionType: 'lesson', lessonType: 'content', headline: 'Intro' },
+        { _key: 'spec-1', sectionType: 'specification', title: 'Spec' },
+        { _key: 'disclaimer-1', sectionType: 'disclaimer', title: 'Safety' },
+      ] as any,
+      [],
+    );
+
+    expect(flow.items.map((item) => item.kind)).toEqual([
+      'lesson',
+      'specification',
+      'quiz',
+      'disclaimer',
+    ]);
+    expect(getNavItems(flow).map((item) => item.kind)).toEqual([
+      'lesson',
+      'specification',
+      'quiz',
+      'disclaimer',
+    ]);
+  });
+});
 
 describe('courseNavigationReducer', () => {
   // Built through the real schema so fixtures stay valid as the contract evolves.
@@ -16,13 +42,21 @@ describe('courseNavigationReducer', () => {
     chapterTitle: 'Chapter 1',
   });
 
-  const structure = deriveCourseStructure([
+  const flow = deriveCourseFlow([
     makeLesson('lesson-1', 'Lesson 1'),
     makeLesson('lesson-2', 'Lesson 2'),
   ]);
 
-  const structureWithHotspots = deriveCourseStructure([
+  const flowWithHotspots = deriveCourseFlow([
     makeLesson('lesson-1', 'Lesson 1', [{ label: 'hotspot-1' }]),
+    makeLesson('lesson-2', 'Lesson 2'),
+  ]);
+
+  const flowWithManualLesson = deriveCourseFlow([
+    {
+      ...makeLesson('lesson-1', 'Lesson 1'),
+      lessonType: 'scrollStory',
+    },
     makeLesson('lesson-2', 'Lesson 2'),
   ]);
 
@@ -32,7 +66,7 @@ describe('courseNavigationReducer', () => {
       navDirection: 1,
       showChapterIntro: false,
     };
-    const nextState = courseNavigationReducer(structure, initialState, { type: 'NEXT' });
+    const nextState = courseNavigationReducer(flow, initialState, { type: 'NEXT' });
     expect(nextState.phase).toEqual({ phase: 'chapter', chapterIndex: 0, lessonIndex: 0 });
     expect(nextState.showChapterIntro).toBe(true);
   });
@@ -43,7 +77,7 @@ describe('courseNavigationReducer', () => {
       navDirection: 1,
       showChapterIntro: false,
     };
-    const nextState = courseNavigationReducer(structure, initialState, { type: 'NEXT' });
+    const nextState = courseNavigationReducer(flow, initialState, { type: 'NEXT' });
     expect(nextState.phase).toEqual({ phase: 'chapter', chapterIndex: 0, lessonIndex: 1 });
   });
 
@@ -53,7 +87,7 @@ describe('courseNavigationReducer', () => {
       navDirection: 1,
       showChapterIntro: false,
     };
-    const nextState = courseNavigationReducer(structure, initialState, { type: 'PREV' });
+    const nextState = courseNavigationReducer(flow, initialState, { type: 'PREV' });
     expect(nextState.phase).toEqual({ phase: 'chapter', chapterIndex: 0, lessonIndex: 0 });
     expect(nextState.navDirection).toBe(-1);
   });
@@ -64,7 +98,7 @@ describe('courseNavigationReducer', () => {
       navDirection: 1,
       showChapterIntro: false,
     };
-    const nextState = courseNavigationReducer(structureWithHotspots, initialState, {
+    const nextState = courseNavigationReducer(flowWithHotspots, initialState, {
       type: 'NEXT',
       visited: {},
     });
@@ -77,7 +111,7 @@ describe('courseNavigationReducer', () => {
       navDirection: 1,
       showChapterIntro: false,
     };
-    const nextState = courseNavigationReducer(structureWithHotspots, initialState, {
+    const nextState = courseNavigationReducer(flowWithHotspots, initialState, {
       type: 'NEXT',
       visited: { 'lesson-1': new Set(['hotspot-1']) },
     });
@@ -90,7 +124,7 @@ describe('courseNavigationReducer', () => {
       navDirection: 1,
       showChapterIntro: false,
     };
-    const nextState = courseNavigationReducer(structureWithHotspots, initialState, {
+    const nextState = courseNavigationReducer(flowWithHotspots, initialState, {
       type: 'GO_TO_SECTION',
       index: 1,
       visited: {},
@@ -104,11 +138,33 @@ describe('courseNavigationReducer', () => {
       navDirection: 1,
       showChapterIntro: false,
     };
-    const nextState = courseNavigationReducer(structureWithHotspots, initialState, {
+    const nextState = courseNavigationReducer(flowWithHotspots, initialState, {
       type: 'GO_TO_SECTION',
       index: 1,
       visited: { 'lesson-1': new Set(['hotspot-1']) },
     });
     expect(nextState.phase).toEqual({ phase: 'chapter', chapterIndex: 0, lessonIndex: 1 });
+  });
+
+  test('NEXT from a manual-completion lesson is blocked until it is completed', () => {
+    const initialState: CourseNavState = {
+      phase: { phase: 'chapter', chapterIndex: 0, lessonIndex: 0 },
+      navDirection: 1,
+      showChapterIntro: false,
+    };
+
+    const lockedState = courseNavigationReducer(flowWithManualLesson, initialState, {
+      type: 'NEXT',
+      visited: {},
+    });
+
+    expect(lockedState.phase).toEqual({ phase: 'chapter', chapterIndex: 0, lessonIndex: 0 });
+
+    const unlockedState = courseNavigationReducer(flowWithManualLesson, initialState, {
+      type: 'NEXT',
+      visited: { 'lesson-1': new Set(['completed']) },
+    });
+
+    expect(unlockedState.phase).toEqual({ phase: 'chapter', chapterIndex: 0, lessonIndex: 1 });
   });
 });

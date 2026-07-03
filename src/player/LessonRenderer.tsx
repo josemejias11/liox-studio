@@ -10,6 +10,8 @@ import {
   SplitScreenLessonDynamic,
   DragDropLessonDynamic,
   ScrollStoryLessonDynamic,
+  getLessonCompletionMode,
+  LessonCompletionMode,
 } from './lesson-types/registry';
 
 export interface LessonRendererProps {
@@ -43,6 +45,12 @@ export function LessonRenderer({
   persistSession,
   courseId,
 }: LessonRendererProps) {
+  const completionMode = getLessonCompletionMode(lesson);
+  const handleManualCompletion =
+    completionMode === LessonCompletionMode.MANUAL
+      ? () => baseMarkVisited(lessonKey, 'completed', 1)
+      : undefined;
+
   switch (lesson.lessonType) {
     case 'stage':
       return (
@@ -68,7 +76,7 @@ export function LessonRenderer({
           headline={lesson.headline}
           videoFileUrl={lesson.videoFile?.asset?.url}
           videoAspectRatio={lesson.videoAspectRatio}
-          onComplete={() => baseMarkVisited(lessonKey, 'completed', 1)}
+          onComplete={handleManualCompletion}
         />
       );
 
@@ -96,7 +104,7 @@ export function LessonRenderer({
         <DragDropLessonDynamic
           lesson={lesson}
           isCompleted={isSpecialComplete}
-          onComplete={() => markVisited('completed')}
+          onComplete={handleManualCompletion ?? (() => markVisited('completed'))}
         />
       );
 
@@ -105,7 +113,7 @@ export function LessonRenderer({
         <ScrollStoryLessonDynamic
           lesson={lesson}
           isCompleted={isSpecialComplete}
-          onComplete={() => baseMarkVisited(lessonKey, 'completed', 1)}
+          onComplete={handleManualCompletion ?? (() => baseMarkVisited(lessonKey, 'completed', 1))}
         />
       );
 

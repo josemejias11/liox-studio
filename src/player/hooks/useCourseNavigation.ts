@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { getChapterLessons, type CourseStructure } from '@/lib/course-structure';
+import { getFlowItemByIndex, type CourseFlow } from '@/lib/course-flow';
+import { getLessonCompletionMode, LessonCompletionMode } from '../lesson-types/registry';
 
 // ── Course phase state machine ────────────────────────────────────────────────
 
@@ -35,9 +37,14 @@ const INITIAL_STATE: CourseNavState = {
   showChapterIntro: false,
 };
 
-// ── Absolute section index (progress bar / NavMap highlight) ──────────────────
+// ── Flow index (progress bar / NavMap highlight) ──────────────────────────────
 
-export function getSectionIndex(structure: CourseStructure, phase: CoursePhase): number {
+function findFlowIndex(flow: CourseFlow, kind: 'quiz' | 'disclaimer'): number {
+  return flow.items.find((item) => item.kind === kind)?.index ?? flow.items.length;
+}
+
+export function getSectionIndex(flow: CourseFlow, phase: CoursePhase): number {
+  const structure = flow.structure;
   switch (phase.phase) {
     case 'cover':
       return -1;
@@ -55,13 +62,19 @@ export function getSectionIndex(structure: CourseStructure, phase: CoursePhase):
       return lessonsBeforeThisChapter + Math.max(0, chapterLessons.length - 1);
     }
     case 'specifications':
-      return structure.specOffset + phase.specIndex;
+      return structure.specSections.length > phase.specIndex
+        ? flow.items.find(
+            (item) =>
+              item.kind === 'specification' &&
+              item.key === (structure.specSections[phase.specIndex]?._key ?? `spec-${phase.specIndex}`),
+          )?.index ?? -1
+        : -1;
     case 'quiz':
-      return structure.quizOffset;
+      return findFlowIndex(flow, 'quiz');
     case 'disclaimer':
-      return structure.disclaimerOffset;
+      return findFlowIndex(flow, 'disclaimer');
     case 'complete':
-      return structure.totalSections;
+      return flow.items.length;
   }
 }
 
@@ -110,11 +123,14 @@ export function isLessonLocked(
 
   const lessonKey = currentLesson._key;
   const hotspots = currentLesson.hotspots ?? [];
-  const isSpecialLesson = ['dragDrop', 'video'].includes(currentLesson.lessonType ?? '');
-  const isSpecialComplete = visited[lessonKey]?.has('completed');
+  const completionMode = getLessonCompletionMode(currentLesson);
 
-  const hotspotsLocked = hotspots.length > 0 && hotspots.some((h) => !visited[lessonKey]?.has(h.label));
-  const specialLocked = isSpecialLesson && !isSpecialComplete;
+  const hotspotsLocked =
+    completionMode === LessonCompletionMode.HOTSPOT &&
+    hotspots.length > 0 &&
+    hotspots.some((h) => !visited[lessonKey]?.has(h.label));
+  const specialLocked =
+    completionMode === LessonCompletionMode.MANUAL && !visited[lessonKey]?.has('completed');
 
   return hotspotsLocked || specialLocked;
 }
@@ -241,18 +257,19 @@ function reducePrev(structure: CourseStructure, state: CourseNavState): CourseNa
 }
 
 function reduceGoToSection(
-  structure: CourseStructure,
+  flow: CourseFlow,
   state: CourseNavState,
   index: number,
   visited?: Record<string, Set<string>>,
 ): CourseNavState {
-  const section = structure.sections[index];
-  if (!section) return state;
+  const structure = flow.structure;
+  const item = getFlowItemByIndex(flow, index);
+  if (!item) return state;
 
-  const currentIdx = getSectionIndex(structure, state.phase);
+  const currentIdx = getSectionIndex(flow, state.phase);
   const isForward = index > currentIdx;
   if (isForward && isLessonLocked(structure, state.phase, visited)) {
-    return state; // Jump is blocked because current lesson is locked
+     return state; // Jump is blocked because current lesson is locked
   }
 
   const navDirection: 1 | -1 = isForward ? 1 : -1;
@@ -262,21 +279,25 @@ function reduceGoToSection(
     showChapterIntro: intro,
   });
 
-  switch (section.sectionType) {
+  switch (item.kind) {
     case 'lesson': {
-      const group = structure.chapters.find((c) => c.chapterIndex === section.chapterIndex);
-      const lessonIdx = group?.lessons.findIndex((l) => l.section === section) ?? -1;
+      const group = structure.chapters.find((chapter) =>
+        chapter.lessons.some((lesson) => lesson.section._key === item.key),
+      );
+      const lessonIdx = group?.lessons.findIndex((lesson) => lesson.section._key === item.key) ?? -1;
       return jump(
         {
           phase: 'chapter',
-          chapterIndex: section.chapterIndex,
+          chapterIndex: group?.chapterIndex ?? 0,
           lessonIndex: lessonIdx >= 0 ? lessonIdx : 0,
         },
         lessonIdx <= 0, // first lesson of a chapter (or not found) shows the intro
       );
     }
     case 'specification': {
-      const specIdx = index - structure.specOffset;
+      const specIdx = structure.specSections.findIndex(
+        (spec, specIndex) => (spec._key ?? `spec-${specIndex}`) === item.key,
+      );
       return jump({
         phase: 'specifications',
         specIndex: specIdx >= 0 ? specIdx : 0,
@@ -291,17 +312,18 @@ function reduceGoToSection(
 
 /** Pure, testable navigation reducer over the derived course structure. */
 export function courseNavigationReducer(
-  structure: CourseStructure,
+  flow: CourseFlow,
   state: CourseNavState,
   action: CourseNavAction,
 ): CourseNavState {
+  const structure = flow.structure;
   switch (action.type) {
     case 'NEXT':
       return reduceNext(structure, state, action.visited);
     case 'PREV':
       return reducePrev(structure, state);
     case 'GO_TO_SECTION':
-      return reduceGoToSection(structure, state, action.index, action.visited);
+      return reduceGoToSection(flow, state, action.index, action.visited);
     case 'QUIZ_DONE':
       // Pass and fail-without-retry both advance past the quiz gate.
       return {
@@ -334,11 +356,12 @@ export function courseNavigationReducer(
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
 export function useCourseNavigation(
-  structure: CourseStructure,
+  flow: CourseFlow,
   visited?: Record<string, Set<string>>,
 ) {
+  const structure = flow.structure;
   const [state, dispatch] = useReducer(
-    (s: CourseNavState, a: CourseNavAction) => courseNavigationReducer(structure, s, a),
+    (s: CourseNavState, a: CourseNavAction) => courseNavigationReducer(flow, s, a),
     INITIAL_STATE,
   );
 
@@ -379,7 +402,7 @@ export function useCourseNavigation(
     showChapterIntro: state.showChapterIntro,
     showBurst,
     nextLocked,
-    currentSectionIndex: getSectionIndex(structure, state.phase),
+    currentSectionIndex: getSectionIndex(flow, state.phase),
     goNext,
     goPrev,
     navigateToSection,

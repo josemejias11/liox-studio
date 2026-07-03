@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useReducer, useRef, useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 
@@ -17,9 +17,8 @@ import {
   QuestionResultSchema,
   SubmitQuizResponseSchema,
   type ClientQuiz,
-  type QuestionResult,
-  type SubmitQuizResponse,
 } from '@/lib/contracts/quiz';
+import { createQuizSessionState, quizSessionReducer } from '@/lib/quiz-session';
 import type { SanityQuizDoc } from '@/lib/contracts/sanity';
 import { sanityImageLoader } from '@/lib/sanity-image-loader';
 
@@ -63,17 +62,8 @@ export function SanityQuizPlayer({
   courseId,
 }: SanityQuizPlayerProps) {
   const [quiz] = useState<ClientQuiz>(() => toClientQuiz(sanityQuiz));
-  const [currentQ, setCurrentQ] = useState(0);
-  const [selected, setSelected] = useState<number | null>(null);
+  const [session, dispatch] = useReducer(quizSessionReducer, undefined, createQuizSessionState);
   const [grading, setGrading] = useState(false);
-  const [gradeErr, setGradeErr] = useState<string | null>(null);
-  /** Server-graded per-question feedback, filled as the learner answers. */
-  const [results, setResults] = useState<(QuestionResult | undefined)[]>([]);
-  const [userAnswers, setUserAnswers] = useState<number[]>([]);
-  const [done, setDone] = useState(false);
-  /** Server-graded final result — the only source of score/passed. */
-  const [summary, setSummary] = useState<SubmitQuizResponse | null>(null);
-  const [submitErr, setSubmitErr] = useState<string | null>(null);
   const [isShaking, setIsShaking] = useState(false);
   const [started, setStarted] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -87,10 +77,9 @@ export function SanityQuizPlayer({
 
   // ── Answer selection — graded server-side per question ────────────────────
   async function handleSelect(optionIndex: number) {
-    if (selected !== null || grading) return;
-    setSelected(optionIndex);
+    if (session.selectedIndex !== null || grading) return;
+    dispatch({ type: 'answer.selected', selectedIndex: optionIndex });
     setGrading(true);
-    setGradeErr(null);
 
     try {
       const res = await fetch('/api/quiz/grade', {
@@ -100,7 +89,7 @@ export function SanityQuizPlayer({
           action: 'question',
           source: quiz.source,
           quizId: quiz.quizId,
-          questionIndex: currentQ,
+          questionIndex: session.currentQuestionIndex,
           selectedIndex: optionIndex,
         }),
       });
@@ -108,21 +97,21 @@ export function SanityQuizPlayer({
       const parsed = QuestionResultSchema.safeParse(await res.json());
       if (!parsed.success) throw new Error('Grade response failed validation');
 
-      setResults((prev) => {
-        const next = [...prev];
-        next[currentQ] = parsed.data;
-        return next;
+      dispatch({
+        type: 'answer.revealed',
+        selectedIndex: optionIndex,
+        result: parsed.data,
       });
-      setUserAnswers((prev) => [...prev, optionIndex]);
 
       if (!parsed.data.correct) {
         setIsShaking(true);
         timers.current.push(setTimeout(() => setIsShaking(false), 400));
       }
     } catch {
-      // Re-enable selection so the learner can try the same question again.
-      setSelected(null);
-      setGradeErr("Couldn't check your answer — tap an option to try again.");
+      dispatch({
+        type: 'answer.failed',
+        message: "Couldn't check your answer — tap an option to try again.",
+      });
     } finally {
       setGrading(false);
     }
@@ -130,8 +119,7 @@ export function SanityQuizPlayer({
 
   // ── Final submission — server computes score / passed and records it ──────
   async function submitQuiz(answers: number[]) {
-    setDone(true);
-    setSubmitErr(null);
+    dispatch({ type: 'submission.started' });
 
     try {
       const res = await fetch('/api/quiz/grade', {
@@ -150,7 +138,7 @@ export function SanityQuizPlayer({
       const parsed = SubmitQuizResponseSchema.safeParse(await res.json());
       if (!parsed.success) throw new Error('Submit response failed validation');
 
-      setSummary(parsed.data);
+      dispatch({ type: 'submission.succeeded', summary: parsed.data });
       const pct = parsed.data.total > 0 ? parsed.data.score / parsed.data.total : 0;
       const pctScore = Math.round(pct * 100);
       if (parsed.data.passed) {
@@ -161,18 +149,15 @@ export function SanityQuizPlayer({
         onPass(pctScore);
       }
     } catch {
-      setSubmitErr("Couldn't score your quiz.");
+      dispatch({ type: 'submission.failed', message: "Couldn't score your quiz." });
     }
   }
 
   function handleNext() {
-    const next = currentQ + 1;
-    if (next >= quiz.questions.length) {
-      void submitQuiz(userAnswers);
-    } else {
-      setCurrentQ(next);
-      setSelected(null);
-      setGradeErr(null);
+    const isLastQuestion = session.currentQuestionIndex + 1 >= quiz.questions.length;
+    dispatch({ type: 'question.advanced', totalQuestions: quiz.questions.length });
+    if (isLastQuestion) {
+      void submitQuiz(session.answers);
     }
   }
 
@@ -202,14 +187,17 @@ export function SanityQuizPlayer({
   }
 
   // ── Scoring state — waiting for (or retrying) the server grade ────────────
-  if (done && !summary) {
+  if (session.phase === 'submitting' && !session.summary) {
     return (
       <div className="bg-background absolute inset-0 flex flex-col items-center justify-center gap-4">
-        {submitErr ? (
+        {session.error ? (
           <>
-            <p className="text-muted-foreground/80 text-sm">{submitErr}</p>
+            <p className="text-muted-foreground/80 text-sm">{session.error}</p>
             <button
-              onClick={() => void submitQuiz(userAnswers)}
+              onClick={() => {
+                dispatch({ type: 'retry.requested' });
+                void submitQuiz(session.answers);
+              }}
               className="bg-background text-foreground border-border/20 hover:bg-background/90 flex items-center gap-2 rounded-full border px-6 py-2.5 text-sm font-bold shadow-2xl transition-transform duration-150 active:scale-95"
             >
               <RefreshCw className="h-4 w-4" /> Try Again
@@ -228,9 +216,9 @@ export function SanityQuizPlayer({
 
 
   // ── Question view ─────────────────────────────────────────────────────────
-  const q = quiz.questions[currentQ];
-  const result = results[currentQ];
-  const revealed = selected !== null && result !== undefined;
+  const q = quiz.questions[session.currentQuestionIndex];
+  const result = session.results[session.currentQuestionIndex];
+  const revealed = session.selectedIndex !== null && result !== undefined;
 
   return (
     <div className="bg-background absolute inset-0 flex flex-col select-none">
@@ -241,10 +229,10 @@ export function SanityQuizPlayer({
         <div className="mb-3 flex w-full items-center gap-1.5">
           {Array.from({ length: total }).map((_, i) => {
             let bgColor = 'bg-border/20'; // Unanswered
-            const r = results[i];
-            if (r && i !== currentQ) {
+            const r = session.results[i];
+            if (r && i !== session.currentQuestionIndex) {
               bgColor = r.correct ? 'bg-accent' : 'bg-destructive/80';
-            } else if (i === currentQ) {
+            } else if (i === session.currentQuestionIndex) {
               bgColor = 'bg-accent/50 animate-pulse';
             }
             return (
@@ -260,13 +248,13 @@ export function SanityQuizPlayer({
             Knowledge Check
           </p>
           <p className="text-foreground/70 text-xs font-bold tabular-nums">
-            {currentQ + 1} <span className="text-foreground/40">/ {total}</span>
+            {session.currentQuestionIndex + 1} <span className="text-foreground/40">/ {total}</span>
           </p>
         </div>
       </div>
 
       {/* Body — keyed by question index so entry animations replay per question */}
-      <div key={currentQ} className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 pb-24">
+      <div key={session.currentQuestionIndex} className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 pb-24">
         {/* Question text */}
         <p className="quiz-enter text-foreground shrink-0 pt-2 text-xl leading-tight font-bold md:text-2xl">
           {q.question}
@@ -296,7 +284,7 @@ export function SanityQuizPlayer({
           transition={{ duration: 0.4 }}
         >
           {q.options.map((option, i) => {
-            const isSelected = selected === i;
+            const isSelected = session.selectedIndex === i;
             const isCorrect = result !== undefined && i === result.correctIndex;
             const showGreen = revealed && isCorrect;
             const showRed = revealed && isSelected && !isCorrect;
@@ -322,7 +310,7 @@ export function SanityQuizPlayer({
               <button
                 key={`${i}-${option}`}
                 onClick={() => void handleSelect(i)}
-                disabled={selected !== null || grading}
+                disabled={session.selectedIndex !== null || grading}
                 role="radio"
                 aria-checked={isSelected}
                 aria-label={`${OPTION_LABELS[i] ?? i + 1}: ${option}${
@@ -384,9 +372,9 @@ export function SanityQuizPlayer({
         </motion.div>
 
         {/* Grading error — selection re-enabled so the learner can retry */}
-        {gradeErr && (
+        {session.error && (
           <p role="alert" className="text-destructive/80 shrink-0 text-sm font-medium">
-            {gradeErr}
+            {session.error}
           </p>
         )}
 
@@ -425,7 +413,7 @@ export function SanityQuizPlayer({
                 onClick={handleNext}
                 className="bg-foreground text-background mt-4 flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-base font-black shadow-[0_0_24px_rgba(0,0,0,0.15)] focus-visible:outline-2 focus-visible:outline-offset-2"
               >
-                {currentQ + 1 >= total ? 'Finish Quiz' : 'Next Question'}
+                {session.currentQuestionIndex + 1 >= total ? 'Finish Quiz' : 'Next Question'}
                 <ChevronRight className="h-5 w-5" />
               </motion.button>
           </>

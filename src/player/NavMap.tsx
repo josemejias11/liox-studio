@@ -14,7 +14,7 @@ import {
 import { useFocusTrap } from '@/lib/useFocusTrap';
 import { ThemeToggle } from '@/components/theme';
 import type { LessonSection } from '@/lib/contracts/sanity';
-import type { CourseStructure } from '@/lib/course-structure';
+import { getNavItems, type CourseFlow } from '@/lib/course-flow';
 
 // ── Icon/color metadata per sectionType / lessonType ─────────────────────────
 
@@ -125,19 +125,18 @@ function SectionRow({
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface NavMapProps {
-  /** Derived course structure — same instance MotoViewer navigates with. */
-  structure: CourseStructure;
-  /** Absolute index in the flat sections array; -1 for cover, sections.length for complete */
+  flow: CourseFlow;
+  /** Flow index in the ordered course navigation list; -1 for cover, flow.items.length for complete */
   currentSectionIndex: number;
   visited: Record<string, Set<string>>;
-  onNavigate: (absoluteSectionIndex: number) => void;
+  onNavigate: (flowIndex: number) => void;
   onClose: () => void;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function NavMap({
-  structure,
+  flow,
   currentSectionIndex,
   visited,
   onNavigate,
@@ -160,17 +159,20 @@ export function NavMap({
   }, []);
 
   // ── Section groups / offsets — single source of truth (course-structure) ──
+  const { structure } = flow;
   const {
     lessonSections,
-    specSections,
-    disclaimerSection,
     chapters: chapterGroups,
-    specOffset,
-    quizOffset,
-    disclaimerOffset,
   } = structure;
+  const navItems = getNavItems(flow);
+  const lessonIndices = new Map(
+    navItems
+      .filter((item) => item.kind === 'lesson')
+      .map((item) => [item.key, item.index] as const),
+  );
+  const nonLessonItems = navItems.filter((item) => item.kind !== 'lesson');
 
-  const hasNonLessonSections = specSections.length > 0 || true || disclaimerSection != null;
+  const hasNonLessonSections = nonLessonItems.length > 0;
 
   // Explored count (lessons only, for footer)
   const exploredCount = lessonSections.filter((ls) => {
@@ -223,6 +225,7 @@ export function NavMap({
               {/* Lessons in this chapter */}
               {group.lessons.map(({ section, absoluteIndex }, posInChapter) => {
                 const meta = LESSON_TYPE_META[section.lessonType] ?? LESSON_TYPE_META.content;
+                const flowIndex = lessonIndices.get(section._key) ?? absoluteIndex;
 
                 return (
                   <SectionRow
@@ -231,8 +234,8 @@ export function NavMap({
                     icon={meta.icon}
                     iconColor={meta.color}
                     title={section.headline}
-                    isCurrent={absoluteIndex === currentSectionIndex}
-                    onClick={() => onNavigate(absoluteIndex)}
+                    isCurrent={flowIndex === currentSectionIndex}
+                    onClick={() => onNavigate(flowIndex)}
                     completion={lessonCompletion(section, visited)}
                   />
                 );
@@ -245,42 +248,30 @@ export function NavMap({
             <div className="border-border/20 mx-3 my-2 border-t" aria-hidden="true" />
           )}
 
-          {/* ── Specification sections — empty dot (no hotspot tracking) ── */}
-          {specSections.map((spec, k) => (
-            <SectionRow
-              key={spec._key ?? `spec-${k}`}
-              indexGlyph={k + 1}
-              icon={SECTION_TYPE_META.specification.icon}
-              iconColor={SECTION_TYPE_META.specification.color}
-              title={spec.title}
-              isCurrent={specOffset + k === currentSectionIndex}
-              onClick={() => onNavigate(specOffset + k)}
-            />
-          ))}
+          {nonLessonItems.map((item, index) => {
+            const meta = SECTION_TYPE_META[item.kind];
+            const indexGlyph =
+              item.kind === 'quiz' ? '✓' : item.kind === 'disclaimer' ? '!' : index + 1;
+            const glyphSrText =
+              item.kind === 'quiz'
+                ? 'Quiz section'
+                : item.kind === 'disclaimer'
+                  ? 'Attention required'
+                  : undefined;
 
-          {/* ── Quiz section ── */}
-          <SectionRow
-            indexGlyph="✓"
-            glyphSrText="Quiz section"
-            icon={SECTION_TYPE_META.quiz.icon}
-            iconColor={SECTION_TYPE_META.quiz.color}
-            title="Knowledge Check"
-            isCurrent={quizOffset === currentSectionIndex}
-            onClick={() => onNavigate(quizOffset)}
-          />
-
-          {/* ── Disclaimer section ── */}
-          {disclaimerSection && (
-            <SectionRow
-              indexGlyph="!"
-              glyphSrText="Attention required"
-              icon={SECTION_TYPE_META.disclaimer.icon}
-              iconColor={SECTION_TYPE_META.disclaimer.color}
-              title={disclaimerSection.title ?? 'Disclaimer'}
-              isCurrent={disclaimerOffset === currentSectionIndex}
-              onClick={() => onNavigate(disclaimerOffset)}
-            />
-          )}
+            return (
+              <SectionRow
+                key={`${item.kind}-${item.key}`}
+                indexGlyph={indexGlyph}
+                glyphSrText={glyphSrText}
+                icon={meta.icon}
+                iconColor={meta.color}
+                title={item.title}
+                isCurrent={item.index === currentSectionIndex}
+                onClick={() => onNavigate(item.index)}
+              />
+            );
+          })}
         </div>
 
         {/* Footer */}

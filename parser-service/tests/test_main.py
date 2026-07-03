@@ -59,10 +59,10 @@ def client():
     """Single TestClient for the module; lifespan deps are mocked at startup."""
     with (
         patch.dict(os.environ, {"PARSER_SERVICE_TOKEN": VALID_TOKEN, "CHROMA_DIR": "/tmp/test-chroma"}),
-        patch("main.TaskPrefixedOllamaEmbeddings"),
-        patch("main.OllamaLLM"),
-        patch("main.chromadb.PersistentClient"),
-        patch("main.os.makedirs"),
+        patch("runtime.TaskPrefixedOllamaEmbeddings"),
+        patch("runtime.OllamaLLM"),
+        patch("runtime.chromadb.PersistentClient"),
+        patch("runtime.os.makedirs"),
     ):
         with TestClient(main.app, raise_server_exceptions=False) as c:
             yield c
@@ -86,13 +86,13 @@ def reset_runtime():
 
 class TestHealth:
     def test_returns_200(self, client):
-        with patch("main.httpx.get") as mock_get, patch("main.os.makedirs"), patch("builtins.open", MagicMock()), patch("main.os.remove"):
+        with patch("main.httpx.get") as mock_get, patch("runtime.os.makedirs"), patch("builtins.open", MagicMock()), patch("main.os.remove"):
             mock_get.return_value = MagicMock(status_code=200)
             resp = client.get("/health")
         assert resp.status_code == 200
 
     def test_response_contains_required_fields(self, client):
-        with patch("main.httpx.get") as mock_get, patch("main.os.makedirs"), patch("builtins.open", MagicMock()), patch("main.os.remove"):
+        with patch("main.httpx.get") as mock_get, patch("runtime.os.makedirs"), patch("builtins.open", MagicMock()), patch("main.os.remove"):
             mock_get.return_value = MagicMock(status_code=200)
             resp = client.get("/health")
         body = resp.json()
@@ -105,7 +105,7 @@ class TestHealth:
     def test_degraded_when_ollama_unreachable(self, client):
         import httpx as _httpx
         with patch("main.httpx.get", side_effect=_httpx.ConnectError("refused")), \
-             patch("main.os.makedirs"), patch("builtins.open", MagicMock()), patch("main.os.remove"):
+             patch("runtime.os.makedirs"), patch("builtins.open", MagicMock()), patch("main.os.remove"):
             resp = client.get("/health")
         assert resp.json()["status"] == "degraded"
         assert resp.json()["ollama_reachable"] is False
@@ -167,7 +167,7 @@ class TestUpload:
     def test_empty_extracted_content_returns_400(self, client):
         mock_result = MagicMock()
         mock_result.text_content = "   "
-        with patch("main.MarkItDown") as MockMD, patch("main.shutil.rmtree"):
+        with patch("documents.MarkItDown") as MockMD, patch("main.shutil.rmtree"):
             MockMD.return_value.convert.return_value = mock_result
             resp = client.post(
                 "/api/upload",
@@ -182,8 +182,8 @@ class TestUpload:
         mock_result = MagicMock()
         mock_result.text_content = "This is valid course content. " * 50
         mock_vs = MagicMock()
-        with patch("main.MarkItDown") as MockMD, \
-             patch("main.get_vectorstore", return_value=mock_vs), \
+        with patch("documents.MarkItDown") as MockMD, \
+             patch("vectorstore.get_vectorstore", return_value=mock_vs), \
              patch("main.shutil.rmtree"):
             MockMD.return_value.convert.return_value = mock_result
             resp = client.post(
@@ -202,8 +202,8 @@ class TestUpload:
         mock_result = MagicMock()
         mock_result.text_content = "Content. " * 50
         mock_vs = MagicMock()
-        with patch("main.MarkItDown") as MockMD, \
-             patch("main.get_vectorstore", return_value=mock_vs), \
+        with patch("documents.MarkItDown") as MockMD, \
+             patch("vectorstore.get_vectorstore", return_value=mock_vs), \
              patch("main.shutil.rmtree"):
             MockMD.return_value.convert.return_value = mock_result
             client.post(
@@ -233,7 +233,7 @@ class TestUpload:
 
 class TestChat:
     def test_unknown_course_returns_no_materials_answer(self, client):
-        with patch("main.collection_exists", return_value=False):
+        with patch("rag_chat.collection_exists", return_value=False):
             resp = client.post("/api/chat", headers=AUTH, json={"course_id": COURSE, "query": "What is Qira?"})
         assert resp.status_code == 200
         assert main.NO_MATERIALS_ANSWER in resp.json()["answer"]
@@ -242,8 +242,8 @@ class TestChat:
     def test_no_relevant_docs_returns_no_context_answer(self, client):
         mock_vs = MagicMock()
         mock_vs.similarity_search_with_relevance_scores.return_value = []
-        with patch("main.collection_exists", return_value=True), \
-             patch("main.get_vectorstore", return_value=mock_vs):
+        with patch("rag_chat.collection_exists", return_value=True), \
+             patch("rag_chat.get_vectorstore", return_value=mock_vs):
             resp = client.post("/api/chat", headers=AUTH, json={"course_id": COURSE, "query": "Unknown topic"})
         assert resp.status_code == 200
         assert resp.json()["answer"] == main.NO_CONTEXT_ANSWER
@@ -254,8 +254,8 @@ class TestChat:
             (_doc("Qira can generate images.", "slides.pdf"), 0.82),
         ]
         main.runtime.llm.invoke.return_value = "Qira generates images using AI."
-        with patch("main.collection_exists", return_value=True), \
-             patch("main.get_vectorstore", return_value=mock_vs):
+        with patch("rag_chat.collection_exists", return_value=True), \
+             patch("rag_chat.get_vectorstore", return_value=mock_vs):
             resp = client.post("/api/chat", headers=AUTH, json={"course_id": COURSE, "query": "What can Qira do?"})
         assert resp.status_code == 200
         body = resp.json()
@@ -276,8 +276,8 @@ class TestChat:
             (_doc(), 0.75),
         ]
         main.runtime.llm.invoke.return_value = main.NO_CONTEXT_ANSWER
-        with patch("main.collection_exists", return_value=True), \
-             patch("main.get_vectorstore", return_value=mock_vs):
+        with patch("rag_chat.collection_exists", return_value=True), \
+             patch("rag_chat.get_vectorstore", return_value=mock_vs):
             resp = client.post("/api/chat", headers=AUTH, json={"course_id": COURSE, "query": "Unrelated?"})
         assert resp.json()["sources"] == []
 
@@ -288,15 +288,15 @@ class TestChat:
 
 class TestGenerateQuiz:
     def test_unknown_course_returns_404(self, client):
-        with patch("main.collection_exists", return_value=False):
+        with patch("quiz_generation.collection_exists", return_value=False):
             resp = client.post("/api/generate-quiz", headers=AUTH, json={"course_id": COURSE, "weak_topics": ["AI"]})
         assert resp.status_code == 404
 
     def test_no_relevant_docs_returns_404(self, client):
         mock_vs = MagicMock()
         mock_vs.similarity_search_with_relevance_scores.return_value = []
-        with patch("main.collection_exists", return_value=True), \
-             patch("main.get_vectorstore", return_value=mock_vs):
+        with patch("quiz_generation.collection_exists", return_value=True), \
+             patch("quiz_generation.get_vectorstore", return_value=mock_vs):
             resp = client.post("/api/generate-quiz", headers=AUTH, json={"course_id": COURSE, "weak_topics": ["AI"]})
         assert resp.status_code == 404
 
@@ -306,8 +306,8 @@ class TestGenerateQuiz:
             (_doc(), 0.70),
         ]
         main.runtime.quiz_llm.invoke.return_value = _quiz_json(5)
-        with patch("main.collection_exists", return_value=True), \
-             patch("main.get_vectorstore", return_value=mock_vs):
+        with patch("quiz_generation.collection_exists", return_value=True), \
+             patch("quiz_generation.get_vectorstore", return_value=mock_vs):
             resp = client.post("/api/generate-quiz", headers=AUTH, json={"course_id": COURSE, "weak_topics": ["Style Sync"]})
         assert resp.status_code == 200
         questions = resp.json()["questions"]
@@ -318,8 +318,8 @@ class TestGenerateQuiz:
         mock_vs = MagicMock()
         mock_vs.similarity_search_with_relevance_scores.return_value = [(_doc(), 0.70)]
         main.runtime.quiz_llm.invoke.return_value = "not json at all"
-        with patch("main.collection_exists", return_value=True), \
-             patch("main.get_vectorstore", return_value=mock_vs):
+        with patch("quiz_generation.collection_exists", return_value=True), \
+             patch("quiz_generation.get_vectorstore", return_value=mock_vs):
             resp = client.post("/api/generate-quiz", headers=AUTH, json={"course_id": COURSE, "weak_topics": ["topic"]})
         assert resp.status_code == 502
         # Confirm it tried twice
@@ -329,8 +329,8 @@ class TestGenerateQuiz:
         mock_vs = MagicMock()
         mock_vs.similarity_search_with_relevance_scores.return_value = [(_doc(), 0.70)]
         main.runtime.quiz_llm.invoke.return_value = _quiz_json(8)
-        with patch("main.collection_exists", return_value=True), \
-             patch("main.get_vectorstore", return_value=mock_vs):
+        with patch("quiz_generation.collection_exists", return_value=True), \
+             patch("quiz_generation.get_vectorstore", return_value=mock_vs):
             resp = client.post("/api/generate-quiz", headers=AUTH, json={"course_id": COURSE, "weak_topics": ["topic"]})
         assert resp.status_code == 200
         assert len(resp.json()["questions"]) == 5

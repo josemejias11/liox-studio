@@ -7,10 +7,9 @@ import type {
 } from '@/lib/contracts/sanity';
 
 // ── Derived course structure ──────────────────────────────────────────────────
-// One source of truth for section grouping / absolute indexing, shared by
-// MotoViewer (navigation) and NavMap (rendering). Absolute indices refer to
-// positions in the flat `sections` array: lessons first, then specifications,
-// then quiz, then disclaimer.
+// One source of truth for grouping raw course sections into chapter-aware lesson
+// collections plus the trailing non-lesson sections. Navigation-specific flow
+// ordering lives in `course-flow.ts`.
 
 export interface ChapterGroup {
   chapterIndex: number;
@@ -27,18 +26,6 @@ export interface CourseStructure {
   disclaimerSection: SanityDisclaimer | undefined;
   /** Unique chapters in course order, with their lessons grouped. */
   chapters: ChapterGroup[];
-  /** Absolute index of the first specification section. */
-  specOffset: number;
-  /** Absolute index where the course-level AI quiz phase maps (= specOffset + specSections.length). */
-  quizOffset: number;
-  /**
-   * Absolute index of the disclaimer section.
-   * Equals `quizOffset + 1` when a disclaimer section exists; equals
-   * `quizOffset` otherwise (both point past the end of the sections array,
-   * which is harmless since the disclaimer row is only rendered when
-   * `disclaimerSection` is defined).
-   */
-  disclaimerOffset: number;
   totalSections: number;
 }
 
@@ -72,22 +59,12 @@ export function deriveCourseStructure(
     group.lessons.push({ section, absoluteIndex });
   });
 
-  const specOffset = lessonSections.length;
-  const quizOffset = specOffset + specSections.length;
-  // The disclaimer follows the quiz in the nav sequence; giving it a distinct
-  // absolute index ensures the NavMap can correctly highlight the disclaimer
-  // row as "current" without conflating it with the quiz row.
-  const disclaimerOffset = disclaimerSection !== undefined ? quizOffset + 1 : quizOffset;
-
   return {
     sections,
     lessonSections,
     specSections,
     disclaimerSection,
     chapters,
-    specOffset,
-    quizOffset,
-    disclaimerOffset,
     totalSections: sections.length,
   };
 }

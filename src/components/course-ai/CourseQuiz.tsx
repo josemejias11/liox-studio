@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useReducer, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Brain, CheckCircle, XCircle, Loader2, BarChart2, RefreshCw } from 'lucide-react';
 
@@ -9,9 +9,8 @@ import {
   QuestionResultSchema,
   SubmitQuizResponseSchema,
   type ClientQuiz,
-  type QuestionResult,
-  type SubmitQuizResponse,
 } from '@/lib/contracts/quiz';
+import { createQuizSessionState, quizSessionReducer } from '@/lib/quiz-session';
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -27,7 +26,7 @@ export interface CourseQuizProps {
   onFail?: () => void;
 }
 
-type Step = 'idle' | 'generating' | 'ready' | 'playing' | 'submitting' | 'results';
+type Step = 'idle' | 'generating' | 'ready' | 'playing';
 
 // Grading is server-side: the browser only ever holds the client-safe quiz
 // (no correct_answer fields) and renders the per-question results returned by
@@ -36,14 +35,8 @@ type Step = 'idle' | 'generating' | 'ready' | 'playing' | 'submitting' | 'result
 export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: CourseQuizProps) {
   const [step, setStep] = useState<Step>('idle');
   const [quiz, setQuiz] = useState<ClientQuiz | null>(null);
-  const [currentQIndex, setCurrentQIndex] = useState(0);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [session, dispatch] = useReducer(quizSessionReducer, undefined, createQuizSessionState);
   const [grading, setGrading] = useState(false);
-  /** Server-graded feedback per question, filled as the learner answers. */
-  const [results, setResults] = useState<(QuestionResult | undefined)[]>([]);
-  const [answers, setAnswers] = useState<number[]>([]);
-  /** Server-graded final summary — the only source of score/passed. */
-  const [summary, setSummary] = useState<SubmitQuizResponse | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const generateQuiz = async () => {
@@ -71,10 +64,9 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
   };
 
   const handleAnswer = async (optionIndex: number) => {
-    if (selectedIndex !== null || grading || !quiz) return;
-    setSelectedIndex(optionIndex);
+    if (session.selectedIndex !== null || grading || !quiz) return;
+    dispatch({ type: 'answer.selected', selectedIndex: optionIndex });
     setGrading(true);
-    setErrorMsg(null);
 
     try {
       const res = await fetch('/api/quiz/grade', {
@@ -84,7 +76,7 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
           action: 'question',
           source: quiz.source,
           quizId: quiz.quizId,
-          questionIndex: currentQIndex,
+          questionIndex: session.currentQuestionIndex,
           selectedIndex: optionIndex,
         }),
       });
@@ -92,27 +84,26 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
       const parsed = QuestionResultSchema.safeParse(await res.json());
       if (!parsed.success) throw new Error('Grade response failed validation');
 
-      setResults((prev) => {
-        const next = [...prev];
-        next[currentQIndex] = parsed.data;
-        return next;
+      dispatch({
+        type: 'answer.revealed',
+        selectedIndex: optionIndex,
+        result: parsed.data,
       });
-      const nextAnswers = [...answers, optionIndex];
-      setAnswers(nextAnswers);
+      const nextAnswers = [...session.answers, optionIndex];
+      const isLastQuestion = session.currentQuestionIndex >= quiz.questions.length - 1;
 
       setTimeout(() => {
-        if (currentQIndex < quiz.questions.length - 1) {
-          setCurrentQIndex((q) => q + 1);
-          setSelectedIndex(null);
-        } else {
+        dispatch({ type: 'question.advanced', totalQuestions: quiz.questions.length });
+        if (isLastQuestion) {
           void submitQuiz(nextAnswers);
         }
       }, 1500);
     } catch (error: unknown) {
       console.warn('Answer grading failed:', error instanceof Error ? error.message : error);
-      // Re-enable selection so the learner can try the same question again.
-      setSelectedIndex(null);
-      setErrorMsg("We couldn't check your answer — tap an option to try again.");
+      dispatch({
+        type: 'answer.failed',
+        message: "We couldn't check your answer — tap an option to try again.",
+      });
     } finally {
       setGrading(false);
     }
@@ -121,8 +112,7 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
   // Final submission — the server computes score/passed and records the attempt.
   const submitQuiz = async (finalAnswers: number[]) => {
     if (!quiz) return;
-    setStep('submitting');
-    setErrorMsg(null);
+    dispatch({ type: 'submission.started' });
 
     try {
       const res = await fetch('/api/quiz/grade', {
@@ -141,29 +131,27 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
       const parsed = SubmitQuizResponseSchema.safeParse(await res.json());
       if (!parsed.success) throw new Error('Submit response failed validation');
 
-      setSummary(parsed.data);
-      setStep('results');
+      dispatch({ type: 'submission.succeeded', summary: parsed.data });
     } catch (error: unknown) {
       console.warn('Quiz submission failed:', error instanceof Error ? error.message : error);
-      setErrorMsg("We couldn't score your quiz. Please try again.");
+      dispatch({
+        type: 'submission.failed',
+        message: "We couldn't score your quiz. Please try again.",
+      });
     }
   };
 
   const reset = () => {
     setStep('idle');
     setQuiz(null);
-    setCurrentQIndex(0);
-    setSelectedIndex(null);
     setGrading(false);
-    setResults([]);
-    setAnswers([]);
-    setSummary(null);
     setErrorMsg(null);
+    dispatch({ type: 'session.reset' });
   };
 
   const questions = quiz?.questions ?? [];
-  const currentQuestion = questions[currentQIndex];
-  const currentResult = results[currentQIndex];
+  const currentQuestion = questions[session.currentQuestionIndex];
+  const currentResult = session.results[session.currentQuestionIndex];
 
   return (
     <div className="mx-auto flex h-[600px] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border/20 bg-background shadow-xl backdrop-blur-xl">
@@ -275,9 +263,9 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
             </motion.div>
           )}
 
-          {step === 'playing' && currentQuestion && (
+          {step === 'playing' && session.phase !== 'submitting' && session.phase !== 'complete' && currentQuestion && (
             <motion.div
-              key={`playing-${currentQIndex}`}
+              key={`playing-${session.currentQuestionIndex}`}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
@@ -285,13 +273,13 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
             >
               <div className="mb-6 flex items-center justify-between">
                 <span className="text-sm font-medium text-muted-foreground">
-                  Question {currentQIndex + 1} of {questions.length}
+                  Question {session.currentQuestionIndex + 1} of {questions.length}
                 </span>
                 <div className="flex gap-1">
                   {questions.map((_, i) => (
                     <div
                       key={i}
-                      className={`h-2 w-8 rounded-full ${i <= currentQIndex ? 'bg-accent' : 'bg-border'}`}
+                      className={`h-2 w-8 rounded-full ${i <= session.currentQuestionIndex ? 'bg-accent' : 'bg-border'}`}
                     />
                   ))}
                 </div>
@@ -303,7 +291,7 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
 
               <div className="space-y-3">
                 {currentQuestion.options.map((option, idx) => {
-                  const isSelected = selectedIndex === idx;
+                  const isSelected = session.selectedIndex === idx;
                   // Correctness comes exclusively from the server grade.
                   const revealed = currentResult !== undefined;
                   const showCorrect = revealed && currentResult.correctIndex === idx;
@@ -313,9 +301,9 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
                     <button
                       key={idx}
                       onClick={() => void handleAnswer(idx)}
-                      disabled={selectedIndex !== null || grading}
+                      disabled={session.selectedIndex !== null || grading}
                       className={`relative flex w-full items-center justify-between rounded-xl border p-4 text-left transition-all ${
-                        selectedIndex === null
+                        session.selectedIndex === null
                           ? 'border-border hover:border-accent/50 hover:bg-accent/8'
                           : showCorrect
                             ? 'border-accent/65 bg-accent/12'
@@ -339,15 +327,15 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
                 })}
               </div>
 
-              {errorMsg && (
+              {session.error && (
                 <p role="alert" className="mt-4 text-sm font-medium text-destructive">
-                  {errorMsg}
+                  {session.error}
                 </p>
               )}
             </motion.div>
           )}
 
-          {step === 'submitting' && (
+          {step === 'playing' && session.phase === 'submitting' && (
             <motion.div
               key="submitting"
               initial={{ opacity: 0 }}
@@ -355,16 +343,19 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
               exit={{ opacity: 0 }}
               className="flex flex-col items-center text-center"
             >
-              {errorMsg ? (
+              {session.error ? (
                 <>
                   <p
                     role="alert"
                     className="mb-6 text-sm font-medium text-destructive"
                   >
-                    {errorMsg}
+                    {session.error}
                   </p>
                   <button
-                    onClick={() => void submitQuiz(answers)}
+                    onClick={() => {
+                      dispatch({ type: 'retry.requested' });
+                      void submitQuiz(session.answers);
+                    }}
                     className="inline-flex items-center justify-center gap-2 rounded-full bg-accent px-8 py-3 text-sm font-medium text-background transition-all hover:bg-accent/90"
                   >
                     <RefreshCw className="h-4 w-4" /> Try Again
@@ -381,7 +372,7 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
             </motion.div>
           )}
 
-          {step === 'results' && summary && (
+          {step === 'playing' && session.phase === 'complete' && session.summary && (
             <motion.div
               key="results"
               initial={{ opacity: 0, scale: 0.9 }}
@@ -390,30 +381,30 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
             >
               <div
                 className={`mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full shadow-lg ${
-                  summary.passed ? 'bg-accent text-accent-foreground' : 'bg-muted text-foreground'
+                  session.summary.passed ? 'bg-accent text-accent-foreground' : 'bg-muted text-foreground'
                 }`}
               >
                 <span className="text-3xl font-bold">
-                  {Math.round((summary.score / summary.total) * 100)}%
+                  {Math.round((session.summary.score / session.summary.total) * 100)}%
                 </span>
               </div>
               <h3 className="mb-2 text-2xl font-bold text-foreground">
-                {summary.passed ? 'Quiz Passed!' : 'Not Quite There Yet'}
+                {session.summary.passed ? 'Quiz Passed!' : 'Not Quite There Yet'}
               </h3>
               <p className="text-muted-foreground">
-                You got {summary.score} out of {summary.total} questions correct.
+                You got {session.summary.score} out of {session.summary.total} questions correct.
               </p>
-              {!summary.passed && (
+              {!session.summary.passed && (
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Passing score: {summary.passingScore}%
+                  Passing score: {session.summary.passingScore}%
                 </p>
               )}
               <div className="mt-8" />
 
-              {summary.passed ? (
+              {session.summary.passed ? (
                 <button
                   onClick={() => {
-                    if (onPass) onPass(Math.round((summary.score / summary.total) * 100));
+                    if (onPass) onPass(Math.round((session.summary!.score / session.summary!.total) * 100));
                     else reset();
                   }}
                   className="inline-flex items-center justify-center rounded-full border-2 border-accent bg-transparent px-8 py-3 text-sm font-medium text-accent transition-all hover:bg-accent/8"

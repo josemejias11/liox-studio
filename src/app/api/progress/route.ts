@@ -1,7 +1,7 @@
 import { headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
 import { ProgressRequestSchema } from '@/lib/contracts/api';
+import { loadSessionProgress, recordHotspots, recordLessonView } from '@/lib/progress-store';
 import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function GET(req: NextRequest) {
@@ -14,25 +14,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const [progressRecords, hotspotRecords] = await Promise.all([
-      prisma.lessonProgress.findMany({ where: { sessionId } }),
-      prisma.hotspotVisit.findMany({ where: { sessionId, layerId: '' } }),
-    ]);
-
-    const lessons: Record<string, { visitedHotspots: string[]; completed: boolean }> = {};
-
-    for (const r of progressRecords) {
-      lessons[r.lessonId] = { visitedHotspots: [], completed: r.completed };
-    }
-
-    for (const h of hotspotRecords) {
-      if (!lessons[h.lessonId]) lessons[h.lessonId] = { visitedHotspots: [], completed: false };
-      if (!lessons[h.lessonId].visitedHotspots.includes(h.label)) {
-        lessons[h.lessonId].visitedHotspots.push(h.label);
-      }
-    }
-
-    return NextResponse.json({ lessons });
+    return NextResponse.json(await loadSessionProgress(sessionId));
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -67,33 +49,11 @@ export async function POST(req: NextRequest) {
 
   try {
     if (body.type === 'lesson') {
-      const { sessionId, lessonId, visitedHotspots, completed } = body;
-
-      await prisma.$transaction(async (tx) => {
-        await tx.session.upsert({
-          where: { id: sessionId },
-          update: { updatedAt: new Date() },
-          create: { id: sessionId },
-        });
-
-        await tx.lessonProgress.upsert({
-          where: { sessionId_lessonId: { sessionId, lessonId } },
-          update: { completed: completed ?? false, courseId: body.courseId ?? '', viewCount: { increment: 1 } },
-          create: { sessionId, lessonId, courseId: body.courseId ?? '', completed: completed ?? false },
-        });
-
-        if (visitedHotspots && visitedHotspots.length > 0) {
-          for (const label of visitedHotspots) {
-            await tx.hotspotVisit.upsert({
-              where: {
-                sessionId_lessonId_layerId_label: { sessionId, lessonId, layerId: '', label },
-              },
-              update: {},
-              create: { sessionId, lessonId, layerId: '', label },
-            });
-          }
-        }
-      });
+      if (body.visitedHotspots !== undefined || body.completed !== undefined) {
+        await recordHotspots(body);
+      } else {
+        await recordLessonView(body);
+      }
 
       return NextResponse.json({ ok: true });
     }
