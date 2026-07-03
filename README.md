@@ -29,6 +29,50 @@ Next.js 16 (root)      ───────────────────
 
 ---
 
+## Module Structure
+
+The codebase is organized into focused modules with clear boundaries:
+
+### TypeScript (`src/`)
+
+| Module | Purpose |
+|--------|---------|
+| `lib/course-flow.ts` | Course flow derivation and navigation item generation |
+| `lib/course-structure.ts` | Course structure types and helpers |
+| `lib/course-content.ts` | Sanity payload normalization to flat sections array |
+| `lib/quiz-session.ts` | Quiz state reducer (answer selection, reveal, submission) |
+| `lib/quiz-grading.ts` | Server-side quiz grading logic |
+| `lib/progress-store.ts` | Prisma progress persistence (hotspots, lessons, quizzes) |
+| `lib/chat-client.ts` | Chat transport to `/api/chat` with response validation |
+| `lib/contracts/` | Zod schemas for Sanity, API, and quiz contracts |
+
+### Player (`src/player/`)
+
+| Module | Purpose |
+|--------|---------|
+| `MotoViewer.tsx` | Main course player shell |
+| `CoursePhaseScreen.tsx` | Phase renderer (cover, lessons, quiz, disclaimer) |
+| `NavMap.tsx` | Full-course navigation map |
+| `LessonRenderer.tsx` | Lesson type dispatcher |
+| `hooks/useCourseNavigation.ts` | Flow-based navigation state machine |
+| `hooks/useCourseSession.ts` | Session ID and consent persistence |
+| `hooks/useWeakTopics.ts` | Weak topic derivation and merge |
+| `lesson-types/registry.ts` | Lesson type metadata and completion modes |
+
+### Parser Service (`parser-service/`)
+
+| Module | Purpose |
+|--------|---------|
+| `settings.py` | Configuration constants from environment |
+| `runtime.py` | Runtime state, Ollama clients, LRU vectorstore cache |
+| `vectorstore.py` | ChromaDB helpers (collection checks, retrieval, chunking) |
+| `documents.py` | Document parsing and upload logic |
+| `rag_chat.py` | RAG chat answer generation |
+| `quiz_generation.py` | Quiz generation from weak topics |
+| `main.py` | FastAPI routes (HTTP adapters only) |
+
+---
+
 ## Performance & Privacy
 
 - **Self-Hosted AI:** All chat and quiz generation runs on your own Ollama host (`llama3`). No proprietary course files or student queries are ever sent to third-party APIs (like OpenAI or Gemini).
@@ -220,6 +264,26 @@ The browser only ever calls these routes; the AI routes proxy server-to-server t
 | `POST`   | `/api/quiz/grade` | Grades AI or CMS quizzes server-side and records the attempt |
 | `POST`   | `/api/upload` | Proxies course-material uploads to the parser service (50 MB cap per file) |
 | `DELETE` | `/api/upload` | Proxies chunk deletion to the parser service |
+
+---
+
+## Testing
+
+```bash
+# Run all TypeScript tests
+npm run test
+
+# Run specific test suites
+npm run test -- src/lib/quiz-session.test.ts
+npm run test -- src/lib/course-content.test.ts
+npm run test -- src/player/hooks/useCourseNavigation.test.ts
+
+# Type checking
+npm run typecheck
+
+# Python parser-service tests (requires venv)
+cd parser-service && pytest tests/ -v
+```
 
 ---
 
