@@ -15,6 +15,7 @@ import type { CourseSection, SanityCourse } from '@/lib/contracts/sanity';
 import { useCourseSession } from './hooks/useCourseSession';
 import { useWeakTopics } from './hooks/useWeakTopics';
 import { CoursePhaseScreen, getCoursePhaseSlideKey } from './CoursePhaseScreen';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // ── Framer Motion slide variants ─────────────────────────────────────────────
 
@@ -115,7 +116,7 @@ export default function MotoViewer({
 
   // ── Weak topics for AI quiz generation ───────────────────────────────────
   const [disclaimerCanProceed, setDisclaimerCanProceed] = useState(true);
-  const weakTopics = useWeakTopics({
+  const { topics: weakTopics } = useWeakTopics({
     phase,
     structure,
     visited,
@@ -180,30 +181,47 @@ export default function MotoViewer({
           exit="exit"
           className="absolute inset-0"
         >
-          <CoursePhaseScreen
-            phase={phase}
-            course={course}
-            structure={structure}
-            currentLesson={currentLesson}
-            lessonKey={lessonKey}
-            hotspots={hotspots}
-            visitedLesson={visited[lessonKey] ?? new Set()}
-            isSpecialComplete={isSpecialComplete ?? false}
-            weakTopics={weakTopics}
-            sessionId={sessionId}
-            persistSession={persistSession}
-            showChapterIntro={showChapterIntro}
-            totalHotspotsVisited={totalHotspotsVisited}
-            totalHotspots={totalHotspots}
-            goNext={goNext}
-            goPrev={goPrev}
-            finishQuiz={nav.finishQuiz}
-            finishChapterQuiz={nav.finishChapterQuiz}
-            dismissChapterIntro={nav.dismissChapterIntro}
-            markVisited={markVisited}
-            baseMarkVisited={baseMarkVisited}
-            onDisclaimerCanProceedChange={setDisclaimerCanProceed}
-          />
+          <ErrorBoundary
+            fallback={
+              <div className="flex flex-col items-center justify-center p-8 text-center">
+                <h2 className="text-lg font-semibold text-red-600">Failed to load course content</h2>
+                <p className="mt-2 text-sm text-gray-600">
+                  Please try refreshing the page or contact support if the issue persists.
+                </p>
+                <button
+                  className="mt-4 rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+                  onClick={() => window.location.reload()}
+                >
+                  Refresh page
+                </button>
+              </div>
+            }
+          >
+            <CoursePhaseScreen
+              phase={phase}
+              course={course}
+              structure={structure}
+              currentLesson={currentLesson}
+              lessonKey={lessonKey}
+              hotspots={hotspots}
+              visitedLesson={visited[lessonKey] ?? new Set()}
+              isSpecialComplete={isSpecialComplete ?? false}
+              weakTopics={weakTopics}
+              sessionId={sessionId}
+              persistSession={persistSession}
+              showChapterIntro={showChapterIntro}
+              totalHotspotsVisited={totalHotspotsVisited}
+              totalHotspots={totalHotspots}
+              goNext={goNext}
+              goPrev={goPrev}
+              finishQuiz={nav.finishQuiz}
+              finishChapterQuiz={nav.finishChapterQuiz}
+              dismissChapterIntro={nav.dismissChapterIntro}
+              markVisited={markVisited}
+              baseMarkVisited={baseMarkVisited}
+              onDisclaimerCanProceedChange={setDisclaimerCanProceed}
+            />
+          </ErrorBoundary>
         </motion.div>
       </AnimatePresence>
 

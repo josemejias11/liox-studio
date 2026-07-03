@@ -6,17 +6,25 @@ import {
   type ProgressStoreDb,
 } from './progress-store';
 
+type MockTx = {
+  session: { upsert: ReturnType<typeof vi.fn> };
+  lessonProgress: { upsert: ReturnType<typeof vi.fn> };
+  hotspotVisit: { upsert: ReturnType<typeof vi.fn> };
+};
+
 function createDb() {
-  const tx = {
+  const tx: MockTx = {
     session: { upsert: vi.fn().mockResolvedValue(undefined) },
     lessonProgress: { upsert: vi.fn().mockResolvedValue(undefined) },
     hotspotVisit: { upsert: vi.fn().mockResolvedValue(undefined) },
   };
 
+  const mockTransaction = vi.fn(async (callback: (tx: MockTx) => Promise<unknown>) => callback(tx));
+
   const db: ProgressStoreDb = {
     lessonProgress: { findMany: vi.fn().mockResolvedValue([]) },
     hotspotVisit: { findMany: vi.fn().mockResolvedValue([]) },
-    $transaction: vi.fn(async (callback) => callback(tx)),
+    $transaction: mockTransaction as unknown as ProgressStoreDb['$transaction'],
   };
 
   return { db, tx };

@@ -4,12 +4,20 @@ import { useEffect, useMemo, useState } from 'react';
 import type { CoursePhase } from './useCourseNavigation';
 import type { CourseStructure } from '@/lib/course-structure';
 
+const MAX_SESSION_WEAK_TOPICS = 10;
+const MAX_MERGED_WEAK_TOPICS = 15;
+
 export interface UseWeakTopicsArgs {
   phase: CoursePhase;
   structure: CourseStructure;
   visited: Record<string, Set<string>>;
   courseId: string;
   currentLessonType?: string;
+}
+
+export interface UseWeakTopicsResult {
+  topics: string[];
+  isLoading: boolean;
 }
 
 export function deriveSessionWeakTopics(
@@ -27,7 +35,7 @@ export function deriveSessionWeakTopics(
     }
   }
 
-  return Array.from(topics).slice(0, 10);
+  return Array.from(topics).slice(0, MAX_SESSION_WEAK_TOPICS);
 }
 
 export function mergeWeakTopics(
@@ -36,7 +44,7 @@ export function mergeWeakTopics(
   apiWeakTopics: string[],
 ): string[] {
   if (!isQuizPhase) return [];
-  return Array.from(new Set([...sessionWeakTopics, ...apiWeakTopics])).slice(0, 15);
+  return Array.from(new Set([...sessionWeakTopics, ...apiWeakTopics])).slice(0, MAX_MERGED_WEAK_TOPICS);
 }
 
 export function useWeakTopics({
@@ -45,8 +53,9 @@ export function useWeakTopics({
   visited,
   courseId,
   currentLessonType,
-}: UseWeakTopicsArgs): string[] {
+}: UseWeakTopicsArgs): UseWeakTopicsResult {
   const [apiWeakTopics, setApiWeakTopics] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const sessionWeakTopics = useMemo(
     () => deriveSessionWeakTopics(structure.lessonSections, visited),
@@ -58,7 +67,7 @@ export function useWeakTopics({
     phase.phase === 'chapter-quiz' ||
     (phase.phase === 'chapter' && currentLessonType === 'quiz');
 
-  const weakTopics = useMemo(
+  const topics = useMemo(
     () => mergeWeakTopics(isQuizPhase, sessionWeakTopics, apiWeakTopics),
     [apiWeakTopics, isQuizPhase, sessionWeakTopics],
   );
@@ -75,6 +84,7 @@ export function useWeakTopics({
       ],
     }));
 
+    setIsLoading(true);
     fetch('/api/analytics/weak-topics', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -85,8 +95,13 @@ export function useWeakTopics({
         if (!data?.weakTopics?.length) return;
         setApiWeakTopics(data.weakTopics);
       })
-      .catch(() => {});
+      .catch((error) => {
+        console.warn('[useWeakTopics] Failed to fetch weak topics:', error instanceof Error ? error.message : error);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, [courseId, isQuizPhase, structure.lessonSections]);
 
-  return weakTopics;
+  return { topics, isLoading };
 }
