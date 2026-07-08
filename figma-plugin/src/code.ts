@@ -8,6 +8,17 @@ const ACTIVE_FONTS = {
 
 const FONT_REGULAR = ACTIVE_FONTS.regular;
 const FONT_SEMIBOLD = ACTIVE_FONTS.strong;
+const DEFAULT_TYPE_SCALE = {
+  display: 68,
+  subtitle: 40,
+  sectionLabel: 50,
+  cardTitle: 30,
+  detailTitle: 26,
+  body: 20,
+  secondary: 18,
+  caption: 16,
+  micro: 15,
+};
 
 function regularFont() {
   return ACTIVE_FONTS.regular;
@@ -19,6 +30,10 @@ function strongFont() {
 
 function typeSize(state: BoardState, key: keyof BoardContent["style"]["typeScale"]) {
   return state.content.style.typeScale[key];
+}
+
+function typeSizeOrDefault(state: BoardState | undefined, key: keyof BoardContent["style"]["typeScale"]) {
+  return state ? typeSize(state, key) : DEFAULT_TYPE_SCALE[key];
 }
 
 function getFrameLayout(state: BoardState, frameId: string) {
@@ -109,19 +124,19 @@ function createStepBadge(frame: any, number: string, label: string) {
   createText(frame, label, 220, 28, 14, FONT_REGULAR, PALETTE.slate);
 }
 
-function createInfoCard(frame: any, card: { x: number; y: number; w: number; h: number; title: string; body: string }) {
+function createInfoCard(frame: any, card: { x: number; y: number; w: number; h: number; title: string; body: string }, state?: BoardState) {
   const container = createFrame(frame, card.title, card.x, card.y, card.w, card.h, PALETTE.white);
   setStroke(container, PALETTE.border, 1);
-  createText(container, card.title, 30, 26, 28, FONT_SEMIBOLD, PALETTE.indigo, { width: card.w - 60 });
-  createText(container, card.body, 30, 84, 19, FONT_REGULAR, PALETTE.slate, { width: card.w - 60 });
+  createText(container, card.title, 30, 26, typeSizeOrDefault(state, "cardTitle"), FONT_SEMIBOLD, PALETTE.indigo, { width: card.w - 60 });
+  createText(container, card.body, 30, 84, typeSizeOrDefault(state, "body"), FONT_REGULAR, PALETTE.slate, { width: card.w - 60 });
   return container;
 }
 
-function createDetailCard(frame: any, card: { x: number; y: number; w: number; h: number; title: string; body: string }) {
+function createDetailCard(frame: any, card: { x: number; y: number; w: number; h: number; title: string; body: string }, state?: BoardState) {
   const container = createFrame(frame, card.title, card.x, card.y, card.w, card.h, PALETTE.white);
   setStroke(container, PALETTE.border, 1);
-  createText(container, card.title, 28, 22, 24, FONT_SEMIBOLD, PALETTE.indigo, { width: card.w - 56 });
-  createText(container, card.body, 28, 68, 17, FONT_REGULAR, PALETTE.slate, { width: card.w - 56 });
+  createText(container, card.title, 28, 22, typeSizeOrDefault(state, "detailTitle"), FONT_SEMIBOLD, PALETTE.indigo, { width: card.w - 56 });
+  createText(container, card.body, 28, 68, typeSizeOrDefault(state, "secondary"), FONT_REGULAR, PALETTE.slate, { width: card.w - 56 });
   return container;
 }
 
@@ -138,11 +153,11 @@ function createChip(frame: any, x: number, y: number, w: number, h: number, text
   return chip;
 }
 
-function createJourneyStop(frame: any, x: number, y: number, number: string, title: string) {
+function createJourneyStop(frame: any, x: number, y: number, number: string, title: string, state?: BoardState) {
   const badge = createFrame(frame, number, x + 74, y, 60, 60, PALETTE.indigo);
   badge.cornerRadius = 30;
   createText(badge, number, 0, 0, 28, FONT_SEMIBOLD, PALETTE.white, { width: 60, height: 60, align: "CENTER", valign: "CENTER" });
-  createText(frame, title, x, y + 92, 20, FONT_SEMIBOLD, PALETTE.black, { width: 208, align: "CENTER" });
+  createText(frame, title, x, y + 92, typeSizeOrDefault(state, "detailTitle"), FONT_SEMIBOLD, PALETTE.black, { width: 208, align: "CENTER" });
 }
 
 function createConnector(frame: any, x: number, y: number, w: number) {
@@ -150,47 +165,285 @@ function createConnector(frame: any, x: number, y: number, w: number) {
   line.cornerRadius = 2;
 }
 
-function createFeaturePill(frame: any, x: number, y: number, w: number, h: number, text: string) {
+function createFeaturePill(frame: any, x: number, y: number, w: number, h: number, text: string, state?: BoardState) {
   const pill = createFrame(frame, text, x, y, w, h, PALETTE.white);
   pill.cornerRadius = 16;
   setStroke(pill, PALETTE.border, 1);
-  createText(pill, text, 18, 0, 16, FONT_REGULAR, PALETTE.black, { width: w - 36, height: h, valign: "CENTER" });
+  createText(pill, text, 18, 0, typeSizeOrDefault(state, "secondary"), FONT_REGULAR, PALETTE.black, { width: w - 36, height: h, valign: "CENTER" });
 }
 
-function createLessonTile(frame: any, card: { x: number; y: number; w: number; h: number; title: string; body: string }, state: BoardState) {
-  const tile = createFrame(frame, card.title, card.x, card.y, card.w, card.h, PALETTE.white);
-  setStroke(tile, PALETTE.border, 1);
-  createText(tile, card.title, 26, 24, 28, FONT_SEMIBOLD, PALETTE.indigo, { width: card.w - 52 });
-  createText(tile, card.body, 26, 78, 17, FONT_REGULAR, PALETTE.slate, { width: card.w - 52 });
-  if (state.config.includeScreenshots) {
-    const zone = createFrame(tile, "[screenshot]", 26, card.h - 64, 190, 36, PALETTE.indigoSoft);
-    zone.cornerRadius = 18;
-    zone.dashPattern = [6, 4];
-    setStroke(zone, PALETTE.indigo, 1);
-    createText(zone, card.title, 0, 0, 14, FONT_SEMIBOLD, PALETTE.indigo, {
-      width: 190,
-      height: 36,
-      align: "CENTER",
-      valign: "CENTER",
-    });
+function createMiniFlowNode(frame: any, card: { x: number; y: number; w: number; h: number; label: string }, state?: BoardState) {
+  const node = createFrame(frame, card.label, card.x, card.y, card.w, card.h, PALETTE.white);
+  node.cornerRadius = 14;
+  setStroke(node, PALETTE.indigo, 1);
+  createText(node, card.label, 10, 0, typeSizeOrDefault(state, "micro"), FONT_SEMIBOLD, PALETTE.indigo, {
+    width: card.w - 20,
+    height: card.h,
+    align: "CENTER",
+    valign: "CENTER",
+  });
+  return node;
+}
+
+function createLessonScreenCard(
+  frame: any,
+  card: { x: number; y: number; w: number; h: number; label: string; accent?: string; tone?: string; dense?: boolean },
+  state?: BoardState,
+) {
+  const shell = createFrame(frame, `${card.label} screen`, card.x, card.y, card.w, card.h, PALETTE.white);
+  shell.cornerRadius = 16;
+  setStroke(shell, PALETTE.border, 1);
+
+  const topBar = createFrame(shell, "top-bar", 0, 0, card.w, 14, card.tone || PALETTE.frost);
+  topBar.cornerRadius = 0;
+  const avatar = createFrame(shell, "avatar", 16, 28, 34, 34, PALETTE.indigoSoft);
+  avatar.cornerRadius = 17;
+  const titleBar = createFrame(shell, "title-bar", 62, 34, card.w - 84, 10, card.accent || PALETTE.indigoSoft);
+  titleBar.cornerRadius = 5;
+  const detailBar = createFrame(shell, "detail-bar", 62, 52, Math.max(54, card.w - 114), 8, PALETTE.frost);
+  detailBar.cornerRadius = 4;
+  const bottomBar = createFrame(shell, "bottom-bar", 18, card.h - 18, card.w - 36, 6, card.accent || PALETTE.indigoSoft);
+  bottomBar.cornerRadius = 3;
+  if (card.dense) {
+    for (let index = 0; index < 3; index += 1) {
+      const row = createFrame(shell, `row-${index}`, 16, 80 + index * 28, card.w - 32, 18, PALETTE.white);
+      row.cornerRadius = 9;
+      setStroke(row, PALETTE.border, 1);
+    }
   }
+
+  createText(shell, card.label, 14, card.dense ? card.h - 54 : card.h - 46, typeSizeOrDefault(state, "micro"), FONT_SEMIBOLD, PALETTE.indigo, {
+    width: card.w - 28,
+    height: 24,
+    align: "CENTER",
+  });
+
+  return shell;
 }
 
-function createProcessRow(frame: any, row: { x: number; y: number; w: number; h: number; number: string; title: string; body?: string }) {
+function createLessonConnector(frame: any, fromX: number, fromY: number, toX: number, toY: number) {
+  if (fromY === toY) {
+    const width = Math.max(12, toX - fromX);
+    const line = createFrame(frame, "lesson-connector", fromX, fromY, width, 3, PALETTE.indigo);
+    line.cornerRadius = 2;
+    createText(frame, "→", fromX + width - 4, fromY - 10, 20, FONT_SEMIBOLD, PALETTE.indigo);
+    return;
+  }
+
+  const elbowX = Math.round((fromX + toX) / 2);
+  const topY = Math.min(fromY, toY);
+  const leftX = Math.min(fromX, elbowX);
+  const horizontalA = createFrame(frame, "lesson-connector-a", leftX, fromY, Math.abs(elbowX - fromX), 3, PALETTE.indigo);
+  horizontalA.cornerRadius = 2;
+  const vertical = createFrame(frame, "lesson-connector-b", elbowX, topY, 3, Math.abs(toY - fromY), PALETTE.indigo);
+  vertical.cornerRadius = 2;
+  const horizontalB = createFrame(frame, "lesson-connector-c", Math.min(elbowX, toX), toY, Math.abs(toX - elbowX), 3, PALETTE.indigo);
+  horizontalB.cornerRadius = 2;
+  createText(frame, "→", toX - 4, toY - 10, 20, FONT_SEMIBOLD, PALETTE.indigo);
+}
+
+function createLessonFlowCluster(
+  frame: any,
+  card: { x: number; y: number; w: number; h: number; title: string; summary: string; steps: { label: string }[]; result: string; number: string },
+  state: BoardState,
+) {
+  const cluster = createFrame(frame, card.title, card.x, card.y, card.w, card.h, PALETTE.white);
+  cluster.cornerRadius = 22;
+  setStroke(cluster, PALETTE.border, 1);
+
+  const badge = createFrame(cluster, `${card.number}`, 18, 18, 46, 46, PALETTE.indigo);
+  badge.cornerRadius = 23;
+  createText(badge, card.number, 0, 0, 22, FONT_SEMIBOLD, PALETTE.white, { width: 46, height: 46, align: "CENTER", valign: "CENTER" });
+  createText(cluster, card.title, 78, 18, typeSizeOrDefault(state, "detailTitle"), FONT_SEMIBOLD, PALETTE.black, { width: card.w - 96 });
+  createText(cluster, card.summary, 78, 52, typeSizeOrDefault(state, "micro"), FONT_REGULAR, PALETTE.slate, { width: card.w - 104 });
+
+  const screens = [
+    { x: 22, y: 120, w: 128, h: 188, label: card.steps[0]?.label || "Start", accent: PALETTE.indigo, tone: PALETTE.indigoSoft },
+    { x: 190, y: 84, w: 144, h: 218, label: card.steps[1]?.label || "Explore", accent: PALETTE.indigo, tone: PALETTE.pearl, dense: true },
+    { x: 366, y: 130, w: 128, h: 188, label: card.steps[2]?.label || "Complete", accent: PALETTE.indigo, tone: PALETTE.indigoSoft },
+    { x: 186, y: 350, w: 152, h: 204, label: "Outcome", accent: PALETTE.indigo, tone: PALETTE.pearl, dense: true },
+  ];
+
+  createLessonScreenCard(cluster, screens[0], state);
+  createLessonScreenCard(cluster, screens[1], state);
+  createLessonScreenCard(cluster, screens[2], state);
+  createLessonScreenCard(cluster, screens[3], state);
+
+  createLessonConnector(cluster, screens[0].x + screens[0].w, screens[0].y + 82, screens[1].x, screens[1].y + 82);
+  createLessonConnector(cluster, screens[1].x + screens[1].w, screens[1].y + 100, screens[2].x, screens[2].y + 100);
+  createLessonConnector(cluster, screens[1].x + 72, screens[1].y + screens[1].h, screens[3].x + 72, screens[3].y);
+  createLessonConnector(cluster, screens[2].x + 64, screens[2].y + screens[2].h, screens[3].x + 112, screens[3].y + 24);
+
+  const note = createFrame(cluster, "result-note", 24, 574, card.w - 48, 72, PALETTE.indigoSoft);
+  note.cornerRadius = 16;
+  setStroke(note, PALETTE.indigo, 1);
+  createText(note, card.result, 18, 12, typeSizeOrDefault(state, "caption"), FONT_REGULAR, PALETTE.slate, { width: card.w - 84 });
+
+  return cluster;
+}
+
+function createJourneyScreenNode(
+  frame: any,
+  card: { x: number; y: number; w: number; h: number; title: string; route: string; accent?: string; tone?: string; dense?: boolean },
+  state: BoardState,
+) {
+  const shell = createLessonScreenCard(
+    frame,
+    { x: card.x, y: card.y, w: card.w, h: card.h, label: card.title, accent: card.accent, tone: card.tone, dense: card.dense },
+    state,
+  );
+  createText(shell, card.route, 12, 18, 11, FONT_SEMIBOLD, PALETTE.slate, { width: card.w - 24, align: "CENTER" });
+  return shell;
+}
+
+function createJourneyMapCluster(
+  frame: any,
+  card: { x: number; y: number; w: number; h: number; title: string; summary: string; screens: ScreenCard[]; number: string; tone?: string },
+  state: BoardState,
+) {
+  const cluster = createFrame(frame, card.title, card.x, card.y, card.w, card.h, PALETTE.white);
+  cluster.cornerRadius = 22;
+  setStroke(cluster, PALETTE.border, 1);
+
+  const badge = createFrame(cluster, `${card.number}`, 18, 18, 46, 46, PALETTE.indigo);
+  badge.cornerRadius = 23;
+  createText(badge, card.number, 0, 0, 22, FONT_SEMIBOLD, PALETTE.white, { width: 46, height: 46, align: "CENTER", valign: "CENTER" });
+  createText(cluster, card.title, 78, 18, typeSizeOrDefault(state, "detailTitle"), FONT_SEMIBOLD, PALETTE.black, { width: card.w - 96 });
+  createText(cluster, card.summary, 78, 52, typeSizeOrDefault(state, "micro"), FONT_REGULAR, PALETTE.slate, { width: card.w - 100 });
+
+  const coords = [
+    { x: 24, y: 132, w: 132, h: 194 },
+    { x: 190, y: 88, w: 148, h: 224 },
+    { x: 370, y: 132, w: 132, h: 194 },
+    { x: 196, y: 368, w: 148, h: 208 },
+  ];
+
+  card.screens.slice(0, 4).forEach((screen, index) => {
+    const slot = coords[index];
+    if (!slot) return;
+    createJourneyScreenNode(
+      cluster,
+      {
+        ...slot,
+        title: screen.title,
+        route: screen.route,
+        accent: PALETTE.indigo,
+        tone: index === 1 ? PALETTE.pearl : card.tone || PALETTE.indigoSoft,
+        dense: index !== 0,
+      },
+      state,
+    );
+  });
+
+  if (card.screens.length > 1) {
+    createLessonConnector(cluster, coords[0].x + coords[0].w, coords[0].y + 84, coords[1].x, coords[1].y + 84);
+    createLessonConnector(cluster, coords[1].x + coords[1].w, coords[1].y + 104, coords[2].x, coords[2].y + 104);
+  }
+  if (card.screens.length > 3) {
+    createLessonConnector(cluster, coords[1].x + 74, coords[1].y + coords[1].h, coords[3].x + 74, coords[3].y);
+    createLessonConnector(cluster, coords[2].x + 66, coords[2].y + coords[2].h, coords[3].x + 114, coords[3].y + 22);
+  }
+
+  const lastScreen = card.screens[Math.min(3, card.screens.length - 1)];
+  if (lastScreen?.note) {
+    const note = createFrame(cluster, "journey-note", 24, 600, card.w - 48, 64, PALETTE.indigoSoft);
+    note.cornerRadius = 16;
+    setStroke(note, PALETTE.indigo, 1);
+    createText(note, lastScreen.note, 18, 12, typeSizeOrDefault(state, "caption"), FONT_REGULAR, PALETTE.slate, { width: card.w - 84 });
+  }
+
+  return cluster;
+}
+
+function createSystemFlowCluster(
+  frame: any,
+  card: { x: number; y: number; w: number; h: number; title: string; summary: string; nodes: string[]; note: string; number: string; tone?: string },
+  state: BoardState,
+) {
+  const cluster = createFrame(frame, card.title, card.x, card.y, card.w, card.h, PALETTE.white);
+  cluster.cornerRadius = 22;
+  setStroke(cluster, PALETTE.border, 1);
+
+  const badge = createFrame(cluster, `${card.number}`, 18, 18, 46, 46, PALETTE.indigo);
+  badge.cornerRadius = 23;
+  createText(badge, card.number, 0, 0, 22, FONT_SEMIBOLD, PALETTE.white, { width: 46, height: 46, align: "CENTER", valign: "CENTER" });
+  createText(cluster, card.title, 78, 18, typeSizeOrDefault(state, "detailTitle"), FONT_SEMIBOLD, PALETTE.black, { width: card.w - 96 });
+  createText(cluster, card.summary, 78, 52, typeSizeOrDefault(state, "micro"), FONT_REGULAR, PALETTE.slate, { width: card.w - 100 });
+
+  const coords = [
+    { x: 22, y: 126, w: 124, h: 182 },
+    { x: 178, y: 86, w: 144, h: 214 },
+    { x: 354, y: 126, w: 124, h: 182 },
+    { x: 178, y: 342, w: 144, h: 196 },
+  ];
+
+  card.nodes.slice(0, 4).forEach((node, index) => {
+    const slot = coords[index];
+    if (!slot) return;
+    createLessonScreenCard(
+      cluster,
+      {
+        ...slot,
+        label: node,
+        accent: PALETTE.indigo,
+        tone: index === 1 ? PALETTE.pearl : card.tone || PALETTE.indigoSoft,
+        dense: index > 0,
+      },
+      state,
+    );
+  });
+
+  if (card.nodes.length > 1) {
+    createLessonConnector(cluster, coords[0].x + coords[0].w, coords[0].y + 84, coords[1].x, coords[1].y + 84);
+    createLessonConnector(cluster, coords[1].x + coords[1].w, coords[1].y + 98, coords[2].x, coords[2].y + 98);
+  }
+  if (card.nodes.length > 3) {
+    createLessonConnector(cluster, coords[1].x + 72, coords[1].y + coords[1].h, coords[3].x + 72, coords[3].y);
+    createLessonConnector(cluster, coords[2].x + 62, coords[2].y + coords[2].h, coords[3].x + 108, coords[3].y + 18);
+  }
+
+  const note = createFrame(cluster, "system-note", 24, 570, card.w - 48, 72, PALETTE.indigoSoft);
+  note.cornerRadius = 16;
+  setStroke(note, PALETTE.indigo, 1);
+  createText(note, card.note, 18, 12, typeSizeOrDefault(state, "caption"), FONT_REGULAR, PALETTE.slate, { width: card.w - 84 });
+
+  return cluster;
+}
+
+function createOutcomePillar(
+  frame: any,
+  card: { x: number; y: number; w: number; h: number; title: string; body: string; number: string; tone?: string },
+  state: BoardState,
+) {
+  const pillar = createFrame(frame, card.title, card.x, card.y, card.w, card.h, PALETTE.white);
+  pillar.cornerRadius = 20;
+  setStroke(pillar, PALETTE.border, 1);
+
+  const badge = createFrame(pillar, `${card.number}`, 22, 22, 42, 42, card.tone || PALETTE.indigoSoft);
+  badge.cornerRadius = 21;
+  createText(badge, card.number, 0, 0, 20, FONT_SEMIBOLD, PALETTE.indigo, { width: 42, height: 42, align: "CENTER", valign: "CENTER" });
+  createText(pillar, card.title, 22, 86, typeSizeOrDefault(state, "detailTitle"), FONT_SEMIBOLD, PALETTE.black, { width: card.w - 44 });
+  createText(pillar, card.body, 22, 130, typeSizeOrDefault(state, "secondary"), FONT_REGULAR, PALETTE.slate, { width: card.w - 44 });
+  const base = createFrame(pillar, "pillar-base", 22, card.h - 20, card.w - 44, 6, PALETTE.indigoSoft);
+  base.cornerRadius = 3;
+  return pillar;
+}
+
+function createProcessRow(frame: any, row: { x: number; y: number; w: number; h: number; number: string; title: string; body?: string }, state?: BoardState) {
   const container = createFrame(frame, row.title, row.x, row.y, row.w, row.h, PALETTE.white);
   setStroke(container, PALETTE.border, 1);
   const badge = createFrame(container, row.number, 26, 22, 58, 58, PALETTE.indigo);
   badge.cornerRadius = 29;
   createText(badge, row.number, 0, 0, 28, FONT_SEMIBOLD, PALETTE.white, { width: 58, height: 58, align: "CENTER", valign: "CENTER" });
   if (row.body) {
-    createText(container, row.title, 112, 14, 20, FONT_SEMIBOLD, PALETTE.black, { width: row.w - 140 });
-    createText(container, row.body, 112, 42, 14, FONT_REGULAR, PALETTE.slate, { width: row.w - 140 });
+    createText(container, row.title, 112, 14, typeSizeOrDefault(state, "detailTitle"), FONT_SEMIBOLD, PALETTE.black, { width: row.w - 140 });
+    createText(container, row.body, 112, 42, typeSizeOrDefault(state, "secondary"), FONT_REGULAR, PALETTE.slate, { width: row.w - 140 });
   } else {
-    createText(container, row.title, 112, 0, 20, FONT_SEMIBOLD, PALETTE.black, { width: row.w - 140, height: row.h, valign: "CENTER" });
+    createText(container, row.title, 112, 0, typeSizeOrDefault(state, "detailTitle"), FONT_SEMIBOLD, PALETTE.black, { width: row.w - 140, height: row.h, valign: "CENTER" });
   }
 }
 
-function createArchitectureStepRow(frame: any, row: { x: number; y: number; w: number; h: number; number: string; title: string; body: string }) {
+function createArchitectureStepRow(frame: any, row: { x: number; y: number; w: number; h: number; number: string; title: string; body: string }, state?: BoardState) {
   const container = createFrame(frame, row.title, row.x, row.y, row.w, row.h, PALETTE.white);
   container.cornerRadius = 22;
   setStroke(container, PALETTE.border, 1);
@@ -205,18 +458,18 @@ function createArchitectureStepRow(frame: any, row: { x: number; y: number; w: n
     valign: "CENTER",
   });
 
-  createText(container, row.title, 96, 14, 20, FONT_SEMIBOLD, PALETTE.black, { width: row.w - 124 });
-  createText(container, row.body, 96, 42, 15, FONT_REGULAR, PALETTE.slate, { width: row.w - 124 });
+  createText(container, row.title, 96, 14, typeSizeOrDefault(state, "detailTitle"), FONT_SEMIBOLD, PALETTE.black, { width: row.w - 124 });
+  createText(container, row.body, 96, 42, typeSizeOrDefault(state, "secondary"), FONT_REGULAR, PALETTE.slate, { width: row.w - 124 });
 }
 
-function createOutcomeCard(frame: any, card: { x: number; y: number; w: number; h: number; title: string; body: string }) {
+function createOutcomeCard(frame: any, card: { x: number; y: number; w: number; h: number; title: string; body: string }, state?: BoardState) {
   const container = createFrame(frame, card.title, card.x, card.y, card.w, card.h, PALETTE.white);
   setStroke(container, PALETTE.border, 1);
   const icon = createFrame(container, "icon", 28, 28, 52, 52, PALETTE.indigoSoft);
   icon.cornerRadius = 16;
   createText(icon, "★", 0, 0, 24, FONT_REGULAR, PALETTE.indigo, { width: 52, height: 52, align: "CENTER", valign: "CENTER" });
-  createText(container, card.title, 28, 104, 24, FONT_SEMIBOLD, PALETTE.black, { width: card.w - 56 });
-  createText(container, card.body, 28, 150, 17, FONT_REGULAR, PALETTE.slate, { width: card.w - 56 });
+  createText(container, card.title, 28, 104, typeSizeOrDefault(state, "detailTitle"), FONT_SEMIBOLD, PALETTE.black, { width: card.w - 56 });
+  createText(container, card.body, 28, 150, typeSizeOrDefault(state, "secondary"), FONT_REGULAR, PALETTE.slate, { width: card.w - 56 });
 }
 
 function createNoteBlock(frame: any, x: number, y: number, w: number, h: number, text: string) {
@@ -233,14 +486,23 @@ function createNoteBlock(frame: any, x: number, y: number, w: number, h: number,
 function createScreenshotZone(frame: any, x: number, y: number, w: number, h: number, label: string, state: BoardState) {
   if (!state.config.includeScreenshots) return;
   const zone = createFrame(frame, `[screenshot] ${label}`, x, y, w, h, PALETTE.indigoSoft);
-  zone.cornerRadius = 12;
-  zone.dashPattern = [10, 6];
-  setStroke(zone, PALETTE.indigo, 2);
-  createText(zone, `[Screenshot: ${label}]`, 0, 0, 16, FONT_SEMIBOLD, PALETTE.indigo, {
-    width: w,
-    height: h,
+  zone.cornerRadius = 16;
+  setStroke(zone, PALETTE.border, 1);
+  const topBar = createFrame(zone, "screenshot-top-bar", 0, 0, w, 18, PALETTE.pearl);
+  topBar.cornerRadius = 0;
+  const stage = createFrame(zone, "screenshot-stage", 18, 36, w - 36, Math.max(48, h - 90), PALETTE.white);
+  stage.cornerRadius = 12;
+  setStroke(stage, PALETTE.border, 1);
+  const hero = createFrame(stage, "screenshot-hero", 14, 16, stage.width - 28, Math.max(18, Math.round((stage.height - 58) * 0.42)), PALETTE.frost);
+  hero.cornerRadius = 10;
+  const rowWidth = stage.width - 42;
+  [0, 1, 2].forEach((index) => {
+    const line = createFrame(stage, `screenshot-line-${index}`, 14, hero.y + hero.height + 14 + index * 18, Math.max(48, rowWidth - index * 18), 8, PALETTE.indigoSoft);
+    line.cornerRadius = 4;
+  });
+  createText(zone, label, 18, h - 34, 13, FONT_SEMIBOLD, PALETTE.indigo, {
+    width: w - 36,
     align: "CENTER",
-    valign: "CENTER",
   });
 }
 
@@ -323,34 +585,34 @@ function createBulletList(frame: any, items: string[], x: number, y: number, wid
   });
 }
 
-function createLabelValueCard(frame: any, card: { x: number; y: number; w: number; h: number; title: string; body: string }) {
+function createLabelValueCard(frame: any, card: { x: number; y: number; w: number; h: number; title: string; body: string }, state?: BoardState) {
   const container = createFrame(frame, card.title, card.x, card.y, card.w, card.h, PALETTE.indigoSoft);
   container.cornerRadius = 12;
   setStroke(container, PALETTE.indigo, 1);
-  createText(container, card.title, 18, 10, 18, FONT_SEMIBOLD, PALETTE.indigo, { width: card.w - 36 });
-  createText(container, card.body, 18, 38, 13, FONT_REGULAR, PALETTE.slate, { width: card.w - 36 });
+  createText(container, card.title, 18, 10, typeSizeOrDefault(state, "secondary"), FONT_SEMIBOLD, PALETTE.indigo, { width: card.w - 36 });
+  createText(container, card.body, 18, 38, typeSizeOrDefault(state, "caption"), FONT_REGULAR, PALETTE.slate, { width: card.w - 36 });
   return container;
 }
 
-function createMetricListCard(frame: any, x: number, y: number, w: number, h: number, title: string, items: string[]) {
+function createMetricListCard(frame: any, x: number, y: number, w: number, h: number, title: string, items: string[], state?: BoardState) {
   const card = createFrame(frame, title, x, y, w, h, PALETTE.white);
   card.cornerRadius = 16;
   setStroke(card, PALETTE.border, 1);
-  createText(card, title, 24, 22, 22, FONT_SEMIBOLD, PALETTE.indigo, { width: w - 48 });
+  createText(card, title, 24, 22, typeSizeOrDefault(state, "detailTitle"), FONT_SEMIBOLD, PALETTE.indigo, { width: w - 48 });
   let cy = 64;
   items.forEach((item) => {
-    createText(card, `• ${item}`, 24, cy, 17, FONT_REGULAR, PALETTE.slate, { width: w - 48 });
+    createText(card, `• ${item}`, 24, cy, typeSizeOrDefault(state, "secondary"), FONT_REGULAR, PALETTE.slate, { width: w - 48 });
     cy += 34;
   });
   return card;
 }
 
-function createSupportCard(frame: any, card: { x: number; y: number; w: number; h: number; title: string; body: string }) {
+function createSupportCard(frame: any, card: { x: number; y: number; w: number; h: number; title: string; body: string }, state?: BoardState) {
   const container = createFrame(frame, card.title, card.x, card.y, card.w, card.h, PALETTE.white);
   container.cornerRadius = 16;
   setStroke(container, PALETTE.border, 1);
-  createText(container, card.title, 24, 20, 20, FONT_SEMIBOLD, PALETTE.indigo, { width: card.w - 48 });
-  createText(container, card.body, 24, 52, 15, FONT_REGULAR, PALETTE.slate, { width: card.w - 48 });
+  createText(container, card.title, 24, 20, typeSizeOrDefault(state, "detailTitle"), FONT_SEMIBOLD, PALETTE.indigo, { width: card.w - 48 });
+  createText(container, card.body, 24, 52, typeSizeOrDefault(state, "caption"), FONT_REGULAR, PALETTE.slate, { width: card.w - 48 });
   return container;
 }
 
@@ -365,27 +627,27 @@ function createScreenFlowCard(
 
   const bar = createFrame(container, `${card.title}-bar`, 0, 0, card.w, 34, PALETTE.frost);
   bar.cornerRadius = 0;
-  createText(bar, card.route, 16, 9, 12, FONT_SEMIBOLD, PALETTE.slate, { width: card.w - 32 });
+  createText(bar, card.route, 16, 9, typeSizeOrDefault(state, "micro"), FONT_SEMIBOLD, PALETTE.slate, { width: card.w - 32 });
 
-  createText(container, card.title, 18, 48, 18, FONT_SEMIBOLD, PALETTE.black, { width: card.w - 36 });
+  createText(container, card.title, 18, 48, typeSizeOrDefault(state, "secondary"), FONT_SEMIBOLD, PALETTE.black, { width: card.w - 36 });
   createScreenshotZone(container, 18, 82, card.w - 36, 114, card.screenshot, state);
   if (card.note) {
-    createText(container, card.note, 18, 210, 12, FONT_REGULAR, PALETTE.slate, { width: card.w - 36 });
+    createText(container, card.note, 18, 210, typeSizeOrDefault(state, "micro"), FONT_REGULAR, PALETTE.slate, { width: card.w - 36 });
   }
 
   return container;
 }
 
-function createCompactNotesCard(frame: any, x: number, y: number, w: number, h: number, title: string, items: string[]) {
+function createCompactNotesCard(frame: any, x: number, y: number, w: number, h: number, title: string, items: string[], state?: BoardState) {
   const card = createFrame(frame, title, x, y, w, h, PALETTE.white);
   card.cornerRadius = 16;
   setStroke(card, PALETTE.border, 1);
-  createText(card, title, 24, 20, 18, FONT_SEMIBOLD, PALETTE.indigo, { width: w - 48 });
+  createText(card, title, 24, 20, typeSizeOrDefault(state, "secondary"), FONT_SEMIBOLD, PALETTE.indigo, { width: w - 48 });
   const columnWidth = Math.floor((w - 72) / 2);
   items.slice(0, 4).forEach((item, index) => {
     const col = index % 2;
     const row = Math.floor(index / 2);
-    createText(card, `• ${item}`, 24 + col * (columnWidth + 24), 54 + row * 28, 13, FONT_REGULAR, PALETTE.slate, {
+    createText(card, `• ${item}`, 24 + col * (columnWidth + 24), 54 + row * 28, typeSizeOrDefault(state, "micro"), FONT_REGULAR, PALETTE.slate, {
       width: columnWidth,
     });
   });
@@ -575,6 +837,45 @@ function createControlKitPage(state: BoardState) {
   });
 }
 
+function buildLessonGalleryFrames(content: BoardContent["content"]["lessonGallery"]): FrameSpec[] {
+  const lessonGroups = [
+    content.lessons.slice(0, 3),
+    content.lessons.slice(3, 6),
+    content.lessons.slice(6, 9),
+  ].filter((group) => group.length > 0);
+
+  return lessonGroups.map((lessons, groupIndex) => ({
+    id: `content.lessonGallery.${groupIndex + 1}`,
+    name: groupIndex === 0 ? content.name : `${content.name} ${groupIndex + 1}`,
+    displayTitle: "lesson type flow map",
+    subtitle: groupIndex === 0 ? content.subtitle : "Repeatable screen-map format applied across every lesson type",
+    background: FRAME_BG[4],
+    badge: ["5", content.badgeLabel],
+    build(frame, state) {
+      createHeader(frame, this.displayTitle || this.name, this.subtitle, state, this.id);
+      createStepBadge(frame, this.badge[0], this.badge[1]);
+      createSectionLabel(frame, `Set ${groupIndex + 1}`, 120, 212, state, 18);
+      lessons.forEach((lesson, lessonIndex) => {
+        createLessonFlowCluster(
+          frame,
+          {
+            x: 120 + lessonIndex * 560,
+            y: 244,
+            w: 520,
+            h: 674,
+            title: lesson.title,
+            summary: lesson.summary,
+            steps: lesson.steps,
+            result: lesson.result,
+            number: String(groupIndex * 3 + lessonIndex + 1),
+          },
+          state,
+        );
+      });
+    },
+  }));
+}
+
 function buildPageSpecs(content: BoardContent): PageSpec[] {
   return [
     {
@@ -594,7 +895,7 @@ function buildPageSpecs(content: BoardContent): PageSpec[] {
             createStepBadge(frame, this.badge[0], this.badge[1]);
             let x = 120;
             for (const card of block.cards.slice(0, 3)) {
-              createInfoCard(frame, { x, y: 274, w: 520, h: 214, title: card.title, body: card.body });
+              createInfoCard(frame, { x, y: 274, w: 520, h: 214, title: card.title, body: card.body }, state);
               x += 560;
             }
             createSectionLabel(frame, "Core Actors", 810, 563, state);
@@ -630,7 +931,7 @@ function buildPageSpecs(content: BoardContent): PageSpec[] {
             createSectionLabel(frame, block.detailLabel, 120, 540, state, 18);
             let dx = 96;
             for (const card of block.detailCards.slice(0, 4)) {
-              createDetailCard(frame, { x: dx, y: 584, w: 428, h: 224, title: card.title, body: card.body });
+              createDetailCard(frame, { x: dx, y: 584, w: 428, h: 224, title: card.title, body: card.body }, state);
               dx += 452;
             }
             block.screenshots.slice(0, 3).forEach((label, index) => createScreenshotZone(frame, 120 + index * 576, 840, 540, 200, label, state));
@@ -656,7 +957,7 @@ function buildPageSpecs(content: BoardContent): PageSpec[] {
             createStudioShell(frame, block.studioTitle, block.studioSidebar);
             let y = 264;
             block.steps.slice(0, 5).forEach((step, index) => {
-              createProcessRow(frame, { x: 140, y, w: 680, h: 98, number: String(index + 1), title: step });
+              createProcessRow(frame, { x: 140, y, w: 680, h: 98, number: String(index + 1), title: step }, state);
               y += 118;
             });
             createNoteBlock(frame, 140, 894, 1012, 114, block.note);
@@ -678,36 +979,14 @@ function buildPageSpecs(content: BoardContent): PageSpec[] {
               const x = 120 + index * 320;
               createFlowNode(frame, { label: item.label, x, y: 280, w: 220, h: 120, color: PALETTE.indigo });
               if (index < 3) createFlowArrow(frame, x + 220, 340, 70);
-              createLabelValueCard(frame, { x, y: 430, w: 220, h: 138, title: "Stage Detail", body: item.detail || "" });
+              createLabelValueCard(frame, { x, y: 430, w: 220, h: 138, title: "Stage Detail", body: item.detail || "" }, state);
             });
             createSectionLabel(frame, block.keyDetailsLabel, 120, 606, state, 18);
-            createMetricListCard(frame, 120, 638, 840, 238, block.keyDetailsLabel, block.keyDetails.slice(0, 4));
+            createMetricListCard(frame, 120, 638, 840, 238, block.keyDetailsLabel, block.keyDetails.slice(0, 4), state);
             block.screenshots.slice(0, 3).forEach((label, index) => createScreenshotZone(frame, 1000 + index * 270, 638 + Math.floor(index / 2) * 262, 250, 238, label, state));
           },
         },
-        {
-          id: "content.lessonGallery",
-          name: content.content.lessonGallery.name,
-          displayTitle: "lesson type gallery",
-          subtitle: content.content.lessonGallery.subtitle,
-          background: FRAME_BG[4],
-          badge: ["5", content.content.lessonGallery.badgeLabel],
-          build(frame, state) {
-            const block = state.content.content.lessonGallery;
-            createHeader(frame, this.displayTitle || this.name, this.subtitle, state, this.id);
-            createStepBadge(frame, this.badge[0], this.badge[1]);
-            const sx = 120;
-            const sy = 210;
-            const tw = 536;
-            const th = 236;
-            const gap = 28;
-            block.lessons.slice(0, 9).forEach((lesson, index) => {
-              const col = index % 3;
-              const row = Math.floor(index / 3);
-              createLessonTile(frame, { x: sx + col * (tw + gap), y: sy + row * (th + gap), w: tw, h: th, title: lesson.title, body: lesson.body }, state);
-            });
-          },
-        },
+        ...buildLessonGalleryFrames(content.content.lessonGallery),
       ],
     },
     {
@@ -725,38 +1004,52 @@ function buildPageSpecs(content: BoardContent): PageSpec[] {
             const block = state.content.learner.journey;
             createHeader(frame, this.displayTitle || this.name, this.subtitle, state, this.id);
             createStepBadge(frame, this.badge[0], this.badge[1]);
-            createSectionLabel(frame, block.authoringLabel, 120, 216, state, 18);
-            const authoringXs = [120, 470, 820];
-            block.authoringScreens.slice(0, 3).forEach((screen, index) => {
-              createScreenFlowCard(
-                frame,
-                { x: authoringXs[index], y: 250, w: 310, h: 310, title: screen.title, route: screen.route, screenshot: screen.screenshot, note: screen.note },
-                state,
-              );
-              if (index < 2) createFlowArrow(frame, authoringXs[index] + 310, 405, 32);
-            });
+            createSectionLabel(frame, block.authoringLabel, 120, 214, state, 18);
+            createJourneyMapCluster(
+              frame,
+              {
+                x: 120,
+                y: 244,
+                w: 520,
+                h: 682,
+                title: block.authoringLabel,
+                summary: "Studio states that define and publish the learner experience.",
+                screens: block.authoringScreens.slice(0, 3),
+                number: "1",
+                tone: PALETTE.indigoSoft,
+              },
+              state,
+            );
 
             createLabelValueCard(frame, {
-              x: 1180,
-              y: 312,
-              w: 620,
-              h: 162,
+              x: 700,
+              y: 450,
+              w: 520,
+              h: 166,
               title: block.transitionLabel,
               body: block.transitionBody,
-            });
+            }, state);
+            createFlowArrow(frame, 640, 536, 40);
+            createFlowArrow(frame, 1220, 536, 40);
 
-            createSectionLabel(frame, block.learnerLabel, 120, 596, state, 18);
-            const learnerXs = [120, 424, 728, 1032, 1336];
-            block.learnerScreens.slice(0, 5).forEach((screen, index) => {
-              createScreenFlowCard(
-                frame,
-                { x: learnerXs[index], y: 630, w: 264, h: 280, title: screen.title, route: screen.route, screenshot: screen.screenshot, note: screen.note },
-                state,
-              );
-              if (index < 4) createFlowArrow(frame, learnerXs[index] + 264, 770, 16);
-            });
+            createSectionLabel(frame, block.learnerLabel, 1280, 214, state, 18);
+            createJourneyMapCluster(
+              frame,
+              {
+                x: 1280,
+                y: 244,
+                w: 520,
+                h: 682,
+                title: block.learnerLabel,
+                summary: "Player states that the learner actually experiences in sequence.",
+                screens: [block.learnerScreens[0], block.learnerScreens[1], block.learnerScreens[2], block.learnerScreens[4]].filter(Boolean),
+                number: "2",
+                tone: PALETTE.pearl,
+              },
+              state,
+            );
 
-            createCompactNotesCard(frame, 120, 930, 1680, 118, block.notesLabel, block.notes.slice(0, 4));
+            createCompactNotesCard(frame, 120, 948, 1680, 92, block.notesLabel, block.notes.slice(0, 4), state);
           },
         },
         {
@@ -786,11 +1079,11 @@ function buildPageSpecs(content: BoardContent): PageSpec[] {
             createScreenshotZone(frame, 120, 436, 560, 214, block.screenshots[0], state);
             createScreenshotZone(frame, 704, 436, 560, 214, block.screenshots[1], state);
 
-            createSupportCard(frame, { x: 1290, y: 436, w: 510, h: 100, title: block.supportCards[0].title, body: block.supportCards[0].body });
-            createSupportCard(frame, { x: 1290, y: 550, w: 510, h: 100, title: block.supportCards[1].title, body: block.supportCards[1].body });
+            createSupportCard(frame, { x: 1290, y: 436, w: 510, h: 100, title: block.supportCards[0].title, body: block.supportCards[0].body }, state);
+            createSupportCard(frame, { x: 1290, y: 550, w: 510, h: 100, title: block.supportCards[1].title, body: block.supportCards[1].body }, state);
 
-            createMetricListCard(frame, 120, 706, 820, 264, block.panelLabel, block.panelItems.slice(0, 4));
-            createMetricListCard(frame, 980, 706, 820, 264, block.effectsLabel, block.effects.slice(0, 4));
+            createMetricListCard(frame, 120, 706, 820, 264, block.panelLabel, block.panelItems.slice(0, 4), state);
+            createMetricListCard(frame, 980, 706, 820, 264, block.effectsLabel, block.effects.slice(0, 4), state);
           },
         },
         {
@@ -804,20 +1097,56 @@ function buildPageSpecs(content: BoardContent): PageSpec[] {
             const block = state.content.learner.quiz;
             createHeader(frame, this.displayTitle || this.name, this.subtitle, state, this.id);
             createStepBadge(frame, this.badge[0], this.badge[1]);
-            block.flowNodes.slice(0, 5).forEach((label, index) => {
-              const x = 120 + index * 270;
-              createFlowNode(frame, { label, x, y: 260, w: 194, h: 120, color: PALETTE.indigo });
-              if (index < 4) createFlowArrow(frame, x + 194, 320, 72);
-            });
-            createSectionLabel(frame, block.dataFlowLabel, 120, 460, state, 18);
-            block.dataFlowItems.slice(0, 5).forEach((item, index) => {
-              createText(frame, item, 120 + index * 320, 500, 15, FONT_REGULAR, PALETTE.slate, { width: 320 });
-            });
-            createInfoCard(frame, { x: 120, y: 580, w: 520, h: 180, title: block.storageCards[0].title, body: block.storageCards[0].body });
-            createInfoCard(frame, { x: 700, y: 580, w: 520, h: 180, title: block.storageCards[1].title, body: block.storageCards[1].body });
-            createScreenshotZone(frame, 1280, 580, 520, 180, block.screenshots[0], state);
-            createScreenshotZone(frame, 120, 820, 540, 220, block.screenshots[1], state);
-            createScreenshotZone(frame, 700, 820, 540, 220, block.screenshots[2], state);
+            createSectionLabel(frame, "Learner + weak-topic trigger", 120, 214, state, 18);
+            createSystemFlowCluster(
+              frame,
+              {
+                x: 120,
+                y: 244,
+                w: 520,
+                h: 666,
+                title: "Learner Quiz Path",
+                summary: "Signals from explored and missed content determine when a knowledge check should appear.",
+                nodes: block.flowNodes.slice(0, 4),
+                note: block.dataFlowItems[0],
+                number: "1",
+                tone: PALETTE.indigoSoft,
+              },
+              state,
+            );
+
+            createLabelValueCard(frame, {
+              x: 700,
+              y: 450,
+              w: 520,
+              h: 166,
+              title: block.dataFlowLabel,
+              body: block.dataFlowItems.slice(1, 4).join(" • "),
+            }, state);
+            createFlowArrow(frame, 640, 536, 40);
+            createFlowArrow(frame, 1220, 536, 40);
+
+            createSectionLabel(frame, "Protected grading + storage", 1280, 214, state, 18);
+            createSystemFlowCluster(
+              frame,
+              {
+                x: 1280,
+                y: 244,
+                w: 520,
+                h: 666,
+                title: "Server Quiz Path",
+                summary: "Quiz payloads, submissions, and grading stay server-side so analytics and answer keys remain protected.",
+                nodes: [block.flowNodes[2], block.flowNodes[3], block.flowNodes[4], "Analytics + review"],
+                note: block.dataFlowItems[4],
+                number: "2",
+                tone: PALETTE.pearl,
+              },
+              state,
+            );
+
+            createInfoCard(frame, { x: 120, y: 930, w: 520, h: 110, title: block.storageCards[0].title, body: block.storageCards[0].body }, state);
+            createInfoCard(frame, { x: 700, y: 930, w: 520, h: 110, title: block.storageCards[1].title, body: block.storageCards[1].body }, state);
+            createScreenshotZone(frame, 1280, 930, 520, 110, block.screenshots[0], state);
           },
         },
       ],
@@ -837,25 +1166,56 @@ function buildPageSpecs(content: BoardContent): PageSpec[] {
             const block = state.content.aiAnalytics.aiArchitecture;
             createHeader(frame, this.displayTitle || this.name, this.subtitle, state, this.id);
             createStepBadge(frame, this.badge[0], this.badge[1]);
-            const flowCoords = [
-              { x: 120, y: 260, w: 194, h: 120 },
-              { x: 424, y: 260, w: 194, h: 120 },
-              { x: 727, y: 260, w: 194, h: 120 },
-              { x: 1028, y: 259, w: 194, h: 120 },
-              { x: 1332, y: 259, w: 194, h: 120 },
-            ];
-            block.flowNodes.slice(0, 5).forEach((label, index) => createFlowNode(frame, { label, ...flowCoords[index], color: PALETTE.indigo }));
-            createFlowArrow(frame, 314, 320, 82);
-            createFlowArrow(frame, 618, 319, 82);
-            createFlowArrow(frame, 919, 319, 82);
-            createFlowArrow(frame, 1222, 316, 82);
-            let sy = 420;
-            block.steps.slice(0, 5).forEach((step) => {
-              createArchitectureStepRow(frame, { x: 120, y: sy, w: 1680, h: 74, number: step.step, title: step.title, body: step.body });
-              sy += 94;
-            });
-            createScreenshotZone(frame, 120, 890, 820, 150, block.screenshots[0], state);
-            createScreenshotZone(frame, 980, 890, 820, 150, block.screenshots[1], state);
+            createSectionLabel(frame, "Question enters the stack", 120, 214, state, 18);
+            createSystemFlowCluster(
+              frame,
+              {
+                x: 120,
+                y: 244,
+                w: 520,
+                h: 666,
+                title: "Request Path",
+                summary: "The learner asks inside the course shell and the request is forwarded through the internal app boundary.",
+                nodes: block.flowNodes.slice(0, 4),
+                note: block.steps[1].body,
+                number: "1",
+                tone: PALETTE.indigoSoft,
+              },
+              state,
+            );
+
+            createLabelValueCard(frame, {
+              x: 700,
+              y: 450,
+              w: 520,
+              h: 166,
+              title: block.steps[2].title,
+              body: `${block.steps[2].body} ${block.steps[3].body}`,
+            }, state);
+            createFlowArrow(frame, 640, 536, 40);
+            createFlowArrow(frame, 1220, 536, 40);
+
+            createSectionLabel(frame, "Grounded answer returns", 1280, 214, state, 18);
+            createSystemFlowCluster(
+              frame,
+              {
+                x: 1280,
+                y: 244,
+                w: 520,
+                h: 666,
+                title: "Response Path",
+                summary: "Retrieved course context grounds the model answer before the learner sees the reply.",
+                nodes: [block.flowNodes[2], block.flowNodes[3], block.flowNodes[4], "answer returns"],
+                note: block.steps[4].body,
+                number: "2",
+                tone: PALETTE.pearl,
+              },
+              state,
+            );
+
+            createInfoCard(frame, { x: 120, y: 930, w: 820, h: 110, title: block.steps[0].title, body: block.steps[0].body }, state);
+            createScreenshotZone(frame, 980, 930, 400, 110, block.screenshots[0], state);
+            createScreenshotZone(frame, 1400, 930, 400, 110, block.screenshots[1], state);
           },
         },
         {
@@ -869,30 +1229,56 @@ function buildPageSpecs(content: BoardContent): PageSpec[] {
             const block = state.content.aiAnalytics.analytics;
             createHeader(frame, this.displayTitle || this.name, this.subtitle, state, this.id);
             createStepBadge(frame, this.badge[0], this.badge[1]);
-            const flowCoords = [
-              { x: 120, y: 250, w: 194, h: 100 },
-              { x: 420, y: 250, w: 194, h: 100 },
-              { x: 719, y: 244, w: 194, h: 100 },
-              { x: 1018, y: 247, w: 194, h: 100 },
-              { x: 1317, y: 250, w: 194, h: 100 },
-            ];
-            block.flowNodes.slice(0, 5).forEach((label, index) => createFlowNode(frame, { label, ...flowCoords[index], color: PALETTE.indigo }));
-            createFlowArrow(frame, 314, 300, 82);
-            createFlowArrow(frame, 614, 300, 82);
-            createFlowArrow(frame, 913, 301, 82);
-            createFlowArrow(frame, 1212, 297, 82);
-            let tx = 120;
-            let ty = 420;
-            block.tables.slice(0, 5).forEach((table) => {
-              createLabelValueCard(frame, { x: tx, y: ty, w: 300, h: 86, title: table.label, body: table.detail });
-              tx += 324;
-              if (tx > 1400) {
-                tx = 120;
-                ty += 104;
-              }
-            });
-            createMetricListCard(frame, 120, 662, 420, 294, block.metricsLabel, block.metrics.slice(0, 7));
-            createScreenshotZone(frame, 592, 662, 1208, 294, block.screenshot, state);
+            createSectionLabel(frame, "Tracked learner signals", 120, 214, state, 18);
+            createSystemFlowCluster(
+              frame,
+              {
+                x: 120,
+                y: 244,
+                w: 520,
+                h: 666,
+                title: "Player Event Path",
+                summary: "What the learner does in the player becomes structured progress events before it reaches reporting.",
+                nodes: block.flowNodes.slice(0, 4),
+                note: block.tables[1].detail,
+                number: "1",
+                tone: PALETTE.indigoSoft,
+              },
+              state,
+            );
+
+            createLabelValueCard(frame, {
+              x: 700,
+              y: 450,
+              w: 520,
+              h: 166,
+              title: "Storage handoff",
+              body: `${block.tables[0].label}, ${block.tables[2].label}, and ${block.tables[4].label} become queryable reporting records through Prisma and PostgreSQL.`,
+            }, state);
+            createFlowArrow(frame, 640, 536, 40);
+            createFlowArrow(frame, 1220, 536, 40);
+
+            createSectionLabel(frame, "Dashboard visibility", 1280, 214, state, 18);
+            createSystemFlowCluster(
+              frame,
+              {
+                x: 1280,
+                y: 244,
+                w: 520,
+                h: 666,
+                title: "Reporting Path",
+                summary: "Stored learner events become metrics, recent sessions, and insight views for instructors and stakeholders.",
+                nodes: [block.flowNodes[2], block.flowNodes[3], block.flowNodes[4], "insight views"],
+                note: block.tables[3].detail,
+                number: "2",
+                tone: PALETTE.pearl,
+              },
+              state,
+            );
+
+            createMetricListCard(frame, 120, 930, 520, 110, block.metricsLabel, block.metrics.slice(0, 7), state);
+            createLabelValueCard(frame, { x: 700, y: 930, w: 520, h: 110, title: block.tables[2].label, body: block.tables[2].detail }, state);
+            createScreenshotZone(frame, 1280, 930, 520, 110, block.screenshot, state);
           },
         },
         {
@@ -906,13 +1292,35 @@ function buildPageSpecs(content: BoardContent): PageSpec[] {
             const block = state.content.aiAnalytics.outcomes;
             createHeader(frame, this.displayTitle || this.name, this.subtitle, state, this.id);
             createStepBadge(frame, this.badge[0], this.badge[1]);
-            let ox = 120;
-            block.cards.slice(0, 5).forEach((card) => {
-              createOutcomeCard(frame, { x: ox, y: 282, w: 320, h: 332, title: card.title, body: card.body });
-              ox += 340;
-            });
-            createNoteBlock(frame, 120, 694, 880, 104, block.note);
-            createScreenshotZone(frame, 1040, 694, 760, 104, block.screenshot, state);
+            createSectionLabel(frame, "Platform value path", 120, 214, state, 18);
+            createSystemFlowCluster(
+              frame,
+              {
+                x: 120,
+                y: 244,
+                w: 520,
+                h: 666,
+                title: "Moto Tutor AI Loop",
+                summary: "Authoring control, interactive delivery, grounded AI, and measurement reinforce each other as one training system.",
+                nodes: ["Author in CMS", "Deliver interactive lessons", "Ground answers with AI", "Measure + improve"],
+                note: block.note,
+                number: "1",
+                tone: PALETTE.indigoSoft,
+              },
+              state,
+            );
+
+            createSectionLabel(frame, "Business outcomes", 700, 214, state, 18);
+            createOutcomePillar(frame, { x: 700, y: 244, w: 330, h: 258, title: block.cards[0].title, body: block.cards[0].body, number: "2" }, state);
+            createOutcomePillar(frame, { x: 1060, y: 244, w: 330, h: 258, title: block.cards[1].title, body: block.cards[1].body, number: "3", tone: PALETTE.pearl }, state);
+            createOutcomePillar(frame, { x: 1420, y: 244, w: 330, h: 258, title: block.cards[2].title, body: block.cards[2].body, number: "4" }, state);
+
+            createOutcomePillar(frame, { x: 700, y: 534, w: 330, h: 230, title: block.cards[3].title, body: block.cards[3].body, number: "5", tone: PALETTE.pearl }, state);
+            createOutcomePillar(frame, { x: 1060, y: 534, w: 330, h: 230, title: block.cards[4].title, body: block.cards[4].body, number: "6" }, state);
+            createLabelValueCard(frame, { x: 1420, y: 534, w: 330, h: 108, title: "Why teams care", body: "The platform shifts from static publishing to an adaptive loop of authoring, interaction, support, and measurement." }, state);
+            createScreenshotZone(frame, 1420, 656, 330, 108, block.screenshot, state);
+
+            createNoteBlock(frame, 700, 820, 1050, 120, block.note);
           },
         },
       ],

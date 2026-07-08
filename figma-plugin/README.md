@@ -2,6 +2,12 @@
 
 This plugin is now built from `figma-plugin/src/code.ts`.
 
+Source of truth:
+
+- `figma-plugin/src/board-defaults.ts` is the canonical content/style source.
+- `figma-plugin/src/code.ts` is the canonical renderer/layout source.
+- The generated Figma board is output, not source.
+
 Useful commands from the repo root:
 
 ```bash

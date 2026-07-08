@@ -10,6 +10,17 @@ type TextCard = {
   body: string;
 };
 
+type LessonFlowStep = {
+  label: string;
+};
+
+type LessonFlowCard = {
+  title: string;
+  summary: string;
+  steps: LessonFlowStep[];
+  result: string;
+};
+
 type ScreenCard = {
   title: string;
   route: string;
@@ -112,7 +123,7 @@ type BoardContent = {
       name: string;
       subtitle: string;
       badgeLabel: string;
-      lessons: TextCard[];
+      lessons: LessonFlowCard[];
     };
   };
   learner: {

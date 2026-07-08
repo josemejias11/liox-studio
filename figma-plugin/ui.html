@@ -103,6 +103,15 @@
     grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
+  .warning {
+    border: 1px solid #e8dfcf;
+    background: #fffaf0;
+    color: #5d564c;
+    border-radius: 14px;
+    padding: 12px;
+    font-size: 12px;
+    line-height: 1.45;
+  }
   .ghost {
     background: var(--accent-soft);
     color: var(--accent);
@@ -129,6 +138,10 @@
     <div>
       <h1>Moto Board Generator</h1>
       <p>Generate only the board sections you need, with explicit sizing and cleanup controls.</p>
+    </div>
+    <div class="warning">
+      Repo source is canonical. This plugin JSON and renderer define the board.
+      Manual Figma edits will be lost on regeneration unless they are copied back into the repo first.
     </div>
     <div class="field">
       <label for="boardTitle">Board Title</label>
@@ -178,11 +191,11 @@
   <div class="panel stack">
     <div>
       <div class="legend">Board Content JSON</div>
-      <p>Edit the copy payload directly. The generator will render from this JSON and resend the whole board into Figma.</p>
+      <p>Edit the canonical content payload directly. The generator will render from this JSON and resend the board into Figma.</p>
     </div>
     <textarea id="contentJson"></textarea>
     <div class="actions">
-      <button class="ghost" id="resetJson" type="button">Reset Template</button>
+      <button class="ghost" id="resetJson" type="button">Load Canonical Template</button>
       <button class="ghost" id="formatJson" type="button">Format JSON</button>
     </div>
   </div>
@@ -265,7 +278,7 @@
   resetJson.onclick = () => {
     contentJson.value = defaultContentJson;
     contentJson.style.borderColor = 'var(--line)';
-    status.textContent = '';
+    status.textContent = 'Canonical template loaded from the plugin bundle.';
   };
 
   formatJson.onclick = () => {
