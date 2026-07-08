@@ -1,0 +1,203 @@
+import { BoardContent, BoardGenerationConfig } from "./types";
+
+export const BOARD_KEY = "moto-client-demo-board";
+export const PAGE_KEY = "moto-client-demo-page";
+
+export const PALETTE = {
+  black: "#131417",
+  indigo: "#685BC7",
+  white: "#FFFFFF",
+  frost: "#E9EAF2",
+  slate: "#636880",
+  pearl: "#F0EDE9",
+  indigoSoft: "#F2F0FB",
+  border: "#C8CAD4",
+};
+
+export const FRAME_BG = ["#E9EAF2", "#F0EDE9", "#E9EAF2", "#F0EDE9", "#E9EAF2", "#F0EDE9"];
+
+export const DEFAULT_CONFIG: BoardGenerationConfig = {
+  boardTitle: "Moto Tutor AI",
+  frameWidth: 1920,
+  frameHeight: 1080,
+  frameGap: 56,
+  layoutMode: "inline",
+  clearExisting: true,
+  includeScreenshots: true,
+  includeControlKit: true,
+  selectedPages: ["overview", "content", "learner", "ai-analytics"],
+};
+
+export const DEFAULT_CONTENT: BoardContent = {
+  overview: {
+    pageName: "Product Overview",
+    whatIs: {
+      name: "What Moto Tutor AI Is",
+      subtitle: "An AI-powered, CMS-driven approach to interactive eLearnings",
+      badgeLabel: "Product Definition",
+      cards: [
+        { title: "CMS-driven authoring", body: "Instructional designers manage course updates directly in Sanity Studio." },
+        { title: "interactive learner experience", body: "Interactive lesson formats move learning beyond static slides." },
+        { title: "AI and analytics feedback loop", body: "Grounded answers, adaptive assessment, and measurable learner behavior in one system." },
+      ],
+      actors: ["Instructional Designers", "Learners", "AI And Analytics Layer"],
+      courseCardsTitle: "Course Library",
+      courseCards: ["Course · 3 Chapters · Published", "Course · 4 Chapters · Draft", "Course · 6 Lessons · Published", "Course · 2 Modules · Review", "Course · Refresher Track · Published"],
+    },
+    platformFlow: {
+      name: "How The Platform Works",
+      subtitle: "End-to-end flow from authoring through delivery, AI, and analytics",
+      badgeLabel: "Platform Flow",
+      nodes: ["author in Sanity", "upload & indexing", "deliver interactive learning", "measure & adapt"],
+      detailLabel: "What happens at each stage:",
+      detailCards: [
+        { title: "authoring", body: "Instructional designers create course structure, lessons, hotspots, and upload source materials in Sanity Studio. Content is stored in Sanity Cloud CMS and served via API." },
+        { title: "upload & indexing", body: "Course material files are proxied through Next.js to the Python parser service for parsing, embedding, and storage." },
+        { title: "delivering", body: "Learners enter the 16:9 Next.js player, explore interactive lessons, and use the AI assistant for course-specific questions." },
+        { title: "measure & adapt", body: "Progress is written to PostgreSQL and weak topics drive adaptive quiz generation and reporting." },
+      ],
+      screenshots: ["Sanity Studio Course Editor", "Learner Player — Hotspot Lesson", "Analytics Dashboard"],
+    },
+  },
+  content: {
+    pageName: "Content & Authoring",
+    authoring: {
+      name: "Authoring In Sanity Studio",
+      subtitle: "How instructional designers create and manage courses",
+      badgeLabel: "Authoring",
+      steps: ["create course", "structure chapters and lessons", "upload source files", "attach supporting content", "publish and maintain"],
+      note: "Instructional designers manage content, structure, and supporting materials in Sanity Studio while the platform handles delivery, grounded AI, adaptive quiz generation, and reporting.",
+      screenshot: "Sanity Studio",
+      studioTitle: "Sanity Studio Layout",
+      studioSidebar: ["Content", "Courses", "Lessons", "Chapters", "Quizzes"],
+    },
+    pipeline: {
+      name: "Content Upload & Indexing Pipeline",
+      subtitle: "How course materials become grounded AI knowledge",
+      badgeLabel: "Content Pipeline",
+      nodes: [
+        { label: "sanity file library", detail: "Authors upload PDF, DOCX, PPTX, XLSX files through the persistent file library in Sanity Studio." },
+        { label: "Next.js API Proxy", detail: "Files are proxied server-to-server with internal auth. Browser never reaches the parser directly." },
+        { label: "parser service", detail: "Python FastAPI uses markitdown to parse documents into clean text chunks ready for embedding." },
+        { label: "ChromaDB Vector Store", detail: "Chunks are embedded and stored for semantic retrieval. Re-uploads replace old chunks." },
+      ],
+      keyDetailsLabel: "Key Details",
+      keyDetails: [
+        "Supported formats: PDF, DOCX, PPTX, XLSX",
+        "Internal-only proxying from Next.js to the parser",
+        "Re-uploading the same filename replaces previous chunks",
+        "Deleting a file in Sanity purges its ChromaDB chunks immediately",
+      ],
+      screenshots: ["Sanity Studio — Material Upload", "Sanity Studio — File Library", "Parser Service — Health Check"],
+    },
+    lessonGallery: {
+      name: "Lesson Type Gallery",
+      subtitle: "Nine ways the platform can deliver interactive learning",
+      badgeLabel: "Lesson Types",
+      lessons: [
+        { title: "Content", body: "Structured learning content with supporting media and guided reading." },
+        { title: "Interaction", body: "Clickable hotspots for guided discovery." },
+        { title: "Product Stage", body: "Immersive product exploration with floating points of interest." },
+        { title: "Video", body: "Embedded video instruction inside the lesson flow." },
+        { title: "Quiz", body: "In-lesson or end-of-course knowledge checks." },
+        { title: "Color Switcher", body: "Interactive comparison of product variants." },
+        { title: "Split Screen", body: "Paired text and media for side-by-side learning." },
+        { title: "Drag And Drop", body: "Practice-based interaction with immediate feedback." },
+        { title: "Scroll Story", body: "Chapter-based narrative with motion and visual transitions." },
+      ],
+    },
+  },
+  learner: {
+    pageName: "Learner Experience",
+    journey: {
+      name: "Learner Journey",
+      subtitle: "A guided journey from course entry to adaptive assessment",
+      badgeLabel: "Learner Journey",
+      playerTitle: "16:9 Player Shell",
+      playerProgress: "⏺ 1/6 lessons complete",
+      stops: ["Browse Course Library", "Cover Screen", "Interactive Lessons", "AI Assistant", "Adaptive Knowledge Check", "Completion"],
+      featureLabel: "Feature Callouts",
+      features: ["Hotspot-Driven Discovery", "Floating AI Assistant Panel", "Course Navigation Map", "Progress Tracking", "Adaptive Quiz From Weak Topics"],
+      screenshots: ["Course Library", "Hotspot Lesson", "AI Assistant Panel", "Quiz Screen"],
+    },
+    features: {
+      name: "Interactive Features Deep Dive",
+      subtitle: "How hotspots, AI assistant, navigation, and progress tracking work",
+      badgeLabel: "Features",
+      cards: [
+        { title: "hotspot discovery", body: "Pulsing dots positioned by percentage on a product image. Discovery panels can contain rich content, media, and progress state." },
+        { title: "AI assistant", body: "Floating entry point on every lesson. The assistant queries grounded course materials to answer product-specific questions." },
+        { title: "navigation map", body: "A full-course map with lesson-type icons, completion dots, and quick access to the knowledge check." },
+        { title: "progress tracking", body: "Progress persists per session and can reflect hotspot visits, lesson completion, and return visits over time." },
+        { title: "adaptive quiz engine", body: "Weak or unexplored topics drive AI-assisted quiz generation so assessment targets what the learner still needs." },
+      ],
+      screenshot: "Adaptive Quiz Screen",
+    },
+    quiz: {
+      name: "Quiz & Adaptive Assessment",
+      subtitle: "How knowledge checks are generated, graded, and recorded",
+      badgeLabel: "Quiz",
+      flowNodes: ["Learner Completes Lessons", "Weak Topics Derived", "Quiz Generated via AI", "Learner Attempts Quiz", "Server-Side Grading"],
+      dataFlowLabel: "Data Flow",
+      dataFlowItems: [
+        "Visited hotspots → weak-topic analysis",
+        "Unvisited topics → /api/quiz endpoint",
+        "AI quiz payload stored server-side",
+        "Answers never leave the server",
+        "Quiz attempts recorded per session",
+      ],
+      storageCards: [
+        { title: "GeneratedQuiz", body: "Stores the AI quiz payload including answers and explanations on the server, while the client only sees the learner-safe projection." },
+        { title: "QuizAttempt", body: "Records each submission with session, score, pass state, and structured answer data for analytics and review." },
+      ],
+      screenshots: ["Quiz Screen — Results", "Analytics — Quiz Breakdown", "Instructor Dashboard"],
+    },
+  },
+  aiAnalytics: {
+    pageName: "AI, Analytics & Outcomes",
+    aiArchitecture: {
+      name: "AI Architecture",
+      subtitle: "How the grounded AI assistant answers course-specific questions",
+      badgeLabel: "AI Architecture",
+      flowNodes: ["learner question", "/api/chat Proxy", "parser service", "ChromaDB search", "llama3 response"],
+      steps: [
+        { step: "1", title: "query received", body: "The learner submits a question from the assistant panel with course context attached." },
+        { step: "2", title: "server proxies", body: "Next.js verifies the request, adds internal auth, and forwards it to the parser service." },
+        { step: "3", title: "retrieve context", body: "Relevant chunks are searched from course materials in the vector store." },
+        { step: "4", title: "generate answer", body: "The model receives grounded context plus the question and returns a domain-specific answer." },
+        { step: "5", title: "return response", body: "The response flows back through the app to the learner without leaving the local AI environment." },
+      ],
+      screenshots: ["AI Assistant Chat Panel", "Parser Service — API Docs"],
+    },
+    analytics: {
+      name: "Analytics & Progress Pipeline",
+      subtitle: "How learner behavior flows from the player to the dashboard",
+      badgeLabel: "Analytics",
+      flowNodes: ["learner player", "API routes", "Prisma ORM", "PostgreSQL", "analytics dashboard"],
+      tables: [
+        { label: "Session", detail: "Browser-generated session tracking with activity timestamps." },
+        { label: "LessonProgress", detail: "Per-lesson views, completion, and course context." },
+        { label: "HotspotVisit", detail: "Feature exploration events with topic labels." },
+        { label: "GeneratedQuiz", detail: "Stored AI quiz payloads with protected answer keys." },
+        { label: "QuizAttempt", detail: "Scores, pass state, and answer JSON per attempt." },
+      ],
+      metricsLabel: "Dashboard Metrics",
+      metrics: ["Total sessions", "Features explored", "Average quiz score", "Quiz attempts", "Top explored features", "Recent sessions", "Lesson engagement"],
+      screenshot: "Analytics Dashboard — Full View",
+    },
+    outcomes: {
+      name: "Why This Matters",
+      subtitle: "Business outcomes from a more adaptive training platform",
+      badgeLabel: "Outcomes",
+      cards: [
+        { title: "faster updates", body: "CMS-driven authoring means courses can be updated without rebuild cycles." },
+        { title: "richer engagement", body: "Interactive lesson formats keep learners active." },
+        { title: "grounded AI support", body: "AI answers from uploaded materials instead of generic guesses." },
+        { title: "adaptive assessment", body: "Knowledge checks respond to explored and weak topics." },
+        { title: "measurable analytics", body: "Learning interactions are recorded and visible to teams." },
+      ],
+      note: "Moto Tutor AI combines authoring control, interactive delivery, grounded AI, and measurable outcomes in one modern training platform.",
+      screenshot: "Analytics Dashboard",
+    },
+  },
+};

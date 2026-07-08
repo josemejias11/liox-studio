@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "none",
+    "strict": false,
+    "skipLibCheck": true,
+    "rootDir": "./src",
+    "outFile": "./dist/code.js",
+    "lib": ["ES2020"],
+    "types": [],
+    "ignoreDeprecations": "6.0"
+  },
+  "files": ["src/types.ts", "src/board-defaults.ts", "src/code.ts"]
+}

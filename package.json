@@ -7,6 +7,8 @@
     "build": "prisma migrate deploy && next build",
     "start": "next start",
     "lint": "eslint",
+    "figma:build": "tsc -p figma-plugin/tsconfig.json",
+    "figma:watch": "tsc -p figma-plugin/tsconfig.json --watch",
     "format": "prettier --write .",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
