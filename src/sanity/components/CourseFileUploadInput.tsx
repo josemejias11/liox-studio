@@ -167,7 +167,7 @@ export function CourseFileUploadInput(props: ArrayOfObjectsInputProps) {
             htmlFor="course-file-upload"
             text={isUploading ? 'Uploading…' : 'Add Files'}
             mode="ghost"
-            disabled={isUploading || !courseId}
+            aria-disabled={isUploading || !courseId}
             style={{ cursor: isUploading || !courseId ? 'not-allowed' : 'pointer' }}
           />
         </Flex>
