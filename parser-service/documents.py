@@ -8,15 +8,14 @@ import tempfile
 
 from markitdown import MarkItDown
 
+from runtime import _vectorstore_cache
 from settings import (
     ALLOWED_EXTENSIONS,
-    CHUNK_OVERLAP,
-    CHUNK_SIZE,
     COURSE_ID_PATTERN,
     MAX_UPLOAD_BYTES,
     UPLOAD_CHUNK_BYTES,
 )
-from vectorstore import build_text_splitter, chunk_ids, get_vectorstore
+from vectorstore import build_text_splitter, chunk_ids, collection_exists, get_vectorstore
 
 logger = logging.getLogger(__name__)
 
@@ -95,3 +94,15 @@ def stream_upload_to_disk(file_obj, ext: str) -> tuple[str, str]:
             buffer.write(chunk)
 
     return temp_dir, temp_file_path
+
+
+def delete_stored_document(course_id: str, filename: str) -> bool:
+    """Delete all chunks for a file. Returns false when the course collection is absent."""
+    if not collection_exists(course_id):
+        return False
+
+    vectorstore = get_vectorstore(course_id)
+    # noinspection PyProtectedMember
+    vectorstore._collection.delete(where={"source": filename})
+    _vectorstore_cache.pop(course_id)
+    return True

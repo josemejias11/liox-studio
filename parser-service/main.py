@@ -11,44 +11,31 @@ the PARSER_SERVICE_TOKEN environment variable.
 import logging
 import os
 import secrets
-import shutil
 
 import httpx
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field, field_validator
 
-# Re-export everything the tests patch via `main.*`
-from settings import (  # noqa: F401
-    ALLOWED_EXTENSIONS,
-    CHUNK_OVERLAP,
-    CHUNK_SIZE,
-    COURSE_ID_PATTERN,
+from documents import _validate_course_id
+from quiz_generation import generate_quiz
+from rag_chat import answer_question
+from runtime import lifespan, runtime
+from service_operations import (
+    DocumentDeletionError,
+    DocumentExtractionError,
+    DocumentProcessingError,
+    InvalidCourseIdError,
+    InvalidUploadError,
+    UploadTooLargeError,
+    remove_course_document,
+    store_course_document,
+)
+from settings import (
+    CHROMA_DIR,
     EMBEDDING_MODEL,
     LLM_MODEL,
-    MAX_UPLOAD_BYTES,
-    NO_CONTEXT_ANSWER,
-    NO_MATERIALS_ANSWER,
     OLLAMA_BASE_URL,
-    CHROMA_DIR,
 )
-from runtime import (  # noqa: F401
-    TaskPrefixedOllamaEmbeddings,
-    _LRUVectorstoreCache,
-    _vectorstore_cache,
-    lifespan,
-    runtime,
-)
-from vectorstore import (  # noqa: F401
-    build_text_splitter,
-    chunk_ids,
-    collection_exists,
-    format_context,
-    get_vectorstore,
-    retrieve_relevant,
-)
-from documents import _validate_course_id, parse_and_store, validate_upload_file, stream_upload_to_disk
-from rag_chat import answer_question
-from quiz_generation import generate_quiz
 
 logger = logging.getLogger(__name__)
 
@@ -141,43 +128,24 @@ class QuizResponse(BaseModel):
 def upload_file(course_id: str = Form(...), file: UploadFile = File(...)):  # noqa: B008
     """Parse a course document and store its chunk embeddings in ChromaDB."""
     try:
-        _validate_course_id(course_id)
-    except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e)) from e
-
-    original_filename = os.path.basename(file.filename or "")
-    try:
-        ext = validate_upload_file(original_filename)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
-
-    logger.info("Upload request: course=%s file=%s", course_id, original_filename)
-
-    temp_dir = None
-    temp_file_path = None
-    try:
-        temp_dir, temp_file_path = stream_upload_to_disk(file.file, ext)  # type: ignore[arg-type]
-        chunks_stored = parse_and_store(course_id, original_filename, temp_file_path)
+        original_filename, chunks_stored = store_course_document(
+            course_id,
+            file.filename or "",
+            file.file,  # type: ignore[arg-type]
+        )
         return UploadResponse(
             status="success",
             filename=original_filename,
             chunks_stored=chunks_stored,
         )
-    except ValueError as e:
-        detail = str(e)
-        if "extract text" in detail.lower():
-            raise HTTPException(status_code=400, detail=detail) from e
-        if "MB upload limit" in detail:
-            raise HTTPException(status_code=413, detail=detail) from e
-        raise HTTPException(status_code=500, detail="Internal server error processing file.") from e
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.exception("Error processing upload for course %s", course_id)
-        raise HTTPException(status_code=500, detail="Internal server error processing file.") from e
-    finally:
-        if temp_dir:
-            shutil.rmtree(temp_dir, ignore_errors=True)
+    except InvalidCourseIdError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    except UploadTooLargeError as error:
+        raise HTTPException(status_code=413, detail=str(error)) from error
+    except (InvalidUploadError, DocumentExtractionError) as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except DocumentProcessingError as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
 
 
 @app.post(
@@ -237,28 +205,11 @@ class DeleteDocumentRequest(BaseModel):
 )
 def delete_document(request: DeleteDocumentRequest):
     """Remove all ChromaDB chunks for a specific file within a course."""
-    logger.info("Delete request: course=%s file=%s", request.course_id, request.filename)
-
-    if not collection_exists(request.course_id):
-        return {"status": "not_found", "filename": request.filename}
-
-    vs = get_vectorstore(request.course_id)
     try:
-        # noinspection PyProtectedMember
-        vs._collection.delete(where={"source": request.filename})
-    except Exception as e:
-        logger.warning(
-            "Could not delete chunks for %s in course %s",
-            request.filename,
-            request.course_id,
-            exc_info=True,
-        )
-        raise HTTPException(status_code=500, detail="Failed to delete document chunks.") from e
-
-    _vectorstore_cache.pop(request.course_id)
-
-    logger.info("Deleted chunks for %s in course %s", request.filename, request.course_id)
-    return {"status": "deleted", "filename": request.filename}
+        status = remove_course_document(request.course_id, request.filename)
+        return {"status": status, "filename": request.filename}
+    except DocumentDeletionError as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
 
 
 @app.get("/health", tags=["ops"])
