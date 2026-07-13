@@ -10,7 +10,6 @@
     "figma:build": "tsc -p figma-plugin/tsconfig.json",
     "figma:watch": "tsc -p figma-plugin/tsconfig.json --watch",
     "format": "prettier --write .",
-    "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate deploy",
@@ -54,7 +53,6 @@
     "prisma": "^5.22.0",
     "shadcn": "^4.11.0",
     "tailwindcss": "^4",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "typescript": "^6.0.3"
   }
 }
