@@ -18,4 +18,11 @@ describe('Canvas lesson authoring', () => {
 
     expect(fields.some((field) => field.name === 'floatingGraphics')).toBe(false);
   });
+
+  test('exposes shared refresher fields for every lesson type', () => {
+    const fields = lessonType.fields as Array<{ name?: string }>;
+
+    expect(fields.some((field) => field.name === 'deviceName')).toBe(true);
+    expect(fields.some((field) => field.name === 'coveredFeatures')).toBe(true);
+  });
 });

@@ -5,6 +5,7 @@ import { getChapterLessons, type CourseStructure } from '@/lib/course-structure'
 import { getFlowItemByIndex, type CourseFlow } from '@/lib/course-flow';
 import { getLessonCompletionMode, LessonCompletionMode } from '../lesson-types/registry';
 import { isCanvasComplete } from '@/lib/canvas';
+import { getCoveredFeatureLabels, isRefresherComplete } from '@/lib/refresher';
 
 // ── Course phase state machine ────────────────────────────────────────────────
 
@@ -126,6 +127,10 @@ export function isLessonLocked(
   const hotspots = currentLesson.hotspots ?? [];
   const completionMode = getLessonCompletionMode(currentLesson);
   const visitedOnLesson = visited[lessonKey] ?? new Set<string>();
+
+  if (getCoveredFeatureLabels(currentLesson).length > 0) {
+    return !isRefresherComplete(currentLesson, visitedOnLesson);
+  }
 
   if (currentLesson.lessonType === 'canvas') {
     return !isCanvasComplete(currentLesson, visitedOnLesson);

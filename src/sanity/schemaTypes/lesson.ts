@@ -133,6 +133,45 @@ export const lessonType = defineType({
       initialValue: 'content',
     }),
     defineField({
+      name: 'deviceName',
+      title: 'Device Name',
+      description: 'The device this refresher reviews.',
+      type: 'string',
+      group: 'content',
+    }),
+    defineField({
+      name: 'coveredFeatures',
+      title: 'Covered Features',
+      description: 'Learners must open every listed feature before continuing.',
+      type: 'array',
+      group: 'content',
+      of: [
+        {
+          type: 'object',
+          name: 'coveredFeature',
+          fields: [
+            defineField({
+              name: 'label',
+              title: 'Feature Name',
+              type: 'string',
+              validation: (r) => r.required(),
+            }),
+            defineField({
+              name: 'summary',
+              title: 'Feature Review',
+              description: 'A concise reminder of what the learner should remember.',
+              type: 'text',
+              rows: 3,
+              validation: (r) => r.required(),
+            }),
+          ],
+          preview: {
+            select: { title: 'label', subtitle: 'summary' },
+          },
+        },
+      ],
+    }),
+    defineField({
       name: 'videoFile',
       title: 'Video File',
       description: 'Upload an MP4 to Sanity CDN.',

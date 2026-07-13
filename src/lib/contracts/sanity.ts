@@ -83,6 +83,12 @@ export const lessonSchema = z.object({
   headline: plainStringSchema,
   body: opt(richTextSchema),
   lessonType: z.enum(ALL_LESSON_TYPES).catch('content'),
+  deviceName: opt(z.string()),
+  coveredFeatures: opt(z.array(z.object({
+    _key: z.string(),
+    label: z.string().catch(''),
+    summary: opt(z.string()),
+  }))),
   media: opt(imageSchema),
   textOverlay: opt(textOverlaySchema),
   hotspots: opt(z.array(hotspotSchema)),

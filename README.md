@@ -46,6 +46,12 @@ Canvas v1 focuses on one primary product image. In Sanity Studio, select **Canva
 
 Learners can pan and zoom the image, explore targets in any order, and continue once all required features have been opened. Optional targets remain available without blocking progress.
 
+### Refresher lesson authoring
+
+Every lesson type can also be authored as a guided device refresher. Set **Device Name**, then add the lesson's **Covered Features** with a concise feature review for each one. The learner sees the device and review count on entry, can open each feature recap, and cannot continue until every listed feature has been reviewed.
+
+Leave **Covered Features** empty for legacy or ungated lessons. When using hotspots or Canvas targets, use the same feature names so the visual exploration and refresher checklist stay aligned.
+
 The codebase is organized into focused modules with clear boundaries:
 
 ### TypeScript (`src/`)
@@ -69,6 +75,7 @@ The codebase is organized into focused modules with clear boundaries:
 | `CoursePhaseScreen.tsx` | Phase renderer (cover, lessons, quiz, disclaimer) |
 | `NavMap.tsx` | Full-course navigation map |
 | `LessonRenderer.tsx` | Lesson type dispatcher |
+| `RefresherFeaturePanel.tsx` | Shared device and covered-feature review panel |
 | `hooks/useCourseNavigation.ts` | Flow-based navigation state machine |
 | `hooks/useCourseSession.ts` | Session ID and consent persistence |
 | `hooks/useWeakTopics.ts` | Weak topic derivation and merge |
@@ -241,6 +248,9 @@ Where instructional designers create and publish course content.
 | `colorSwitcher` | `ContentLesson` | Up to 4 color variants with swappable product images |
 | `dragDrop` | `DragDropLesson` | Drag chip to drop zone interaction with correctness feedback |
 | `scrollStory` | `ScrollStoryLesson` | Scroll-driven chapters with parallax image pan/zoom/rotate |
+| `canvas` | `CanvasInspectionLesson` | Pan-and-zoom product inspection with feature targets |
+
+**Shared refresher fields** — use `Device Name` and `Covered Features` on any lesson type to add a device-focused review. Each feature needs a name and a concise review; learners must open every listed feature before the Next button unlocks.
 
 **Rich text** — all body fields support standard decorators (bold, italic, underline, strike, code) plus **superscript** (`x²`, spec callouts like `5G¹`). Use the `Sup` button in the toolbar.
 

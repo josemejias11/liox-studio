@@ -8,6 +8,7 @@ import { CompletionBurst } from '@/components/CompletionBurst';
 import { CourseAIFab } from '@/components/CourseAIFab';
 import { getLessonCompletionMode, LessonCompletionMode } from './lesson-types/registry';
 import { getRequiredCanvasTargetCount, isCanvasComplete } from '@/lib/canvas';
+import { getCoveredFeatureLabels, isRefresherComplete } from '@/lib/refresher';
 import { useLessonProgress } from './hooks/useLessonProgress';
 import { useCourseNavigation } from './hooks/useCourseNavigation';
 import { getChapterLessons } from '@/lib/course-structure';
@@ -83,6 +84,11 @@ export default function MotoViewer({
     : LessonCompletionMode.NONE;
   const requiredCanvasTargets = currentLesson ? getRequiredCanvasTargetCount(currentLesson) : 0;
   const canvasLesson = currentLesson?.lessonType === 'canvas' ? currentLesson : undefined;
+  const refresherFeatureLabels = currentLesson ? getCoveredFeatureLabels(currentLesson) : [];
+  const refresherLesson = refresherFeatureLabels.length > 0 ? currentLesson : undefined;
+  const visitedRefresherFeatures = refresherLesson
+    ? refresherFeatureLabels.filter((label) => visited[lessonKey]?.has(label)).length
+    : 0;
   const visitedRequiredCanvasTargets = canvasLesson
     ? [...(visited[lessonKey] ?? [])].filter((label) =>
         canvasLesson.hotspots?.some((target) => target.required && target.label === label),
@@ -96,8 +102,10 @@ export default function MotoViewer({
     baseMarkVisited(
       lessonKey,
       label,
-      completionMode === LessonCompletionMode.MANUAL ? 1 : hotspots.length,
-      canvasLesson
+      refresherLesson ? refresherFeatureLabels.length : completionMode === LessonCompletionMode.MANUAL ? 1 : hotspots.length,
+      refresherLesson
+        ? (nextVisited) => isRefresherComplete(refresherLesson, nextVisited)
+        : canvasLesson
         ? (nextVisited) => isCanvasComplete(canvasLesson, nextVisited)
         : undefined,
     );
@@ -157,7 +165,9 @@ export default function MotoViewer({
             onToggleNavMap: () => setShowNavMap((v) => !v),
             moduleTitle: course.title,
             completionHint:
-              nextLocked && canvasLesson && requiredCanvasTargets > 0
+              nextLocked && refresherLesson
+                ? `Review every feature (${visitedRefresherFeatures} / ${refresherFeatureLabels.length})`
+                : nextLocked && canvasLesson && requiredCanvasTargets > 0
                 ? `Explore all required features (${visitedRequiredCanvasTargets} / ${requiredCanvasTargets})`
                 : nextLocked && hotspots.length > 0
                 ? `Tap all ${hotspots.length} features to continue (${visitedOnLesson} / ${hotspots.length})`

@@ -8,6 +8,8 @@ const LESSON_FIELDS = groq`
   headline,
   body,
   lessonType,
+  deviceName,
+  coveredFeatures[] { _key, label, summary },
   media { asset->{ url } },
   textOverlay { x, y, width },
   hotspots[] {

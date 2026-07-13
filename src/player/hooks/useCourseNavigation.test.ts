@@ -71,6 +71,17 @@ describe('courseNavigationReducer', () => {
     makeLesson('lesson-2', 'Lesson 2'),
   ]);
 
+  const flowWithRefresher = deriveCourseFlow([
+    {
+      ...makeLesson('lesson-1', 'Refresh the phone'),
+      coveredFeatures: [
+        { _key: 'camera', label: 'Camera', summary: 'Review camera controls.' },
+        { _key: 'display', label: 'Display', summary: 'Review display settings.' },
+      ],
+    },
+    makeLesson('lesson-2', 'Lesson 2'),
+  ]);
+
   test('NEXT from cover goes to first lesson', () => {
     const initialState: CourseNavState = {
       phase: { phase: 'cover' },
@@ -195,6 +206,26 @@ describe('courseNavigationReducer', () => {
     const unlockedState = courseNavigationReducer(flowWithCanvasLesson, initialState, {
       type: 'NEXT',
       visited: { 'lesson-1': new Set(['Camera']) },
+    });
+    expect(unlockedState.phase).toEqual({ phase: 'chapter', chapterIndex: 0, lessonIndex: 1 });
+  });
+
+  test('NEXT from a refresher lesson is blocked until every covered feature is opened', () => {
+    const initialState: CourseNavState = {
+      phase: { phase: 'chapter', chapterIndex: 0, lessonIndex: 0 },
+      navDirection: 1,
+      showChapterIntro: false,
+    };
+
+    const lockedState = courseNavigationReducer(flowWithRefresher, initialState, {
+      type: 'NEXT',
+      visited: { 'lesson-1': new Set(['Camera']) },
+    });
+    expect(lockedState.phase).toEqual(initialState.phase);
+
+    const unlockedState = courseNavigationReducer(flowWithRefresher, initialState, {
+      type: 'NEXT',
+      visited: { 'lesson-1': new Set(['Camera', 'Display']) },
     });
     expect(unlockedState.phase).toEqual({ phase: 'chapter', chapterIndex: 0, lessonIndex: 1 });
   });

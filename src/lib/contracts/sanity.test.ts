@@ -31,4 +31,21 @@ describe('course contracts', () => {
 
     expect(lesson).not.toHaveProperty('floatingGraphics');
   });
+
+  test('accepts optional refresher metadata on lessons', () => {
+    const lesson = lessonSchema.parse({
+      sectionType: 'lesson',
+      _key: 'lesson-1',
+      headline: 'Lesson',
+      deviceName: 'Moto G',
+      coveredFeatures: [
+        { _key: 'camera', label: 'Camera', summary: 'Review the camera controls.' },
+      ],
+    });
+
+    expect(lesson.deviceName).toBe('Moto G');
+    expect(lesson.coveredFeatures).toEqual([
+      { _key: 'camera', label: 'Camera', summary: 'Review the camera controls.' },
+    ]);
+  });
 });
