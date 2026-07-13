@@ -1,7 +1,7 @@
 import { expect, test, describe } from 'vitest';
 import { courseNavigationReducer, type CourseNavState } from './useCourseNavigation';
 import { deriveCourseFlow, getNavItems } from '@/lib/course-flow';
-import { lessonSchema, type LessonSection } from '../../lib/contracts/sanity';
+import { lessonSchema, type CourseSection, type LessonSection } from '../../lib/contracts/sanity';
 
 describe('course flow', () => {
   test('includes quiz and disclaimer as addressable course flow items', () => {
@@ -10,7 +10,7 @@ describe('course flow', () => {
         { _key: 'lesson-1', sectionType: 'lesson', lessonType: 'content', headline: 'Intro' },
         { _key: 'spec-1', sectionType: 'specification', title: 'Spec' },
         { _key: 'disclaimer-1', sectionType: 'disclaimer', title: 'Safety' },
-      ] as any,
+      ] as unknown as CourseSection[],
       [],
     );
 
@@ -31,7 +31,7 @@ describe('course flow', () => {
 
 describe('courseNavigationReducer', () => {
   // Built through the real schema so fixtures stay valid as the contract evolves.
-  const makeLesson = (key: string, headline: string, hotspots?: Array<{ label: string }>): LessonSection => ({
+  const makeLesson = (key: string, headline: string, hotspots?: Array<{ label: string; required?: boolean }>): LessonSection => ({
     ...lessonSchema.parse({
       sectionType: 'lesson',
       _key: key,
@@ -56,6 +56,17 @@ describe('courseNavigationReducer', () => {
     {
       ...makeLesson('lesson-1', 'Lesson 1'),
       lessonType: 'scrollStory',
+    },
+    makeLesson('lesson-2', 'Lesson 2'),
+  ]);
+
+  const flowWithCanvasLesson = deriveCourseFlow([
+    {
+      ...makeLesson('lesson-1', 'Inspect the phone', [
+        { label: 'Camera', required: true },
+        { label: 'Finish', required: false },
+      ]),
+      lessonType: 'canvas',
     },
     makeLesson('lesson-2', 'Lesson 2'),
   ]);
@@ -165,6 +176,26 @@ describe('courseNavigationReducer', () => {
       visited: { 'lesson-1': new Set(['completed']) },
     });
 
+    expect(unlockedState.phase).toEqual({ phase: 'chapter', chapterIndex: 0, lessonIndex: 1 });
+  });
+
+  test('NEXT from a canvas lesson ignores optional targets but requires required targets', () => {
+    const initialState: CourseNavState = {
+      phase: { phase: 'chapter', chapterIndex: 0, lessonIndex: 0 },
+      navDirection: 1,
+      showChapterIntro: false,
+    };
+
+    const lockedState = courseNavigationReducer(flowWithCanvasLesson, initialState, {
+      type: 'NEXT',
+      visited: { 'lesson-1': new Set(['Finish']) },
+    });
+    expect(lockedState.phase).toEqual(initialState.phase);
+
+    const unlockedState = courseNavigationReducer(flowWithCanvasLesson, initialState, {
+      type: 'NEXT',
+      visited: { 'lesson-1': new Set(['Camera']) },
+    });
     expect(unlockedState.phase).toEqual({ phase: 'chapter', chapterIndex: 0, lessonIndex: 1 });
   });
 });

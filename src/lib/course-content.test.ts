@@ -97,4 +97,45 @@ describe('normalizeCourseContent', () => {
     expect(content!.sections).toEqual([]);
     expect(content!.course.chapters).toBeUndefined();
   });
+
+  test('defaults missing course mode to standard', () => {
+    const content = normalizeCourseContent(makeRaw());
+
+    expect(content?.course.courseMode).toBe('standard');
+  });
+
+  test('keeps legacy lessons renderable in standard courses', () => {
+    const raw = {
+      ...makeRaw(),
+      chapters: [{
+        title: 'Advanced chapter',
+        lessons: [{
+          sectionType: 'lesson' as const,
+          _key: 'drag-drop-1',
+          headline: 'Drag and drop',
+          lessonType: 'dragDrop' as const,
+        }],
+      }],
+    };
+
+    expect(normalizeCourseContent(raw)).not.toBeNull();
+  });
+
+  test('accepts canvas lessons in canvas courses', () => {
+    const raw = {
+      ...makeRaw(),
+      courseMode: 'canvas' as const,
+      chapters: [{
+        title: 'Advanced chapter',
+        lessons: [{
+          sectionType: 'lesson' as const,
+          _key: 'canvas-1',
+          headline: 'Inspect the phone',
+          lessonType: 'canvas' as const,
+        }],
+      }],
+    };
+
+    expect(normalizeCourseContent(raw)).not.toBeNull();
+  });
 });

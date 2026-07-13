@@ -28,6 +28,7 @@
 .claude
 web/.claude
 .agents
+.superpowers/
 
 # debug
 npm-debug.log*

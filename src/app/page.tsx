@@ -99,6 +99,9 @@ export default async function Home() {
                     <h2 className="group-hover:text-primary line-clamp-2 text-lg leading-tight font-semibold transition-colors">
                       {course.title}
                     </h2>
+                    <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                      {course.courseMode === 'canvas' ? 'Canvas course' : 'Standard course'}
+                    </p>
                     {course.description && (
                       <p className="text-muted-foreground line-clamp-2 text-sm font-light">
                         {course.description}

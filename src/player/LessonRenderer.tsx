@@ -10,6 +10,7 @@ import {
   SplitScreenLessonDynamic,
   DragDropLessonDynamic,
   ScrollStoryLessonDynamic,
+  CanvasInspectionLessonDynamic,
   getLessonCompletionMode,
   LessonCompletionMode,
 } from './lesson-types/registry';
@@ -114,6 +115,16 @@ export function LessonRenderer({
           lesson={lesson}
           isCompleted={isSpecialComplete}
           onComplete={handleManualCompletion ?? (() => baseMarkVisited(lessonKey, 'completed', 1))}
+        />
+      );
+
+    case 'canvas':
+      return (
+        <CanvasInspectionLessonDynamic
+          lesson={lesson}
+          visitedLabels={visited}
+          onVisit={markVisited}
+          courseId={courseId}
         />
       );
 

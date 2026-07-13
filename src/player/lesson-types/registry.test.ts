@@ -52,6 +52,10 @@ describe('lessonTypeRegistry', () => {
       completionMode: LessonCompletionMode.MANUAL,
       requiresManualCompletion: true,
     });
+    expect(lessonTypeRegistry.canvas).toMatchObject({
+      completionMode: LessonCompletionMode.HOTSPOT,
+      requiresManualCompletion: false,
+    });
   });
 
   test('returns completion mode for each lesson type', () => {
@@ -64,5 +68,6 @@ describe('lessonTypeRegistry', () => {
     expect(getLessonCompletionMode(makeLesson('splitScreen'))).toBe(LessonCompletionMode.NONE);
     expect(getLessonCompletionMode(makeLesson('dragDrop'))).toBe(LessonCompletionMode.MANUAL);
     expect(getLessonCompletionMode(makeLesson('scrollStory'))).toBe(LessonCompletionMode.MANUAL);
+    expect(getLessonCompletionMode(makeLesson('canvas'))).toBe(LessonCompletionMode.HOTSPOT);
   });
 });

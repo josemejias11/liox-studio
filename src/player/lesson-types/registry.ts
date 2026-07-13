@@ -55,6 +55,10 @@ export const lessonTypeRegistry: Record<LessonType, LessonTypeRegistryEntry> = {
     completionMode: LessonCompletionMode.MANUAL,
     requiresManualCompletion: true,
   },
+  canvas: {
+    completionMode: LessonCompletionMode.HOTSPOT,
+    requiresManualCompletion: false,
+  },
 };
 
 export function getLessonCompletionMode(
@@ -89,3 +93,7 @@ export const DragDropLessonDynamic = dynamic(() => import('./DragDropLesson'), {
 export const ScrollStoryLessonDynamic = dynamic(() => import('./ScrollStoryLesson'), {
   loading: LoadingSkeleton,
 });
+export const CanvasInspectionLessonDynamic = dynamic(
+  () => import('./CanvasInspectionLesson').then((m) => ({ default: m.CanvasInspectionLesson })),
+  { loading: LoadingSkeleton },
+);

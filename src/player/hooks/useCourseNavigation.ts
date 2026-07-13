@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { getChapterLessons, type CourseStructure } from '@/lib/course-structure';
 import { getFlowItemByIndex, type CourseFlow } from '@/lib/course-flow';
 import { getLessonCompletionMode, LessonCompletionMode } from '../lesson-types/registry';
+import { isCanvasComplete } from '@/lib/canvas';
 
 // ── Course phase state machine ────────────────────────────────────────────────
 
@@ -124,13 +125,17 @@ export function isLessonLocked(
   const lessonKey = currentLesson._key;
   const hotspots = currentLesson.hotspots ?? [];
   const completionMode = getLessonCompletionMode(currentLesson);
+  const visitedOnLesson = visited[lessonKey] ?? new Set<string>();
+
+  if (currentLesson.lessonType === 'canvas') {
+    return !isCanvasComplete(currentLesson, visitedOnLesson);
+  }
 
   const hotspotsLocked =
     completionMode === LessonCompletionMode.HOTSPOT &&
     hotspots.length > 0 &&
-    hotspots.some((h) => !visited[lessonKey]?.has(h.label));
-  const specialLocked =
-    completionMode === LessonCompletionMode.MANUAL && !visited[lessonKey]?.has('completed');
+    hotspots.some((h) => !visitedOnLesson.has(h.label));
+  const specialLocked = completionMode === LessonCompletionMode.MANUAL && !visitedOnLesson.has('completed');
 
   return hotspotsLocked || specialLocked;
 }

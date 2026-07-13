@@ -383,6 +383,7 @@ export function HotspotMapInput(props: ArrayOfObjectsInputProps) {
   // Resolve media field from the parent lesson object
   const parentPath = (path as Path).slice(0, -1);
   const media = useFormValue([...parentPath, 'media']) as SanityImage | undefined;
+  const lessonType = useFormValue([...parentPath, 'lessonType']) as string | undefined;
   const imageUrl = media?.asset?._ref ? assetRefToUrl(media.asset._ref, projectId, dataset) : null;
 
   function handleChange(newHotspots: HotspotItem[]) {
@@ -398,6 +399,12 @@ export function HotspotMapInput(props: ArrayOfObjectsInputProps) {
         itemTypeName={itemTypeName}
         onChange={handleChange}
       />
+
+      {lessonType === 'canvas' && (
+        <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 12, margin: 0 }}>
+          Canvas feature targets may be marked required in the fields below. Learners can explore in any order.
+        </p>
+      )}
 
       {/* Standard Sanity array editor for field values (label, topic, body, photos) */}
       {renderDefault(props)}

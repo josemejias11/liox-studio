@@ -122,6 +122,7 @@ export const lessonType = defineType({
           { title: 'Product Stage', value: 'stage' },
           { title: 'Video', value: 'video' },
           { title: 'Quiz (In-Lesson)', value: 'quiz' },
+          { title: 'Canvas Product Inspection', value: 'canvas' },
           { title: 'Color Switcher', value: 'colorSwitcher' },
           { title: 'Split Screen', value: 'splitScreen' },
           { title: 'Drag & Drop', value: 'dragDrop' },
@@ -206,7 +207,7 @@ export const lessonType = defineType({
       group: 'interactions',
       components: { input: HotspotMapInput },
       hidden: ({ parent }) =>
-        parent?.lessonType !== 'interaction' && parent?.lessonType !== 'stage',
+        parent?.lessonType !== 'interaction' && parent?.lessonType !== 'stage' && parent?.lessonType !== 'canvas',
       of: [
         {
           type: 'object',
@@ -219,6 +220,14 @@ export const lessonType = defineType({
               validation: (r) => r.required(),
             }),
             defineField({ name: 'topic', title: 'AI Topic Query', type: 'string' }),
+            defineField({
+              name: 'required',
+              title: 'Required for Completion',
+              description: 'Canvas lessons require learners to explore this feature before continuing.',
+              type: 'boolean',
+              initialValue: false,
+              hidden: ({ parent: _parent, document }) => document?.lessonType !== 'canvas',
+            }),
             defineField({
               name: 'x',
               title: 'X Position (%)',

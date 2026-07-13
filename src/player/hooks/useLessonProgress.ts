@@ -52,14 +52,21 @@ export function useLessonProgress(sessionId: string, persist: boolean = true) {
     return restored;
   }, [data]);
 
-  const markVisited = async (lessonKey: string, label: string, totalHotspots: number) => {
+  const markVisited = async (
+    lessonKey: string,
+    label: string,
+    totalHotspots: number,
+    completionRule?: (visited: Set<string>) => boolean,
+  ) => {
     if (!sessionId) return;
 
     const currentLessonVisited = visited[lessonKey] ?? new Set<string>();
     if (currentLessonVisited.has(label)) return;
 
     const nextVisitedSet = new Set([...currentLessonVisited, label]);
-    const isCompleted = totalHotspots > 0 && nextVisitedSet.size >= totalHotspots;
+    const isCompleted = completionRule
+      ? completionRule(nextVisitedSet)
+      : totalHotspots > 0 && nextVisitedSet.size >= totalHotspots;
     const visitedHotspots = Array.from(nextVisitedSet);
 
     const payload: ProgressRequestBody = {

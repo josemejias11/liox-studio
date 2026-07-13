@@ -53,6 +53,22 @@ export const courseType = defineType({
       of: [{ type: 'string' }],
     }),
     defineField({
+      name: 'courseMode',
+      title: 'Course Mode',
+      description:
+        'Standard courses use structured lesson screens. Canvas courses add spatial, product-inspection learning experiences.',
+      type: 'string',
+      group: 'settings',
+      options: {
+        list: [
+          { title: 'Standard — informational', value: 'standard' },
+          { title: 'Canvas — spatial learning experiences', value: 'canvas' },
+        ],
+        layout: 'radio',
+      },
+      initialValue: 'standard',
+    }),
+    defineField({
       name: 'chapters',
       title: 'Chapters',
       type: 'array',

@@ -17,6 +17,7 @@ const LESSON_FIELDS = groq`
     x,
     y,
     body,
+    required,
     photos[] { asset->{ url, originalFilename } },
     videoFile { asset->{ url } },
     videoAspectRatio,
@@ -95,6 +96,7 @@ export const COURSES_QUERY = groq`
   *[_type == "course" && published == true] | order(_createdAt desc) {
     _id,
     title,
+    courseMode,
     slug,
     description,
     thumbnail { asset->{ url } },
@@ -108,6 +110,7 @@ export const COURSE_BY_SLUG_QUERY = groq`
   *[_type == "course" && slug.current == $slug && published == true][0] {
     _id,
     title,
+    courseMode,
     description,
     thumbnail { asset->{ url } },
     coverImage { asset->{ url } },

@@ -31,6 +31,21 @@ Next.js 16 (root)      ───────────────────
 
 ## Module Structure
 
+### Course modes
+
+Courses use the `courseMode` field in Sanity:
+
+- `standard` (the default) uses the existing structured lesson flow.
+- `canvas` adds spatial educational lessons while continuing to use the same player, navigation, and progress tracking.
+
+The mode describes the authored learning experience; it is not a permission gate for legacy lesson types. Canvas lessons use the same route and player as Standard lessons.
+
+### Canvas product inspection lesson
+
+Canvas v1 focuses on one primary product image. In Sanity Studio, select **Canvas Product Inspection**, upload the image, and place feature targets using the visual map. Mark the targets learners must inspect as **Required for Completion**.
+
+Learners can pan and zoom the image, explore targets in any order, and continue once all required features have been opened. Optional targets remain available without blocking progress.
+
 The codebase is organized into focused modules with clear boundaries:
 
 ### TypeScript (`src/`)

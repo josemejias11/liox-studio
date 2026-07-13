@@ -7,6 +7,7 @@ import { NavMap } from './NavMap';
 import { CompletionBurst } from '@/components/CompletionBurst';
 import { CourseAIFab } from '@/components/CourseAIFab';
 import { getLessonCompletionMode, LessonCompletionMode } from './lesson-types/registry';
+import { getRequiredCanvasTargetCount, isCanvasComplete } from '@/lib/canvas';
 import { useLessonProgress } from './hooks/useLessonProgress';
 import { useCourseNavigation } from './hooks/useCourseNavigation';
 import { getChapterLessons } from '@/lib/course-structure';
@@ -80,6 +81,13 @@ export default function MotoViewer({
   const completionMode = currentLesson
     ? getLessonCompletionMode(currentLesson)
     : LessonCompletionMode.NONE;
+  const requiredCanvasTargets = currentLesson ? getRequiredCanvasTargetCount(currentLesson) : 0;
+  const canvasLesson = currentLesson?.lessonType === 'canvas' ? currentLesson : undefined;
+  const visitedRequiredCanvasTargets = canvasLesson
+    ? [...(visited[lessonKey] ?? [])].filter((label) =>
+        canvasLesson.hotspots?.some((target) => target.required && target.label === label),
+      ).length
+    : 0;
 
   const requiresManualCompletion = completionMode === LessonCompletionMode.MANUAL;
   const isSpecialComplete = requiresManualCompletion && visited[lessonKey]?.has('completed');
@@ -89,6 +97,9 @@ export default function MotoViewer({
       lessonKey,
       label,
       completionMode === LessonCompletionMode.MANUAL ? 1 : hotspots.length,
+      canvasLesson
+        ? (nextVisited) => isCanvasComplete(canvasLesson, nextVisited)
+        : undefined,
     );
 
   // ── Navigation wrappers ───────────────────────────────────────────────────
@@ -146,7 +157,9 @@ export default function MotoViewer({
             onToggleNavMap: () => setShowNavMap((v) => !v),
             moduleTitle: course.title,
             completionHint:
-              nextLocked && hotspots.length > 0
+              nextLocked && canvasLesson && requiredCanvasTargets > 0
+                ? `Explore all required features (${visitedRequiredCanvasTargets} / ${requiredCanvasTargets})`
+                : nextLocked && hotspots.length > 0
                 ? `Tap all ${hotspots.length} features to continue (${visitedOnLesson} / ${hotspots.length})`
                 : undefined,
           }

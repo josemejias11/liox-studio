@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { PortableTextBlock } from '@portabletext/types';
+import { ALL_LESSON_TYPES, type CourseMode } from '@/lib/course-modes';
 
 // ── Sanity content contract ───────────────────────────────────────────────────
 // Single source of truth for the shapes returned by the GROQ queries in
@@ -74,6 +75,7 @@ export const hotspotSchema = z.object({
   x: z.number().catch(0),
   y: z.number().catch(0),
   body: opt(richTextSchema),
+  required: opt(z.boolean()),
   photos: opt(z.array(photoSchema)),
   videoFile: opt(imageSchema),
   videoAspectRatio: opt(z.string()),
@@ -87,7 +89,7 @@ export const lessonSchema = z.object({
   _key: z.string(),
   headline: plainStringSchema,
   body: opt(richTextSchema),
-  lessonType: z.enum(['content', 'interaction', 'stage', 'video', 'quiz', 'colorSwitcher', 'splitScreen', 'dragDrop', 'scrollStory']).catch('content'),
+  lessonType: z.enum(ALL_LESSON_TYPES).catch('content'),
   media: opt(imageSchema),
   textOverlay: opt(textOverlaySchema),
   hotspots: opt(z.array(hotspotSchema)),
@@ -221,6 +223,7 @@ const chapterSchema = z.object({
 export const courseSchema = z.object({
   _id: z.string(),
   title: z.string().catch(''),
+  courseMode: z.enum(['standard', 'canvas']).catch('standard'),
   description: opt(z.string()),
   thumbnail: opt(imageSchema),
   coverImage: opt(imageSchema),
@@ -233,6 +236,7 @@ export const courseSchema = z.object({
   disclaimer: opt(disclaimerSchema),
 });
 export type SanityCourse = z.output<typeof courseSchema>;
+export type { CourseMode };
 
 /** Flat discriminated union of every section type in the course flow. */
 export type CourseSection = LessonSection | SanitySpecification | SanityQuizDoc | SanityDisclaimer;
@@ -242,6 +246,7 @@ export type CourseSection = LessonSection | SanitySpecification | SanityQuizDoc 
 export const courseSummarySchema = z.object({
   _id: z.string(),
   title: z.string().catch(''),
+  courseMode: z.enum(['standard', 'canvas']).catch('standard'),
   slug: z.object({ current: z.string() }),
   description: opt(z.string()),
   thumbnail: opt(imageSchema),
