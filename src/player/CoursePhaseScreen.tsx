@@ -4,8 +4,9 @@ import dynamic from 'next/dynamic';
 import { CourseCover } from '@/components/CourseCover';
 import { CourseComplete } from '@/components/CourseComplete';
 import type { CourseStructure } from '@/lib/course-structure';
-import type { LessonSection, SanityCourse, SanityHotspot } from '@/lib/contracts/sanity';
+import type { LessonSection, SanityCourse } from '@/lib/contracts/sanity';
 import type { CoursePhase } from './hooks/useCourseNavigation';
+import type { LessonRuntime } from './hooks/useLessonRuntime';
 import { ChapterIntro } from './ChapterIntro';
 import { LessonRenderer } from './LessonRenderer';
 
@@ -26,11 +27,7 @@ export interface CoursePhaseScreenProps {
   phase: CoursePhase;
   course: SanityCourse;
   structure: CourseStructure;
-  currentLesson?: LessonSection;
-  lessonKey: string;
-  hotspots: SanityHotspot[];
-  visitedLesson: Set<string>;
-  isSpecialComplete: boolean;
+  lessonRuntime: LessonRuntime;
   weakTopics: string[];
   sessionId: string;
   persistSession: boolean;
@@ -42,8 +39,6 @@ export interface CoursePhaseScreenProps {
   finishQuiz: () => void;
   finishChapterQuiz: (chapterIndex: number) => void;
   dismissChapterIntro: () => void;
-  markVisited: (label: string) => void;
-  baseMarkVisited: (key: string, label: string, total: number) => void;
   onDisclaimerCanProceedChange: (canProceed: boolean) => void;
 }
 
@@ -77,11 +72,7 @@ export function CoursePhaseScreen({
   phase,
   course,
   structure,
-  currentLesson,
-  lessonKey,
-  hotspots,
-  visitedLesson,
-  isSpecialComplete,
+  lessonRuntime,
   weakTopics,
   sessionId,
   persistSession,
@@ -93,10 +84,9 @@ export function CoursePhaseScreen({
   finishQuiz,
   finishChapterQuiz,
   dismissChapterIntro,
-  markVisited,
-  baseMarkVisited,
   onDisclaimerCanProceedChange,
 }: CoursePhaseScreenProps) {
+  const { currentLesson } = lessonRuntime;
   switch (phase.phase) {
     case 'cover': {
       const coverImage =
@@ -188,14 +178,14 @@ export function CoursePhaseScreen({
       return (
         <LessonRenderer
           lesson={currentLesson}
-          lessonKey={lessonKey}
-          hotspots={hotspots}
-          visited={visitedLesson}
-          isSpecialComplete={isSpecialComplete}
+          lessonKey={lessonRuntime.lessonKey}
+          hotspots={lessonRuntime.hotspots}
+          visited={lessonRuntime.visitedLabels}
+          isSpecialComplete={lessonRuntime.isSpecialComplete}
           goNext={goNext}
           goPrev={goPrev}
-          markVisited={markVisited}
-          baseMarkVisited={baseMarkVisited}
+          markVisited={lessonRuntime.markVisited}
+          baseMarkVisited={lessonRuntime.baseMarkVisited}
           weakTopics={weakTopics}
           sessionId={sessionId}
           persistSession={persistSession}

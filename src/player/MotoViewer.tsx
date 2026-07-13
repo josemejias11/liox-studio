@@ -3,12 +3,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LessonFrame } from './LessonFrame';
-import { NavMap } from './NavMap';
-import { CompletionBurst } from '@/components/CompletionBurst';
-import { CourseAIFab } from '@/components/CourseAIFab';
-import { getLessonCompletionMode, LessonCompletionMode } from './lesson-types/registry';
-import { getRequiredCanvasTargetCount, isCanvasComplete } from '@/lib/canvas';
-import { getCoveredFeatureLabels, isRefresherComplete } from '@/lib/refresher';
 import { useLessonProgress } from './hooks/useLessonProgress';
 import { useCourseNavigation } from './hooks/useCourseNavigation';
 import { getChapterLessons } from '@/lib/course-structure';
@@ -18,6 +12,8 @@ import { useCourseSession } from './hooks/useCourseSession';
 import { useWeakTopics } from './hooks/useWeakTopics';
 import { CoursePhaseScreen, getCoursePhaseSlideKey } from './CoursePhaseScreen';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { useLessonRuntime } from './hooks/useLessonRuntime';
+import { PlayerOverlays } from './PlayerOverlays';
 
 // ── Framer Motion slide variants ─────────────────────────────────────────────
 
@@ -76,39 +72,13 @@ export default function MotoViewer({
     phase.phase === 'chapter'
       ? getChapterLessons(structure, phase.chapterIndex)[phase.lessonIndex]
       : undefined;
-  const lessonKey = currentLesson?._key ?? '';
-  const hotspots = useMemo(() => currentLesson?.hotspots ?? [], [currentLesson]);
-  const visitedOnLesson = visited[lessonKey]?.size ?? 0;
-  const completionMode = currentLesson
-    ? getLessonCompletionMode(currentLesson)
-    : LessonCompletionMode.NONE;
-  const requiredCanvasTargets = currentLesson ? getRequiredCanvasTargetCount(currentLesson) : 0;
-  const canvasLesson = currentLesson?.lessonType === 'canvas' ? currentLesson : undefined;
-  const refresherFeatureLabels = currentLesson ? getCoveredFeatureLabels(currentLesson) : [];
-  const refresherLesson = refresherFeatureLabels.length > 0 ? currentLesson : undefined;
-  const visitedRefresherFeatures = refresherLesson
-    ? refresherFeatureLabels.filter((label) => visited[lessonKey]?.has(label)).length
-    : 0;
-  const visitedRequiredCanvasTargets = canvasLesson
-    ? [...(visited[lessonKey] ?? [])].filter((label) =>
-        canvasLesson.hotspots?.some((target) => target.required && target.label === label),
-      ).length
-    : 0;
-
-  const requiresManualCompletion = completionMode === LessonCompletionMode.MANUAL;
-  const isSpecialComplete = requiresManualCompletion && visited[lessonKey]?.has('completed');
-
-  const markVisited = (label: string) =>
-    baseMarkVisited(
-      lessonKey,
-      label,
-      refresherLesson ? refresherFeatureLabels.length : completionMode === LessonCompletionMode.MANUAL ? 1 : hotspots.length,
-      refresherLesson
-        ? (nextVisited) => isRefresherComplete(refresherLesson, nextVisited)
-        : canvasLesson
-        ? (nextVisited) => isCanvasComplete(canvasLesson, nextVisited)
-        : undefined,
-    );
+  const lessonRuntime = useLessonRuntime({
+    currentLesson,
+    visited,
+    baseMarkVisited,
+    nextLocked,
+  });
+  const { lessonKey } = lessonRuntime;
 
   // ── Navigation wrappers ───────────────────────────────────────────────────
   const goNext = nav.goNext;
@@ -165,13 +135,7 @@ export default function MotoViewer({
             onToggleNavMap: () => setShowNavMap((v) => !v),
             moduleTitle: course.title,
             completionHint:
-              nextLocked && refresherLesson
-                ? `Review every feature (${visitedRefresherFeatures} / ${refresherFeatureLabels.length})`
-                : nextLocked && canvasLesson && requiredCanvasTargets > 0
-                ? `Explore all required features (${visitedRequiredCanvasTargets} / ${requiredCanvasTargets})`
-                : nextLocked && hotspots.length > 0
-                ? `Tap all ${hotspots.length} features to continue (${visitedOnLesson} / ${hotspots.length})`
-                : undefined,
+              lessonRuntime.completionHint,
           }
         : phase.phase === 'disclaimer'
           ? {
@@ -224,11 +188,7 @@ export default function MotoViewer({
               phase={phase}
               course={course}
               structure={structure}
-              currentLesson={currentLesson}
-              lessonKey={lessonKey}
-              hotspots={hotspots}
-              visitedLesson={visited[lessonKey] ?? new Set()}
-              isSpecialComplete={isSpecialComplete ?? false}
+              lessonRuntime={lessonRuntime}
               weakTopics={weakTopics}
               sessionId={sessionId}
               persistSession={persistSession}
@@ -240,39 +200,26 @@ export default function MotoViewer({
               finishQuiz={nav.finishQuiz}
               finishChapterQuiz={nav.finishChapterQuiz}
               dismissChapterIntro={nav.dismissChapterIntro}
-              markVisited={markVisited}
-              baseMarkVisited={baseMarkVisited}
               onDisclaimerCanProceedChange={setDisclaimerCanProceed}
             />
           </ErrorBoundary>
         </motion.div>
       </AnimatePresence>
 
-      {showNavMap && (
-        <NavMap
-          flow={flow}
-          currentSectionIndex={nav.currentSectionIndex}
-          visited={visited}
-          onNavigate={navigateToSection}
-          onClose={() => setShowNavMap(false)}
-        />
-      )}
-
-      {phase.phase !== 'cover' &&
-        phase.phase !== 'quiz' &&
-        phase.phase !== 'chapter-quiz' &&
-        currentLesson?.lessonType !== 'quiz' && <CourseAIFab courseId={course._id} />}
-
-      {progressError && persistSession && (
-        <div
-          role="status"
-          className="bg-card/90 text-muted-foreground border-border/20 fixed bottom-4 left-4 z-50 rounded-full border px-4 py-2 text-xs shadow-lg backdrop-blur-sm"
-        >
-          Progress sync is unavailable — your progress may not be saved.
-        </div>
-      )}
-
-      <CompletionBurst active={showBurst} />
+      <PlayerOverlays
+        flow={flow}
+        phase={phase}
+        currentLesson={currentLesson}
+        currentSectionIndex={nav.currentSectionIndex}
+        visited={visited}
+        courseId={course._id}
+        showNavMap={showNavMap}
+        showBurst={showBurst}
+        progressError={progressError}
+        persistSession={persistSession}
+        onNavigate={navigateToSection}
+        onCloseNavMap={() => setShowNavMap(false)}
+      />
     </LessonFrame>
   );
 }
