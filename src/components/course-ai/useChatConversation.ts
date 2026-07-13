@@ -1,28 +1,33 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { askCourseChat } from '@/lib/chat-client';
 
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
-}
-
-interface ConversationTurn {
-  role: 'user' | 'assistant';
-  content: string;
+  pending?: boolean;
 }
 
 export interface UseChatConversationOptions {
   courseId?: string;
   onError?: (error: unknown) => void;
+  onAssistantMessage?: (message: string) => void;
+}
+
+export interface SendChatOptions {
+  displayUserMessage?: boolean;
+  displayPendingAssistant?: boolean;
+  queryOverride?: string;
+  fallbackMessage?: string;
 }
 
 export interface UseChatConversationReturn {
   messages: ChatMessage[];
   isLoading: boolean;
-  send: (query: string) => Promise<void>;
+  send: (query: string, options?: SendChatOptions) => Promise<string | undefined>;
+  abort: () => void;
   reset: () => void;
 }
 
@@ -36,73 +41,109 @@ const FALLBACK_ERROR =
 export function useChatConversation({
   courseId,
   onError,
+  onAssistantMessage,
 }: UseChatConversationOptions = {}): UseChatConversationReturn {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const conversationRef = useRef<ConversationTurn[]>([]);
   const abortRef = useRef<AbortController | null>(null);
+  const messageIdRef = useRef(0);
+
+  const nextMessageId = useCallback(() => {
+    messageIdRef.current += 1;
+    return `chat-${messageIdRef.current}`;
+  }, []);
 
   const send = useCallback(
-    async (query: string) => {
+    async (query: string, options: SendChatOptions = {}) => {
       if (!courseId || !query.trim()) return;
 
-      const userMsg: ChatMessage = {
-        id: Date.now().toString(),
-        role: 'user',
-        content: query.trim(),
-      };
+      const {
+        displayUserMessage = true,
+        displayPendingAssistant = false,
+        queryOverride,
+        fallbackMessage = FALLBACK_ERROR,
+      } = options;
+      const visibleQuery = query.trim();
+      const requestQuery = queryOverride?.trim() || visibleQuery;
+      const pendingMessageId = displayPendingAssistant ? nextMessageId() : undefined;
 
-      setMessages((prev) => [...prev, userMsg]);
+      if (displayUserMessage) {
+        setMessages((prev) => [
+          ...prev,
+          { id: nextMessageId(), role: 'user', content: visibleQuery },
+        ]);
+      }
+      if (pendingMessageId) {
+        setMessages((prev) => [
+          ...prev,
+          { id: pendingMessageId, role: 'assistant', content: '', pending: true },
+        ]);
+      }
       setIsLoading(true);
 
-      // Abort any in-flight request
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
 
-      conversationRef.current = [
-        ...conversationRef.current,
-        { role: 'user', content: query.trim() },
-      ];
-
       try {
         const data = await askCourseChat(
-          { courseId, query: query.trim() },
+          { courseId, query: requestQuery },
           controller.signal,
         );
 
-        setMessages((prev) => [
-          ...prev,
-          { id: (Date.now() + 1).toString(), role: 'assistant', content: data.answer },
-        ]);
-
-        conversationRef.current = [
-          ...conversationRef.current,
-          { role: 'assistant', content: data.answer },
-        ];
+        setMessages((prev) =>
+          pendingMessageId
+            ? prev.map((message) =>
+                message.id === pendingMessageId
+                  ? { ...message, content: data.answer, pending: false }
+                  : message,
+              )
+            : [
+                ...prev,
+                { id: nextMessageId(), role: 'assistant', content: data.answer },
+              ],
+        );
+        onAssistantMessage?.(data.answer);
+        return data.answer;
       } catch (error: unknown) {
         if ((error as { name?: string }).name === 'AbortError') return;
         console.warn('Chat request failed:', error instanceof Error ? error.message : error);
-        setMessages((prev) => [
-          ...prev,
-          { id: (Date.now() + 1).toString(), role: 'assistant', content: FALLBACK_ERROR },
-        ]);
+        setMessages((prev) =>
+          pendingMessageId
+            ? prev.map((message) =>
+                message.id === pendingMessageId
+                  ? { ...message, content: fallbackMessage, pending: false }
+                  : message,
+              )
+            : [
+                ...prev,
+                { id: nextMessageId(), role: 'assistant', content: fallbackMessage },
+              ],
+        );
         onError?.(error);
+        return undefined;
       } finally {
         if (abortRef.current === controller) {
           setIsLoading(false);
+          abortRef.current = null;
         }
       }
     },
-    [courseId, onError],
+    [courseId, nextMessageId, onAssistantMessage, onError],
   );
 
-  const reset = useCallback(() => {
+  const abort = useCallback(() => {
     abortRef.current?.abort();
-    setMessages([]);
+    abortRef.current = null;
     setIsLoading(false);
-    conversationRef.current = [];
   }, []);
 
-  return { messages, isLoading, send, reset };
+  const reset = useCallback(() => {
+    abort();
+    setMessages([]);
+  }, [abort]);
+
+  useEffect(() => abort, [abort]);
+
+  return { messages, isLoading, send, abort, reset };
 }
