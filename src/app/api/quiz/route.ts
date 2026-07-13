@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import {
   GenerateQuizRequestSchema,
   type ClientQuiz,
-  type GenerateQuizRequest,
   type ServerAiQuiz,
 } from '@/lib/contracts/quiz';
 import { generateCourseQuiz, RagServiceError } from '@/lib/parser-service';
+import { jsonError, readJson, unexpectedApiError } from '@/lib/server/http';
 
 // Generates an AI quiz via the self-hosted parser/RAG service (server-to-server),
 // persists the full payload — correct answers included — in Prisma, and returns
@@ -43,23 +42,19 @@ async function persistAndStrip(quiz: ServerAiQuiz): Promise<ClientQuiz> {
 }
 
 export async function POST(req: NextRequest) {
-  let body: GenerateQuizRequest;
-  try {
-    body = GenerateQuizRequestSchema.parse(await req.json());
-  } catch (err: unknown) {
-    const details = err instanceof z.ZodError ? err.issues : undefined;
-    return NextResponse.json({ error: 'Invalid request payload', details }, { status: 400 });
-  }
+  const parsed = await readJson(req, GenerateQuizRequestSchema, {
+    invalidJsonMessage: 'Invalid request payload',
+  });
+  if (!parsed.success) return parsed.response;
 
   let result;
   try {
-    result = await generateCourseQuiz(body.courseId, body.weakTopics ?? []);
+    result = await generateCourseQuiz(parsed.data.courseId, parsed.data.weakTopics ?? []);
   } catch (err: unknown) {
     if (err instanceof RagServiceError) {
-      return NextResponse.json({ error: err.message }, { status: 502 });
+      return jsonError(err.message, 502);
     }
-    console.error('[api/quiz] unexpected error:', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return unexpectedApiError('api/quiz', err);
   }
 
   // Map the parser wire shape onto the persisted ServerAiQuiz shape. The parser
@@ -81,6 +76,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(await persistAndStrip(quiz));
   } catch (err: unknown) {
     console.error('[api/quiz] failed to persist quiz:', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return jsonError('Internal server error', 500);
   }
 }

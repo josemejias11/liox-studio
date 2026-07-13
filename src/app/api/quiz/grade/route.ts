@@ -10,6 +10,7 @@ import {
   gradeSubmission,
   type GradableQuestion,
 } from '@/lib/quiz-grading';
+import { jsonError, readJson, unexpectedApiError } from '@/lib/server/http';
 
 class CmsConfigurationError extends Error {
   constructor(message: string) {
@@ -106,42 +107,27 @@ async function loadAnswerKey(source: QuizSource, quizId: string): Promise<Answer
 // ── Route ─────────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  let json: unknown;
-  try {
-    json = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-  }
-
-  const parsed = QuizGradeRequestSchema.safeParse(json);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: 'Invalid request payload', details: parsed.error.issues },
-      { status: 400 },
-    );
-  }
+  const parsed = await readJson(req, QuizGradeRequestSchema);
+  if (!parsed.success) return parsed.response;
   const body = parsed.data;
 
   try {
     const key = await loadAnswerKey(body.source, body.quizId);
     if (!key) {
-      return NextResponse.json({ error: 'Quiz not found' }, { status: 404 });
+      return jsonError('Quiz not found', 404);
     }
 
     if (body.action === 'question') {
       const question = key.questions[body.questionIndex];
       if (!question || body.selectedIndex >= question.options.length) {
-        return NextResponse.json({ error: 'Question or answer out of range' }, { status: 400 });
+        return jsonError('Question or answer out of range', 400);
       }
       return NextResponse.json(gradeQuestion(question, body.selectedIndex));
     }
 
     // action === "submit"
     if (body.answers.length !== key.questions.length) {
-      return NextResponse.json(
-        { error: 'Answer count does not match question count' },
-        { status: 400 },
-      );
+      return jsonError('Answer count does not match question count', 400);
     }
 
     const result = gradeSubmission(key.questions, body.answers, key.passingScore);
@@ -193,8 +179,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result);
   } catch (err) {
     if (err instanceof CmsConfigurationError) {
-      return NextResponse.json({ error: err.message }, { status: 422 });
+      return jsonError(err.message, 422);
     }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return unexpectedApiError('api/quiz/grade', err);
   }
 }
