@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { courseSchema, courseSummarySchema } from './sanity';
+import { courseSchema, courseSummarySchema, lessonSchema } from './sanity';
 
 describe('course contracts', () => {
   test('accepts standard and canvas modes and defaults missing mode to standard', () => {
@@ -19,5 +19,16 @@ describe('course contracts', () => {
         slug: { current: 'course' },
       }).courseMode,
     ).toBe('standard');
+  });
+
+  test('does not expose retired floating graphics on lessons', () => {
+    const lesson = lessonSchema.parse({
+      sectionType: 'lesson',
+      _key: 'lesson-1',
+      headline: 'Lesson',
+      floatingGraphics: [{ x: 10, y: 20, width: 'small' }],
+    });
+
+    expect(lesson).not.toHaveProperty('floatingGraphics');
   });
 });

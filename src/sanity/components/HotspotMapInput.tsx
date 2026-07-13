@@ -373,8 +373,7 @@ function HotspotMap({ hotspots, imageUrl, itemTypeName, onChange }: HotspotMapPr
 export function HotspotMapInput(props: ArrayOfObjectsInputProps) {
   const { value, onChange, path, renderDefault, schemaType } = props;
   const hotspots = (value ?? []) as HotspotItem[];
-  // Derive the item _type from the schema so this component works for both
-  // hotspots (type: "hotspot") and floatingGraphics (type: "graphic").
+  // Derive the item _type from the schema so the map creates valid hotspot objects.
   const itemTypeName = (schemaType as { of?: Array<{ name?: string }> }).of?.[0]?.name ?? 'hotspot';
 
   const client = useClient({ apiVersion: '2024-01-01' });

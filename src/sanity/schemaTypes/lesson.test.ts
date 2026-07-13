@@ -12,4 +12,10 @@ describe('Canvas lesson authoring', () => {
       value: 'canvas',
     });
   });
+
+  test('does not expose the retired floating graphics field', () => {
+    const fields = lessonType.fields as Array<{ name?: string }>;
+
+    expect(fields.some((field) => field.name === 'floatingGraphics')).toBe(false);
+  });
 });

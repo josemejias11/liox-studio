@@ -292,61 +292,6 @@ export const lessonType = defineType({
       ],
     }),
     defineField({
-      name: 'floatingGraphics',
-      title: 'Floating Logos & Graphics',
-      description: 'Add SVG or PNG logos that float above the lesson background.',
-      type: 'array',
-      group: 'media',
-      components: { input: HotspotMapInput }, // reusing HotspotMapInput since it provides x/y mapping
-      of: [
-        {
-          type: 'object',
-          name: 'graphic',
-          fields: [
-            defineField({
-              name: 'image',
-              title: 'Graphic File (SVG/PNG)',
-              type: 'image',
-              options: { accept: 'image/png, image/svg+xml' },
-              validation: (r) => r.required(),
-            }),
-            defineField({
-              name: 'x',
-              title: 'X Position (%)',
-              type: 'number',
-              validation: (r) => r.min(0).max(100),
-            }),
-            defineField({
-              name: 'y',
-              title: 'Y Position (%)',
-              type: 'number',
-              validation: (r) => r.min(0).max(100),
-            }),
-            defineField({
-              name: 'width',
-              title: 'Size',
-              type: 'string',
-              options: {
-                list: [
-                  { title: 'Small', value: 'small' },
-                  { title: 'Medium', value: 'medium' },
-                  { title: 'Large', value: 'large' },
-                  { title: 'Full Width', value: 'full' },
-                ],
-              },
-              initialValue: 'medium',
-            }),
-          ],
-          preview: {
-            select: { title: 'width', media: 'image' },
-            prepare({ title, media }) {
-              return { title: `Floating Graphic (${title})`, media };
-            },
-          },
-        },
-      ],
-    }),
-    defineField({
       name: 'dropZones',
       title: 'Drop Zones',
       type: 'array',

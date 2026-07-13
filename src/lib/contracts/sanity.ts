@@ -58,13 +58,6 @@ const textOverlaySchema = z.object({
   width: opt(z.string()),
 });
 
-const floatingGraphicSchema = z.object({
-  image: opt(imageSchema),
-  x: opt(z.number()),
-  y: opt(z.number()),
-  width: opt(z.string()),
-});
-
 // ── Lesson hotspots ───────────────────────────────────────────────────────────
 
 export const hotspotSchema = z.object({
@@ -95,7 +88,6 @@ export const lessonSchema = z.object({
   hotspots: opt(z.array(hotspotSchema)),
   videoAspectRatio: opt(z.string()),
   videoFile: opt(imageSchema),
-  floatingGraphics: opt(z.array(floatingGraphicSchema)),
   stageBackground: opt(imageSchema),
   enableCompletionAnimation: opt(z.boolean()),
   completionTransition: opt(z.enum(['spin', 'rise', 'fade'])),

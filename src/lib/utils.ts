@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/** Map a semantic width token (from Sanity textOverlay/graphic fields) to a max-width class. */
+/** Map a semantic width token from Sanity text-overlay fields to a max-width class. */
 export function getSemanticWidthClass(width?: string): string {
   switch (width) {
     case 'small':

@@ -24,7 +24,6 @@ const LESSON_FIELDS = groq`
   },
   videoAspectRatio,
   videoFile { asset->{ url } },
-  floatingGraphics[] { image { asset->{ url } }, x, y, width },
   stageBackground { asset->{ url } },
   enableCompletionAnimation,
   completionTransition,

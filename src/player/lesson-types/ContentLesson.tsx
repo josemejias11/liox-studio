@@ -132,26 +132,6 @@ export function ContentLesson({
         </div>
       )}
 
-      {/* Floating graphics */}
-      {lesson.floatingGraphics?.map(
-        (fg, i) =>
-          fg.image?.asset?.url && (
-            <div
-              key={i}
-              className={`pointer-events-none absolute z-10 ${getSemanticWidthClass(fg.width)}`}
-              style={{ left: `${fg.x ?? 0}%`, top: `${fg.y ?? 0}%` }}
-            >
-              <Image
-                src={fg.image.asset.url}
-                alt="Floating Graphic"
-                width={800}
-                height={800}
-                className="h-auto w-full object-contain drop-shadow-2xl"
-              />
-            </div>
-          ),
-      )}
-
       {/* Hotspots */}
       {hotspots.map((h, i) => (
         <Hotspot
