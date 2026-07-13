@@ -10,5 +10,5 @@
     "types": [],
     "ignoreDeprecations": "6.0"
   },
-  "files": ["src/types.ts", "src/board-defaults.ts", "src/code.ts"]
+  "files": ["src/types.ts", "src/board-defaults.ts", "src/live-board-snapshot.ts", "src/code.ts"]
 }

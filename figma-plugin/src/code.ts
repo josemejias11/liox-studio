@@ -1444,6 +1444,79 @@ function normalizeContent(raw: unknown): BoardContent {
   return deepMerge(DEFAULT_CONTENT, raw);
 }
 
+function snapshotPaint(paint: LiveSnapshotPaint) {
+  const [hex, opacity] = Array.isArray(paint) ? paint : [paint, 1];
+  return { type: "SOLID", color: hexToRgb(hex), opacity };
+}
+
+function collectSnapshotFonts(node: LiveSnapshotNode, fonts: Map<string, FontName>) {
+  if (node.font) {
+    const font = { family: node.font[0], style: node.font[1] };
+    fonts.set(`${font.family}\u0000${font.style}`, font);
+  }
+  for (const child of node.c || []) collectSnapshotFonts(child, fonts);
+}
+
+async function loadSnapshotFonts() {
+  const fonts = new Map<string, FontName>();
+  for (const node of LIVE_BOARD_SNAPSHOT.page.c) collectSnapshotFonts(node, fonts);
+  for (const font of fonts.values()) await figma.loadFontAsync(font);
+}
+
+function applySnapshotGeometry(node: any, spec: LiveSnapshotNode) {
+  node.name = spec.n;
+  node.resize(spec.w, spec.h);
+  node.x = spec.x;
+  node.y = spec.y;
+  node.visible = spec.v !== false;
+  node.locked = spec.l === true;
+  node.opacity = spec.o ?? 1;
+  node.rotation = spec.r ?? 0;
+  node.fills = (spec.f || []).map(snapshotPaint);
+  node.strokes = (spec.s || []).map(snapshotPaint);
+  node.strokeWeight = spec.sw ?? 1;
+  if (typeof spec.cr === "number") node.cornerRadius = spec.cr;
+}
+
+function createSnapshotNode(parent: any, spec: LiveSnapshotNode) {
+  if (spec.t === "TEXT") {
+    const node = figma.createText();
+    parent.appendChild(node);
+    node.fontName = spec.font ? { family: spec.font[0], style: spec.font[1] } : FONT_REGULAR;
+    node.textAutoResize = "NONE";
+    node.characters = spec.text || "";
+    if (typeof spec.fs === "number") node.fontSize = spec.fs;
+    if (spec.lh === "AUTO") node.lineHeight = { unit: "AUTO" };
+    else if (spec.lh) node.lineHeight = { value: spec.lh[0], unit: spec.lh[1] };
+    if (spec.ls) node.letterSpacing = { value: spec.ls[0], unit: spec.ls[1] };
+    if (spec.ah) node.textAlignHorizontal = spec.ah;
+    if (spec.av) node.textAlignVertical = spec.av;
+    if (typeof spec.ps === "number") node.paragraphSpacing = spec.ps;
+    if (spec.tc) node.textCase = spec.tc;
+    if (spec.td) node.textDecoration = spec.td;
+    applySnapshotGeometry(node, spec);
+    if (spec.ar) node.textAutoResize = spec.ar;
+    return node;
+  }
+
+  const node = figma.createFrame();
+  parent.appendChild(node);
+  node.clipsContent = spec.cl === true;
+  applySnapshotGeometry(node, spec);
+  for (const child of spec.c || []) createSnapshotNode(node, child);
+  return node;
+}
+
+async function restoreLiveSnapshot() {
+  await loadSnapshotFonts();
+  const page = figma.createPage();
+  page.name = `${LIVE_BOARD_SNAPSHOT.page.name} · Pulled Snapshot ${LIVE_BOARD_SNAPSHOT.source.capturedAt}`;
+  page.setPluginData(PAGE_KEY, "live-snapshot");
+  await figma.setCurrentPageAsync(page);
+  for (const child of LIVE_BOARD_SNAPSHOT.page.c) createSnapshotNode(page, child);
+  return page;
+}
+
 async function generateBoard(state: BoardState) {
   await loadFonts(state);
   if (state.config.clearExisting) await clearGeneratedPages();
@@ -1512,6 +1585,22 @@ figma.ui.onmessage = async (msg: any) => {
       frameCount: countSelectedFrames(DEFAULT_CONFIG),
       contentJson: JSON.stringify(DEFAULT_CONTENT, null, 2),
     });
+    return;
+  }
+  if (msg?.type === "restore-live-snapshot") {
+    try {
+      await restoreLiveSnapshot();
+      figma.ui.postMessage({
+        type: "done",
+        text: `Created a safe copy of the ${LIVE_BOARD_SNAPSHOT.source.capturedAt} live snapshot with 13 frames. The original live page was not changed.`,
+      });
+      figma.closePlugin();
+    } catch (error) {
+      figma.ui.postMessage({
+        type: "done",
+        text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+      });
+    }
     return;
   }
   if (msg?.type !== "generate") return;

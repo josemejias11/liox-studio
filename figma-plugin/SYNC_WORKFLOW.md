@@ -17,6 +17,13 @@
   - frame composition
 - `Figma` is generated output.
 
+## Pulled live snapshot
+
+- `src/live-board-snapshot.ts` is the complete read-only capture of live page `161:8770` from 2026-07-10.
+- It contains all 1,485 frames and text nodes, including hierarchy, copy, geometry, solid colors, strokes, typography, visibility, and corner styling.
+- Use **Create Safe Copy From Pulled Live Snapshot** to restore it. The restore path always creates a new page and never clears existing pages.
+- Snapshot pages use a separate plugin tag, so canonical cleanup does not delete them.
+
 ## Ongoing workflow
 
 1. Make changes in the repo first.
@@ -28,9 +35,9 @@
 
 ## Rule
 
-Do not expect manual Figma edits to persist after regeneration.
+Manual edits made after the snapshot date still require another pull before canonical regeneration.
 
-If something only exists on the canvas, it is not part of the system yet.
+If something only exists on the canvas after the snapshot date, it is not part of the system yet.
 
 ## Practical split
 

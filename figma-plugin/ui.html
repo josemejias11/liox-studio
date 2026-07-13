@@ -116,6 +116,10 @@
     background: var(--accent-soft);
     color: var(--accent);
   }
+  .snapshot {
+    background: #173f35;
+  }
+  .snapshot:hover { background: #0f332a; }
   button {
     width: 100%;
     padding: 12px;
@@ -140,8 +144,8 @@
       <p>Generate only the board sections you need, with explicit sizing and cleanup controls.</p>
     </div>
     <div class="warning">
-      Repo source is canonical. This plugin JSON and renderer define the board.
-      Manual Figma edits will be lost on regeneration unless they are copied back into the repo first.
+      The 2026-07-10 live board has been pulled into this plugin as a protected snapshot.
+      Restore it to a new page before using the canonical generator.
     </div>
     <div class="field">
       <label for="boardTitle">Board Title</label>
@@ -200,12 +204,14 @@
     </div>
   </div>
 
-  <button id="generate">Generate Board</button>
+  <button class="snapshot" id="restoreSnapshot" type="button">Create Safe Copy From Pulled Live Snapshot</button>
+  <button id="generate">Generate Canonical Board</button>
   <div class="status" id="status"></div>
 </div>
 
 <script>
   const btn = document.getElementById('generate');
+  const restoreSnapshot = document.getElementById('restoreSnapshot');
   const status = document.getElementById('status');
   const boardTitle = document.getElementById('boardTitle');
   const frameWidth = document.getElementById('frameWidth');
@@ -275,6 +281,13 @@
     }, '*');
   };
 
+  restoreSnapshot.onclick = () => {
+    restoreSnapshot.disabled = true;
+    btn.disabled = true;
+    status.textContent = 'Creating a new page from the pulled live snapshot...';
+    parent.postMessage({ pluginMessage: { type: 'restore-live-snapshot' } }, '*');
+  };
+
   resetJson.onclick = () => {
     contentJson.value = defaultContentJson;
     contentJson.style.borderColor = 'var(--line)';
@@ -308,6 +321,7 @@
     if (msg.type === 'done') {
       status.textContent = msg.text;
       btn.disabled = false;
+      restoreSnapshot.disabled = false;
     }
   };
 
