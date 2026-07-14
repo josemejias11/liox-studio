@@ -26,7 +26,6 @@
 
 # ai
 .claude
-web/.claude
 .agents
 .superpowers/
 
@@ -72,6 +71,7 @@ parser-service/.env
 
 # IDE
 .idea/
+.vscode/
 
 # Local Claude Code config
 .claude/
