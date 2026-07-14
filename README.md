@@ -66,6 +66,7 @@ The codebase is organized into focused modules with clear boundaries:
 | `lib/progress-store.ts` | Prisma progress persistence (hotspots, lessons, quizzes) |
 | `lib/chat-client.ts` | Chat transport to `/api/chat` with response validation |
 | `lib/contracts/` | Zod schemas for Sanity, API, and quiz contracts |
+| `lib/server/http.ts` | Shared server-side request parsing and API error responses |
 
 ### Player (`src/player/`)
 
@@ -73,10 +74,12 @@ The codebase is organized into focused modules with clear boundaries:
 |--------|---------|
 | `MotoViewer.tsx` | Main course player shell |
 | `CoursePhaseScreen.tsx` | Phase renderer (cover, lessons, quiz, disclaimer) |
+| `PlayerOverlays.tsx` | Course map, AI assistant, sync warning, and completion overlays |
 | `NavMap.tsx` | Full-course navigation map |
 | `LessonRenderer.tsx` | Lesson type dispatcher |
 | `RefresherFeaturePanel.tsx` | Shared device and covered-feature review panel |
 | `hooks/useCourseNavigation.ts` | Flow-based navigation state machine |
+| `hooks/useLessonRuntime.ts` | Current lesson completion, progress, and visit model |
 | `hooks/useCourseSession.ts` | Session ID and consent persistence |
 | `hooks/useWeakTopics.ts` | Weak topic derivation and merge |
 | `lesson-types/registry.ts` | Lesson type metadata and completion modes |
@@ -89,9 +92,16 @@ The codebase is organized into focused modules with clear boundaries:
 | `runtime.py` | Runtime state, Ollama clients, LRU vectorstore cache |
 | `vectorstore.py` | ChromaDB helpers (collection checks, retrieval, chunking) |
 | `documents.py` | Document parsing and upload logic |
+| `service_operations.py` | Upload and deletion orchestration used by HTTP adapters |
 | `rag_chat.py` | RAG chat answer generation |
 | `quiz_generation.py` | Quiz generation from weak topics |
 | `main.py` | FastAPI routes (HTTP adapters only) |
+
+### Authoring and discovery boundaries
+
+- `src/sanity/schemaTypes/lesson.ts` composes focused field groups from `src/sanity/schemaTypes/lesson/` without changing the Sanity document shape.
+- `src/components/course-ai/useChatConversation.ts` owns chat request cancellation, message state, and transport errors for both course chat and feature discovery.
+- `src/components/discovery/` contains the learn-content and conversation views used by `DiscoveryPanel`.
 
 ---
 
@@ -292,22 +302,20 @@ The browser only ever calls these routes; the AI routes proxy server-to-server t
 
 ---
 
-## Testing
+## Verification
 
 ```bash
-# Run all TypeScript tests
-npm run test
-
-# Run specific test suites
-npm run test -- src/lib/quiz-session.test.ts
-npm run test -- src/lib/course-content.test.ts
-npm run test -- src/player/hooks/useCourseNavigation.test.ts
-
-# Type checking
+# Web application checks
+npm run lint
 npm run typecheck
 
-# Python parser-service tests (requires venv)
-cd parser-service && pytest tests/ -v
+# Figma plugin TypeScript build
+npm run figma:build
+
+# Python parser-service checks (requires venv)
+cd parser-service
+./venv/bin/ruff check main.py documents.py service_operations.py
+./venv/bin/python -m compileall -f main.py documents.py service_operations.py
 ```
 
 ---

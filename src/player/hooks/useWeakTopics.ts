@@ -75,6 +75,8 @@ export function useWeakTopics({
   useEffect(() => {
     if (!isQuizPhase) return;
 
+    const controller = new AbortController();
+
     const lessonMeta = structure.lessonSections.map((section) => ({
       id: section._key,
       headline: section.headline,
@@ -84,23 +86,32 @@ export function useWeakTopics({
       ],
     }));
 
-    setIsLoading(true);
-    fetch('/api/analytics/weak-topics', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ courseId, lessons: lessonMeta }),
-    })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data) => {
+    async function loadWeakTopics() {
+      setIsLoading(true);
+      try {
+        const response = await fetch('/api/analytics/weak-topics', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ courseId, lessons: lessonMeta }),
+          signal: controller.signal,
+        });
+        const data = response.ok ? await response.json() : null;
         if (!data?.weakTopics?.length) return;
         setApiWeakTopics(data.weakTopics);
-      })
-      .catch((error) => {
-        console.warn('[useWeakTopics] Failed to fetch weak topics:', error instanceof Error ? error.message : error);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+      } catch (error: unknown) {
+        if ((error as { name?: string }).name !== 'AbortError') {
+          console.warn(
+            '[useWeakTopics] Failed to fetch weak topics:',
+            error instanceof Error ? error.message : error,
+          );
+        }
+      } finally {
+        if (!controller.signal.aborted) setIsLoading(false);
+      }
+    }
+
+    void loadWeakTopics();
+    return () => controller.abort();
   }, [courseId, isQuizPhase, structure.lessonSections]);
 
   return { topics, isLoading };
