@@ -21,6 +21,16 @@ ALLOWED_EXTENSIONS = {".pdf", ".pptx", ".docx", ".xlsx"}
 # Must satisfy Chroma collection-name rules (3-63 chars, alnum at both ends).
 COURSE_ID_PATTERN = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._-]{1,61}[a-zA-Z0-9]$")
 
+
+def validate_course_id(value: str) -> str:
+    """Validate a course identifier before it reaches Chroma."""
+    if not COURSE_ID_PATTERN.fullmatch(value):
+        raise ValueError(
+            "course_id must be 3-63 characters, alphanumeric at both ends, "
+            "and contain only letters, digits, '.', '_' or '-'."
+        )
+    return value
+
 # Relevance cutoff for cosine-space collections.
 RELEVANCE_THRESHOLD = float(os.environ.get("RELEVANCE_THRESHOLD", "0.45"))
 

@@ -89,18 +89,10 @@ The codebase is organized into focused modules with clear boundaries:
 
 ### Parser Service (`parser-service/`)
 
-| Module                  | Purpose                                                   |
-| ----------------------- | --------------------------------------------------------- |
-| `settings.py`           | Configuration constants from environment                  |
-| `runtime.py`            | Lifespan-managed Ollama/Chroma clients and LRU cache      |
-| `contracts.py`          | FastAPI request/response and generated-quiz validation    |
-| `documents.py`          | Course/file validation and temporary-file staging         |
-| `document_text.py`      | MarkItDown extraction and empty-text validation           |
-| `vectorstore.py`        | Chroma mutations, retrieval, and cache invalidation       |
-| `service_operations.py` | Upload and deletion use-case orchestration                |
-| `rag_chat.py`           | RAG chat answer generation                                |
-| `quiz_generation.py`    | Quiz generation from weak topics                          |
-| `main.py`               | FastAPI routes (HTTP adapters only)                       |
+The parser service provides document indexing, course-grounded chat, and quiz
+generation to the Node API routes and background worker. Its detailed module
+ownership, operations, and evaluation guidance live in
+[parser-service/docs](parser-service/docs/README.md).
 
 ### Authoring and discovery boundaries
 
@@ -126,7 +118,7 @@ The codebase is organized into focused modules with clear boundaries:
 ### Prerequisites
 
 - Node.js 20+
-- Python 3.9+
+- Python 3.11+
 - [Ollama](https://ollama.com/) installed and running locally
 - A [Sanity](https://sanity.io) account (free tier works)
 - PostgreSQL running locally (any installation — Postgres.app, Homebrew, Docker, or WebStorm's built-in DB tool)
@@ -340,8 +332,8 @@ npm run figma:build
 
 # Python parser-service checks (requires venv)
 cd parser-service
-./venv/bin/ruff check main.py documents.py service_operations.py
-./venv/bin/python -m compileall -f main.py documents.py service_operations.py
+./venv/bin/ruff check .
+./venv/bin/python -m compileall -f main.py contracts.py documents.py rag.py settings.py
 ```
 
 ---

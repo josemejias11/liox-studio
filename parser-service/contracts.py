@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel, Field, field_validator
 
-from documents import validate_course_id
+from settings import validate_course_id
 
 
 class UploadResponse(BaseModel):

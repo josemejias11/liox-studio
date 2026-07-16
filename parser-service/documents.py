@@ -1,4 +1,4 @@
-"""Document parsing and upload logic."""
+"""Document validation, extraction, indexing, and deletion use cases."""
 
 import logging
 import os
@@ -7,26 +7,41 @@ import shutil
 import tempfile
 from typing import BinaryIO
 
+from markitdown import MarkItDown
+
+from rag import build_text_splitter, delete_document_chunks, replace_document_chunks
 from settings import (
     ALLOWED_EXTENSIONS,
-    COURSE_ID_PATTERN,
     MAX_UPLOAD_BYTES,
     UPLOAD_CHUNK_BYTES,
+    validate_course_id,
 )
 
 logger = logging.getLogger(__name__)
 
 
-def validate_course_id(value: str) -> str:
-    if not COURSE_ID_PATTERN.fullmatch(value):
-        raise ValueError(
-            "course_id must be 3-63 characters, alphanumeric at both ends, "
-            "and contain only letters, digits, '.', '_' or '-'."
-        )
-    return value
+class InvalidCourseIdError(ValueError):
+    """The supplied course identifier is not valid."""
 
 
-_validate_course_id = validate_course_id
+class InvalidUploadError(ValueError):
+    """The uploaded document cannot be accepted."""
+
+
+class UploadTooLargeError(InvalidUploadError):
+    """The uploaded document exceeds the configured size limit."""
+
+
+class DocumentExtractionError(InvalidUploadError):
+    """The uploaded document contains no extractable text."""
+
+
+class DocumentProcessingError(RuntimeError):
+    """The uploaded document could not be processed."""
+
+
+class DocumentDeletionError(RuntimeError):
+    """Stored document chunks could not be removed."""
 
 
 def validate_upload_file(filename: str) -> str:
@@ -60,3 +75,61 @@ def stream_upload_to_disk(file_obj: BinaryIO, ext: str) -> tuple[str, str]:
             buffer.write(chunk)
 
     return temp_dir, temp_file_path
+
+
+def extract_document_text(file_path: str) -> str:
+    """Extract non-empty text from one staged document."""
+    logger.info("Parsing file with MarkItDown...")
+    text_content = MarkItDown().convert(file_path).text_content
+    if not text_content or not text_content.strip():
+        raise ValueError("Could not extract text from the file.")
+    return text_content
+
+
+def store_course_document(course_id: str, filename: str, file_obj: BinaryIO) -> tuple[str, int]:
+    """Validate, stage, parse, and index one course document."""
+    try:
+        validate_course_id(course_id)
+    except ValueError as error:
+        raise InvalidCourseIdError(str(error)) from error
+
+    original_filename = os.path.basename(filename or "")
+    try:
+        extension = validate_upload_file(original_filename)
+    except ValueError as error:
+        raise InvalidUploadError(str(error)) from error
+
+    logger.info("Upload request: course=%s file=%s", course_id, original_filename)
+    temp_dir: str | None = None
+    try:
+        temp_dir, temp_file_path = stream_upload_to_disk(file_obj, extension)
+        chunks = build_text_splitter().split_text(extract_document_text(temp_file_path))
+        return original_filename, replace_document_chunks(course_id, original_filename, chunks)
+    except ValueError as error:
+        detail = str(error)
+        if "MB upload limit" in detail:
+            raise UploadTooLargeError(detail) from error
+        if "extract text" in detail.lower():
+            raise DocumentExtractionError(detail) from error
+        raise DocumentProcessingError("Internal server error processing file.") from error
+    except Exception as error:
+        logger.exception("Error processing upload for course %s", course_id)
+        raise DocumentProcessingError("Internal server error processing file.") from error
+    finally:
+        if temp_dir:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+def remove_course_document(course_id: str, filename: str) -> str:
+    """Remove one document's chunks and return the public deletion status."""
+    logger.info("Delete request: course=%s file=%s", course_id, filename)
+    try:
+        deleted = delete_document_chunks(course_id, filename)
+    except Exception as error:
+        logger.warning(
+            "Could not delete chunks for %s in course %s", filename, course_id, exc_info=True
+        )
+        raise DocumentDeletionError("Failed to delete document chunks.") from error
+    if deleted:
+        logger.info("Deleted chunks for %s in course %s", filename, course_id)
+    return "deleted" if deleted else "not_found"

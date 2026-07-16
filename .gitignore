@@ -62,6 +62,7 @@ next-env.d.ts
 **/venv/
 /.venv
 **/__pycache__/
+.ipynb_checkpoints/
 parser-service/chroma_db/
 *.pyc
 *.pyo

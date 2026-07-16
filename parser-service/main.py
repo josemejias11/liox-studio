@@ -1,12 +1,4 @@
-"""Moto AI Parser Service.
-
-Internal RAG microservice (server-to-server only; called by the Next.js
-backend, never by the browser). Parses course documents, stores embeddings
-in ChromaDB, and answers questions / generates quizzes via a local Ollama LLM.
-
-All endpoints except GET /health require the X-Internal-Token header to match
-the PARSER_SERVICE_TOKEN environment variable.
-"""
+"""Moto AI Parser Service HTTP application and executable entrypoint."""
 
 import logging
 import os
@@ -23,10 +15,7 @@ from contracts import (
     QuizResponse,
     UploadResponse,
 )
-from quiz_generation import generate_quiz
-from rag_chat import answer_question
-from runtime import lifespan, runtime
-from service_operations import (
+from documents import (
     DocumentDeletionError,
     DocumentExtractionError,
     DocumentProcessingError,
@@ -36,47 +25,27 @@ from service_operations import (
     remove_course_document,
     store_course_document,
 )
-from settings import (
-    CHROMA_DIR,
-    EMBEDDING_MODEL,
-    LLM_MODEL,
-    OLLAMA_BASE_URL,
-)
+from rag import answer_question, generate_quiz, lifespan, runtime
+from settings import CHROMA_DIR, EMBEDDING_MODEL, LLM_MODEL, OLLAMA_BASE_URL
 
 logger = logging.getLogger(__name__)
-
-# ---------------------------------------------------------------------------
-# App
-# ---------------------------------------------------------------------------
-
-_is_production = os.environ.get("ENV") == "production"
 app = FastAPI(
     title="Moto AI Parser Service",
     description="Internal microservice to parse course documents and chat using a local LLM",
     version="1.1.0",
     lifespan=lifespan,
-    docs_url=None if _is_production else "/docs",
-    redoc_url=None if _is_production else "/redoc",
+    docs_url="/docs",
+    redoc_url="/redoc",
 )
-
-
-# ---------------------------------------------------------------------------
-# Auth dependency
-# ---------------------------------------------------------------------------
 
 
 def require_internal_token(
     x_internal_token: str | None = Header(default=None, alias="X-Internal-Token"),
 ) -> None:
     if not x_internal_token or not secrets.compare_digest(
-        x_internal_token.encode("utf-8"), runtime.token.encode("utf-8")
+        x_internal_token.encode(), runtime.token.encode()
     ):
         raise HTTPException(status_code=401, detail="Invalid or missing X-Internal-Token.")
-
-
-# ---------------------------------------------------------------------------
-# Routes
-# ---------------------------------------------------------------------------
 
 
 @app.post(
@@ -85,21 +54,10 @@ def require_internal_token(
     dependencies=[Depends(require_internal_token)],
     tags=["documents"],
 )
-def upload_file(
-    course_id: str = Form(...), file: UploadFile = File(...)  # noqa: B008
-) -> UploadResponse:
-    """Parse a course document and store its chunk embeddings in ChromaDB."""
+def upload_file(course_id: str = Form(...), file: UploadFile = File(...)) -> UploadResponse:  # noqa: B008
     try:
-        original_filename, chunks_stored = store_course_document(
-            course_id,
-            file.filename or "",
-            file.file,
-        )
-        return UploadResponse(
-            status="success",
-            filename=original_filename,
-            chunks_stored=chunks_stored,
-        )
+        filename, chunks_stored = store_course_document(course_id, file.filename or "", file.file)
+        return UploadResponse(status="success", filename=filename, chunks_stored=chunks_stored)
     except InvalidCourseIdError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
     except UploadTooLargeError as error:
@@ -117,15 +75,14 @@ def upload_file(
     tags=["chat"],
 )
 def chat(request: ChatRequest) -> ChatResponse:
-    """Answer a question strictly from the course materials."""
     try:
         answer, sources = answer_question(request.course_id, request.query)
         return ChatResponse(answer=answer, sources=sources)
-    except HTTPException:
-        raise
-    except Exception as e:
+    except Exception as error:
         logger.exception("Error during chat generation for course %s", request.course_id)
-        raise HTTPException(status_code=500, detail="Internal server error generating response.") from e
+        raise HTTPException(
+            status_code=500, detail="Internal server error generating response."
+        ) from error
 
 
 @app.post(
@@ -135,59 +92,49 @@ def chat(request: ChatRequest) -> ChatResponse:
     tags=["quiz"],
 )
 def generate_quiz_route(request: QuizRequest) -> QuizResponse:
-    """Generate a 5-question multiple-choice quiz targeting the weak topics."""
     try:
-        questions = generate_quiz(request.course_id, request.weak_topics)
-        return QuizResponse.model_validate({"questions": questions})
-    except LookupError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
-    except RuntimeError as e:
-        raise HTTPException(status_code=502, detail=str(e)) from e
-    except HTTPException:
-        raise
-    except Exception as e:
+        return QuizResponse.model_validate(
+            {"questions": generate_quiz(request.course_id, request.weak_topics)}
+        )
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
+    except Exception as error:
         logger.exception("Error during quiz generation for course %s", request.course_id)
-        raise HTTPException(status_code=500, detail="Internal server error generating quiz.") from e
+        raise HTTPException(
+            status_code=500, detail="Internal server error generating quiz."
+        ) from error
 
 
-@app.delete(
-    "/api/document",
-    dependencies=[Depends(require_internal_token)],
-    tags=["documents"],
-)
+@app.delete("/api/document", dependencies=[Depends(require_internal_token)], tags=["documents"])
 def delete_document(request: DeleteDocumentRequest) -> dict[str, str]:
-    """Remove all ChromaDB chunks for a specific file within a course."""
     try:
-        status = remove_course_document(request.course_id, request.filename)
-        return {"status": status, "filename": request.filename}
+        return {
+            "status": remove_course_document(request.course_id, request.filename),
+            "filename": request.filename,
+        }
     except DocumentDeletionError as error:
         raise HTTPException(status_code=500, detail=str(error)) from error
 
 
 @app.get("/health", tags=["ops"])
 def health_check() -> dict[str, str | bool]:
-    """Readiness check: Ollama reachability and ChromaDB directory writability."""
-    ollama_reachable = False
     try:
-        resp = httpx.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=3.0)
-        ollama_reachable = resp.status_code == 200
+        ollama_reachable = httpx.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=3.0).status_code == 200
     except httpx.HTTPError:
-        pass
-
-    chroma_writable = False
+        ollama_reachable = False
     try:
         os.makedirs(CHROMA_DIR, exist_ok=True)
-        probe_path = os.path.join(CHROMA_DIR, f".probe-{secrets.token_hex(16)}")
-        with open(probe_path, "w") as probe:
-            probe.write("ok")
-        os.remove(probe_path)
+        probe = os.path.join(CHROMA_DIR, f".probe-{secrets.token_hex(16)}")
+        with open(probe, "w") as handle:
+            handle.write("ok")
+        os.remove(probe)
         chroma_writable = True
     except OSError:
-        pass
-
-    ready = ollama_reachable and chroma_writable
+        chroma_writable = False
     return {
-        "status": "ok" if ready else "degraded",
+        "status": "ok" if ollama_reachable and chroma_writable else "degraded",
         "service": "moto-ai-parser",
         "ollama_reachable": ollama_reachable,
         "chroma_dir_writable": chroma_writable,
@@ -202,6 +149,7 @@ if __name__ == "__main__":
     _port = int(os.environ.get("PARSER_PORT", "8000"))
     if _port < 1024:
         import sys
+
         print(
             f"ERROR: PARSER_PORT={_port} is a privileged port (< 1024). "
             "Set PARSER_PORT to 1024 or higher, or leave it unset to use the default 8000.",
