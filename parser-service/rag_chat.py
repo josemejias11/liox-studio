@@ -2,9 +2,9 @@
 
 import logging
 
-from settings import NO_CONTEXT_ANSWER, NO_MATERIALS_ANSWER, RETRIEVAL_K_CHAT
 from runtime import runtime
-from vectorstore import collection_exists, format_context, get_vectorstore, retrieve_relevant
+from settings import NO_CONTEXT_ANSWER, NO_MATERIALS_ANSWER, RETRIEVAL_K_CHAT
+from vectorstore import collection_exists, format_context, retrieve_course_documents
 
 logger = logging.getLogger(__name__)
 
@@ -16,8 +16,7 @@ def answer_question(course_id: str, query: str) -> tuple[str, list[str]]:
     if not collection_exists(course_id):
         return NO_MATERIALS_ANSWER, []
 
-    vectorstore = get_vectorstore(course_id)
-    docs = retrieve_relevant(vectorstore, query, k=RETRIEVAL_K_CHAT)
+    docs = retrieve_course_documents(course_id, query, k=RETRIEVAL_K_CHAT)
 
     if not docs:
         return NO_CONTEXT_ANSWER, []

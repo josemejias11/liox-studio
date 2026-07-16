@@ -14,9 +14,15 @@ import secrets
 
 import httpx
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
-from pydantic import BaseModel, Field, field_validator
 
-from documents import _validate_course_id
+from contracts import (
+    ChatRequest,
+    ChatResponse,
+    DeleteDocumentRequest,
+    QuizRequest,
+    QuizResponse,
+    UploadResponse,
+)
 from quiz_generation import generate_quiz
 from rag_chat import answer_question
 from runtime import lifespan, runtime
@@ -69,52 +75,6 @@ def require_internal_token(
 
 
 # ---------------------------------------------------------------------------
-# Request / response models (the cross-service contract)
-# ---------------------------------------------------------------------------
-
-
-class UploadResponse(BaseModel):
-    status: str
-    filename: str
-    chunks_stored: int
-
-
-class ChatRequest(BaseModel):
-    course_id: str
-    query: str = Field(max_length=2000)
-
-    @field_validator("course_id")
-    @classmethod
-    def validate_course_id(cls, v: str) -> str:
-        return _validate_course_id(v)
-
-
-class ChatResponse(BaseModel):
-    answer: str
-    sources: list[str]
-
-
-class QuizRequest(BaseModel):
-    course_id: str
-    weak_topics: list[str] = Field(min_length=1)
-
-    @field_validator("course_id")
-    @classmethod
-    def validate_course_id(cls, v: str) -> str:
-        return _validate_course_id(v)
-
-
-class QuizQuestion(BaseModel):
-    question: str
-    options: list[str] = Field(min_length=4, max_length=4)
-    correct_answer_index: int = Field(ge=0, le=3)  # type: ignore[arg-type]
-
-
-class QuizResponse(BaseModel):
-    questions: list[QuizQuestion] = Field(min_length=5, max_length=5)
-
-
-# ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
 
@@ -125,13 +85,15 @@ class QuizResponse(BaseModel):
     dependencies=[Depends(require_internal_token)],
     tags=["documents"],
 )
-def upload_file(course_id: str = Form(...), file: UploadFile = File(...)):  # noqa: B008
+def upload_file(
+    course_id: str = Form(...), file: UploadFile = File(...)  # noqa: B008
+) -> UploadResponse:
     """Parse a course document and store its chunk embeddings in ChromaDB."""
     try:
         original_filename, chunks_stored = store_course_document(
             course_id,
             file.filename or "",
-            file.file,  # type: ignore[arg-type]
+            file.file,
         )
         return UploadResponse(
             status="success",
@@ -154,7 +116,7 @@ def upload_file(course_id: str = Form(...), file: UploadFile = File(...)):  # no
     dependencies=[Depends(require_internal_token)],
     tags=["chat"],
 )
-def chat(request: ChatRequest):
+def chat(request: ChatRequest) -> ChatResponse:
     """Answer a question strictly from the course materials."""
     try:
         answer, sources = answer_question(request.course_id, request.query)
@@ -172,7 +134,7 @@ def chat(request: ChatRequest):
     dependencies=[Depends(require_internal_token)],
     tags=["quiz"],
 )
-def generate_quiz_route(request: QuizRequest):
+def generate_quiz_route(request: QuizRequest) -> QuizResponse:
     """Generate a 5-question multiple-choice quiz targeting the weak topics."""
     try:
         questions = generate_quiz(request.course_id, request.weak_topics)
@@ -188,22 +150,12 @@ def generate_quiz_route(request: QuizRequest):
         raise HTTPException(status_code=500, detail="Internal server error generating quiz.") from e
 
 
-class DeleteDocumentRequest(BaseModel):
-    course_id: str
-    filename: str
-
-    @field_validator("course_id")
-    @classmethod
-    def validate_course_id(cls, v: str) -> str:
-        return _validate_course_id(v)
-
-
 @app.delete(
     "/api/document",
     dependencies=[Depends(require_internal_token)],
     tags=["documents"],
 )
-def delete_document(request: DeleteDocumentRequest):
+def delete_document(request: DeleteDocumentRequest) -> dict[str, str]:
     """Remove all ChromaDB chunks for a specific file within a course."""
     try:
         status = remove_course_document(request.course_id, request.filename)
@@ -213,7 +165,7 @@ def delete_document(request: DeleteDocumentRequest):
 
 
 @app.get("/health", tags=["ops"])
-def health_check():
+def health_check() -> dict[str, str | bool]:
     """Readiness check: Ollama reachability and ChromaDB directory writability."""
     ollama_reachable = False
     try:

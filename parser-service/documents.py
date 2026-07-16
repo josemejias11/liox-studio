@@ -5,22 +5,19 @@ import os
 import secrets
 import shutil
 import tempfile
+from typing import BinaryIO
 
-from markitdown import MarkItDown
-
-from runtime import _vectorstore_cache
 from settings import (
     ALLOWED_EXTENSIONS,
     COURSE_ID_PATTERN,
     MAX_UPLOAD_BYTES,
     UPLOAD_CHUNK_BYTES,
 )
-from vectorstore import build_text_splitter, chunk_ids, collection_exists, get_vectorstore
 
 logger = logging.getLogger(__name__)
 
 
-def _validate_course_id(value: str) -> str:
+def validate_course_id(value: str) -> str:
     if not COURSE_ID_PATTERN.fullmatch(value):
         raise ValueError(
             "course_id must be 3-63 characters, alphanumeric at both ends, "
@@ -29,38 +26,7 @@ def _validate_course_id(value: str) -> str:
     return value
 
 
-def parse_and_store(course_id: str, original_filename: str, temp_file_path: str) -> int:
-    """Parse a document and store its chunk embeddings. Returns chunk count."""
-    logger.info("Parsing file with MarkItDown...")
-    md = MarkItDown()
-    result = md.convert(temp_file_path)
-    text_content = result.text_content
-
-    if not text_content or not text_content.strip():
-        raise ValueError("Could not extract text from the file.")
-
-    text_splitter = build_text_splitter()
-    chunks = text_splitter.split_text(text_content)
-
-    logger.info("Storing %d chunks in ChromaDB (collection: %s)...", len(chunks), course_id)
-    vectorstore = get_vectorstore(course_id)
-
-    # Replace any previous chunks for this file.
-    try:
-        # noinspection PyProtectedMember
-        vectorstore._collection.delete(where={"source": original_filename})
-    except Exception:
-        logger.warning("Could not delete previous chunks for %s", original_filename, exc_info=True)
-
-    metadatas = [{"source": original_filename, "course_id": course_id} for _ in chunks]
-    vectorstore.add_texts(
-        texts=chunks,
-        metadatas=metadatas,
-        ids=chunk_ids(course_id, original_filename, len(chunks)),
-    )
-
-    logger.info("Upload and processing complete.")
-    return len(chunks)
+_validate_course_id = validate_course_id
 
 
 def validate_upload_file(filename: str) -> str:
@@ -74,7 +40,7 @@ def validate_upload_file(filename: str) -> str:
     return ext
 
 
-def stream_upload_to_disk(file_obj, ext: str) -> tuple[str, str]:
+def stream_upload_to_disk(file_obj: BinaryIO, ext: str) -> tuple[str, str]:
     """Stream upload to a temp file. Returns (temp_dir, temp_file_path)."""
     temp_dir = tempfile.mkdtemp(prefix="moto-upload-")
     temp_file_path = os.path.join(temp_dir, secrets.token_hex(16) + ext)
@@ -94,15 +60,3 @@ def stream_upload_to_disk(file_obj, ext: str) -> tuple[str, str]:
             buffer.write(chunk)
 
     return temp_dir, temp_file_path
-
-
-def delete_stored_document(course_id: str, filename: str) -> bool:
-    """Delete all chunks for a file. Returns false when the course collection is absent."""
-    if not collection_exists(course_id):
-        return False
-
-    vectorstore = get_vectorstore(course_id)
-    # noinspection PyProtectedMember
-    vectorstore._collection.delete(where={"source": filename})
-    _vectorstore_cache.pop(course_id)
-    return True

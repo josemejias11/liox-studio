@@ -5,13 +5,13 @@ import os
 import shutil
 from typing import BinaryIO
 
+from document_text import extract_document_text
 from documents import (
-    _validate_course_id,
-    delete_stored_document,
-    parse_and_store,
     stream_upload_to_disk,
+    validate_course_id,
     validate_upload_file,
 )
+from vectorstore import build_text_splitter, delete_document_chunks, replace_document_chunks
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ def store_course_document(
 ) -> tuple[str, int]:
     """Validate, persist temporarily, parse, and index one course document."""
     try:
-        _validate_course_id(course_id)
+        validate_course_id(course_id)
     except ValueError as error:
         raise InvalidCourseIdError(str(error)) from error
 
@@ -62,7 +62,9 @@ def store_course_document(
     temp_dir: str | None = None
     try:
         temp_dir, temp_file_path = stream_upload_to_disk(file_obj, extension)
-        chunks_stored = parse_and_store(course_id, original_filename, temp_file_path)
+        text_content = extract_document_text(temp_file_path)
+        chunks = build_text_splitter().split_text(text_content)
+        chunks_stored = replace_document_chunks(course_id, original_filename, chunks)
         return original_filename, chunks_stored
     except ValueError as error:
         detail = str(error)
@@ -83,7 +85,7 @@ def remove_course_document(course_id: str, filename: str) -> str:
     """Remove one document's chunks and return the public deletion status."""
     logger.info("Delete request: course=%s file=%s", course_id, filename)
     try:
-        deleted = delete_stored_document(course_id, filename)
+        deleted = delete_document_chunks(course_id, filename)
     except Exception as error:
         logger.warning(
             "Could not delete chunks for %s in course %s",

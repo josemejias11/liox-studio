@@ -6,9 +6,10 @@ import logging
 
 from pydantic import ValidationError
 
-from settings import QUIZ_MAX_CONTEXT_DOCS, RETRIEVAL_K_PER_TOPIC
+from contracts import QuizPayload
 from runtime import runtime
-from vectorstore import collection_exists, format_context, get_vectorstore, retrieve_relevant
+from settings import QUIZ_MAX_CONTEXT_DOCS, RETRIEVAL_K_PER_TOPIC
+from vectorstore import collection_exists, format_context, retrieve_course_documents
 
 logger = logging.getLogger(__name__)
 
@@ -20,13 +21,11 @@ def generate_quiz(course_id: str, weak_topics: list[str]) -> list[dict]:
     if not collection_exists(course_id):
         raise LookupError("No materials found for this course to generate a quiz.")
 
-    vectorstore = get_vectorstore(course_id)
-
     # Retrieve per weak topic, then merge and dedupe.
     docs = []
     seen: set[str] = set()
     for topic in weak_topics:
-        for doc in retrieve_relevant(vectorstore, topic, k=RETRIEVAL_K_PER_TOPIC):
+        for doc in retrieve_course_documents(course_id, topic, k=RETRIEVAL_K_PER_TOPIC):
             key = hashlib.sha256(doc.page_content.encode("utf-8")).hexdigest()
             if key not in seen:
                 seen.add(key)
@@ -73,18 +72,7 @@ Output the JSON object now:"""
             questions = parsed.get("questions") if isinstance(parsed, dict) else None
             if isinstance(questions, list) and len(questions) > 5:
                 questions = questions[:5]
-            # Validate via pydantic
-            from pydantic import BaseModel, Field
-
-            class QuizQuestion(BaseModel):
-                question: str
-                options: list[str] = Field(min_length=4, max_length=4)
-                correct_answer_index: int = Field(ge=0, le=3)
-
-            class QuizResponse(BaseModel):
-                questions: list[QuizQuestion] = Field(min_length=5, max_length=5)
-
-            validated = QuizResponse.model_validate({"questions": questions})
+            validated = QuizPayload.model_validate({"questions": questions})
             return [q.model_dump() for q in validated.questions]
         except (ValueError, ValidationError, AttributeError) as e:
             last_error = e

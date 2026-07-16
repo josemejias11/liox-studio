@@ -3,6 +3,7 @@
 import logging
 import os
 from collections import OrderedDict
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from threading import Lock
 
@@ -90,8 +91,23 @@ class _LRUVectorstoreCache:
 _vectorstore_cache = _LRUVectorstoreCache()
 
 
+def get_cached_vectorstore(course_id: str) -> Chroma | None:
+    """Return the cached Chroma wrapper for a course, when present."""
+    return _vectorstore_cache.get(course_id)
+
+
+def cache_vectorstore(course_id: str, vectorstore: Chroma) -> None:
+    """Store a course Chroma wrapper in the bounded runtime cache."""
+    _vectorstore_cache.set(course_id, vectorstore)
+
+
+def invalidate_vectorstore_cache(course_id: str) -> None:
+    """Discard one cached wrapper after its underlying collection changes."""
+    _vectorstore_cache.pop(course_id)
+
+
 @asynccontextmanager
-async def lifespan(_fastapi_app: FastAPI):
+async def lifespan(_fastapi_app: FastAPI) -> AsyncIterator[None]:
     logging.basicConfig(level=logging.INFO)
     token = os.environ.get("PARSER_SERVICE_TOKEN")
     if not token:

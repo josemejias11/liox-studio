@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "NODE_OPTIONS='--localstorage-file=./.next/.localstorage' next dev",
+    "jobs:worker": "tsx src/jobs/worker.ts",
     "build": "prisma migrate deploy && next build",
     "start": "next start",
     "lint": "eslint",
@@ -52,6 +53,7 @@
     "prisma": "^5.22.0",
     "shadcn": "^4.11.0",
     "tailwindcss": "^4",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "tsx": "^4.21.0"
   }
 }

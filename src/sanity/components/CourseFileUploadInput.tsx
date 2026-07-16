@@ -1,8 +1,21 @@
 import React, { useRef, useState, useCallback, useMemo } from 'react';
-import { ArrayOfObjectsInputProps, PatchEvent, insert, set, setIfMissing, unset, useFormValue } from 'sanity';
+import {
+  ArrayOfObjectsInputProps,
+  PatchEvent,
+  insert,
+  set,
+  setIfMissing,
+  unset,
+  useFormValue,
+} from 'sanity';
 import { randomKey } from '@sanity/util/content';
 import { Button, Card, Flex, Text, Box, Stack, Badge } from '@sanity/ui';
 import { MAX_UPLOAD_BYTES, UploadResponseSchema } from '@/lib/contracts/api';
+import {
+  DocumentIndexResultSchema,
+  JobStatusResponseSchema,
+  type JobStatusResponse,
+} from '@/lib/jobs/contracts';
 
 type UploadedFile = {
   _key: string;
@@ -17,6 +30,7 @@ type SessionFileStatus = {
   state: 'pending' | 'uploading' | 'success' | 'error';
   chunks?: number;
   errorReason?: string;
+  progress?: string;
 };
 
 function uploadErrorReason(status: number): string {
@@ -24,6 +38,22 @@ function uploadErrorReason(status: number): string {
   if (status === 413) return 'File too large (50 MB limit)';
   if (status === 502) return 'Upload service unavailable';
   return `Upload failed (HTTP ${status})`;
+}
+
+function sleep(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+async function waitForJob(jobId: string): Promise<JobStatusResponse> {
+  for (let attempt = 0; attempt < 300; attempt++) {
+    const response = await fetch(`/api/jobs/${jobId}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`Job status request failed (${response.status})`);
+    const parsed = JobStatusResponseSchema.safeParse(await response.json());
+    if (!parsed.success) throw new Error('Job status response failed validation');
+    if (parsed.data.status === 'succeeded' || parsed.data.status === 'failed') return parsed.data;
+    await sleep(1_000);
+  }
+  throw new Error('Document indexing timed out');
 }
 
 export function CourseFileUploadInput(props: ArrayOfObjectsInputProps) {
@@ -57,12 +87,16 @@ export function CourseFileUploadInput(props: ArrayOfObjectsInputProps) {
         const file = files[i];
 
         if (file.size > MAX_UPLOAD_BYTES) {
-          results[i] = { name: file.name, state: 'error', errorReason: 'File too large (50 MB limit)' };
+          results[i] = {
+            name: file.name,
+            state: 'error',
+            errorReason: 'File too large (50 MB limit)',
+          };
           setSessionStatuses([...results]);
           continue;
         }
 
-        results[i] = { name: file.name, state: 'uploading' };
+        results[i] = { name: file.name, state: 'uploading', progress: 'queueing' };
         setSessionStatuses([...results]);
 
         try {
@@ -76,13 +110,27 @@ export function CourseFileUploadInput(props: ArrayOfObjectsInputProps) {
             : undefined;
 
           if (parsed?.success) {
-            results[i] = { name: file.name, state: 'success', chunks: parsed.data.chunks_stored };
+            results[i] = { name: file.name, state: 'uploading', progress: 'queued' };
+            setSessionStatuses([...results]);
+            const job = await waitForJob(parsed.data.jobId);
+            if (job.status === 'failed') {
+              results[i] = {
+                name: file.name,
+                state: 'error',
+                errorReason: job.errorMessage ?? 'Document indexing failed',
+              };
+              setSessionStatuses([...results]);
+              continue;
+            }
+            const indexed = DocumentIndexResultSchema.safeParse(job.result);
+            if (!indexed.success) throw new Error('Document indexing result failed validation');
+            results[i] = { name: file.name, state: 'success', chunks: indexed.data.chunksStored };
             const existing = knownFiles.get(file.name);
             if (existing) {
               // Same filename re-uploaded — update the existing row in-place.
               const updated: UploadedFile = {
                 ...existing,
-                chunks: parsed.data.chunks_stored,
+                chunks: indexed.data.chunksStored,
                 uploadedAt: new Date().toISOString(),
               };
               onChange(PatchEvent.from(set(updated, [{ _key: existing._key }])));
@@ -94,7 +142,7 @@ export function CourseFileUploadInput(props: ArrayOfObjectsInputProps) {
                 _key: randomKey(12),
                 _type: 'uploadedFile',
                 filename: file.name,
-                chunks: parsed.data.chunks_stored,
+                chunks: indexed.data.chunksStored,
                 uploadedAt: new Date().toISOString(),
               };
               onChange(PatchEvent.from([setIfMissing([]), insert([added], 'after', [-1])]));
@@ -187,7 +235,7 @@ export function CourseFileUploadInput(props: ArrayOfObjectsInputProps) {
                   }
                 >
                   {f.state === 'uploading'
-                    ? 'uploading'
+                    ? (f.progress ?? 'processing')
                     : f.state === 'success'
                       ? `✓ ${f.chunks} chunks`
                       : f.state === 'error'
@@ -205,7 +253,12 @@ export function CourseFileUploadInput(props: ArrayOfObjectsInputProps) {
         {/* Persistent indexed file library */}
         {indexedFiles.length > 0 && (
           <Stack space={1}>
-            <Text size={0} weight="semibold" muted style={{ textTransform: 'uppercase', letterSpacing: '0.08em', padding: '2px 0' }}>
+            <Text
+              size={0}
+              weight="semibold"
+              muted
+              style={{ textTransform: 'uppercase', letterSpacing: '0.08em', padding: '2px 0' }}
+            >
               Indexed files ({indexedFiles.length})
             </Text>
             {indexedFiles.map((f) => (
@@ -234,7 +287,9 @@ export function CourseFileUploadInput(props: ArrayOfObjectsInputProps) {
         )}
 
         {indexedFiles.length === 0 && sessionStatuses.length === 0 && (
-          <Text size={1} muted>No files indexed yet. Add files above to populate the AI knowledge base.</Text>
+          <Text size={1} muted>
+            No files indexed yet. Add files above to populate the AI knowledge base.
+          </Text>
         )}
       </Stack>
     </Card>

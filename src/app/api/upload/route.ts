@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { MAX_UPLOAD_BYTES } from '@/lib/contracts/api';
-import { uploadCourseDocument, deleteCourseDocument, RagServiceError } from '@/lib/parser-service';
+import { enqueueDocumentIndexJob } from '@/lib/jobs/queue';
+import { deleteCourseDocument, RagServiceError } from '@/lib/parser-service';
 import { jsonError, readJson, unexpectedApiError } from '@/lib/server/http';
 
-// Proxies course-material uploads and deletions to the self-hosted parser service,
-// server-to-server. Enforces the 50MB cap before forwarding anything upstream.
+// Persists course-material uploads as durable indexing jobs. Deletion remains a
+// quick parser-service call because it only removes existing vector chunks.
+
+export const runtime = 'nodejs';
 
 function isAuthorized(req: NextRequest): boolean {
   const token = req.cookies.get('analytics_token')?.value;
@@ -24,9 +27,7 @@ export async function DELETE(req: NextRequest) {
   if (!parsed.success) return parsed.response;
 
   const { course_id, filename } =
-    parsed.data && typeof parsed.data === 'object'
-      ? (parsed.data as Record<string, unknown>)
-      : {};
+    parsed.data && typeof parsed.data === 'object' ? (parsed.data as Record<string, unknown>) : {};
 
   if (typeof course_id !== 'string' || course_id.length === 0) {
     return jsonError('A valid "course_id" field is required', 400);
@@ -75,12 +76,12 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await uploadCourseDocument(courseId, file);
-    return NextResponse.json(result);
+    const result = await enqueueDocumentIndexJob(
+      { courseId, filename: file.name, ...(file.type ? { contentType: file.type } : {}) },
+      Buffer.from(await file.arrayBuffer()),
+    );
+    return NextResponse.json(result, { status: 202 });
   } catch (err: unknown) {
-    if (err instanceof RagServiceError) {
-      return jsonError(err.message, 502);
-    }
     return unexpectedApiError('api/upload', err);
   }
 }

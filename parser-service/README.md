@@ -2,6 +2,22 @@
 
 This is the Python FastAPI microservice for Moto AI. It handles document parsing, generating embeddings, storing chunks in a vector database, and querying a local LLM.
 
+## Module Boundaries
+
+| Module | Responsibility |
+| --- | --- |
+| `main.py` | FastAPI routes, internal-token authentication, and HTTP error translation. |
+| `contracts.py` | Pydantic request/response and generated-quiz validation models. |
+| `service_operations.py` | Document indexing and deletion use cases used by the HTTP adapter. |
+| `documents.py` | Course/file validation and bounded temporary-file staging. |
+| `document_text.py` | MarkItDown extraction and empty-document validation. |
+| `vectorstore.py` | Chroma collection access, chunk replacement/deletion, retrieval, and cache invalidation. |
+| `runtime.py` | Lifespan-managed Ollama/Chroma clients and the bounded vectorstore cache. |
+| `rag_chat.py` | Course-context chat retrieval, prompting, and answer/source projection. |
+| `quiz_generation.py` | Weak-topic retrieval, quiz prompting, and structured quiz validation. |
+
+The Node background worker calls the same `/api/upload` and `/api/generate-quiz` contracts as the rest of the application; this service keeps those routes and response shapes stable.
+
 ## Prerequisites
 
 1.  Python 3.8+
