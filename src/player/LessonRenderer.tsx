@@ -2,6 +2,7 @@
 
 import { CourseQuiz } from '@/components/course-ai/CourseQuiz';
 import type { LessonSection, SanityHotspot } from '@/lib/contracts/sanity';
+import { RefresherFeaturePanel } from './RefresherFeaturePanel';
 import {
   ContentLessonDynamic,
   ProductStageDynamic,
@@ -10,6 +11,9 @@ import {
   SplitScreenLessonDynamic,
   DragDropLessonDynamic,
   ScrollStoryLessonDynamic,
+  CanvasInspectionLessonDynamic,
+  getLessonCompletionMode,
+  LessonCompletionMode,
 } from './lesson-types/registry';
 
 export interface LessonRendererProps {
@@ -43,9 +47,17 @@ export function LessonRenderer({
   persistSession,
   courseId,
 }: LessonRendererProps) {
+  const completionMode = getLessonCompletionMode(lesson);
+  const handleManualCompletion =
+    completionMode === LessonCompletionMode.MANUAL
+      ? () => baseMarkVisited(lessonKey, 'completed', 1)
+      : undefined;
+
+  let lessonContent: React.ReactNode;
+
   switch (lesson.lessonType) {
     case 'stage':
-      return (
+      lessonContent = (
         <ProductStageDynamic
           headline={lesson.headline}
           body={lesson.body}
@@ -61,19 +73,21 @@ export function LessonRenderer({
           courseId={courseId}
         />
       );
+      break;
 
     case 'video':
-      return (
+      lessonContent = (
         <VideoLessonDynamic
           headline={lesson.headline}
           videoFileUrl={lesson.videoFile?.asset?.url}
           videoAspectRatio={lesson.videoAspectRatio}
-          onComplete={() => baseMarkVisited(lessonKey, 'completed', 1)}
+          onComplete={handleManualCompletion}
         />
       );
+      break;
 
     case 'quiz':
-      return (
+      lessonContent = (
         <div className="bg-background absolute inset-0 flex items-center justify-center overflow-y-auto p-6">
           <CourseQuiz
             weakTopics={weakTopics}
@@ -84,33 +98,49 @@ export function LessonRenderer({
           />
         </div>
       );
+      break;
 
     case 'colorSwitcher':
-      return <ColorSwitcherLessonDynamic lesson={lesson} />;
+      lessonContent = <ColorSwitcherLessonDynamic lesson={lesson} />;
+      break;
 
     case 'splitScreen':
-      return <SplitScreenLessonDynamic lesson={lesson} />;
+      lessonContent = <SplitScreenLessonDynamic lesson={lesson} />;
+      break;
 
     case 'dragDrop':
-      return (
+      lessonContent = (
         <DragDropLessonDynamic
           lesson={lesson}
           isCompleted={isSpecialComplete}
-          onComplete={() => markVisited('completed')}
+          onComplete={handleManualCompletion ?? (() => markVisited('completed'))}
         />
       );
+      break;
 
     case 'scrollStory':
-      return (
+      lessonContent = (
         <ScrollStoryLessonDynamic
           lesson={lesson}
           isCompleted={isSpecialComplete}
-          onComplete={() => baseMarkVisited(lessonKey, 'completed', 1)}
+          onComplete={handleManualCompletion ?? (() => baseMarkVisited(lessonKey, 'completed', 1))}
         />
       );
+      break;
+
+    case 'canvas':
+      lessonContent = (
+        <CanvasInspectionLessonDynamic
+          lesson={lesson}
+          visitedLabels={visited}
+          onVisit={markVisited}
+          courseId={courseId}
+        />
+      );
+      break;
 
     default:
-      return (
+      lessonContent = (
         <ContentLessonDynamic
           lesson={lesson}
           hotspots={hotspots}
@@ -120,4 +150,11 @@ export function LessonRenderer({
         />
       );
   }
+
+  return (
+    <>
+      {lessonContent}
+      <RefresherFeaturePanel lesson={lesson} visitedLabels={visited} onVisit={markVisited} />
+    </>
+  );
 }

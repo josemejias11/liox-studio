@@ -4,11 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "NODE_OPTIONS='--localstorage-file=./.next/.localstorage' next dev",
+    "jobs:worker": "tsx src/jobs/worker.ts",
     "build": "prisma migrate deploy && next build",
     "start": "next start",
     "lint": "eslint",
+    "figma:build": "tsc -p figma-plugin/tsconfig.json",
+    "figma:watch": "tsc -p figma-plugin/tsconfig.json --watch",
     "format": "prettier --write .",
-    "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate deploy",
@@ -17,7 +19,6 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
-    "@base-ui/react": "^1.5.0",
     "@emotion/is-prop-valid": "^1.4.0",
     "@portabletext/react": "^6.2.0",
     "@prisma/client": "^5.22.0",
@@ -53,6 +54,6 @@
     "shadcn": "^4.11.0",
     "tailwindcss": "^4",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "tsx": "^4.21.0"
   }
 }

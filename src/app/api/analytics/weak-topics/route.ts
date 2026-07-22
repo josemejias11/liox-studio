@@ -1,22 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { WeakTopicsRequestSchema } from '@/lib/contracts/api';
 import { getWeakTopicsForCourse } from '@/services/analytics.service';
+import { readJson, unexpectedApiError } from '@/lib/server/http';
 
 export async function POST(req: NextRequest) {
-  let json: unknown;
-  try {
-    json = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-  }
-
-  const parsed = WeakTopicsRequestSchema.safeParse(json);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: 'Invalid request payload', details: parsed.error.issues },
-      { status: 400 },
-    );
-  }
+  const parsed = await readJson(req, WeakTopicsRequestSchema);
+  if (!parsed.success) return parsed.response;
 
   const { courseId, lessons } = parsed.data;
 
@@ -24,7 +13,6 @@ export async function POST(req: NextRequest) {
     const result = await getWeakTopicsForCourse(courseId, lessons);
     return NextResponse.json(result);
   } catch (err: unknown) {
-    console.error('[api/analytics/weak-topics] unexpected error:', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return unexpectedApiError('api/analytics/weak-topics', err);
   }
 }

@@ -373,8 +373,7 @@ function HotspotMap({ hotspots, imageUrl, itemTypeName, onChange }: HotspotMapPr
 export function HotspotMapInput(props: ArrayOfObjectsInputProps) {
   const { value, onChange, path, renderDefault, schemaType } = props;
   const hotspots = (value ?? []) as HotspotItem[];
-  // Derive the item _type from the schema so this component works for both
-  // hotspots (type: "hotspot") and floatingGraphics (type: "graphic").
+  // Derive the item _type from the schema so the map creates valid hotspot objects.
   const itemTypeName = (schemaType as { of?: Array<{ name?: string }> }).of?.[0]?.name ?? 'hotspot';
 
   const client = useClient({ apiVersion: '2024-01-01' });
@@ -383,6 +382,7 @@ export function HotspotMapInput(props: ArrayOfObjectsInputProps) {
   // Resolve media field from the parent lesson object
   const parentPath = (path as Path).slice(0, -1);
   const media = useFormValue([...parentPath, 'media']) as SanityImage | undefined;
+  const lessonType = useFormValue([...parentPath, 'lessonType']) as string | undefined;
   const imageUrl = media?.asset?._ref ? assetRefToUrl(media.asset._ref, projectId, dataset) : null;
 
   function handleChange(newHotspots: HotspotItem[]) {
@@ -398,6 +398,12 @@ export function HotspotMapInput(props: ArrayOfObjectsInputProps) {
         itemTypeName={itemTypeName}
         onChange={handleChange}
       />
+
+      {lessonType === 'canvas' && (
+        <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 12, margin: 0 }}>
+          Canvas feature targets may be marked required in the fields below. Learners can explore in any order.
+        </p>
+      )}
 
       {/* Standard Sanity array editor for field values (label, topic, body, photos) */}
       {renderDefault(props)}

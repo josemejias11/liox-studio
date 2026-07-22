@@ -1,8 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Bot, BarChart2, BookOpen, PlayCircle } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { readClient } from '@/sanity/lib/client';
 import { COURSES_QUERY } from '@/sanity/lib/queries';
 import { courseSummarySchema, type CourseSummary } from '@/lib/contracts/sanity';
@@ -37,10 +35,6 @@ export default async function Home() {
             Analytics
           </Link>
           <ThemeToggle />
-          <Avatar className="h-8 w-8">
-            <AvatarImage src="https://github.com/shadcn.png" alt="@user" />
-            <AvatarFallback>U</AvatarFallback>
-          </Avatar>
         </div>
       </header>
 
@@ -71,7 +65,7 @@ export default async function Home() {
                 className="group focus-visible:ring-ring rounded-xl focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 aria-label={`Start course: ${course.title}`}
               >
-                <Card className="border-border bg-card flex h-full flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                <div className="group/card border-border bg-card text-card-foreground ring-foreground/10 flex h-full flex-col gap-(--card-spacing) overflow-hidden rounded-xl py-(--card-spacing) text-sm ring-1 [--card-spacing:--spacing(4)] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                   <div className="bg-muted relative aspect-[16/9] w-full overflow-hidden">
                     {course.thumbnail?.asset?.url ? (
                       <Image
@@ -95,23 +89,26 @@ export default async function Home() {
                       </div>
                     </div>
                   </div>
-                  <CardHeader className="flex-1 space-y-2 p-5">
+                  <div className="group/card-header @container/card-header grid flex-1 auto-rows-min items-start gap-1 space-y-2 rounded-t-xl p-5">
                     <h2 className="group-hover:text-primary line-clamp-2 text-lg leading-tight font-semibold transition-colors">
                       {course.title}
                     </h2>
+                    <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                      {course.courseMode === 'canvas' ? 'Canvas course' : 'Standard course'}
+                    </p>
                     {course.description && (
                       <p className="text-muted-foreground line-clamp-2 text-sm font-light">
                         {course.description}
                       </p>
                     )}
-                  </CardHeader>
-                  <CardContent className="mt-auto p-5 pt-0">
+                  </div>
+                  <div className="mt-auto p-5 pt-0">
                     <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium">
                       <BookOpen className="h-3.5 w-3.5" />
                       {course.chapterCount} {course.chapterCount === 1 ? 'Chapter' : 'Chapters'}
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </Link>
             ))}
           </div>

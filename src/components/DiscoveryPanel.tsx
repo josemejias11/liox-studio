@@ -1,17 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { X, Send, Sparkles } from 'lucide-react';
-import { PhotoCardStack } from './PhotoCardStack';
+import { X, Sparkles } from 'lucide-react';
 import { useFocusTrap } from '@/lib/useFocusTrap';
-import { PortableText } from '@portabletext/react';
-import { supMark } from '@/lib/portable-text-components';
-import { ChatResponseSchema } from '@/lib/contracts/api';
 import type { RichText, SanityPhoto } from '@/lib/contracts/sanity';
-import { cssAspectRatio } from '@/lib/utils';
-
-type Message = { role: 'assistant' | 'user'; text: string; streaming?: boolean };
-type Turn = { role: 'user' | 'assistant'; content: string };
+import { useChatConversation } from './course-ai/useChatConversation';
+import { DiscoveryConversation } from './discovery/DiscoveryConversation';
+import { DiscoveryLearnContent } from './discovery/DiscoveryLearnContent';
 
 interface DiscoveryPanelProps {
   open: boolean;
@@ -26,41 +21,6 @@ interface DiscoveryPanelProps {
   y?: number;
   mode?: 'sidebar' | 'popover';
   courseId?: string;
-}
-
-const SUGGESTIONS = [
-  'How would I demo this to a customer?',
-  'What problem does this solve?',
-  'How does this compare to competitors?',
-];
-
-// Lightweight Markdown: **bold**, bullet lines, line breaks — no external library
-function renderText(text: string) {
-  const lines = text.split('\n');
-  return (
-    <>
-      {lines.map((line, i) => {
-        const isBullet = line.startsWith('- ') || line.startsWith('• ');
-        const content = isBullet ? line.slice(2) : line;
-        const parts = content.split(/(\*\*[^*]+\*\*)/g);
-        return (
-          <span key={i}>
-            {isBullet && <span className="text-accent mr-1.5 select-none">•</span>}
-            {parts.map((part, j) =>
-              part.startsWith('**') && part.endsWith('**') ? (
-                <strong key={j} className="text-foreground font-semibold">
-                  {part.slice(2, -2)}
-                </strong>
-              ) : (
-                part
-              ),
-            )}
-            {i < lines.length - 1 && <br />}
-          </span>
-        );
-      })}
-    </>
-  );
 }
 
 export function DiscoveryPanel({
@@ -79,33 +39,25 @@ export function DiscoveryPanel({
 }: DiscoveryPanelProps) {
   const hasVideo = !!videoFile?.asset?.url;
   const hasLearnContent = !!(body || (photos?.length ?? 0) > 0 || hasVideo);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
-  const [streaming, setStreaming] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-
   const [liveAnnouncement, setLiveAnnouncement] = useState('');
+  const [lastPosition, setLastPosition] = useState<{ x: number; y: number } | null>(null);
   // Tracks whether the viewport is below the md breakpoint (768 px).
   // Initialized false (SSR-safe); corrected on mount and kept in sync with resize.
   const [isMobileView, setIsMobileView] = useState(false);
+  const { messages, isLoading, send, abort, reset } = useChatConversation({
+    courseId,
+    onAssistantMessage: setLiveAnnouncement,
+  });
 
   const panelRef = useRef<HTMLDivElement>(null);
-  const abortRef = useRef<AbortController | null>(null);
-  const conversationRef = useRef<Turn[]>([]);
-  const firstResponseRef = useRef(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const greetingKeyRef = useRef<string | null>(null);
   const swipeTouchStartX = useRef(0);
   const swipeTouchStartY = useRef(0);
-  const lastPosRef = useRef<{ x: number; y: number } | null>(null);
-  const scrollBodyRef = useRef<HTMLDivElement>(null);
-  const userHasSentRef = useRef(false);
 
   useEffect(() => {
     if (open) {
-      if (x !== undefined && y !== undefined) lastPosRef.current = { x, y };
-      else lastPosRef.current = null;
       // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLastPosition(x !== undefined && y !== undefined ? { x, y } : null);
       setLiveAnnouncement(`Opened ${label}. ${hasLearnContent ? 'Learn content available.' : ''}`);
     } else {
       setLiveAnnouncement(`Closed ${label}.`);
@@ -124,148 +76,40 @@ export function DiscoveryPanel({
     return () => mq.removeEventListener('change', handler);
   }, []);
 
-  // Reset all state when a new hotspot opens
+  // Reset conversation state when a new hotspot opens.
   useEffect(() => {
     if (open) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setMessages([]);
-      setInput('');
-      setShowSuggestions(true); // show suggestion chips upfront before user sends
-      conversationRef.current = [];
-      firstResponseRef.current = false;
-      userHasSentRef.current = false;
-      if (scrollBodyRef.current) scrollBodyRef.current.scrollTop = 0;
+      reset();
+      greetingKeyRef.current = null;
     }
-  }, [open, label]);
+  }, [open, label, reset]);
 
   // Auto-fire AI greeting when the panel opens with a topic.
-  // Gated on firstResponseRef (reset synchronously by the [open, label] effect above)
-  // so it fires exactly once per hotspot open, even if open/topic change together.
   useEffect(() => {
-    if (open && !firstResponseRef.current && topic) {
-      sendQuery(
-        `Briefly explain the "${topic}" feature to a sales rep in 2-3 sentences. Be concise and sales-focused.`,
-        true, // hide the auto-fire prompt from the UI
-      );
-    }
-    // sendQuery is defined in the component body and reads `body`/`topic` via closure.
-    // topic is included so the effect re-fires if the hotspot topic changes while open.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, label, topic]);
+    if (!open || !topic) return;
+    const greetingKey = `${label}:${topic}`;
+    if (greetingKeyRef.current === greetingKey) return;
+    greetingKeyRef.current = greetingKey;
 
-  // Abort in-flight request when panel closes
+    const prompt = `Briefly explain the "${topic}" feature to a sales rep in 2-3 sentences. Be concise and sales-focused.`;
+    void send(prompt, {
+      displayUserMessage: false,
+      displayPendingAssistant: true,
+      queryOverride: `Regarding the "${topic}" feature: ${prompt}`,
+      fallbackMessage: "Couldn't load content right now.",
+    });
+  }, [open, label, topic, send]);
+
   useEffect(() => {
-    if (!open) abortRef.current?.abort();
-  }, [open]);
+    if (!open) abort();
+  }, [open, abort]);
 
-  // Scroll to bottom only after the user explicitly sends a message,
-  // or when there is no learn content (pure AI chat — greeting should be visible).
-  useEffect(() => {
-    if (userHasSentRef.current || !hasLearnContent) {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages, hasLearnContent]);
-
-  async function sendQuery(queryText: string, hideFromUI = false) {
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-    setStreaming(true);
-
-    // Append user turn to conversation history
-    conversationRef.current = [...conversationRef.current, { role: 'user', content: queryText }];
-
-    // Show user bubble (except for hidden auto-fire)
-    if (!hideFromUI) {
-      setMessages((prev) => [...prev, { role: 'user', text: queryText }]);
-    }
-
-    // Streaming placeholder for assistant
-    setMessages((prev) => [...prev, { role: 'assistant', text: '', streaming: true }]);
-
-    let fullResponse = '';
-
-    try {
-      if (!courseId) throw new Error('Missing courseId');
-
-      // Proxied through the Next.js route handler — the browser never calls
-      // the parser service directly.
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          courseId,
-          query: topic ? `Regarding the "${topic}" feature: ${queryText}` : queryText,
-        }),
-        signal: controller.signal,
-      });
-
-      if (!res.ok) {
-        throw new Error(`Chat request failed (${res.status})`);
-      }
-
-      const parsed = ChatResponseSchema.safeParse(await res.json());
-      if (!parsed.success) {
-        throw new Error('Chat response failed validation');
-      }
-      fullResponse = parsed.data.answer;
-
-      setMessages((prev) => {
-        const msgs = [...prev];
-        msgs[msgs.length - 1] = { role: 'assistant', text: fullResponse, streaming: true };
-        return msgs;
-      });
-    } catch (e: unknown) {
-      if ((e as { name?: string }).name !== 'AbortError' && !controller.signal.aborted) {
-        setMessages((prev) => {
-          const msgs = [...prev];
-          msgs[msgs.length - 1] = {
-            role: 'assistant',
-            text: "Couldn't load content right now.",
-            streaming: false,
-          };
-          return msgs;
-        });
-      }
-    } finally {
-      // Only finalize state for the request that is still current.
-      // If another sendQuery was called while this one was in-flight, abortRef.current
-      // will have been replaced; the old request must not touch the new request's state.
-      if (abortRef.current === controller) {
-        // Finalize streaming bubble
-        setMessages((prev) => {
-          const msgs = [...prev];
-          if (msgs.length > 0)
-            msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], streaming: false };
-          return msgs;
-        });
-
-        // Record completed assistant turn for multi-turn context
-        if (fullResponse) {
-          conversationRef.current = [
-            ...conversationRef.current,
-            { role: 'assistant', content: fullResponse },
-          ];
-          setLiveAnnouncement(fullResponse);
-          if (!firstResponseRef.current) {
-            firstResponseRef.current = true;
-            // suggestions remain visible — they were shown upfront and hide only on user send
-          }
-        }
-
-        setStreaming(false);
-      }
-    }
-  }
-
-  function handleSend(text?: string) {
-    const q = (text ?? input).trim();
-    if (!q || streaming) return;
-    if (!text) setInput('');
-    setShowSuggestions(false);
-    userHasSentRef.current = true;
-    sendQuery(q);
-    inputRef.current?.focus();
+  function handleSend(query: string) {
+    void send(query, {
+      displayPendingAssistant: true,
+      queryOverride: topic ? `Regarding the "${topic}" feature: ${query}` : query,
+      fallbackMessage: "Couldn't load content right now.",
+    });
   }
 
   return (
@@ -289,8 +133,8 @@ export function DiscoveryPanel({
 
       {/* Panel — popover (floating) or sidebar */}
       {(() => {
-        const posX = x !== undefined ? x : lastPosRef.current?.x;
-        const posY = y !== undefined ? y : lastPosRef.current?.y;
+        const posX = x !== undefined ? x : lastPosition?.x;
+        const posY = y !== undefined ? y : lastPosition?.y;
 
         // If mode is explicitly popover, always treat as floating (even if x/y are not fully resolved yet)
         // If mode isn't set, guess based on whether we have coordinates.
@@ -420,145 +264,25 @@ export function DiscoveryPanel({
               </div>
             </div>
 
-            {/* ── Single scrollable body ── */}
-            <div
-              ref={scrollBodyRef}
-              className="flex-1 scrollbar-none overflow-y-auto"
-              style={{ scrollbarWidth: 'none' }}
-            >
-              {/* Learn content — media + body, shown above AI chat if present */}
-              {hasLearnContent && (
-                <div className="flex flex-col gap-4 px-4 pt-4 pb-2">
-                  {/* Media zone: video has priority; falls back to photos */}
-                  {hasVideo ? (
-                    <video
-                      src={videoFile!.asset!.url!}
-                      controls
-                      autoPlay
-                      playsInline
-                      className="w-full max-h-[55vh] rounded-2xl bg-black object-contain"
-                      style={{ aspectRatio: cssAspectRatio(videoAspectRatio) }}
-                    />
-                  ) : (photos?.length ?? 0) > 0 ? (
-                    <PhotoCardStack photos={photos} />
-                  ) : null}
-                  {body && (
-                    <div className="text-foreground prose prose-sm prose-invert max-w-none text-[16px] leading-relaxed">
-                      {typeof body === 'string' ? body : <PortableText value={body} components={{ marks: supMark }} />}
-                    </div>
-                  )}
-                  {/* Separator — visually bridges learn content and AI chat section */}
-                  <div className="mt-1 mb-1 flex items-center gap-3">
-                    <div className="h-px flex-1 bg-white/8" />
-                    <span className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-semibold tracking-widest uppercase">
-                      <Sparkles className="h-3 w-3" />
-                      Course AI Assistant
-                    </span>
-                    <div className="h-px flex-1 bg-white/8" />
-                  </div>
-                </div>
-              )}
-
-              {/* AI chat messages + suggestions */}
-              <div className="flex flex-col gap-3 px-4 py-3">
-                {/* Empty / welcome state when there is no topic to auto-fire */}
-                {messages.length === 0 && !streaming && !topic && (
-                  <div className="flex flex-col items-center gap-3 py-8 text-center">
-                    <div className="bg-accent/10 ring-accent/20 rounded-full p-3.5 ring-1">
-                      <Sparkles className="text-accent/70 h-5 w-5" />
-                    </div>
-                    <p className="text-muted-foreground text-sm leading-snug">
-                      Ask me anything about{' '}
-                      <span className="text-foreground font-medium">{label}</span>
-                    </p>
-                  </div>
-                )}
-
-                {/* Message bubbles */}
-                {messages.map((msg, i) => (
-                  <div
-                    key={i}
-                    className={`flex gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    {msg.role === 'assistant' && (
-                      <div className="bg-accent/15 ring-accent/20 mt-1 h-fit shrink-0 rounded-full p-1.5 ring-1">
-                        <Sparkles className="text-accent h-3 w-3" />
-                      </div>
-                    )}
-                    <div
-                      className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
-                        msg.role === 'user'
-                          ? 'bg-foreground/8 text-foreground rounded-tr-sm'
-                          : 'bg-accent/15 border-accent/20 text-foreground rounded-tl-sm border'
-                      }`}
-                    >
-                      {msg.text
-                        ? msg.role === 'assistant'
-                          ? renderText(msg.text)
-                          : msg.text
-                        : msg.streaming && (
-                            <span className="flex items-center gap-1 py-0.5">
-                              {[0, 150, 300].map((d) => (
-                                <span
-                                  key={d}
-                                  className="bg-accent h-1.5 w-1.5 animate-bounce rounded-full"
-                                  style={{ animationDelay: `${d}ms` }}
-                                />
-                              ))}
-                            </span>
-                          )}
-                    </div>
-                  </div>
-                ))}
-
-                {/* Suggestion chips — shown upfront on open, hidden after user sends */}
-                {showSuggestions && !streaming && (
-                  <div className="flex flex-col gap-2 pt-1 pb-1">
-                    <p className="text-muted-foreground text-[9px] font-semibold tracking-widest uppercase">
-                      Try asking
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {SUGGESTIONS.map((s) => (
-                        <button
-                          key={s}
-                          onClick={() => handleSend(s)}
-                          className="text-accent bg-accent/10 border-accent/25 hover:bg-accent/20 rounded-full border px-3.5 py-1.5 text-left text-sm transition-all duration-150 active:scale-[0.97]"
-                        >
-                          {s}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div ref={bottomRef} />
-              </div>
-            </div>
-
-            {/* ── Input bar ── */}
-            <div className="shrink-0 border-t border-white/8 px-4 py-3">
-              <div className="flex items-center gap-2">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                  placeholder="Ask about this feature…"
-                  aria-label="Ask the Course AI Assistant about this feature"
-                  disabled={streaming}
-                  className="bg-foreground/6 text-foreground placeholder:text-muted-foreground focus:ring-accent/60 flex-1 rounded-full px-4 py-2.5 text-sm transition-all duration-200 outline-none focus:ring-2 focus:ring-offset-0 disabled:opacity-40"
-                />
-                <button
-                  onClick={() => handleSend()}
-                  disabled={!input.trim() || streaming}
-                  className="bg-accent text-accent-foreground hover:bg-accent/90 disabled:bg-foreground/10 disabled:text-muted-foreground flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full p-2.5 transition-all duration-200 active:scale-90 disabled:cursor-not-allowed"
-                  aria-label="Send"
-                >
-                  <Send className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
+            <DiscoveryConversation
+              key={`${label}:${open ? 'open' : 'closed'}`}
+              label={label}
+              topic={topic}
+              messages={messages}
+              isLoading={isLoading}
+              hasLearnContent={hasLearnContent}
+              onSend={handleSend}
+              learnContent={
+                hasLearnContent ? (
+                  <DiscoveryLearnContent
+                    body={body}
+                    photos={photos}
+                    videoFile={videoFile}
+                    videoAspectRatio={videoAspectRatio}
+                  />
+                ) : undefined
+              }
+            />
           </div>
         );
       })()}

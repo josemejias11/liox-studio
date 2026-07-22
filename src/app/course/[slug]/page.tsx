@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { readClient } from '@/sanity/lib/client';
 import { COURSE_BY_SLUG_QUERY } from '@/sanity/lib/queries';
 import MotoViewer from '@/player/MotoViewer';
-import { courseSchema, type CourseSection, type LessonSection } from '@/lib/contracts/sanity';
+import { normalizeCourseContent } from '@/lib/course-content';
 
 export default async function CoursePage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = await params;
@@ -17,37 +17,15 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
     notFound();
   }
 
-  // Validate the GROQ payload against the shared Sanity contract once at the
-  // boundary; everything downstream consumes typed values.
-  const parsed = courseSchema.safeParse(raw);
-  if (!parsed.success) {
-    console.error(
-      `[course/${resolvedParams.slug}] Sanity payload failed contract validation:`,
-      parsed.error.issues,
-    );
+  const content = normalizeCourseContent(raw);
+  if (!content) {
+    console.error(`[course/${resolvedParams.slug}] Sanity payload failed contract validation`);
     notFound();
   }
-  const course = parsed.data;
-
-  // ── 1. Lessons from all chapters (enriched with chapterTitle + chapterIndex) ──
-  const lessonSections: LessonSection[] = (course.chapters ?? []).flatMap((chapter, chapterIndex) =>
-    (chapter.lessons ?? []).map((lesson) => ({
-      ...lesson,
-      chapterTitle: chapter.title ?? '',
-      chapterIndex,
-    })),
-  );
-
-  // ── Flat sections array — order defines course flow ────────────────────────
-  const sections: CourseSection[] = [
-    ...lessonSections,
-    ...(course.specifications ?? []),
-    ...(course.disclaimer ? [course.disclaimer] : []),
-  ];
 
   return (
     <div className="bg-background h-dvh w-full overflow-hidden">
-      <MotoViewer course={course} sections={sections} />
+      <MotoViewer course={content.course} sections={content.sections} />
     </div>
   );
 }

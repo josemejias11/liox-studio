@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useReducer, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Brain, CheckCircle, XCircle, Loader2, BarChart2, RefreshCw } from 'lucide-react';
 
@@ -9,9 +9,9 @@ import {
   QuestionResultSchema,
   SubmitQuizResponseSchema,
   type ClientQuiz,
-  type QuestionResult,
-  type SubmitQuizResponse,
 } from '@/lib/contracts/quiz';
+import { JobAcceptedResponseSchema, JobStatusResponseSchema } from '@/lib/jobs/contracts';
+import { createQuizSessionState, quizSessionReducer } from '@/lib/quiz-session';
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -27,7 +27,31 @@ export interface CourseQuizProps {
   onFail?: () => void;
 }
 
-type Step = 'idle' | 'generating' | 'ready' | 'playing' | 'submitting' | 'results';
+type Step = 'idle' | 'generating' | 'ready' | 'playing';
+
+function sleep(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+async function waitForQuizJob(jobId: string, onProgress: (progress: string | null) => void) {
+  for (let attempt = 0; attempt < 300; attempt++) {
+    const response = await fetch(`/api/jobs/${jobId}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`Quiz status request failed (${response.status})`);
+    const parsed = JobStatusResponseSchema.safeParse(await response.json());
+    if (!parsed.success) throw new Error('Quiz status response failed validation');
+    onProgress(parsed.data.progress);
+    if (parsed.data.status === 'failed') {
+      throw new Error(parsed.data.errorMessage ?? 'Quiz generation failed');
+    }
+    if (parsed.data.status === 'succeeded') {
+      const quiz = ClientQuizSchema.safeParse(parsed.data.result);
+      if (!quiz.success) throw new Error('Quiz result failed validation');
+      return quiz.data;
+    }
+    await sleep(1_000);
+  }
+  throw new Error('Quiz generation timed out');
+}
 
 // Grading is server-side: the browser only ever holds the client-safe quiz
 // (no correct_answer fields) and renders the per-question results returned by
@@ -36,19 +60,15 @@ type Step = 'idle' | 'generating' | 'ready' | 'playing' | 'submitting' | 'result
 export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: CourseQuizProps) {
   const [step, setStep] = useState<Step>('idle');
   const [quiz, setQuiz] = useState<ClientQuiz | null>(null);
-  const [currentQIndex, setCurrentQIndex] = useState(0);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [session, dispatch] = useReducer(quizSessionReducer, undefined, createQuizSessionState);
   const [grading, setGrading] = useState(false);
-  /** Server-graded feedback per question, filled as the learner answers. */
-  const [results, setResults] = useState<(QuestionResult | undefined)[]>([]);
-  const [answers, setAnswers] = useState<number[]>([]);
-  /** Server-graded final summary — the only source of score/passed. */
-  const [summary, setSummary] = useState<SubmitQuizResponse | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [generationProgress, setGenerationProgress] = useState<string | null>(null);
 
   const generateQuiz = async () => {
     setStep('generating');
     setErrorMsg(null);
+    setGenerationProgress('queueing');
     try {
       if (!courseId) throw new Error('Missing courseId');
       const res = await fetch('/api/quiz', {
@@ -57,24 +77,23 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
         body: JSON.stringify({ courseId, weakTopics: weakTopics ?? [] }),
       });
       if (!res.ok) throw new Error(`Quiz request failed (${res.status})`);
-
-      const parsed = ClientQuizSchema.safeParse(await res.json());
+      const parsed = JobAcceptedResponseSchema.safeParse(await res.json());
       if (!parsed.success) throw new Error('Quiz response failed validation');
 
-      setQuiz(parsed.data);
+      setQuiz(await waitForQuizJob(parsed.data.jobId, setGenerationProgress));
       setStep('ready');
     } catch (error: unknown) {
       console.warn('Quiz generation failed:', error instanceof Error ? error.message : error);
       setErrorMsg("We couldn't generate your quiz right now. Please try again in a moment.");
+      setGenerationProgress(null);
       setStep('idle');
     }
   };
 
   const handleAnswer = async (optionIndex: number) => {
-    if (selectedIndex !== null || grading || !quiz) return;
-    setSelectedIndex(optionIndex);
+    if (session.selectedIndex !== null || grading || !quiz) return;
+    dispatch({ type: 'answer.selected', selectedIndex: optionIndex });
     setGrading(true);
-    setErrorMsg(null);
 
     try {
       const res = await fetch('/api/quiz/grade', {
@@ -84,7 +103,7 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
           action: 'question',
           source: quiz.source,
           quizId: quiz.quizId,
-          questionIndex: currentQIndex,
+          questionIndex: session.currentQuestionIndex,
           selectedIndex: optionIndex,
         }),
       });
@@ -92,27 +111,26 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
       const parsed = QuestionResultSchema.safeParse(await res.json());
       if (!parsed.success) throw new Error('Grade response failed validation');
 
-      setResults((prev) => {
-        const next = [...prev];
-        next[currentQIndex] = parsed.data;
-        return next;
+      dispatch({
+        type: 'answer.revealed',
+        selectedIndex: optionIndex,
+        result: parsed.data,
       });
-      const nextAnswers = [...answers, optionIndex];
-      setAnswers(nextAnswers);
+      const nextAnswers = [...session.answers, optionIndex];
+      const isLastQuestion = session.currentQuestionIndex >= quiz.questions.length - 1;
 
       setTimeout(() => {
-        if (currentQIndex < quiz.questions.length - 1) {
-          setCurrentQIndex((q) => q + 1);
-          setSelectedIndex(null);
-        } else {
+        dispatch({ type: 'question.advanced', totalQuestions: quiz.questions.length });
+        if (isLastQuestion) {
           void submitQuiz(nextAnswers);
         }
       }, 1500);
     } catch (error: unknown) {
       console.warn('Answer grading failed:', error instanceof Error ? error.message : error);
-      // Re-enable selection so the learner can try the same question again.
-      setSelectedIndex(null);
-      setErrorMsg("We couldn't check your answer — tap an option to try again.");
+      dispatch({
+        type: 'answer.failed',
+        message: "We couldn't check your answer — tap an option to try again.",
+      });
     } finally {
       setGrading(false);
     }
@@ -121,8 +139,7 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
   // Final submission — the server computes score/passed and records the attempt.
   const submitQuiz = async (finalAnswers: number[]) => {
     if (!quiz) return;
-    setStep('submitting');
-    setErrorMsg(null);
+    dispatch({ type: 'submission.started' });
 
     try {
       const res = await fetch('/api/quiz/grade', {
@@ -141,41 +158,38 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
       const parsed = SubmitQuizResponseSchema.safeParse(await res.json());
       if (!parsed.success) throw new Error('Submit response failed validation');
 
-      setSummary(parsed.data);
-      setStep('results');
+      dispatch({ type: 'submission.succeeded', summary: parsed.data });
     } catch (error: unknown) {
       console.warn('Quiz submission failed:', error instanceof Error ? error.message : error);
-      setErrorMsg("We couldn't score your quiz. Please try again.");
+      dispatch({
+        type: 'submission.failed',
+        message: "We couldn't score your quiz. Please try again.",
+      });
     }
   };
 
   const reset = () => {
     setStep('idle');
     setQuiz(null);
-    setCurrentQIndex(0);
-    setSelectedIndex(null);
     setGrading(false);
-    setResults([]);
-    setAnswers([]);
-    setSummary(null);
     setErrorMsg(null);
+    setGenerationProgress(null);
+    dispatch({ type: 'session.reset' });
   };
 
   const questions = quiz?.questions ?? [];
-  const currentQuestion = questions[currentQIndex];
-  const currentResult = results[currentQIndex];
+  const currentQuestion = questions[session.currentQuestionIndex];
+  const currentResult = session.results[session.currentQuestionIndex];
 
   return (
-    <div className="mx-auto flex h-[600px] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border/20 bg-background shadow-xl backdrop-blur-xl">
-      <div className="flex items-center border-b border-border/20 bg-background/50 px-6 py-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-background shadow-md">
+    <div className="border-border/20 bg-background mx-auto flex h-[600px] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border shadow-xl backdrop-blur-xl">
+      <div className="border-border/20 bg-background/50 flex items-center border-b px-6 py-4">
+        <div className="bg-accent text-background flex h-10 w-10 items-center justify-center rounded-full shadow-md">
           <Brain className="h-5 w-5" />
         </div>
         <div className="ml-4">
-          <h2 className="text-lg font-semibold text-foreground">
-            Adaptive AI Quiz
-          </h2>
-          <p className="text-xs text-muted-foreground">Personalized learning path</p>
+          <h2 className="text-foreground text-lg font-semibold">Adaptive AI Quiz</h2>
+          <p className="text-muted-foreground text-xs">Personalized learning path</p>
         </div>
       </div>
 
@@ -189,25 +203,25 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
               exit={{ opacity: 0, scale: 0.9 }}
               className="text-center"
             >
-              <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-accent/10">
-                <BarChart2 className="h-12 w-12 text-accent" />
+              <div className="bg-accent/10 mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full">
+                <BarChart2 className="text-accent h-12 w-12" />
               </div>
-              <h3 className="mb-2 text-2xl font-bold text-foreground">
+              <h3 className="text-foreground mb-2 text-2xl font-bold">
                 Ready to test your knowledge?
               </h3>
-              <p className="mb-8 text-muted-foreground">
+              <p className="text-muted-foreground mb-8">
                 {weakTopics && weakTopics.length > 0
                   ? 'Your quiz will focus on the topics you have explored the least.'
                   : 'A short quiz will be generated from your course materials.'}
               </p>
               {errorMsg && (
-                <p role="alert" className="mb-6 text-sm font-medium text-destructive">
+                <p role="alert" className="text-destructive mb-6 text-sm font-medium">
                   {errorMsg}
                 </p>
               )}
               <button
                 onClick={() => void generateQuiz()}
-                className="group relative inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-8 py-3.5 text-sm font-medium text-background transition-all hover:bg-foreground/90 hover:shadow-lg"
+                className="group bg-foreground text-background hover:bg-foreground/90 relative inline-flex items-center justify-center gap-2 rounded-full px-8 py-3.5 text-sm font-medium transition-all hover:shadow-lg"
               >
                 <span>{errorMsg ? 'Try Again' : 'Generate Quiz'}</span>
                 <Sparkles className="h-4 w-4 transition-transform group-hover:scale-110" />
@@ -223,22 +237,23 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
               exit={{ opacity: 0 }}
               className="flex flex-col items-center text-center"
             >
-              <Loader2 className="mb-6 h-12 w-12 animate-spin text-accent" />
-              <h3 className="mb-2 text-xl font-bold text-foreground">
-                Generating Custom Quiz…
-              </h3>
+              <Loader2 className="text-accent mb-6 h-12 w-12 animate-spin" />
+              <h3 className="text-foreground mb-2 text-xl font-bold">Generating Custom Quiz…</h3>
+              {generationProgress && (
+                <p className="text-muted-foreground text-sm capitalize">{generationProgress}</p>
+              )}
               {weakTopics && weakTopics.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mt-4 rounded-xl border border-accent/20 bg-accent/8 p-4 text-accent"
+                  className="border-accent/20 bg-accent/8 text-accent mt-4 rounded-xl border p-4"
                 >
                   <p className="mb-2 text-sm font-semibold">Focus topics:</p>
                   <div className="flex flex-wrap justify-center gap-2">
                     {weakTopics.map((topic) => (
                       <span
                         key={topic}
-                        className="rounded-full bg-accent/15 px-3 py-1 text-xs font-medium"
+                        className="bg-accent/15 rounded-full px-3 py-1 text-xs font-medium"
                       >
                         {topic}
                       </span>
@@ -257,97 +272,100 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
               exit={{ opacity: 0, scale: 0.9 }}
               className="text-center"
             >
-              <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-accent/10">
-                <CheckCircle className="h-10 w-10 text-accent" />
+              <div className="bg-accent/10 mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full">
+                <CheckCircle className="text-accent h-10 w-10" />
               </div>
-              <h3 className="mb-4 text-2xl font-bold text-foreground">
+              <h3 className="text-foreground mb-4 text-2xl font-bold">
                 Your custom quiz is ready!
               </h3>
-              <p className="mb-8 text-muted-foreground">
+              <p className="text-muted-foreground mb-8">
                 {questions.length} questions tailored to your learning gaps.
               </p>
               <button
                 onClick={() => setStep('playing')}
-                className="inline-flex items-center justify-center rounded-full bg-accent px-8 py-3.5 text-sm font-medium text-background transition-all hover:bg-accent/90 hover:shadow-lg"
+                className="bg-accent text-background hover:bg-accent/90 inline-flex items-center justify-center rounded-full px-8 py-3.5 text-sm font-medium transition-all hover:shadow-lg"
               >
                 Start Quiz
               </button>
             </motion.div>
           )}
 
-          {step === 'playing' && currentQuestion && (
-            <motion.div
-              key={`playing-${currentQIndex}`}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="w-full"
-            >
-              <div className="mb-6 flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground">
-                  Question {currentQIndex + 1} of {questions.length}
-                </span>
-                <div className="flex gap-1">
-                  {questions.map((_, i) => (
-                    <div
-                      key={i}
-                      className={`h-2 w-8 rounded-full ${i <= currentQIndex ? 'bg-accent' : 'bg-border'}`}
-                    />
-                  ))}
+          {step === 'playing' &&
+            session.phase !== 'submitting' &&
+            session.phase !== 'complete' &&
+            currentQuestion && (
+              <motion.div
+                key={`playing-${session.currentQuestionIndex}`}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="w-full"
+              >
+                <div className="mb-6 flex items-center justify-between">
+                  <span className="text-muted-foreground text-sm font-medium">
+                    Question {session.currentQuestionIndex + 1} of {questions.length}
+                  </span>
+                  <div className="flex gap-1">
+                    {questions.map((_, i) => (
+                      <div
+                        key={i}
+                        className={`h-2 w-8 rounded-full ${i <= session.currentQuestionIndex ? 'bg-accent' : 'bg-border'}`}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <h3 className="mb-8 text-xl font-medium text-foreground">
-                {currentQuestion.question}
-              </h3>
+                <h3 className="text-foreground mb-8 text-xl font-medium">
+                  {currentQuestion.question}
+                </h3>
 
-              <div className="space-y-3">
-                {currentQuestion.options.map((option, idx) => {
-                  const isSelected = selectedIndex === idx;
-                  // Correctness comes exclusively from the server grade.
-                  const revealed = currentResult !== undefined;
-                  const showCorrect = revealed && currentResult.correctIndex === idx;
-                  const showWrong = revealed && isSelected && !currentResult.correct;
+                <div className="space-y-3">
+                  {currentQuestion.options.map((option, idx) => {
+                    const isSelected = session.selectedIndex === idx;
+                    // Correctness comes exclusively from the server grade.
+                    const revealed = currentResult !== undefined;
+                    const showCorrect = revealed && currentResult.correctIndex === idx;
+                    const showWrong = revealed && isSelected && !currentResult.correct;
 
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => void handleAnswer(idx)}
-                      disabled={selectedIndex !== null || grading}
-                      className={`relative flex w-full items-center justify-between rounded-xl border p-4 text-left transition-all ${
-                        selectedIndex === null
-                          ? 'border-border hover:border-accent/50 hover:bg-accent/8'
-                          : showCorrect
-                            ? 'border-accent/65 bg-accent/12'
-                            : showWrong
-                              ? 'border-destructive/60 bg-destructive/8'
-                              : 'border-border opacity-50'
-                      }`}
-                    >
-                      <span
-                        className={`font-medium ${showCorrect ? 'text-accent' : showWrong ? 'text-destructive' : 'text-foreground/80'}`}
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => void handleAnswer(idx)}
+                        disabled={session.selectedIndex !== null || grading}
+                        className={`relative flex w-full items-center justify-between rounded-xl border p-4 text-left transition-all ${
+                          session.selectedIndex === null
+                            ? 'border-border hover:border-accent/50 hover:bg-accent/8'
+                            : showCorrect
+                              ? 'border-accent/65 bg-accent/12'
+                              : showWrong
+                                ? 'border-destructive/60 bg-destructive/8'
+                                : 'border-border opacity-50'
+                        }`}
                       >
-                        {option}
-                      </span>
-                      {grading && isSelected && (
-                        <Loader2 className="h-5 w-5 animate-spin text-accent" />
-                      )}
-                      {showCorrect && <CheckCircle className="h-5 w-5 text-accent" />}
-                      {showWrong && <XCircle className="h-5 w-5 text-destructive" />}
-                    </button>
-                  );
-                })}
-              </div>
+                        <span
+                          className={`font-medium ${showCorrect ? 'text-accent' : showWrong ? 'text-destructive' : 'text-foreground/80'}`}
+                        >
+                          {option}
+                        </span>
+                        {grading && isSelected && (
+                          <Loader2 className="text-accent h-5 w-5 animate-spin" />
+                        )}
+                        {showCorrect && <CheckCircle className="text-accent h-5 w-5" />}
+                        {showWrong && <XCircle className="text-destructive h-5 w-5" />}
+                      </button>
+                    );
+                  })}
+                </div>
 
-              {errorMsg && (
-                <p role="alert" className="mt-4 text-sm font-medium text-destructive">
-                  {errorMsg}
-                </p>
-              )}
-            </motion.div>
-          )}
+                {session.error && (
+                  <p role="alert" className="text-destructive mt-4 text-sm font-medium">
+                    {session.error}
+                  </p>
+                )}
+              </motion.div>
+            )}
 
-          {step === 'submitting' && (
+          {step === 'playing' && session.phase === 'submitting' && (
             <motion.div
               key="submitting"
               initial={{ opacity: 0 }}
@@ -355,33 +373,31 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
               exit={{ opacity: 0 }}
               className="flex flex-col items-center text-center"
             >
-              {errorMsg ? (
+              {session.error ? (
                 <>
-                  <p
-                    role="alert"
-                    className="mb-6 text-sm font-medium text-destructive"
-                  >
-                    {errorMsg}
+                  <p role="alert" className="text-destructive mb-6 text-sm font-medium">
+                    {session.error}
                   </p>
                   <button
-                    onClick={() => void submitQuiz(answers)}
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-accent px-8 py-3 text-sm font-medium text-background transition-all hover:bg-accent/90"
+                    onClick={() => {
+                      dispatch({ type: 'retry.requested' });
+                      void submitQuiz(session.answers);
+                    }}
+                    className="bg-accent text-background hover:bg-accent/90 inline-flex items-center justify-center gap-2 rounded-full px-8 py-3 text-sm font-medium transition-all"
                   >
                     <RefreshCw className="h-4 w-4" /> Try Again
                   </button>
                 </>
               ) : (
                 <>
-                  <Loader2 className="mb-6 h-12 w-12 animate-spin text-accent" />
-                  <h3 className="text-xl font-bold text-foreground">
-                    Scoring your answers…
-                  </h3>
+                  <Loader2 className="text-accent mb-6 h-12 w-12 animate-spin" />
+                  <h3 className="text-foreground text-xl font-bold">Scoring your answers…</h3>
                 </>
               )}
             </motion.div>
           )}
 
-          {step === 'results' && summary && (
+          {step === 'playing' && session.phase === 'complete' && session.summary && (
             <motion.div
               key="results"
               initial={{ opacity: 0, scale: 0.9 }}
@@ -390,33 +406,36 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
             >
               <div
                 className={`mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full shadow-lg ${
-                  summary.passed ? 'bg-accent text-accent-foreground' : 'bg-muted text-foreground'
+                  session.summary.passed
+                    ? 'bg-accent text-accent-foreground'
+                    : 'bg-muted text-foreground'
                 }`}
               >
                 <span className="text-3xl font-bold">
-                  {Math.round((summary.score / summary.total) * 100)}%
+                  {Math.round((session.summary.score / session.summary.total) * 100)}%
                 </span>
               </div>
-              <h3 className="mb-2 text-2xl font-bold text-foreground">
-                {summary.passed ? 'Quiz Passed!' : 'Not Quite There Yet'}
+              <h3 className="text-foreground mb-2 text-2xl font-bold">
+                {session.summary.passed ? 'Quiz Passed!' : 'Not Quite There Yet'}
               </h3>
               <p className="text-muted-foreground">
-                You got {summary.score} out of {summary.total} questions correct.
+                You got {session.summary.score} out of {session.summary.total} questions correct.
               </p>
-              {!summary.passed && (
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Passing score: {summary.passingScore}%
+              {!session.summary.passed && (
+                <p className="text-muted-foreground mt-1 text-sm">
+                  Passing score: {session.summary.passingScore}%
                 </p>
               )}
               <div className="mt-8" />
 
-              {summary.passed ? (
+              {session.summary.passed ? (
                 <button
                   onClick={() => {
-                    if (onPass) onPass(Math.round((summary.score / summary.total) * 100));
+                    if (onPass)
+                      onPass(Math.round((session.summary!.score / session.summary!.total) * 100));
                     else reset();
                   }}
-                  className="inline-flex items-center justify-center rounded-full border-2 border-accent bg-transparent px-8 py-3 text-sm font-medium text-accent transition-all hover:bg-accent/8"
+                  className="border-accent text-accent hover:bg-accent/8 inline-flex items-center justify-center rounded-full border-2 bg-transparent px-8 py-3 text-sm font-medium transition-all"
                 >
                   {onPass ? 'Continue' : 'Try Another Quiz'}
                 </button>
@@ -424,14 +443,14 @@ export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: 
                 <div className="flex flex-col items-center gap-3">
                   <button
                     onClick={reset}
-                    className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-accent bg-transparent px-8 py-3 text-sm font-medium text-accent transition-all hover:bg-accent/8"
+                    className="border-accent text-accent hover:bg-accent/8 inline-flex items-center justify-center gap-2 rounded-full border-2 bg-transparent px-8 py-3 text-sm font-medium transition-all"
                   >
                     <RefreshCw className="h-4 w-4" /> Try Again
                   </button>
                   {onFail && (
                     <button
                       onClick={onFail}
-                      className="text-sm font-medium text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
+                      className="text-muted-foreground hover:text-foreground text-sm font-medium underline underline-offset-4 transition-colors"
                     >
                       Continue without passing
                     </button>

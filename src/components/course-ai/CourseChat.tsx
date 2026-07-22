@@ -3,28 +3,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Sparkles, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChatResponseSchema } from '@/lib/contracts/api';
-
-type Message = {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-};
-
-const USER_SAFE_ERROR =
-  "Sorry — I couldn't reach the assistant just now. Please try again in a moment.";
+import { useChatConversation } from './useChatConversation';
 
 export function CourseChat({ courseId }: { courseId?: string }) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content:
-        "Hello! I'm your AI course assistant. Feel free to ask me any questions about the uploaded materials.",
-    },
-  ]);
+  const { messages, isLoading, send } = useChatConversation({ courseId });
   const [inputValue, setInputValue] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -38,63 +21,9 @@ export function CourseChat({ courseId }: { courseId?: string }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
-
-    const userMsg: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: inputValue.trim(),
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
+    const query = inputValue.trim();
     setInputValue('');
-    setIsLoading(true);
-
-    try {
-      if (!courseId) throw new Error('Missing courseId');
-
-      // Proxied through the Next.js route handler — the browser never calls
-      // the parser service directly.
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          courseId,
-          query: userMsg.content,
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error(`Chat request failed (${res.status})`);
-      }
-
-      const parsed = ChatResponseSchema.safeParse(await res.json());
-      if (!parsed.success) {
-        throw new Error('Chat response failed validation');
-      }
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: parsed.data.answer,
-        },
-      ]);
-    } catch (error: unknown) {
-      console.warn('Chat request failed:', error instanceof Error ? error.message : error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: USER_SAFE_ERROR,
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
+    await send(query);
   };
 
   return (

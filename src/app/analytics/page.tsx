@@ -1,12 +1,24 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { Bot, Users, Zap, Trophy, BookOpen, ArrowLeft } from 'lucide-react';
 import { getAnalyticsData } from '@/services/analytics.service';
 import React from 'react';
 
-// Always render fresh data — without this the dashboard would be frozen at
-// build time. TODO(auth): gate this instructor dashboard behind authentication
-// in a later phase; it is currently public.
 export const dynamic = 'force-dynamic';
+
+// ── Auth gate ──────────────────────────────────────────────────────────────
+// Same pattern as /api/upload: checks the httpOnly analytics_token cookie
+// set by POST /api/analytics/login. Redirects to login if missing or wrong.
+
+async function requireAuth(): Promise<void> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get('analytics_token')?.value;
+  const expected = process.env.ANALYTICS_PASSWORD;
+  if (!expected || token !== expected) {
+    redirect('/analytics/login');
+  }
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -45,6 +57,8 @@ function StatCard({
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default async function AnalyticsPage() {
+  await requireAuth();
+
   const {
     totalSessions,
     totalHotspotsVisited,

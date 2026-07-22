@@ -28,6 +28,7 @@
 .claude
 web/.claude
 .agents
+.superpowers/
 
 # debug
 npm-debug.log*
@@ -62,6 +63,7 @@ next-env.d.ts
 **/venv/
 /.venv
 **/__pycache__/
+.ipynb_checkpoints/
 parser-service/chroma_db/
 *.pyc
 *.pyo
@@ -71,10 +73,10 @@ parser-service/.env
 
 # IDE
 .idea/
+.vscode/
 
 # Local Claude Code config
 .claude/
 
 # OS
 .playwright-mcp/
-

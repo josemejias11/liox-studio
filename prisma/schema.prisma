@@ -81,3 +81,56 @@ model QuizAttempt {
   @@index([sessionId, passed])
   @@index([createdAt])
 }
+
+enum BackgroundJobKind {
+  DOCUMENT_INDEX
+  QUIZ_GENERATE
+  AI_OPERATION
+}
+
+enum BackgroundJobStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+// Durable queue record. `dedupeKey` is unique only while a job is active; it is
+// cleared when the job reaches a terminal state so a later request can enqueue
+// fresh work for the same document or quiz input.
+model BackgroundJob {
+  id             String              @id @default(cuid())
+  kind           BackgroundJobKind
+  status         BackgroundJobStatus @default(QUEUED)
+  dedupeKey      String?             @unique
+  payload        Json
+  progress       String?
+  attempts       Int                 @default(0)
+  maxAttempts    Int                 @default(3)
+  runAfter       DateTime            @default(now())
+  leaseExpiresAt DateTime?
+  leaseToken     String?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  result         Json?
+  errorMessage   String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  artifact       JobArtifact?
+
+  @@index([status, runAfter])
+  @@index([leaseExpiresAt])
+  @@index([completedAt])
+}
+
+// Uploaded bytes live with the queued job until document indexing succeeds,
+// making the work recoverable across web/worker process restarts.
+model JobArtifact {
+  id          String        @id @default(cuid())
+  jobId       String        @unique
+  filename    String
+  contentType String?
+  bytes       Bytes
+  createdAt   DateTime      @default(now())
+  job         BackgroundJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+}
