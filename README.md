@@ -6,18 +6,20 @@ An AI-powered eLearning platform that replaces traditional authoring tools (Arti
 
 ## Architecture
 
-The platform consists of a Next.js frontend and a Python FastAPI backend for localized AI workloads.
+The platform consists of a Next.js/Sanity web app, a durable Node job worker, shared internal TypeScript packages, and a Python FastAPI service for localized AI workloads.
+
+The repository is an npm workspace for the Node applications and shared TypeScript packages. Run npm commands from the repository root; the Python parser remains an independently installable service under `services/parser-service`.
 
 ```text
-Sanity CMS (headless) ───────┐ (uploads course files)
-       │                     ▼
-       ▼               Python FastAPI (parser-service)
-Next.js 16 (root)      ─────────────────────────────
-─────────────────      /api/upload      markitdown + ChromaDB
-/ course library       /api/document   chunk deletion
-/course/[slug]         /api/chat        local Llama 3 Chat
-/analytics             /api/generate-quiz local Llama 3 Quiz Gen
-/studio
+Sanity CMS (headless) ───────────────┐
+                                     ▼
+apps/web (Next.js 16) ───────► apps/job-worker ───────► services/parser-service
+  /course library                     │                    /api/upload
+  /course/[slug]                      │                    /api/document
+  /analytics                          │                    /api/chat
+  /studio                             │                    /api/generate-quiz
+                                     ▼
+                              packages/database (PostgreSQL)
 ```
 
 **Data flow:**
@@ -25,7 +27,7 @@ Next.js 16 (root)      ───────────────────
 1. Content is authored in Sanity Studio. Course files (PDF, PPTX, DOCX, **XLSX**) are uploaded through a persistent file library. Next.js writes each upload to a durable PostgreSQL job artifact, and the worker sends it to the Python `/api/upload` endpoint for ChromaDB indexing. Re-uploading the same filename replaces its chunks; deleting a file purges its chunks via `/api/document`.
 2. The Python backend uses `markitdown` to parse the file and `langchain` + `ChromaDB` to embed and store the chunks locally.
 3. Learner explores hotspots. A floating AI Assistant (`CourseAIFab`) queries the Python `/api/chat` endpoint to get course-specific answers generated locally by `llama3`.
-4. Learner enters a Quiz phase. The Next.js app sends the learner's **weak topics** (hotspots not yet visited) to `/api/generate-quiz`. The Python backend searches ChromaDB for those topics and uses `llama3` to dynamically generate a structured adaptive quiz. The course-level quiz always uses the AI path — no CMS-authored quiz required.
+4. Learner enters a Quiz phase. The Next.js app queues the learner's **weak topics** (hotspots not yet visited); the worker sends them to the parser service's `/api/generate-quiz` endpoint. The Python backend searches ChromaDB for those topics and uses `llama3` to dynamically generate a structured adaptive quiz. The course-level quiz always uses the AI path — no CMS-authored quiz required.
 5. Hotspot visits and lesson progress → `/api/progress` → local PostgreSQL via Prisma.
 
 ---
@@ -55,7 +57,7 @@ Leave **Covered Features** empty for legacy or ungated lessons. When using hotsp
 
 The codebase is organized into focused modules with clear boundaries:
 
-### TypeScript (`src/`)
+### Web app (`apps/web/src/`; entries below are relative to this directory)
 
 | Module                    | Purpose                                                    |
 | ------------------------- | ---------------------------------------------------------- |
@@ -66,12 +68,37 @@ The codebase is organized into focused modules with clear boundaries:
 | `lib/quiz-grading.ts`     | Server-side quiz grading logic                             |
 | `lib/progress-store.ts`   | Prisma progress persistence (hotspots, lessons, quizzes)   |
 | `lib/chat-client.ts`      | Chat transport to `/api/chat` with response validation     |
-| `lib/contracts/`          | Zod schemas for Sanity, API, and quiz contracts            |
+| `lib/contracts/`          | Web-only Zod schemas for Sanity and API contracts          |
 | `lib/server/http.ts`      | Shared server-side request parsing and API error responses |
-| `lib/jobs/`               | Durable queue contracts, persistence, and job handlers     |
-| `jobs/worker.ts`          | Standalone worker that executes queued document and AI jobs |
 
-### Player (`src/player/`)
+### Shared packages
+
+| Package                   | Purpose                                                     |
+| ------------------------- | ----------------------------------------------------------- |
+| `packages/database/`      | Prisma schema, migrations, and generated client             |
+| `packages/contracts/`     | Shared TypeScript contracts                                 |
+| `packages/jobs/`          | Durable queue persistence, claiming, leases, and retries    |
+| `packages/parser-client/` | Typed client for the parser service                         |
+| `apps/job-worker/src/`    | Standalone worker that executes queued document and AI jobs |
+
+### Workspace commands
+
+Run these from the repository root:
+
+| Command               | Purpose                                                              |
+| --------------------- | -------------------------------------------------------------------- |
+| `npm install`         | Installs and links every npm workspace                               |
+| `npm run dev`         | Starts the Next.js/Sanity web application                            |
+| `npm run jobs:worker` | Starts the durable background-job worker                             |
+| `npm run build`       | Applies Prisma migrations, then creates the production Next.js build |
+| `npm run lint`        | Lints the applications, packages, and workspace runner               |
+| `npm run typecheck`   | Type-checks every TypeScript workspace                               |
+| `npm run db:generate` | Regenerates the Prisma client owned by `packages/database`           |
+| `npm run db:migrate`  | Applies migrations from `packages/database/prisma/migrations`        |
+
+`npm run build` requires the configured PostgreSQL server to be reachable because migrations run before Next.js compilation.
+
+### Player (`apps/web/src/player/`)
 
 | Module                         | Purpose                                                         |
 | ------------------------------ | --------------------------------------------------------------- |
@@ -87,25 +114,25 @@ The codebase is organized into focused modules with clear boundaries:
 | `hooks/useWeakTopics.ts`       | Weak topic derivation and merge                                 |
 | `lesson-types/registry.ts`     | Lesson type metadata and completion modes                       |
 
-### Parser Service (`parser-service/`)
+### Parser Service (`services/parser-service/`)
 
 The parser service provides document indexing, course-grounded chat, and quiz
 generation to the Node API routes and background worker. Its detailed module
-ownership, operations, and evaluation guidance live in
-[parser-service/docs](parser-service/docs/README.md).
+ownership and operations guidance live in
+[services/parser-service/docs](services/parser-service/docs/README.md).
 
 ### Authoring and discovery boundaries
 
-- `src/sanity/schemaTypes/lesson.ts` composes focused field groups from `src/sanity/schemaTypes/lesson/` without changing the Sanity document shape.
-- `src/components/course-ai/useChatConversation.ts` owns chat request cancellation, message state, and transport errors for both course chat and feature discovery.
-- `src/components/discovery/` contains the learn-content and conversation views used by `DiscoveryPanel`.
+- `apps/web/src/sanity/schemaTypes/lesson.ts` owns the Sanity lesson schema.
+- `apps/web/src/components/course-ai/useChatConversation.ts` owns chat request cancellation, message state, and transport errors.
+- `apps/web/src/components/discovery/` contains the learn-content and conversation views used by `DiscoveryPanel`.
 
 ---
 
 ## Performance & Privacy
 
 - **Self-Hosted AI:** All chat and quiz generation runs on your own Ollama host (`llama3`). No proprietary course files or student queries are ever sent to third-party APIs (like OpenAI or Gemini).
-- **Internal-Only AI Backend:** The browser never reaches the FastAPI service — all AI traffic proxies through Next.js route handlers carrying a shared-secret `X-Internal-Token` header.
+- **Internal-Only AI Backend:** The browser never reaches the FastAPI service. Synchronous chat and deletion requests proxy through Next.js, while uploads and quiz generation run through the durable worker; both server paths carry a shared-secret `X-Internal-Token` header.
 - **Server-Side Grading:** All quizzes (AI-generated and CMS-authored) are graded server-side; the answer key never reaches the browser.
 - **Local Postgres:** Progress tracking and quiz attempts are stored in a local PostgreSQL database via Prisma. In production, swap for a managed PG instance (e.g. Supabase) by updating `DATABASE_URL` / `DIRECT_URL` in your environment.
 
@@ -113,7 +140,7 @@ ownership, operations, and evaluation guidance live in
 
 ## Getting Started
 
-> **Five processes must run simultaneously.** The platform requires PostgreSQL, Ollama, the Python parser-service, the background-job worker, and Next.js. Steps 2–5 below each start one process; open a new terminal for each.
+> **Five processes must run simultaneously.** The platform requires PostgreSQL, Ollama, the Python parser service, the background-job worker, and Next.js. Steps 2–4 below start the three application processes; keep PostgreSQL and Ollama running separately.
 
 ### Prerequisites
 
@@ -136,6 +163,7 @@ ollama pull nomic-embed-text
 ```bash
 git clone https://github.com/josemejias11/moto-ai.git
 cd moto-ai
+npm install
 ```
 
 Copy the example env file and fill in your local values:
@@ -143,6 +171,8 @@ Copy the example env file and fill in your local values:
 ```bash
 cp .env.example .env.local
 ```
+
+The root `.env`/`.env.local` files are canonical for the Node workspaces. The parser service keeps its own `services/parser-service/.env` and `services/parser-service/chroma_db`.
 
 Edit `.env.local` — the minimum required for local dev:
 
@@ -170,18 +200,18 @@ psql -U <user> -d postgres -c "CREATE DATABASE moto_ai_dev;"
 ### 2. Start the Python AI Backend
 
 ```bash
-cd parser-service
+cd services/parser-service
 python3 -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
-pip install -r requirements.txt
+pip install -e '.[dev]'
 cp .env.example .env            # one-time: token and tunables loaded automatically
-python main.py
+python -m moto_parser
 ```
 
-`python main.py` always binds to `http://127.0.0.1:8000`. To use a different port set `PARSER_PORT` (not `PORT`, which collides with Node):
+`python -m moto_parser` binds to `http://127.0.0.1:8000` by default. To use a different port set `PARSER_PORT`:
 
 ```bash
-PARSER_PORT=9000 python main.py
+PARSER_PORT=9000 python -m moto_parser
 ```
 
 Verify it's healthy:
@@ -210,7 +240,6 @@ The worker claims durable PostgreSQL jobs for document parsing/embedding and AI 
 Open a new terminal:
 
 ```bash
-npm install
 npm run db:migrate   # applies Prisma migrations to local PostgreSQL
 npm run dev
 # → http://localhost:3000
@@ -305,35 +334,36 @@ Password is set via `ANALYTICS_PASSWORD` in your env (any value works locally).
 
 ### Next.js (`localhost:3000`)
 
-The browser only ever calls these routes; the AI routes proxy server-to-server to the FastAPI service.
+The browser only ever calls these routes. Chat and deletion proxy directly to FastAPI; upload and quiz routes enqueue work that the background worker sends to FastAPI.
 
-| Method   | Path                       | Description                                                                |
-| -------- | -------------------------- | -------------------------------------------------------------------------- |
-| `GET`    | `/api/progress?sessionId=` | Returns lesson progress for a session                                      |
-| `POST`   | `/api/progress`            | Upserts lesson progress and hotspot visits                                 |
-| `POST`   | `/api/chat`                | Proxies course Q&A to the parser service                                   |
-| `POST`   | `/api/quiz`                | Queues an AI quiz job; answer key stays server-side                         |
-| `POST`   | `/api/quiz/grade`          | Grades AI or CMS quizzes server-side and records the attempt               |
-| `POST`   | `/api/upload`              | Queues course-material indexing (50 MB cap per file)                        |
-| `DELETE` | `/api/upload`              | Proxies chunk deletion to the parser service                               |
-| `GET`    | `/api/jobs/[id]`           | Returns client-safe background job status, result, or error                 |
+| Method   | Path                       | Description                                                  |
+| -------- | -------------------------- | ------------------------------------------------------------ |
+| `GET`    | `/api/progress?sessionId=` | Returns lesson progress for a session                        |
+| `POST`   | `/api/progress`            | Upserts lesson progress and hotspot visits                   |
+| `POST`   | `/api/chat`                | Proxies course Q&A to the parser service                     |
+| `POST`   | `/api/quiz`                | Queues an AI quiz job; answer key stays server-side          |
+| `POST`   | `/api/quiz/grade`          | Grades AI or CMS quizzes server-side and records the attempt |
+| `POST`   | `/api/upload`              | Queues course-material indexing (50 MB cap per file)         |
+| `DELETE` | `/api/upload`              | Proxies chunk deletion to the parser service                 |
+| `GET`    | `/api/jobs/[id]`           | Returns client-safe background job status, result, or error  |
 
 ---
 
 ## Verification
 
 ```bash
-# Web application checks
+# Node workspace checks (requires PostgreSQL for the full build)
 npm run lint
 npm run typecheck
-
-# Figma plugin TypeScript build
-npm run figma:build
+npm run build
 
 # Python parser-service checks (requires venv)
-cd parser-service
-./venv/bin/ruff check .
-./venv/bin/python -m compileall -f main.py contracts.py documents.py rag.py settings.py
+cd services/parser-service
+./venv/bin/ruff check src
+./venv/bin/ruff format --check src
+./venv/bin/mypy src
+./venv/bin/python -m compileall -f src/moto_parser
+./venv/bin/python -m pip check
 ```
 
 ---
@@ -345,22 +375,10 @@ cd parser-service
 | CMS           | Sanity (headless) + embedded Studio via `next-sanity`                     |
 | Frontend      | Next.js 16, React 19, TypeScript (strict)                                 |
 | Styling       | Tailwind CSS v4, `tw-animate-css`, shadcn/ui v4                           |
-| AI Backend    | Python 3.9+, FastAPI, Uvicorn                                             |
+| AI Backend    | Python 3.11+, FastAPI, Uvicorn                                            |
 | AI Models     | Ollama (`llama3` + `nomic-embed-text`), LangChain, ChromaDB, `markitdown` |
 | Database      | PostgreSQL (local dev) + Prisma ORM v5                                    |
 | Rate Limiting | Upstash Redis (gracefully disabled when env vars are unset)               |
-
----
-
-## Full Reset
-
-`reset-all.sh` (repo root) is the canonical one-command teardown for a clean content-entry run. It wipes the PostgreSQL database, deletes all Sanity documents, and removes `parser-service/chroma_db`. Run it before starting a fresh authoring session:
-
-```bash
-./reset-all.sh
-```
-
-Loads credentials from `.env` + `.env.local`. After reset: restart the parser-service (so ChromaDB is recreated), run `npm run db:migrate`, then author and upload fresh content.
 
 ---
 

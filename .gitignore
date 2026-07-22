@@ -1,7 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+**/node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -14,7 +14,7 @@
 /coverage
 
 # next.js
-/.next/
+**/.next/
 /out/
 
 # production
@@ -26,7 +26,6 @@
 
 # ai
 .claude
-web/.claude
 .agents
 .superpowers/
 
@@ -47,7 +46,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/src/generated/prisma
+/packages/database/src/generated/prisma
 
 # Prisma local SQLite database
 *.db
@@ -63,20 +62,18 @@ next-env.d.ts
 **/venv/
 /.venv
 **/__pycache__/
+**/*.egg-info/
 .ipynb_checkpoints/
-parser-service/chroma_db/
+services/parser-service/chroma_db/
 *.pyc
 *.pyo
 
 # Parser service secrets
-parser-service/.env
+services/parser-service/.env
 
 # IDE
 .idea/
 .vscode/
-
-# Local Claude Code config
-.claude/
 
 # OS
 .playwright-mcp/

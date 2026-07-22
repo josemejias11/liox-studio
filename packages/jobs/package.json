@@ -1,0 +1,16 @@
+{
+  "name": "@moto-ai/jobs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@moto-ai/contracts": "0.1.0",
+    "@moto-ai/database": "0.1.0"
+  }
+}

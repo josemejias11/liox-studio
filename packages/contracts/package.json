@@ -1,0 +1,16 @@
+{
+  "name": "@moto-ai/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./jobs": "./src/jobs.ts",
+    "./quiz": "./src/quiz.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  }
+}
