@@ -1,5 +1,6 @@
 import { defineType, defineField, defineArrayMember } from 'sanity';
 import { CourseFileUploadInput } from '../components/CourseFileUploadInput';
+import { CourseLocalizationInput } from '../components/CourseLocalizationInput';
 
 export const courseType = defineType({
   name: 'course',
@@ -9,6 +10,7 @@ export const courseType = defineType({
     { name: 'content', title: 'Content' },
     { name: 'coverUi', title: 'Cover UI' },
     { name: 'settings', title: 'Settings' },
+    { name: 'courseStudio', title: 'Course Studio' },
   ],
   fields: [
     defineField({
@@ -202,6 +204,26 @@ export const courseType = defineType({
       type: 'boolean',
       group: 'settings',
       initialValue: false,
+    }),
+    defineField({
+      name: 'sourceLocale',
+      title: 'Source Locale',
+      type: 'string',
+      group: 'courseStudio',
+      initialValue: 'en-US',
+      validation: (rule) => rule.required(),
+    }),
+    defineField({
+      name: 'localizationReleases',
+      title: 'Localization Releases',
+      description:
+        'Lionbridge-only release tracking. Agencies receive exported packages; they do not access Course Studio.',
+      type: 'array',
+      group: 'courseStudio',
+      of: [{ type: 'reference', to: [{ type: 'courseLocaleRelease' }] }],
+      components: {
+        input: CourseLocalizationInput,
+      },
     }),
   ],
   preview: {
