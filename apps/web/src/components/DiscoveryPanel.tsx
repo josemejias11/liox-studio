@@ -20,6 +20,8 @@ interface DiscoveryPanelProps {
   x?: number;
   y?: number;
   mode?: 'sidebar' | 'popover';
+  sidebarPlacement?: 'edge' | 'workbench';
+  dimBackdrop?: boolean;
   courseId?: string;
 }
 
@@ -35,10 +37,13 @@ export function DiscoveryPanel({
   x,
   y,
   mode,
+  sidebarPlacement = 'edge',
+  dimBackdrop = true,
   courseId,
 }: DiscoveryPanelProps) {
   const hasVideo = !!videoFile?.asset?.url;
   const hasLearnContent = !!(body || (photos?.length ?? 0) > 0 || hasVideo);
+  const isWorkbenchSidebar = sidebarPlacement === 'workbench';
   const [liveAnnouncement, setLiveAnnouncement] = useState('');
   const [lastPosition, setLastPosition] = useState<{ x: number; y: number } | null>(null);
   // Tracks whether the viewport is below the md breakpoint (768 px).
@@ -65,6 +70,19 @@ export function DiscoveryPanel({
   }, [open, label, hasLearnContent, x, y]);
 
   useFocusTrap(panelRef, open);
+
+  useEffect(() => {
+    if (!open) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      onClose();
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
 
   // Sync isMobileView with the viewport width (md breakpoint = 768 px).
   useEffect(() => {
@@ -115,16 +133,18 @@ export function DiscoveryPanel({
   return (
     <div
       className={`absolute inset-0 z-30 transition-all duration-300 ease-out ${
-        open ? 'pointer-events-auto' : 'pointer-events-none'
+        isWorkbenchSidebar ? 'pointer-events-none' : open ? 'pointer-events-auto' : 'pointer-events-none'
       }`}
     >
       {/* Dimmer */}
-      <div
-        onClick={onClose}
-        className={`bg-background/40 absolute inset-0 backdrop-blur-[1px] transition-opacity duration-300 ${
-          open ? 'opacity-100' : 'opacity-0'
-        }`}
-      />
+      {!isWorkbenchSidebar && (
+        <div
+          onClick={onClose}
+          className={`${dimBackdrop ? 'bg-background/40 backdrop-blur-[1px]' : 'bg-transparent'} absolute inset-0 transition-opacity duration-300 ${
+            open ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+      )}
 
       {/* Screen-reader live region for completed AI responses */}
       <div aria-live="polite" aria-atomic="true" className="sr-only">
@@ -215,6 +235,12 @@ export function DiscoveryPanel({
           bg-card/80 dark:bg-card/95 backdrop-blur-2xl border-l border-white/10
           shadow-2xl transition-[transform] ease-[cubic-bezier(0.32,0.72,0,1)]
           ${open ? 'translate-x-0 duration-[280ms]' : 'translate-x-full duration-[200ms]'}`;
+        const workbenchSidebarClasses = `pointer-events-auto absolute top-6 right-6 bottom-24 w-[min(27rem,33vw)] flex flex-col rounded-[1.25rem]
+          bg-card/92 dark:bg-card/95 backdrop-blur-2xl border border-white/10
+          shadow-[0_24px_80px_rgba(0,0,0,0.38)] transition-[transform,opacity] ease-[cubic-bezier(0.32,0.72,0,1)]
+          ${open
+            ? 'translate-x-0 opacity-100 duration-[280ms]'
+            : 'translate-x-[calc(100%+1.5rem)] opacity-0 pointer-events-none duration-[200ms]'}`;
 
         return (
           <div
@@ -239,7 +265,15 @@ export function DiscoveryPanel({
             // On desktop floating: apply the clamp-based x/y inline style.
             // On sidebar: no inline style.
             style={!isMobileView && isFloating ? floatingStyle : undefined}
-            className={isMobileView ? mobileClasses : isFloating ? floatingClasses : sidebarClasses}
+            className={
+              isMobileView
+                ? mobileClasses
+                : isFloating
+                  ? floatingClasses
+                  : isWorkbenchSidebar
+                    ? workbenchSidebarClasses
+                    : sidebarClasses
+            }
           >
             {/* ── Header ── */}
             <div className="shrink-0 border-b border-white/8 px-5 pt-4 pb-3.5">

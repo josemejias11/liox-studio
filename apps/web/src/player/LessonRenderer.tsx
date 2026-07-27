@@ -88,14 +88,20 @@ export function LessonRenderer({
 
     case 'quiz':
       lessonContent = (
-        <div className="bg-background absolute inset-0 flex items-center justify-center overflow-y-auto p-6">
-          <CourseQuiz
-            weakTopics={weakTopics}
-            onPass={goNext}
-            onFail={goNext}
-            sessionId={persistSession ? sessionId : undefined}
-            courseId={courseId}
-          />
+        <div className="absolute inset-0 flex items-center justify-center overflow-y-auto bg-[#111225] p-6">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(104,91,199,0.42),transparent_42%)]" />
+          <div className="relative w-full max-w-2xl rounded-[2rem] border border-white/12 bg-white/96 p-4 shadow-[0_32px_90px_rgba(0,0,0,0.42)] md:p-8">
+            <p className="mb-5 text-center text-xs font-semibold tracking-[0.22em] text-[#685bc7] uppercase">
+              Practice challenge
+            </p>
+            <CourseQuiz
+              weakTopics={weakTopics}
+              onPass={goNext}
+              onFail={goNext}
+              sessionId={persistSession ? sessionId : undefined}
+              courseId={courseId}
+            />
+          </div>
         </div>
       );
       break;
@@ -105,7 +111,9 @@ export function LessonRenderer({
       break;
 
     case 'splitScreen':
-      lessonContent = <SplitScreenLessonDynamic lesson={lesson} />;
+      lessonContent = (
+        <SplitScreenLessonDynamic lesson={lesson} visitedLabels={visited} onVisit={markVisited} />
+      );
       break;
 
     case 'dragDrop':
@@ -124,6 +132,8 @@ export function LessonRenderer({
           lesson={lesson}
           isCompleted={isSpecialComplete}
           onComplete={handleManualCompletion ?? (() => baseMarkVisited(lessonKey, 'completed', 1))}
+          visitedLabels={visited}
+          onVisit={markVisited}
         />
       );
       break;

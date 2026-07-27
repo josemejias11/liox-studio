@@ -57,7 +57,10 @@ export function useLessonRuntime({
   const canvasLesson = currentLesson?.lessonType === 'canvas' ? currentLesson : undefined;
   const requiredCanvasTargets = currentLesson ? getRequiredCanvasTargetCount(currentLesson) : 0;
   const refresherFeatureLabels = currentLesson ? getCoveredFeatureLabels(currentLesson) : [];
-  const refresherLesson = refresherFeatureLabels.length > 0 ? currentLesson : undefined;
+  const refresherLesson =
+    completionMode === LessonCompletionMode.MANUAL || refresherFeatureLabels.length === 0
+      ? undefined
+      : currentLesson;
   const visitedRefresherFeatures = refresherFeatureLabels.filter((label) =>
     visitedLabels.has(label),
   ).length;
@@ -76,14 +79,18 @@ export function useLessonRuntime({
         : completionMode === LessonCompletionMode.MANUAL
           ? 1
           : hotspots.length;
-      const completionRule = refresherLesson
-        ? (nextVisited: Set<string>) => isRefresherComplete(refresherLesson, nextVisited)
-        : canvasLesson
-          ? (nextVisited: Set<string>) => isCanvasComplete(canvasLesson, nextVisited)
-          : undefined;
+      const completionRule =
+        completionMode === LessonCompletionMode.MANUAL
+          ? (nextVisited: Set<string>) => nextVisited.has('completed')
+          : refresherLesson
+            ? (nextVisited: Set<string>) => isRefresherComplete(refresherLesson, nextVisited)
+            : canvasLesson
+              ? (nextVisited: Set<string>) => isCanvasComplete(canvasLesson, nextVisited)
+              : undefined;
 
       void baseMarkVisited(lessonKey, label, totalRequired, completionRule);
-    }, [
+    },
+    [
       baseMarkVisited,
       canvasLesson,
       completionMode,
@@ -97,7 +104,7 @@ export function useLessonRuntime({
   const completionHint = !nextLocked
     ? undefined
     : refresherLesson
-      ? `Review every feature (${visitedRefresherFeatures} / ${refresherFeatureLabels.length})`
+      ? `Complete Quick Recall (${visitedRefresherFeatures} / ${refresherFeatureLabels.length})`
       : canvasLesson && requiredCanvasTargets > 0
         ? `Explore all required features (${visitedRequiredCanvasTargets} / ${requiredCanvasTargets})`
         : hotspots.length > 0

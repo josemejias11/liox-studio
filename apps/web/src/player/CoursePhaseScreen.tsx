@@ -114,22 +114,31 @@ export function CoursePhaseScreen({
 
     case 'quiz':
       return (
-        <div className="bg-background absolute inset-0 flex items-center justify-center overflow-y-auto p-6">
-          <CourseQuizDynamic
-            weakTopics={weakTopics}
-            onPass={finishQuiz}
-            onFail={finishQuiz}
-            sessionId={persistSession ? sessionId : undefined}
-            courseId={course._id}
-          />
+        <div className="absolute inset-0 flex items-center justify-center overflow-y-auto bg-[#111225] p-6">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(104,91,199,0.42),transparent_42%)]" />
+          <div className="relative w-full max-w-2xl rounded-[2rem] border border-white/12 bg-white/96 p-4 shadow-[0_32px_90px_rgba(0,0,0,0.42)] md:p-8">
+            <p className="mb-5 text-center text-xs font-semibold tracking-[0.22em] text-[#685bc7] uppercase">
+              Final knowledge check
+            </p>
+            <CourseQuizDynamic
+              weakTopics={weakTopics}
+              onPass={finishQuiz}
+              onFail={finishQuiz}
+              sessionId={persistSession ? sessionId : undefined}
+              courseId={course._id}
+            />
+          </div>
         </div>
       );
 
     case 'chapter-quiz': {
-      const chapterGroup = structure.chapters.find((chapter) => chapter.chapterIndex === phase.chapterIndex);
+      const chapterGroup = structure.chapters.find(
+        (chapter) => chapter.chapterIndex === phase.chapterIndex,
+      );
 
       return (
-        <div className="bg-background absolute inset-0 flex items-center justify-center overflow-y-auto p-6">
+        <div className="absolute inset-0 flex items-center justify-center overflow-y-auto bg-[#111225] p-6">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(104,91,199,0.42),transparent_42%)]" />
           <QuizLessonDynamic
             sanityQuiz={chapterGroup?.quickCheck}
             weakTopics={weakTopics}

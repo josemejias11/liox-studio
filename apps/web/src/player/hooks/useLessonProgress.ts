@@ -24,7 +24,11 @@ interface ProgressData {
  *                  SWR cache — no POSTs are sent, so nothing is recorded
  *                  server-side or on the device.
  */
-export function useLessonProgress(sessionId: string, persist: boolean = true) {
+export function useLessonProgress(
+  sessionId: string,
+  persist: boolean = true,
+  courseId?: string,
+) {
   const markLessonViewed = async (lessonId: string, courseId: string) => {
     if (!sessionId || !persist) return;
     const payload: ProgressRequestBody = { type: 'lesson', sessionId, lessonId, courseId };
@@ -73,6 +77,7 @@ export function useLessonProgress(sessionId: string, persist: boolean = true) {
       type: 'lesson',
       sessionId,
       lessonId: lessonKey,
+      ...(courseId ? { courseId } : {}),
       visitedHotspots,
       completed: isCompleted,
     };

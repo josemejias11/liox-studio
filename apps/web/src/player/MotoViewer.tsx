@@ -62,7 +62,7 @@ export default function MotoViewer({
     markVisited: baseMarkVisited,
     markLessonViewed,
     error: progressError,
-  } = useLessonProgress(sessionId, persistSession);
+  } = useLessonProgress(sessionId, persistSession, course._id);
 
   const nav = useCourseNavigation(flow, visited);
   const { phase, navDirection, showChapterIntro, showBurst, nextLocked } = nav;
@@ -90,10 +90,23 @@ export default function MotoViewer({
   }
 
   // ── Completion stats ──────────────────────────────────────────────────────
-  const totalHotspotsVisited = Object.values(visited).reduce((sum, s) => sum + s.size, 0);
-  const totalHotspots = structure.lessonSections.reduce(
-    (sum, s) => sum + (s.hotspots?.length ?? 0),
-    0,
+  const { totalHotspots, totalHotspotsVisited } = useMemo(
+    () =>
+      structure.lessonSections.reduce(
+        (stats, section) => {
+          const authoredLabels = section.hotspots?.map((hotspot) => hotspot.label) ?? [];
+          const visitedLabels = visited[section._key];
+
+          return {
+            totalHotspots: stats.totalHotspots + authoredLabels.length,
+            totalHotspotsVisited:
+              stats.totalHotspotsVisited +
+              authoredLabels.filter((label) => visitedLabels?.has(label)).length,
+          };
+        },
+        { totalHotspots: 0, totalHotspotsVisited: 0 },
+      ),
+    [structure.lessonSections, visited],
   );
 
   // ── Lesson view tracking ──────────────────────────────────────────────────

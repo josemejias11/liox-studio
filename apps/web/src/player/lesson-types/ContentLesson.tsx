@@ -2,14 +2,19 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { PlayCircle } from 'lucide-react';
-import { PortableText, type PortableTextMarkComponent } from '@portabletext/react';
+import { BookOpen, MousePointer2, PlayCircle } from 'lucide-react';
+import { PortableText } from '@portabletext/react';
 import { supMark } from '@/lib/portable-text-components';
 import { Hotspot } from '@/components/Hotspot';
 import { DiscoveryPanel } from '@/components/DiscoveryPanel';
 import { sanityImageLoader } from '@/lib/sanity-image-loader';
 import { getSemanticWidthClass } from '@/lib/utils';
 import type { LessonSection, RichText, SanityHotspot, SanityPhoto } from '@/lib/contracts/sanity';
+import {
+  InlineDiscoveryCueMark,
+  InlineDiscoveryCueProvider,
+  type InlineDiscoveryCueResolver,
+} from './InlineDiscoveryCue';
 
 interface ContentLessonProps {
   lesson: LessonSection;
@@ -31,6 +36,46 @@ interface ActivePanel {
   videoAspectRatio?: string;
 }
 
+function toActivePanel(hotspot: SanityHotspot): ActivePanel {
+  return {
+    topic: hotspot.topic,
+    title: hotspot.label,
+    body: hotspot.body,
+    x: hotspot.x,
+    y: hotspot.y,
+    photos: hotspot.photos,
+    videoFile: hotspot.videoFile,
+    videoAspectRatio: hotspot.videoAspectRatio,
+  };
+}
+
+export function getLayerLinkLabels(body: RichText | undefined): Set<string> {
+  if (!Array.isArray(body)) return new Set<string>();
+
+  return new Set(
+    body.flatMap((block) => {
+      const markDefs = (block as { markDefs?: unknown }).markDefs;
+      if (!Array.isArray(markDefs)) return [];
+
+      return markDefs.flatMap((markDef) => {
+        if (
+          typeof markDef === 'object' &&
+          markDef !== null &&
+          (markDef as { _type?: unknown })._type === 'layerLink' &&
+          typeof (markDef as { linkedLayer?: unknown }).linkedLayer === 'string'
+        ) {
+          return [(markDef as { linkedLayer: string }).linkedLayer];
+        }
+        return [];
+      });
+    }),
+  );
+}
+
+const CONTENT_PORTABLE_TEXT_COMPONENTS = {
+  marks: { layerLink: InlineDiscoveryCueMark, ...supMark },
+};
+
 export function ContentLesson({
   lesson,
   hotspots,
@@ -44,36 +89,34 @@ export function ContentLesson({
   const overlayX = lesson.textOverlay?.x ?? 6;
   const overlayY = lesson.textOverlay?.y ?? 15;
   const overlayWidth = getSemanticWidthClass(lesson.textOverlay?.width);
+  const isInteraction = lesson.lessonType === 'interaction';
+  const discoveredCount = hotspots.filter((hotspot) => visitedLabels.has(hotspot.label)).length;
 
-  // Inline "layerLink" annotations open the matching hotspot's discovery panel.
-  const LayerLinkMark: PortableTextMarkComponent<{
-    _type: 'layerLink';
-    linkedLayer?: string;
-  }> = ({ children, value }) => (
-    <button
-      onClick={() => {
-        const hotspot = hotspots.find((h) => h.label === value?.linkedLayer);
-        if (hotspot) {
-          setActivePanel({
-            topic: hotspot.topic,
-            title: hotspot.label,
-            body: hotspot.body,
-            x: hotspot.x,
-            y: hotspot.y,
-            photos: hotspot.photos,
-            videoFile: hotspot.videoFile,
-            videoAspectRatio: hotspot.videoAspectRatio,
-          });
-        }
-      }}
-      className="text-accent decoration-accent/40 hover:decoration-accent mx-1 font-medium underline underline-offset-4 transition-colors"
-    >
-      {children}
-    </button>
-  );
+  const resolveLinkedLayer: InlineDiscoveryCueResolver = (linkedLayer) => {
+    const hotspot = hotspots.find((item) => item.label === linkedLayer);
+    const coveredFeature = lesson.coveredFeatures?.find((item) => item.label === linkedLayer);
+    const label = hotspot?.label ?? coveredFeature?.label;
+
+    if (!label) return undefined;
+
+    return {
+      label,
+      summary: coveredFeature?.summary,
+      visited: visitedLabels.has(label),
+      onActivate: () => {
+        onVisit(label);
+        if (hotspot) setActivePanel(toActivePanel(hotspot));
+      },
+    };
+  };
+  const linkedHotspotLabels = isInteraction ? new Set<string>() : getLayerLinkLabels(lesson.body);
 
   return (
-    <>
+    <div
+      className={`absolute inset-0 overflow-hidden ${
+        isInteraction ? 'bg-[#090a18]' : 'bg-[#f4f0e8]'
+      }`}
+    >
       {/* Background image or solid color — the lesson's LCP element */}
       {imageUrl ? (
         <Image
@@ -83,11 +126,49 @@ export function ContentLesson({
           priority
           sizes="100vw"
           loader={sanityImageLoader}
-          className="object-cover"
+          className={`object-cover ${
+            isInteraction ? 'opacity-78 saturate-[0.82]' : 'opacity-90 saturate-[0.86]'
+          }`}
         />
       ) : (
-        <div className="bg-background absolute inset-0" />
+        <div
+          className={`absolute inset-0 ${
+            isInteraction
+              ? 'bg-[radial-gradient(circle_at_62%_42%,rgba(104,91,199,0.35),transparent_42%),linear-gradient(145deg,#090a18,#17172a)]'
+              : 'bg-[radial-gradient(circle_at_70%_25%,rgba(255,255,255,0.95),transparent_45%),linear-gradient(145deg,#f7f3eb,#e9e3d8)]'
+          }`}
+        />
       )}
+
+      <div
+        className={`pointer-events-none absolute inset-0 ${
+          isInteraction
+            ? 'bg-[linear-gradient(90deg,rgba(7,8,18,0.94)_0%,rgba(7,8,18,0.68)_38%,rgba(7,8,18,0.08)_72%)]'
+            : 'bg-[linear-gradient(90deg,rgba(244,240,232,0.98)_0%,rgba(244,240,232,0.76)_38%,rgba(244,240,232,0.08)_70%)]'
+        }`}
+      />
+
+      <div className="pointer-events-none absolute top-6 right-6 left-6 z-20 flex items-center justify-between md:top-8 md:right-10 md:left-10">
+        <div
+          className={`flex items-center gap-2 text-[11px] font-semibold tracking-[0.22em] uppercase ${
+            isInteraction ? 'text-[#bcb4ff]' : 'text-[#685bc7]'
+          }`}
+        >
+          {isInteraction ? <MousePointer2 className="h-4 w-4" /> : <BookOpen className="h-4 w-4" />}
+          {isInteraction ? 'Guided interaction' : 'Learning brief'}
+        </div>
+        {hotspots.length > 0 && (
+          <div
+            className={`rounded-full border px-3 py-1.5 text-xs font-semibold tabular-nums backdrop-blur-md ${
+              isInteraction
+                ? 'border-white/15 bg-[#111225]/72 text-white/72'
+                : 'border-[#18191d]/10 bg-white/72 text-[#595b66]'
+            }`}
+          >
+            {discoveredCount} / {hotspots.length} explored
+          </div>
+        )}
+      </div>
 
       {/* Text content */}
       {(!imageUrl || lesson.body) && (
@@ -101,30 +182,52 @@ export function ContentLesson({
             imageUrl
               ? ({
                   '--desktop-x': `max(6%, ${overlayX}%)`,
-                  '--desktop-y': `${overlayY}%`,
+                  '--desktop-y': `max(13%, ${overlayY}%)`,
                 } as React.CSSProperties)
-              : { inset: 0, padding: '6%', justifyContent: 'center' }
+              : { inset: 0, padding: '8%', justifyContent: 'center' }
           }
         >
           <div
             className={`pointer-events-auto w-full ${imageUrl ? overlayWidth : 'flex max-w-xl flex-col gap-4'} ${
               imageUrl
-                ? 'bg-card/60 dark:bg-card/95 rounded-[2rem] border border-white/10 p-6 shadow-2xl backdrop-blur-2xl md:p-8'
+                ? isInteraction
+                  ? 'rounded-[1.5rem] border border-white/12 bg-[#111225]/88 p-6 text-white shadow-[0_24px_70px_rgba(0,0,0,0.4)] backdrop-blur-2xl md:p-8'
+                  : 'rounded-[0.35rem_2rem_2rem_0.35rem] border-l-4 border-l-[#685bc7] bg-[#fffdf8]/92 p-6 shadow-[0_22px_60px_rgba(56,48,36,0.18)] backdrop-blur-xl md:p-8'
                 : ''
             }`}
           >
-            <h2 className="text-foreground text-2xl leading-tight font-semibold">
+            {isInteraction && (
+              <p className="mb-3 text-xs font-semibold tracking-[0.2em] text-[#bcb4ff] uppercase">
+                Explore to reveal
+              </p>
+            )}
+            {!isInteraction && (
+              <p className="mb-3 text-xs font-semibold tracking-[0.2em] text-[#685bc7] uppercase">
+                Learning brief
+              </p>
+            )}
+            <h2
+              className={`text-2xl leading-tight font-semibold md:text-3xl ${
+                isInteraction ? 'text-white' : 'text-[#18191d]'
+              }`}
+            >
               {lesson.headline}
             </h2>
             {lesson.body && (
-              <div className="prose dark:prose-invert text-muted-foreground mt-4 max-w-none text-base leading-relaxed font-light whitespace-pre-wrap">
+              <div
+                className={`prose mt-4 max-w-none text-base leading-relaxed font-light whitespace-pre-wrap ${
+                  isInteraction ? 'prose-invert text-white/72' : 'text-[#5d5a55]'
+                }`}
+              >
                 {typeof lesson.body === 'string' ? (
                   lesson.body
                 ) : (
-                  <PortableText
-                    value={lesson.body}
-                    components={{ marks: { layerLink: LayerLinkMark, ...supMark } }}
-                  />
+                  <InlineDiscoveryCueProvider resolveLinkedLayer={resolveLinkedLayer}>
+                    <PortableText
+                      value={lesson.body}
+                      components={CONTENT_PORTABLE_TEXT_COMPONENTS}
+                    />
+                  </InlineDiscoveryCueProvider>
                 )}
               </div>
             )}
@@ -133,30 +236,23 @@ export function ContentLesson({
       )}
 
       {/* Hotspots */}
-      {hotspots.map((h, i) => (
-        <Hotspot
-          key={i}
-          x={h.x}
-          y={h.y}
-          label={h.label}
-          visited={visitedLabels.has(h.label)}
-          variant="moto-indigo-black"
-          icon={h.videoFile?.asset?.url ? <PlayCircle className="h-5 w-5 text-white" /> : undefined}
-          onVisit={() => onVisit(h.label)}
-          onOpen={() =>
-            setActivePanel({
-              topic: h.topic,
-              title: h.label,
-              body: h.body,
-              x: h.x,
-              y: h.y,
-              photos: h.photos,
-              videoFile: h.videoFile,
-              videoAspectRatio: h.videoAspectRatio,
-            })
-          }
-        />
-      ))}
+      {hotspots
+        .filter((hotspot) => isInteraction || !linkedHotspotLabels.has(hotspot.label))
+        .map((h, i) => (
+          <Hotspot
+            key={i}
+            x={h.x}
+            y={h.y}
+            label={h.label}
+            visited={visitedLabels.has(h.label)}
+            variant={isInteraction ? 'pulse' : 'moto-indigo-black'}
+            icon={
+              h.videoFile?.asset?.url ? <PlayCircle className="h-5 w-5 text-white" /> : undefined
+            }
+            onVisit={() => onVisit(h.label)}
+            onOpen={() => setActivePanel(toActivePanel(h))}
+          />
+        ))}
 
       <DiscoveryPanel
         open={activePanel !== null}
@@ -172,6 +268,6 @@ export function ContentLesson({
         mode="popover"
         courseId={courseId}
       />
-    </>
+    </div>
   );
 }

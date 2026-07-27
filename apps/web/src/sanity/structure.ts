@@ -74,20 +74,6 @@ export function structure(S: StructureBuilder) {
 
                   S.divider(),
 
-                  // Quiz linked to this course
-                  S.listItem()
-                    .title('Quiz')
-                    .icon(SparklesIcon)
-                    .child(
-                      S.documentList()
-                        .title('Quiz')
-                        .apiVersion('2024-01-01')
-                        .filter(
-                          '_type == "quiz" && _id == *[_type == "course" && _id == $courseId][0].quiz._ref',
-                        )
-                        .params({ courseId }),
-                    ),
-
                   // Specifications linked to this course
                   S.listItem()
                     .title('Specifications')

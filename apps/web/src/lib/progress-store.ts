@@ -146,7 +146,7 @@ export async function recordHotspots(
       where: { sessionId_lessonId: { sessionId: input.sessionId, lessonId: input.lessonId } },
       update: {
         completed: input.completed ?? false,
-        courseId: input.courseId ?? '',
+        ...(input.courseId ? { courseId: input.courseId } : {}),
         ...(input.recordView ? { viewCount: { increment: 1 } } : {}),
       },
       create: {

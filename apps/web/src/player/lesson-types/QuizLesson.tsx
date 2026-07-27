@@ -50,13 +50,15 @@ export function QuizLesson({
   }
 
   return (
-    <div className="bg-background absolute inset-0 flex flex-col overflow-y-auto p-6 md:p-12">
-      <div className="mx-auto w-full max-w-2xl space-y-12 pb-24 text-center">
+    <div className="absolute inset-0 flex flex-col overflow-y-auto bg-[#111225] p-6 text-white md:p-12">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(104,91,199,0.42),transparent_40%)]" />
+      <div className="relative mx-auto w-full max-w-2xl space-y-12 pb-24 text-center">
         <div>
-          <h1 className="text-foreground text-3xl font-bold tracking-tight md:text-4xl">
-            Knowledge Check
-          </h1>
-          <p className="text-muted-foreground mt-2 text-lg">
+          <p className="text-xs font-semibold tracking-[0.22em] text-[#c4beff] uppercase">
+            Practice challenge
+          </p>
+          <h1 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">Knowledge Check</h1>
+          <p className="mt-2 text-lg text-white/65">
             Test your knowledge with a quiz generated from this course.
           </p>
         </div>

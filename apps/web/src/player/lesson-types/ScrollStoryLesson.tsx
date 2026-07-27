@@ -5,17 +5,33 @@ import { supMark } from '@/lib/portable-text-components';
 import { CheckCircle2 } from 'lucide-react';
 import type { SanityLesson } from '@/lib/contracts/sanity';
 import Image from 'next/image';
+import {
+  InlineDiscoveryCueMark,
+  InlineDiscoveryCueProvider,
+  type InlineDiscoveryCueResolver,
+} from './InlineDiscoveryCue';
 
 interface ScrollStoryLessonProps {
   lesson: SanityLesson;
   isCompleted: boolean;
   onComplete: () => void;
+  visitedLabels: Set<string>;
+  onVisit: (label: string) => void;
 }
 
 const BASE_TOP_PX = 16;
 const STACK_STEP_PX = 12;
+const SCROLL_STORY_PORTABLE_TEXT_COMPONENTS = {
+  marks: { layerLink: InlineDiscoveryCueMark, ...supMark },
+};
 
-export default function ScrollStoryLesson({ lesson, isCompleted, onComplete }: ScrollStoryLessonProps) {
+export default function ScrollStoryLesson({
+  lesson,
+  isCompleted,
+  onComplete,
+  visitedLabels,
+  onVisit,
+}: ScrollStoryLessonProps) {
   const { headline, scrollChapters = [], media } = lesson;
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -30,6 +46,17 @@ export default function ScrollStoryLesson({ lesson, isCompleted, onComplete }: S
   const [showCompletionOverlay, setShowCompletionOverlay] = useState(false);
 
   const hasChapterImages = scrollChapters.some(c => c.image?.asset?.url);
+  const resolveLinkedLayer: InlineDiscoveryCueResolver = (linkedLayer) => {
+    const feature = lesson.coveredFeatures?.find((item) => item.label === linkedLayer);
+    if (!feature) return undefined;
+
+    return {
+      label: feature.label,
+      summary: feature.summary,
+      visited: visitedLabels.has(feature.label),
+      onActivate: () => onVisit(feature.label),
+    };
+  };
 
   useEffect(() => {
     const unsub = scrollYProgress.on('change', (v) => {
@@ -48,14 +75,14 @@ export default function ScrollStoryLesson({ lesson, isCompleted, onComplete }: S
   }, [isCompleted]);
 
   return (
-    <div ref={scrollContainerRef} className="relative w-full h-full overflow-y-scroll bg-[#0f0f11] text-white">
+    <div ref={scrollContainerRef} className="relative h-full w-full overflow-y-scroll bg-[#f0ede9] font-sans text-[#18191d]">
 
       {/* Sticky navigation layer — zero document height, content overflows visibly */}
       <div className="sticky top-0 h-0 z-50 overflow-visible pointer-events-none">
 
         {/* Gold progress bar */}
         <motion.div
-          className="absolute top-0 left-0 right-0 h-1 bg-[#f5d061] origin-left"
+          className="absolute top-0 left-0 right-0 h-1 bg-[#685bc7] origin-left"
           style={{ scaleX: scrollYProgress }}
         />
 
@@ -75,9 +102,9 @@ export default function ScrollStoryLesson({ lesson, isCompleted, onComplete }: S
                   }
                 }}
                 aria-label={`Scroll to chapter ${i + 1}`}
-                className={`w-3 h-3 rounded-full border-2 border-[#f5d061] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#f5d061] focus:ring-offset-2 focus:ring-offset-[#0f0f11] hover:scale-125 ${
+                className={`h-3 w-3 rounded-full border-2 border-[#685bc7] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#685bc7] focus:ring-offset-2 focus:ring-offset-[#f0ede9] hover:scale-125 ${
                   i === activeChapter
-                    ? 'bg-[#f5d061] scale-110 shadow-[0_0_10px_rgba(245,208,97,0.8)]'
+                    ? 'scale-110 bg-[#685bc7] shadow-[0_0_10px_rgba(104,91,199,0.45)]'
                     : 'bg-transparent cursor-pointer'
                 }`}
               />
@@ -89,15 +116,15 @@ export default function ScrollStoryLesson({ lesson, isCompleted, onComplete }: S
         <AnimatePresence>
           {showCompletionOverlay && (
             <motion.div
-              className="absolute inset-x-0 top-0 flex flex-col items-center justify-center bg-[#0f0f11]/80 backdrop-blur-sm"
+              className="absolute inset-x-0 top-0 flex flex-col items-center justify-center bg-[#18191d]/85 backdrop-blur-sm"
               style={{ height: '100vh' }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: shouldReduceMotion ? 0 : 0.3 }}
             >
-              <CheckCircle2 className="w-16 h-16 text-[#f5d061] mb-2" />
-              <span className="text-white font-serif font-semibold text-2xl">Complete</span>
+              <CheckCircle2 className="mb-2 h-16 w-16 text-[#b48a3a]" />
+              <span className="font-sans text-2xl font-semibold text-white">Complete</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -118,12 +145,21 @@ export default function ScrollStoryLesson({ lesson, isCompleted, onComplete }: S
       )}
 
       {/* Stacking cards */}
-      <div className="px-4 md:px-8 pb-8">
+      <div className="px-4 pb-8 md:px-8">
+        <div className="mx-auto max-w-6xl px-2 pt-8 md:px-6 md:pt-12">
+          <p className="mb-3 text-xs font-semibold tracking-[0.24em] text-[#685bc7] uppercase">Story mode</p>
+          <h2 className="max-w-3xl text-4xl leading-[0.95] tracking-[-0.04em] text-[#18191d] md:text-6xl">
+            {headline}
+          </h2>
+          <p className="mt-5 max-w-xl text-sm leading-relaxed text-[#595b66] md:text-base">
+            Follow the sequence, connect the moments, and keep the product story in context.
+          </p>
+        </div>
         {scrollChapters.map((chapter, i) => (
           <div
             key={i}
             data-index={i}
-            className="chapter-block sticky rounded-3xl bg-[#1a1a1e] border border-white/10 shadow-[0_-20px_40px_-20px_rgba(0,0,0,0.8)] p-8 md:p-12"
+            className="chapter-block sticky mx-auto max-w-6xl rounded-[2rem] border border-[#18191d]/10 bg-[#fcfbf8] p-8 shadow-[0_-20px_50px_-28px_rgba(24,25,29,0.35)] md:p-12"
             style={{
               top: `${BASE_TOP_PX + i * STACK_STEP_PX}px`,
               zIndex: i + 1,
@@ -137,26 +173,29 @@ export default function ScrollStoryLesson({ lesson, isCompleted, onComplete }: S
                   src={chapter.image.asset.url}
                   alt={chapter.heading}
                   fill
-                  className="object-cover"
+                  className="object-cover grayscale-[0.1]"
                 />
               </div>
             )}
 
             {/* Heading */}
-            <h3 className="text-4xl md:text-5xl font-serif mb-6 text-white leading-tight tracking-tight">
+            <p className="mb-3 text-xs font-semibold tracking-[0.2em] text-[#b48a3a] uppercase">Moment {String(i + 1).padStart(2, '0')}</p>
+            <h3 className="mb-6 font-sans text-4xl leading-[0.98] tracking-[-0.035em] text-[#18191d] md:text-5xl">
               {chapter.heading}
             </h3>
 
             {/* Body */}
             {chapter.body && (
-              <div className="prose prose-invert prose-lg max-w-none text-white/70 leading-relaxed font-light">
+              <div className="prose prose-lg max-w-none font-sans font-light leading-relaxed text-[#595b66]">
                 {typeof chapter.body === 'string' ? (
                   <p>{chapter.body}</p>
                 ) : (
-                  <PortableText
-                    value={chapter.body as import('sanity').PortableTextBlock[]}
-                    components={{ marks: supMark }}
-                  />
+                  <InlineDiscoveryCueProvider resolveLinkedLayer={resolveLinkedLayer}>
+                    <PortableText
+                      value={chapter.body as import('sanity').PortableTextBlock[]}
+                      components={SCROLL_STORY_PORTABLE_TEXT_COMPONENTS}
+                    />
+                  </InlineDiscoveryCueProvider>
                 )}
               </div>
             )}

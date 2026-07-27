@@ -4,14 +4,7 @@ import { useEffect, useReducer, useRef, useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 
-import {
-  CheckCircle2,
-  XCircle,
-  Loader2,
-  ChevronRight,
-  Trophy,
-  RefreshCw,
-} from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, ChevronRight, Trophy, RefreshCw } from 'lucide-react';
 
 import {
   QuestionResultSchema,
@@ -25,8 +18,6 @@ import { sanityImageLoader } from '@/lib/sanity-image-loader';
 // ── Sanity quiz player ────────────────────────────────────────────────────────
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-
-
 
 // Transform the client-safe Sanity projection into the shared wire shape.
 // (No correctness data exists here — grading happens in /api/quiz/grade.)
@@ -67,7 +58,6 @@ export function SanityQuizPlayer({
   const [isShaking, setIsShaking] = useState(false);
   const [started, setStarted] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-
 
   // Clear any pending shake timers on unmount
   useEffect(() => {
@@ -161,27 +151,29 @@ export function SanityQuizPlayer({
     }
   }
 
-
   const total = quiz.questions.length;
 
   // ── Intro screen ──────────────────────────────────────────────────────────
   if (!started && quiz.instructions) {
     return (
-      <div className="bg-background quiz-enter absolute inset-0 flex flex-col items-center justify-center px-8 text-center">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_35%,rgba(104,91,199,0.07),transparent)]" />
-        <Trophy className="text-accent mb-5 h-12 w-12 opacity-80" />
-        <h2 className="text-foreground mb-4 text-2xl leading-tight font-black md:text-3xl">
-          {quiz.title}
-        </h2>
-        <p className="text-foreground/70 mx-auto mb-8 max-w-sm text-base leading-relaxed font-medium">
-          {quiz.instructions}
-        </p>
-        <button
-          onClick={() => setStarted(true)}
-          className="bg-foreground text-background hover:bg-foreground/90 rounded-full px-8 py-3.5 text-lg font-black shadow-2xl transition-transform hover:scale-105 active:scale-95"
-        >
-          Start Quiz
-        </button>
+      <div className="quiz-enter absolute inset-0 flex flex-col items-center justify-center overflow-hidden bg-[#111225] px-8 text-center text-white">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_62%_54%_at_50%_35%,rgba(104,91,199,0.55),transparent_70%)]" />
+        <div className="relative flex max-w-lg flex-col items-center">
+          <p className="mb-6 text-xs font-semibold tracking-[0.24em] text-[#c4beff] uppercase">
+            Practice challenge
+          </p>
+          <Trophy className="mb-5 h-12 w-12 text-[#c4beff]" />
+          <h2 className="mb-4 text-2xl leading-tight font-black md:text-3xl">{quiz.title}</h2>
+          <p className="mx-auto mb-8 max-w-sm text-base leading-relaxed font-medium text-white/70">
+            {quiz.instructions}
+          </p>
+          <button
+            onClick={() => setStarted(true)}
+            className="rounded-full bg-white px-8 py-3.5 text-lg font-black text-[#242051] shadow-2xl transition-transform hover:scale-105 hover:bg-white/92 active:scale-95"
+          >
+            Start Quiz
+          </button>
+        </div>
       </div>
     );
   }
@@ -189,31 +181,30 @@ export function SanityQuizPlayer({
   // ── Scoring state — waiting for (or retrying) the server grade ────────────
   if (session.phase === 'submitting' && !session.summary) {
     return (
-      <div className="bg-background absolute inset-0 flex flex-col items-center justify-center gap-4">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#111225] text-white">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(104,91,199,0.46),transparent_58%)]" />
         {session.error ? (
           <>
-            <p className="text-muted-foreground/80 text-sm">{session.error}</p>
+            <p className="relative text-sm text-white/70">{session.error}</p>
             <button
               onClick={() => {
                 dispatch({ type: 'retry.requested' });
                 void submitQuiz(session.answers);
               }}
-              className="bg-background text-foreground border-border/20 hover:bg-background/90 flex items-center gap-2 rounded-full border px-6 py-2.5 text-sm font-bold shadow-2xl transition-transform duration-150 active:scale-95"
+              className="relative flex items-center gap-2 rounded-full border border-white/15 bg-white px-6 py-2.5 text-sm font-bold text-[#242051] shadow-2xl transition-transform duration-150 hover:bg-white/90 active:scale-95"
             >
               <RefreshCw className="h-4 w-4" /> Try Again
             </button>
           </>
         ) : (
           <>
-            <Loader2 className="text-accent h-7 w-7 animate-spin" />
-            <p className="text-foreground/40 text-sm font-medium">Scoring your answers…</p>
+            <Loader2 className="relative h-7 w-7 animate-spin text-[#c4beff]" />
+            <p className="relative text-sm font-medium text-white/62">Scoring your answers…</p>
           </>
         )}
       </div>
     );
   }
-
-
 
   // ── Question view ─────────────────────────────────────────────────────────
   const q = quiz.questions[session.currentQuestionIndex];
@@ -221,14 +212,14 @@ export function SanityQuizPlayer({
   const revealed = session.selectedIndex !== null && result !== undefined;
 
   return (
-    <div className="bg-background absolute inset-0 flex flex-col select-none">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_35%,rgba(104,91,199,0.07),transparent)]" />
+    <div className="absolute inset-0 flex flex-col bg-[#111225] text-white select-none">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_65%_55%_at_50%_18%,rgba(104,91,199,0.48),transparent_72%)]" />
 
       {/* Header — progress bar + counter */}
-      <div className="shrink-0 px-6 pt-5 pb-2">
+      <div className="relative shrink-0 px-6 pt-5 pb-2 md:px-10 md:pt-7">
         <div className="mb-3 flex w-full items-center gap-1.5">
           {Array.from({ length: total }).map((_, i) => {
-            let bgColor = 'bg-border/20'; // Unanswered
+            let bgColor = 'bg-white/14'; // Unanswered
             const r = session.results[i];
             if (r && i !== session.currentQuestionIndex) {
               bgColor = r.correct ? 'bg-accent' : 'bg-destructive/80';
@@ -244,19 +235,22 @@ export function SanityQuizPlayer({
           })}
         </div>
         <div className="flex items-center justify-between">
-          <p className="text-foreground/70 text-xs font-bold tracking-widest uppercase">
-            Knowledge Check
+          <p className="text-xs font-bold tracking-widest text-[#c4beff] uppercase">
+            Practice challenge
           </p>
-          <p className="text-foreground/70 text-xs font-bold tabular-nums">
-            {session.currentQuestionIndex + 1} <span className="text-foreground/40">/ {total}</span>
+          <p className="text-xs font-bold text-white/72 tabular-nums">
+            {session.currentQuestionIndex + 1} <span className="text-white/38">/ {total}</span>
           </p>
         </div>
       </div>
 
       {/* Body — keyed by question index so entry animations replay per question */}
-      <div key={session.currentQuestionIndex} className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 pb-24">
+      <div
+        key={session.currentQuestionIndex}
+        className="relative mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col gap-4 overflow-y-auto px-6 pb-24 md:px-10"
+      >
         {/* Question text */}
-        <p className="quiz-enter text-foreground shrink-0 pt-2 text-xl leading-tight font-bold md:text-2xl">
+        <p className="quiz-enter shrink-0 pt-3 text-xl leading-tight font-bold text-white md:text-3xl">
           {q.question}
         </p>
 
@@ -291,20 +285,20 @@ export function SanityQuizPlayer({
             const dimmed = revealed && !isCorrect && !isSelected;
 
             const baseClass =
-              'relative flex items-start gap-2.5 p-3 rounded-xl border text-left ' +
-              'transition-colors duration-150 disabled:cursor-default ';
+              'relative flex items-start gap-3 p-4 rounded-2xl border text-left shadow-sm ' +
+              'transition-all duration-150 disabled:cursor-default ';
 
             const stateClass = !revealed
               ? isSelected
-                ? 'border-accent/50 bg-accent/12'
-                : 'border-border/10 bg-background/5 hover:border-accent/25 hover:bg-accent/8'
+                ? 'border-[#a9a0ff] bg-[#ddd9ff]'
+                : 'border-white/16 bg-white/94 hover:-translate-y-0.5 hover:border-[#b8b0ff] hover:bg-white'
               : showGreen
-                ? 'border-accent/65 bg-accent/12 quiz-option-correct'
+                ? 'border-[#7770d8] bg-[#e8e5ff] quiz-option-correct'
                 : showRed
-                  ? 'border-border/65 bg-muted/12 quiz-option-wrong'
+                  ? 'border-[#b8b4c4] bg-[#e8e7eb] quiz-option-wrong'
                   : dimmed
-                    ? 'border-border/5 bg-background/3 opacity-40'
-                    : 'border-border/10 bg-background/5';
+                    ? 'border-white/8 bg-white/80 opacity-45'
+                    : 'border-white/16 bg-white/94';
 
             return (
               <button
@@ -327,10 +321,10 @@ export function SanityQuizPlayer({
                 <span
                   className={`mt-px flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold ${
                     showGreen
-                      ? 'border-accent text-accent'
+                      ? 'border-[#685bc7] text-[#685bc7]'
                       : showRed
-                        ? 'border-border text-muted-foreground'
-                        : 'border-border/20 text-foreground/35'
+                        ? 'border-[#85838c] text-[#77757d]'
+                        : 'border-[#18191d]/18 text-[#18191d]/46'
                   }`}
                 >
                   {OPTION_LABELS[i] ?? i + 1}
@@ -339,11 +333,7 @@ export function SanityQuizPlayer({
                 {/* Option text */}
                 <span
                   className={`mt-px text-base leading-snug font-semibold ${
-                    showGreen
-                      ? 'text-foreground'
-                      : showRed
-                        ? 'text-muted-foreground'
-                        : 'text-foreground/75'
+                    showGreen ? 'text-[#242051]' : showRed ? 'text-[#5d5a62]' : 'text-[#27272c]'
                   }`}
                 >
                   {option}
@@ -351,18 +341,18 @@ export function SanityQuizPlayer({
 
                 {/* Pending grade spinner on the picked option */}
                 {grading && isSelected && (
-                  <span className="absolute top-2 right-2">
-                    <Loader2 className="text-accent h-3.5 w-3.5 animate-spin" />
+                  <span className="absolute top-3 right-3">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-[#685bc7]" />
                   </span>
                 )}
 
                 {/* Result icon (after answer is revealed) */}
                 {revealed && isSelected && (
-                  <span className="absolute top-2 right-2">
+                  <span className="absolute top-3 right-3">
                     {isCorrect ? (
-                      <CheckCircle2 className="text-accent h-3.5 w-3.5" />
+                      <CheckCircle2 className="h-3.5 w-3.5 text-[#685bc7]" />
                     ) : (
-                      <XCircle className="text-muted-foreground h-3.5 w-3.5" />
+                      <XCircle className="h-3.5 w-3.5 text-[#77757d]" />
                     )}
                   </span>
                 )}
@@ -373,7 +363,7 @@ export function SanityQuizPlayer({
 
         {/* Grading error — selection re-enabled so the learner can retry */}
         {session.error && (
-          <p role="alert" className="text-destructive/80 shrink-0 text-sm font-medium">
+          <p role="alert" className="shrink-0 text-sm font-medium text-[#ffb5b5]">
             {session.error}
           </p>
         )}
@@ -381,12 +371,12 @@ export function SanityQuizPlayer({
         {/* Explanation — appears after the server grades the answer */}
         {revealed && result && (
           <>
-            <div className="quiz-enter bg-background/5 border-border/8 mt-2 shrink-0 rounded-2xl border px-5 py-4">
+            <div className="quiz-enter mt-2 shrink-0 rounded-2xl border border-white/14 bg-white/95 px-5 py-4 text-[#27272c] shadow-lg">
               {(() => {
                 const isCorrect = result.correct;
                 return (
                   <div
-                    className={`mb-2 flex items-center gap-1.5 ${isCorrect ? 'text-accent' : 'text-destructive'}`}
+                    className={`mb-2 flex items-center gap-1.5 ${isCorrect ? 'text-[#685bc7]' : 'text-[#a04747]'}`}
                   >
                     {isCorrect ? (
                       <CheckCircle2 className="h-5 w-5" />
@@ -399,23 +389,23 @@ export function SanityQuizPlayer({
                   </div>
                 );
               })()}
-              <p className="text-foreground/80 text-base leading-relaxed font-medium">
+              <p className="text-base leading-relaxed font-medium text-[#45434b]">
                 {result.explanation}
               </p>
             </div>
 
-              <motion.button
-                autoFocus
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleNext}
-                className="bg-foreground text-background mt-4 flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-base font-black shadow-[0_0_24px_rgba(0,0,0,0.15)] focus-visible:outline-2 focus-visible:outline-offset-2"
-              >
-                {session.currentQuestionIndex + 1 >= total ? 'Finish Quiz' : 'Next Question'}
-                <ChevronRight className="h-5 w-5" />
-              </motion.button>
+            <motion.button
+              autoFocus
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleNext}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 text-base font-black text-[#242051] shadow-[0_0_24px_rgba(0,0,0,0.22)] focus-visible:outline-2 focus-visible:outline-offset-2"
+            >
+              {session.currentQuestionIndex + 1 >= total ? 'Finish Quiz' : 'Next Question'}
+              <ChevronRight className="h-5 w-5" />
+            </motion.button>
           </>
         )}
       </div>

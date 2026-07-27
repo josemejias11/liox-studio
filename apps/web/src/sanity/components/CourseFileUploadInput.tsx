@@ -1,14 +1,5 @@
 import React, { useRef, useState, useCallback, useMemo } from 'react';
-import {
-  ArrayOfObjectsInputProps,
-  PatchEvent,
-  insert,
-  set,
-  setIfMissing,
-  unset,
-  useFormValue,
-} from 'sanity';
-import { randomKey } from '@sanity/util/content';
+import { ArrayOfObjectsInputProps, PatchEvent, unset, useFormValue } from 'sanity';
 import { Button, Card, Flex, Text, Box, Stack, Badge } from '@sanity/ui';
 import { MAX_UPLOAD_BYTES, UploadResponseSchema } from '@/lib/contracts/api';
 import {
@@ -38,6 +29,12 @@ function uploadErrorReason(status: number): string {
   if (status === 413) return 'File too large (50 MB limit)';
   if (status === 502) return 'Upload service unavailable';
   return `Upload failed (HTTP ${status})`;
+}
+
+function deleteErrorReason(status: number): string {
+  if (status === 401) return 'Not authorized to remove this file';
+  if (status === 502) return 'Document removal service unavailable';
+  return `Could not remove document (HTTP ${status})`;
 }
 
 function sleep(milliseconds: number): Promise<void> {
@@ -78,10 +75,6 @@ export function CourseFileUploadInput(props: ArrayOfObjectsInputProps) {
       setIsUploading(true);
 
       const results: SessionFileStatus[] = [...initial];
-
-      // props.value does not re-render mid-loop, so track rows added/updated in
-      // this batch locally to keep same-filename dedup correct within it.
-      const knownFiles = new Map(indexedFiles.map((f) => [f.filename, f]));
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
@@ -125,29 +118,9 @@ export function CourseFileUploadInput(props: ArrayOfObjectsInputProps) {
             const indexed = DocumentIndexResultSchema.safeParse(job.result);
             if (!indexed.success) throw new Error('Document indexing result failed validation');
             results[i] = { name: file.name, state: 'success', chunks: indexed.data.chunksStored };
-            const existing = knownFiles.get(file.name);
-            if (existing) {
-              // Same filename re-uploaded — update the existing row in-place.
-              const updated: UploadedFile = {
-                ...existing,
-                chunks: indexed.data.chunksStored,
-                uploadedAt: new Date().toISOString(),
-              };
-              onChange(PatchEvent.from(set(updated, [{ _key: existing._key }])));
-              knownFiles.set(file.name, updated);
-            } else {
-              // New file — append to the persistent array. setIfMissing makes the
-              // first-ever insert persist (insert into a missing array is a no-op).
-              const added: UploadedFile = {
-                _key: randomKey(12),
-                _type: 'uploadedFile',
-                filename: file.name,
-                chunks: indexed.data.chunksStored,
-                uploadedAt: new Date().toISOString(),
-              };
-              onChange(PatchEvent.from([setIfMissing([]), insert([added], 'after', [-1])]));
-              knownFiles.set(file.name, added);
-            }
+            // The worker writes the durable course-material row to Sanity before
+            // the job succeeds. The Studio only reports its status, so closing
+            // this tab cannot lose the indexed-file metadata.
           } else {
             results[i] = {
               name: file.name,
@@ -164,22 +137,36 @@ export function CourseFileUploadInput(props: ArrayOfObjectsInputProps) {
 
       setIsUploading(false);
     },
-    [courseId, onChange, indexedFiles],
+    [courseId],
   );
 
   const handleRemove = useCallback(
     async (file: UploadedFile) => {
-      if (courseId) {
-        try {
-          await fetch('/api/upload', {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ course_id: courseId, filename: file.filename }),
-          });
-        } catch {
-          // Non-blocking: remove the Sanity record even if the API call fails.
-        }
+      if (!courseId) {
+        setSessionStatuses([
+          { name: file.filename, state: 'error', errorReason: 'Course is not ready for removal' },
+        ]);
+        return;
       }
+
+      try {
+        const response = await fetch('/api/upload', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ course_id: courseId, filename: file.filename }),
+        });
+        if (!response.ok) throw new Error(deleteErrorReason(response.status));
+      } catch (error: unknown) {
+        setSessionStatuses([
+          {
+            name: file.filename,
+            state: 'error',
+            errorReason: error instanceof Error ? error.message : 'Could not remove document',
+          },
+        ]);
+        return;
+      }
+
       onChange(PatchEvent.from(unset([{ _key: file._key }])));
     },
     [courseId, onChange],

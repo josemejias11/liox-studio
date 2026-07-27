@@ -128,6 +128,10 @@ export function isLessonLocked(
   const completionMode = getLessonCompletionMode(currentLesson);
   const visitedOnLesson = visited[lessonKey] ?? new Set<string>();
 
+  if (completionMode === LessonCompletionMode.MANUAL) {
+    return !visitedOnLesson.has('completed');
+  }
+
   if (getCoveredFeatureLabels(currentLesson).length > 0) {
     return !isRefresherComplete(currentLesson, visitedOnLesson);
   }
@@ -140,9 +144,8 @@ export function isLessonLocked(
     completionMode === LessonCompletionMode.HOTSPOT &&
     hotspots.length > 0 &&
     hotspots.some((h) => !visitedOnLesson.has(h.label));
-  const specialLocked = completionMode === LessonCompletionMode.MANUAL && !visitedOnLesson.has('completed');
 
-  return hotspotsLocked || specialLocked;
+  return hotspotsLocked;
 }
 
 function reduceNext(

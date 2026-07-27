@@ -238,7 +238,7 @@ export function ProductStage({
   return (
     <div
       ref={containerRef}
-      className="absolute inset-0 overflow-hidden"
+      className="absolute inset-0 overflow-hidden bg-[#070812]"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onScroll={(e) => {
@@ -263,7 +263,7 @@ export function ProductStage({
           />
         </motion.div>
       ) : (
-        <div className="bg-background stage-enter-bg absolute inset-0" />
+        <div className="stage-enter-bg absolute inset-0 bg-[radial-gradient(ellipse_70%_65%_at_50%_42%,#1b1d38_0%,#0b0c16_56%,#05060b_100%)]" />
       )}
 
       {/* ── Cursor-reactive ambient glow — static gradient moved via transform (GPU-composited) ── */}
@@ -359,6 +359,8 @@ export function ProductStage({
                   label={h.label}
                   visited={visited.has(h.label)}
                   variant="pulse"
+                  presentation="callout"
+                  calloutSide={h.x >= 50 ? 'left' : 'right'}
                   onVisit={() => onVisit(h.label)}
                   onOpen={() =>
                     setActivePanel({
@@ -399,6 +401,8 @@ export function ProductStage({
                 label={h.label}
                 visited={visited.has(h.label)}
                 variant="pulse"
+                presentation="callout"
+                calloutSide={h.x >= 50 ? 'left' : 'right'}
                 onVisit={() => onVisit(h.label)}
                 onOpen={() =>
                   setActivePanel({
@@ -422,7 +426,7 @@ export function ProductStage({
       <div className="stage-enter-top absolute top-3 right-3 z-20 flex flex-col items-end gap-2">
         <div className="flex items-center gap-1.5">
           <span
-            className={`text-[10px] font-medium tabular-nums transition-colors duration-500 select-none ${allDiscovered ? 'text-accent/80' : 'text-foreground/40'}`}
+            className={`text-[10px] font-medium tabular-nums transition-colors duration-500 select-none ${allDiscovered ? 'text-accent/90' : 'text-white/45'}`}
           >
             {discoveredCount} / {total}
           </span>
@@ -467,7 +471,7 @@ export function ProductStage({
         {allDiscovered && (
           <div className="completion-badge bg-accent/15 border-accent/35 flex items-center gap-1.5 rounded-full border px-3 py-1.5">
             <CheckCircle2 className="text-accent h-3.5 w-3.5 shrink-0" />
-            <span className="text-foreground text-xs font-semibold tracking-wide whitespace-nowrap">
+            <span className="text-white text-xs font-semibold tracking-wide whitespace-nowrap">
               All {total} features discovered
             </span>
           </div>
@@ -480,7 +484,7 @@ export function ProductStage({
           className="stage-enter-top pointer-events-none absolute top-13 right-3 z-20"
           style={{ animationDelay: '200ms' }}
         >
-          <p className="text-foreground/20 text-right text-[8px] tracking-wide select-none">
+          <p className="text-white/35 text-right text-[8px] tracking-wide select-none">
             ← → to explore
           </p>
         </div>
@@ -491,14 +495,14 @@ export function ProductStage({
         className="stage-enter-top pointer-events-none absolute top-6 left-6 z-20 max-w-md md:max-w-xl pr-6"
         style={{ animationDelay: '380ms' }}
       >
-        <p className="text-foreground/40 mb-1.5 text-[10px] font-bold tracking-[0.2em] uppercase">
-          Discover
+        <p className="mb-1.5 text-[10px] font-bold tracking-[0.2em] text-[#a9a0ff] uppercase">
+          Product exploration
         </p>
-        <h2 className="text-foreground/90 text-2xl md:text-3xl leading-tight font-bold mb-3">
+        <h2 className="mb-3 text-2xl leading-tight font-bold text-white md:text-3xl">
           {headline}
         </h2>
         {body && (
-          <div className="text-foreground/70 prose prose-sm md:prose-base prose-invert max-w-none font-light leading-relaxed">
+          <div className="prose prose-sm max-w-none font-light leading-relaxed text-white/70 md:prose-base prose-invert">
             {typeof body === 'string' ? <p>{body}</p> : <PortableText value={body as import('sanity').PortableTextBlock[]} components={{ marks: supMark }} />}
           </div>
         )}
@@ -512,8 +516,8 @@ export function ProductStage({
           className="stage-enter-bottom pointer-events-none absolute bottom-10 left-1/2 z-20 -translate-x-1/2"
           style={{ animationDelay: '700ms' }}
         >
-          <span className="text-foreground/30 text-[10px] font-medium tracking-wide">
-            Tap a hotspot to explore
+          <span className="text-[10px] font-medium tracking-wide text-white/45">
+            Explore each highlighted feature
           </span>
         </div>
       )}

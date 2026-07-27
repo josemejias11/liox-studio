@@ -1,5 +1,5 @@
 import { defineField } from 'sanity';
-import { richTextDecorators } from './richText';
+import { layerLinkAnnotation, richTextDecorators } from './richText';
 
 export const lessonCoreContentFields = [
   defineField({
@@ -20,22 +20,7 @@ export const lessonCoreContentFields = [
         type: 'block',
         marks: {
           decorators: richTextDecorators,
-          annotations: [
-            {
-              name: 'layerLink',
-              type: 'object',
-              title: 'Layer Link',
-              fields: [
-                defineField({
-                  name: 'linkedLayer',
-                  type: 'string',
-                  title: 'Linked Layer Headline',
-                  description: 'The headline of the layer to open.',
-                  validation: (r) => r.required(),
-                }),
-              ],
-            },
-          ],
+          annotations: [layerLinkAnnotation],
         },
       },
     ],
@@ -67,15 +52,15 @@ export const lessonConfigurationFields = [
   }),
   defineField({
     name: 'deviceName',
-    title: 'Device Name',
-    description: 'The device this refresher reviews.',
+    title: 'Quick Recall Topic',
+    description: 'Optional title shown above this lesson’s Quick Recall activity.',
     type: 'string',
     group: 'content',
   }),
   defineField({
     name: 'coveredFeatures',
-    title: 'Covered Features',
-    description: 'Learners must open every listed feature before continuing.',
+    title: 'Quick Recall Features',
+    description: 'Learners reveal every answer before continuing.',
     type: 'array',
     group: 'content',
     of: [
@@ -85,14 +70,15 @@ export const lessonConfigurationFields = [
         fields: [
           defineField({
             name: 'label',
-            title: 'Feature Name',
+            title: 'Recall Prompt',
+            description: 'The feature name or question learners see before revealing the answer.',
             type: 'string',
             validation: (r) => r.required(),
           }),
           defineField({
             name: 'summary',
-            title: 'Feature Review',
-            description: 'A concise reminder of what the learner should remember.',
+            title: 'Revealed Answer',
+            description: 'A concise answer shown after the learner chooses Reveal answer.',
             type: 'text',
             rows: 3,
             validation: (r) => r.required(),

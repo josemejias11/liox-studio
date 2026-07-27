@@ -56,7 +56,6 @@ export const quizType = defineType({
               options: {
                 list: [
                   { title: 'Multiple Choice (Single Answer)', value: 'single' },
-                  { title: 'Multiple Choice (Multi Answer)', value: 'multi' },
                   { title: 'True / False', value: 'truefalse' },
                 ],
                 layout: 'radio',
@@ -99,7 +98,18 @@ export const quizType = defineType({
                   },
                 },
               ],
-              validation: (r) => r.min(2),
+              validation: (r) =>
+                r.min(2).custom((answers) => {
+                  const correctAnswerCount = Array.isArray(answers)
+                    ? answers.filter(
+                        (answer) =>
+                          typeof answer === 'object' &&
+                          answer !== null &&
+                          (answer as { isCorrect?: unknown }).isCorrect === true,
+                      ).length
+                    : 0;
+                  return correctAnswerCount === 1 || 'Select exactly one correct answer.';
+                }),
             }),
             defineField({
               name: 'explanation',
@@ -114,7 +124,6 @@ export const quizType = defineType({
             prepare({ title, subtitle }) {
               const labels: Record<string, string> = {
                 single: 'Single Choice',
-                multi: 'Multi Choice',
                 truefalse: 'True / False',
               };
               return { title, subtitle: labels[subtitle] ?? subtitle };

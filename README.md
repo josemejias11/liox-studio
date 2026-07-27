@@ -49,11 +49,22 @@ Canvas v1 focuses on one primary product image. In Sanity Studio, select **Canva
 
 Learners can pan and zoom the image, explore targets in any order, and continue once all required features have been opened. Optional targets remain available without blocking progress.
 
-### Refresher lesson authoring
+### Interaction presentations and learning cues
 
-Every lesson type can also be authored as a guided device refresher. Set **Device Name**, then add the lesson's **Covered Features** with a concise feature review for each one. The learner sees the device and review count on entry, can open each feature recap, and cannot continue until every listed feature has been reviewed.
+The player keeps one shared hotspot and progress model while adapting the visual presentation to the lesson family:
 
-Leave **Covered Features** empty for legacy or ungated lessons. When using hotspots or Canvas targets, use the same feature names so the visual exploration and refresher checklist stay aligned.
+- **Interaction** and content hotspots use the classic pulsing hotspot and discovery panel.
+- **Product Stage** hotspots show persistent labeled callouts on desktop and fall back to the classic hotspot treatment on smaller screens.
+- **Canvas Product Inspection** hotspots use a reticle presentation while the learner explores the image and opens the existing discovery surface.
+- **Split Screen**, **Scroll Story**, and content body copy can use inline **Learning Cue** annotations. In Studio, select text, choose **Learning Cue**, and set **Linked Feature Label** to the exact name of a hotspot or covered feature in that lesson. Learners can activate the cue inline; its visited state is shared with the lesson's existing progress tracking.
+
+Learning cues are additive: text whose label does not resolve to a hotspot or covered feature remains ordinary body copy, and existing hotspot content keeps its current behavior.
+
+### Quick Recall authoring
+
+Any lesson can include a short **Quick Recall** activity. Set an optional **Quick Recall Topic**, then add **Quick Recall Features**. Each **Recall Prompt** is shown first; its **Revealed Answer** stays hidden until the learner selects **Reveal answer**. For lessons that use progress-based navigation, the learner can continue after every configured answer has been revealed.
+
+Leave **Quick Recall Features** empty for lessons that do not need a recall moment. When a prompt refers to a hotspot or Canvas target, use the same label so the shared progress stays aligned.
 
 The codebase is organized into focused modules with clear boundaries:
 
@@ -100,19 +111,20 @@ Run these from the repository root:
 
 ### Player (`apps/web/src/player/`)
 
-| Module                         | Purpose                                                         |
-| ------------------------------ | --------------------------------------------------------------- |
-| `MotoViewer.tsx`               | Main course player shell                                        |
-| `CoursePhaseScreen.tsx`        | Phase renderer (cover, lessons, quiz, disclaimer)               |
-| `PlayerOverlays.tsx`           | Course map, AI assistant, sync warning, and completion overlays |
-| `NavMap.tsx`                   | Full-course navigation map                                      |
-| `LessonRenderer.tsx`           | Lesson type dispatcher                                          |
-| `RefresherFeaturePanel.tsx`    | Shared device and covered-feature review panel                  |
-| `hooks/useCourseNavigation.ts` | Flow-based navigation state machine                             |
-| `hooks/useLessonRuntime.ts`    | Current lesson completion, progress, and visit model            |
-| `hooks/useCourseSession.ts`    | Session ID and consent persistence                              |
-| `hooks/useWeakTopics.ts`       | Weak topic derivation and merge                                 |
-| `lesson-types/registry.ts`     | Lesson type metadata and completion modes                       |
+| Module                                | Purpose                                                         |
+| ------------------------------------- | --------------------------------------------------------------- |
+| `MotoViewer.tsx`                      | Main course player shell                                        |
+| `CoursePhaseScreen.tsx`               | Phase renderer (cover, lessons, quiz, disclaimer)               |
+| `PlayerOverlays.tsx`                  | Course map, AI assistant, sync warning, and completion overlays |
+| `NavMap.tsx`                          | Full-course navigation map                                      |
+| `LessonRenderer.tsx`                  | Lesson type dispatcher                                          |
+| `RefresherFeaturePanel.tsx`           | Shared Quick Recall prompt-and-answer panel                     |
+| `hooks/useCourseNavigation.ts`        | Flow-based navigation state machine                             |
+| `hooks/useLessonRuntime.ts`           | Current lesson completion, progress, and visit model            |
+| `hooks/useCourseSession.ts`           | Session ID and consent persistence                              |
+| `hooks/useWeakTopics.ts`              | Weak topic derivation and merge                                 |
+| `lesson-types/InlineDiscoveryCue.tsx` | Inline rich-text learning cue and visited state                 |
+| `lesson-types/registry.ts`            | Lesson type metadata and completion modes                       |
 
 ### Parser Service (`services/parser-service/`)
 
@@ -294,17 +306,17 @@ Where instructional designers create and publish course content.
 | `content`       | `ContentLesson`          | Headline + body text, optional background image and hotspots                      |
 | `interaction`   | `ContentLesson`          | Same as content but hotspots are required; drives the discovery flow              |
 | `stage`         | `ProductStage`           | Full-bleed product image with floating hotspots and optional completion animation |
-| `video`         | `ContentLesson`          | MP4 playback; supports 16:9, 1:1, 4:5, 9:16 aspect ratios                         |
-| `splitScreen`   | `SplitScreenLesson`      | Left/right split — text on one side, video on the other                           |
+| `video`         | `VideoLesson`            | MP4 playback; supports 16:9, 1:1, 4:5, 9:16 aspect ratios                         |
+| `splitScreen`   | `SplitScreenLesson`      | Left/right split — text on one side, video on the other; supports learning cues   |
 | `quiz`          | in-lesson quiz           | CMS-authored quiz embedded inside the lesson flow                                 |
-| `colorSwitcher` | `ContentLesson`          | Up to 4 color variants with swappable product images                              |
+| `colorSwitcher` | `ColorSwitcherLesson`    | Up to 4 color variants with swappable product images                              |
 | `dragDrop`      | `DragDropLesson`         | Drag chip to drop zone interaction with correctness feedback                      |
-| `scrollStory`   | `ScrollStoryLesson`      | Scroll-driven chapters with parallax image pan/zoom/rotate                        |
+| `scrollStory`   | `ScrollStoryLesson`      | Scroll-driven chapters with parallax image pan/zoom/rotate and learning cues      |
 | `canvas`        | `CanvasInspectionLesson` | Pan-and-zoom product inspection with feature targets                              |
 
-**Shared refresher fields** — use `Device Name` and `Covered Features` on any lesson type to add a device-focused review. Each feature needs a name and a concise review; learners must open every listed feature before the Next button unlocks.
+**Quick Recall fields** — use `Quick Recall Topic` and `Quick Recall Features` on non-manual lesson types to add a short recall activity. Each prompt needs a concise revealed answer; learners must reveal every answer before the Next button unlocks.
 
-**Rich text** — all body fields support standard decorators (bold, italic, underline, strike, code) plus **superscript** (`x²`, spec callouts like `5G¹`). Use the `Sup` button in the toolbar.
+**Rich text** — all body fields support standard decorators (bold, italic, underline, strike, code) plus **superscript** (`x²`, spec callouts like `5G¹`). Use the `Sup` button in the toolbar. Body copy and Scroll Story chapter text also support the **Learning Cue** annotation described above.
 
 ### Instructor Dashboard — analytics
 

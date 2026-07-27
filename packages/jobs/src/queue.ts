@@ -158,8 +158,10 @@ export async function claimNextJob(): Promise<ClaimedJob | null> {
       FROM "BackgroundJob"
       WHERE "attempts" < "maxAttempts"
         AND (
-          ("status" = 'QUEUED'::"BackgroundJobStatus" AND "runAfter" <= ${now})
-          OR ("status" = 'RUNNING'::"BackgroundJobStatus" AND "leaseExpiresAt" <= ${now})
+          ("status" = 'QUEUED'::"BackgroundJobStatus"
+            AND "runAfter" <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'))
+          OR ("status" = 'RUNNING'::"BackgroundJobStatus"
+            AND "leaseExpiresAt" <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'))
         )
       ORDER BY "runAfter" ASC, "createdAt" ASC
       FOR UPDATE SKIP LOCKED

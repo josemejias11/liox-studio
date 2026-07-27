@@ -166,6 +166,7 @@ export function DiscoveryConversation({
           <input
             ref={inputRef}
             type="text"
+            name="discovery-question"
             value={input}
             onChange={(event) => setInput(event.target.value)}
             onKeyDown={(event) => event.key === 'Enter' && send()}

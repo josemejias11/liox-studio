@@ -1,6 +1,6 @@
 import { defineField } from 'sanity';
 import { HotspotMapInput } from '../../components/HotspotMapInput';
-import { richTextDecorators } from './richText';
+import { layerLinkAnnotation, richTextDecorators } from './richText';
 
 export const lessonInteractionFields = [
   defineField({
@@ -185,7 +185,15 @@ export const lessonInteractionFields = [
             name: 'body',
             title: 'Body Text',
             type: 'array',
-            of: [{ type: 'block', marks: { decorators: richTextDecorators } }],
+            of: [
+              {
+                type: 'block',
+                marks: {
+                  decorators: richTextDecorators,
+                  annotations: [layerLinkAnnotation],
+                },
+              },
+            ],
           }),
           defineField({
             name: 'image',
