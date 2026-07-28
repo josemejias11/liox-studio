@@ -66,7 +66,7 @@ The tool reads a resolved authoring graph, not the public learner projection. It
 The former locale-release foundation is replaced by a master-release foundation. A `courseMasterRelease` records one frozen complete course version:
 
 - master Course reference, title, source revision, source fingerprint, and creation time;
-- complete resolved authoring snapshot serialized as read-only JSON text, including course, chapters, lessons, quizzes, specifications, disclaimer, and unchanged media references;
+- complete resolved authoring snapshot serialized as an immutable review artifact, including course, chapters, lessons, quizzes, specifications, disclaimer, and unchanged media references;
 - lifecycle status: `draft`, `ready`, `delivered`, `archived`.
 
 Creating a master release never edits the live course. It gives Lionbridge a traceable master in Course Studio now; generating the exact external deliverable that Motorola distributes is a later adapter, deliberately separate from authoring.

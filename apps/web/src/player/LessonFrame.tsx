@@ -7,6 +7,7 @@ type SectionType = 'lesson' | 'specification' | 'quiz' | 'disclaimer';
 
 interface LessonFrameProps {
   children: ReactNode;
+  contained?: boolean;
   // Nav — omit all three to hide the nav bar entirely (e.g. cover / stage / quiz lessons)
   currentLesson?: number;
   totalLessons?: number;
@@ -39,6 +40,7 @@ const SECTION_LABELS: Record<SectionType, string | null> = {
 
 export function LessonFrame({
   children,
+  contained = false,
   currentLesson,
   totalLessons,
   onPrev,
@@ -59,7 +61,11 @@ export function LessonFrame({
 
   return (
     // Outer shell — flex-col so the device banner stacks below the frame.
-    <div className="bg-glass-gradient flex h-dvh w-full flex-col items-center justify-start overflow-hidden">
+    <div
+      className={`bg-glass-gradient flex w-full flex-col items-center justify-start overflow-hidden ${
+        contained ? 'h-full' : 'h-dvh'
+      }`}
+    >
       {/* Fullscreen frame — fills all remaining vertical space after the banner */}
       <div
         className={`relative w-full flex-1 overflow-clip rounded-none ${className}`}

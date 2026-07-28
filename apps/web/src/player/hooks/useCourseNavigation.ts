@@ -401,6 +401,10 @@ export function useCourseNavigation(
     (index: number) => dispatch({ type: 'GO_TO_SECTION', index, visited }),
     [visited],
   );
+  const navigateToSectionUnrestricted = useCallback(
+    (index: number) => dispatch({ type: 'GO_TO_SECTION', index }),
+    [],
+  );
   const finishQuiz = useCallback(() => dispatch({ type: 'QUIZ_DONE' }), []);
   const finishChapterQuiz = useCallback(
     (chapterIndex: number) => dispatch({ type: 'CHAPTER_QUIZ_DONE', chapterIndex }),
@@ -419,6 +423,7 @@ export function useCourseNavigation(
     goNext,
     goPrev,
     navigateToSection,
+    navigateToSectionUnrestricted,
     finishQuiz,
     finishChapterQuiz,
     dismissChapterIntro,

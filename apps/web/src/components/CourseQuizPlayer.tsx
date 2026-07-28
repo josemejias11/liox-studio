@@ -41,6 +41,8 @@ export interface CourseQuizPlayerProps {
 
   sessionId?: string;
   courseId?: string;
+  /** Preview authored quiz material without grading or recording attempts. */
+  preview?: boolean;
 }
 
 export function CourseQuizPlayer({
@@ -50,6 +52,7 @@ export function CourseQuizPlayer({
 
   sessionId,
   courseId,
+  preview = false,
 }: CourseQuizPlayerProps) {
   const [quiz] = useState<ClientQuiz>(() => toClientQuiz(courseQuiz));
   const [session, dispatch] = useReducer(quizSessionReducer, undefined, createQuizSessionState);
@@ -63,6 +66,47 @@ export function CourseQuizPlayer({
     const pendingTimers = timers.current;
     return () => pendingTimers.forEach(clearTimeout);
   }, []);
+
+  if (preview) {
+    return (
+      <div className="absolute inset-0 overflow-y-auto bg-[#111225] px-6 py-8 text-white md:px-10">
+        <div className="mx-auto max-w-5xl">
+          <p className="text-xs font-bold tracking-widest text-[#c4beff] uppercase">Quiz preview</p>
+          <h2 className="mt-2 text-2xl font-black md:text-3xl">{courseQuiz.title}</h2>
+          {courseQuiz.instructions && (
+            <p className="mt-3 max-w-3xl text-base leading-relaxed text-white/70">
+              {courseQuiz.instructions}
+            </p>
+          )}
+          <p className="mt-4 text-sm text-white/55">
+            Review mode: answers are not selectable, graded, or recorded.
+          </p>
+          <ol className="mt-8 space-y-6">
+            {courseQuiz.questions.map((question, questionIndex) => (
+              <li key={`${question._key}-${questionIndex}`} className="rounded-2xl border border-white/12 bg-white/8 p-5">
+                <h3 className="text-lg font-bold">
+                  {questionIndex + 1}. {question.questionText}
+                </h3>
+                <ul className="mt-4 grid gap-3 md:grid-cols-2">
+                  {question.answers.map((answer, answerIndex) => (
+                    <li
+                      key={`${answer._key}-${answerIndex}`}
+                      className="rounded-xl border border-white/12 bg-white/6 px-4 py-3 text-white/82"
+                    >
+                      <span className="mr-2 font-bold text-[#c4beff]">
+                        {OPTION_LABELS[answerIndex] ?? answerIndex + 1}.
+                      </span>
+                      {answer.text}
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    );
+  }
 
   // ── Answer selection — graded server-side per question ────────────────────
   async function handleSelect(optionIndex: number) {

@@ -24,6 +24,7 @@ interface ProductStageProps {
   onNext: () => void;
   onPrev?: () => void;
   courseId: string;
+  preview?: boolean;
 }
 
 export function ProductStage({
@@ -37,6 +38,7 @@ export function ProductStage({
   visited,
   onVisit,
   courseId,
+  preview = false,
 }: ProductStageProps) {
   const [activePanel, setActivePanel] = useState<{
     label: string;
@@ -535,6 +537,7 @@ export function ProductStage({
         y={activePanel?.y}
         mode="popover"
         courseId={courseId}
+        preview={preview}
       />
     </div>
   );

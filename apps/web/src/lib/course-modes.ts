@@ -17,5 +17,4 @@ export const ALL_LESSON_TYPES = [
   ...CANVAS_LESSON_TYPES,
 ] as const;
 
-export type CourseMode = 'standard' | 'canvas';
 export type LessonType = (typeof ALL_LESSON_TYPES)[number];

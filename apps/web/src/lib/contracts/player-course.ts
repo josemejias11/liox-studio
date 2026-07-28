@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { PortableTextBlock } from '@portabletext/types';
-import { ALL_LESSON_TYPES, type CourseMode } from '@/lib/course-modes';
+import { ALL_LESSON_TYPES } from '@/lib/course-modes';
 
 // ── Course content contract ──────────────────────────────────────────────────
 // Single source of truth for the app-owned course graph loaded from Postgres.
@@ -226,7 +226,6 @@ const chapterSchema = z.object({
 export const courseSchema = z.object({
   _id: z.string(),
   title: z.string().catch(''),
-  courseMode: z.enum(['standard', 'canvas']).catch('standard'),
   description: opt(z.string()),
   thumbnail: opt(imageSchema),
   coverImage: opt(imageSchema),
@@ -239,7 +238,6 @@ export const courseSchema = z.object({
   disclaimer: opt(disclaimerSchema),
 });
 export type CourseContent = z.output<typeof courseSchema>;
-export type { CourseMode };
 
 /** Flat discriminated union of every section type in the course flow. */
 export type CourseSection = LessonSection | CourseSpecification | AuthoredQuiz | CourseDisclaimer;
@@ -249,7 +247,6 @@ export type CourseSection = LessonSection | CourseSpecification | AuthoredQuiz |
 export const courseSummarySchema = z.object({
   _id: z.string(),
   title: z.string().catch(''),
-  courseMode: z.enum(['standard', 'canvas']).catch('standard'),
   slug: z.object({ current: z.string() }),
   description: opt(z.string()),
   thumbnail: opt(imageSchema),

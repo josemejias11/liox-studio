@@ -30,6 +30,7 @@ export interface LessonRendererProps {
   sessionId: string;
   persistSession: boolean;
   courseId: string;
+  preview: boolean;
 }
 
 export function LessonRenderer({
@@ -46,6 +47,7 @@ export function LessonRenderer({
   sessionId,
   persistSession,
   courseId,
+  preview,
 }: LessonRendererProps) {
   const completionMode = getLessonCompletionMode(lesson);
   const handleManualCompletion =
@@ -71,6 +73,7 @@ export function LessonRenderer({
           onNext={goNext}
           onPrev={goPrev}
           courseId={courseId}
+          preview={preview}
         />
       );
       break;
@@ -100,6 +103,7 @@ export function LessonRenderer({
               onFail={goNext}
               sessionId={persistSession ? sessionId : undefined}
               courseId={courseId}
+              preview={preview}
             />
           </div>
         </div>
@@ -145,6 +149,7 @@ export function LessonRenderer({
           visitedLabels={visited}
           onVisit={markVisited}
           courseId={courseId}
+          preview={preview}
         />
       );
       break;
@@ -157,6 +162,7 @@ export function LessonRenderer({
           visitedLabels={visited}
           onVisit={markVisited}
           courseId={courseId}
+          preview={preview}
         />
       );
   }

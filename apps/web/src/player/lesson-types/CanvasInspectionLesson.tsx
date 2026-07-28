@@ -13,6 +13,7 @@ interface CanvasInspectionLessonProps {
   visitedLabels: Set<string>;
   onVisit: (label: string) => void;
   courseId?: string;
+  preview?: boolean;
 }
 
 interface ActiveTarget {
@@ -46,6 +47,7 @@ export function CanvasInspectionLesson({
   visitedLabels,
   onVisit,
   courseId,
+  preview = false,
 }: CanvasInspectionLessonProps) {
   const [zoom, setZoom] = useState(MIN_CANVAS_ZOOM);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -246,6 +248,7 @@ export function CanvasInspectionLesson({
         sidebarPlacement="workbench"
         dimBackdrop={false}
         courseId={courseId}
+        preview={preview}
       />
     </div>
   );

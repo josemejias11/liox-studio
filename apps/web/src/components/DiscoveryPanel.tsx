@@ -23,6 +23,8 @@ interface DiscoveryPanelProps {
   sidebarPlacement?: 'edge' | 'workbench';
   dimBackdrop?: boolean;
   courseId?: string;
+  /** Render only authored material; do not start or expose Course AI. */
+  preview?: boolean;
 }
 
 export function DiscoveryPanel({
@@ -40,6 +42,7 @@ export function DiscoveryPanel({
   sidebarPlacement = 'edge',
   dimBackdrop = true,
   courseId,
+  preview = false,
 }: DiscoveryPanelProps) {
   const hasVideo = !!videoFile?.asset?.url;
   const hasLearnContent = !!(body || (photos?.length ?? 0) > 0 || hasVideo);
@@ -104,7 +107,7 @@ export function DiscoveryPanel({
 
   // Auto-fire AI greeting when the panel opens with a topic.
   useEffect(() => {
-    if (!open || !topic) return;
+    if (preview || !open || !topic) return;
     const greetingKey = `${label}:${topic}`;
     if (greetingKeyRef.current === greetingKey) return;
     greetingKeyRef.current = greetingKey;
@@ -116,13 +119,14 @@ export function DiscoveryPanel({
       queryOverride: `Regarding the "${topic}" feature: ${prompt}`,
       fallbackMessage: "Couldn't load content right now.",
     });
-  }, [open, label, topic, send]);
+  }, [open, label, preview, topic, send]);
 
   useEffect(() => {
     if (!open) abort();
   }, [open, abort]);
 
   function handleSend(query: string) {
+    if (preview) return;
     void send(query, {
       displayPendingAssistant: true,
       queryOverride: topic ? `Regarding the "${topic}" feature: ${query}` : query,
@@ -298,25 +302,42 @@ export function DiscoveryPanel({
               </div>
             </div>
 
-            <DiscoveryConversation
-              key={`${label}:${open ? 'open' : 'closed'}`}
-              label={label}
-              topic={topic}
-              messages={messages}
-              isLoading={isLoading}
-              hasLearnContent={hasLearnContent}
-              onSend={handleSend}
-              learnContent={
-                hasLearnContent ? (
+            {preview ? (
+              <div className="scrollbar-none flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+                {hasLearnContent ? (
                   <DiscoveryLearnContent
                     body={body}
                     photos={photos}
                     videoFile={videoFile}
                     videoAspectRatio={videoAspectRatio}
                   />
-                ) : undefined
-              }
-            />
+                ) : (
+                  <p className="px-5 py-8 text-sm text-muted-foreground">
+                    No additional authored material is available for this feature.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <DiscoveryConversation
+                key={`${label}:${open ? 'open' : 'closed'}`}
+                label={label}
+                topic={topic}
+                messages={messages}
+                isLoading={isLoading}
+                hasLearnContent={hasLearnContent}
+                onSend={handleSend}
+                learnContent={
+                  hasLearnContent ? (
+                    <DiscoveryLearnContent
+                      body={body}
+                      photos={photos}
+                      videoFile={videoFile}
+                      videoAspectRatio={videoAspectRatio}
+                    />
+                  ) : undefined
+                }
+              />
+            )}
           </div>
         );
       })()}

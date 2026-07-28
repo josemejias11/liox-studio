@@ -75,6 +75,12 @@ npm install
 npm run db:migrate
 ```
 
+The updated Course Studio requires migration
+`20260728190000_add_course_lesson_trash` before the app is started or deployed.
+It creates the PostgreSQL-backed, indefinite screen Trash store. Confirm the
+migration command completes against the target database as part of the release;
+this guide does not claim that it is currently applied.
+
 `npm run build` also applies committed migrations, so the configured database
 must be reachable during the build.
 
@@ -96,9 +102,10 @@ npm run build
 npm start
 ```
 
-The deployment must keep `/studio`, `/course/[slug]`, `/analytics`, and
-`/api/course-assets/[...key]` on the same Next.js application. HTTPS is required
-in production so authentication cookies remain protected in transit.
+The deployment must keep `/studio`, `/review/[token]`, `/course/[slug]`,
+`/analytics`, and `/api/course-assets/[...key]` on the same Next.js
+application. HTTPS is required in production so authentication cookies and
+review tokens remain protected in transit.
 
 ## Background worker
 
@@ -131,6 +138,7 @@ through the Next.js API and durable worker, never by calling the parser directly
 
 - [ ] PostgreSQL is reachable through both configured URLs.
 - [ ] `npm run db:migrate` completed against the production database.
+- [ ] Migration `20260728190000_add_course_lesson_trash` completed before the updated web app started.
 - [ ] The R2 bucket is private and credentials are scoped to it.
 - [ ] Course Studio and analytics use separate strong passwords.
 - [ ] The parser token matches across the web app, worker, and parser service.
@@ -138,7 +146,12 @@ through the Next.js API and durable worker, never by calling the parser directly
 - [ ] The web app, worker, and parser are supervised and restart on failure.
 - [ ] HTTPS, database backups, R2 backups, and ChromaDB backups are enabled.
 - [ ] A draft course can be previewed without writing learner progress.
+- [ ] A frozen revision remains unchanged after the live course is edited.
+- [ ] A review link opens only its revision and accepts lesson-specific feedback.
+- [ ] Course Studio displays submitted feedback and can mark it resolved.
 - [ ] A published course loads through `/course/[slug]`.
+- [ ] Course Studio screen deletion moves the screen to indefinite PostgreSQL Trash and supports immediate Undo and persistent Restore.
+- [ ] Direct screen deletion is recoverable; permanent Trash deletion and Empty Trash destroy Trash snapshots, while chapter deletion permanently destroys that chapter's active screens.
 
 ## Backup and recovery
 
@@ -160,6 +173,11 @@ Missing R2 objects remain missing even when their metadata row is present.
 - Rotate credentials independently; do not reuse the authoring password for
   analytics or internal service authentication.
 - Quiz answer keys remain server-side and must not be added to learner payloads.
+- Review tokens grant read-only access to one immutable revision. Only token
+  hashes are stored; generating a replacement link invalidates the previous
+  token.
+- Preview and review mode must not write learner progress, request weak-topic
+  analytics, or expose the Course AI assistant.
 - Treat immutable course revisions as the delivery audit boundary. Downstream
   Motorola and localization packaging remains a future adapter, not a runtime
   dependency.

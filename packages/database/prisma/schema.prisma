@@ -37,7 +37,6 @@ model Course {
   slug               String                  @unique
   title              String
   description        String?
-  courseMode         String                  @default("standard")
   status             CoursePublicationStatus @default(DRAFT)
   learningObjectives Json?
   cover              Json?
@@ -46,6 +45,7 @@ model Course {
   sourceFiles        Json?
   chapters           CourseChapter[]
   quizzes            CourseQuiz[]
+  trashItems         CourseLessonTrash[]
   revisions          CourseRevision[]
   createdAt          DateTime                @default(now())
   updatedAt          DateTime                @updatedAt
@@ -84,6 +84,24 @@ model CourseLesson {
 
   @@unique([chapterId, position])
   @@index([chapterId])
+}
+
+model CourseLessonTrash {
+  id           String   @id @default(cuid())
+  courseId     String
+  lessonId     String
+  chapterId    String
+  chapterTitle String
+  position     Int
+  lessonType   String
+  headline     String
+  body         Json?
+  payload      Json
+  deletedAt    DateTime @default(now())
+  course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId, deletedAt])
+  @@index([courseId, lessonId])
 }
 
 // Course quizzes remain separately addressable because server-side grading

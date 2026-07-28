@@ -43,10 +43,12 @@ export default function MotoViewer({
   course,
   sections,
   preview = false,
+  initialSectionKey,
 }: {
   course: CourseContent;
   sections: CourseSection[];
   preview?: boolean;
+  initialSectionKey?: string;
 }) {
   const flow = useMemo(
     () => deriveCourseFlow(sections, course.chapters ?? []),
@@ -57,7 +59,7 @@ export default function MotoViewer({
   const [showNavMap, setShowNavMap] = useState(false);
 
   // ── Session ───────────────────────────────────────────────────────────────
-  const { sessionId, persistSession: userPersistSession } = useCourseSession();
+  const { sessionId, persistSession: userPersistSession } = useCourseSession(preview);
   const persistSession = userPersistSession && !preview;
 
   const {
@@ -68,7 +70,23 @@ export default function MotoViewer({
   } = useLessonProgress(sessionId, persistSession, course._id);
 
   const nav = useCourseNavigation(flow, visited);
-  const { phase, navDirection, showChapterIntro, showBurst, nextLocked } = nav;
+  const {
+    phase,
+    navDirection,
+    showChapterIntro,
+    showBurst,
+    nextLocked,
+    navigateToSectionUnrestricted: navigateToPreviewSection,
+    dismissChapterIntro: dismissPreviewChapterIntro,
+  } = nav;
+
+  useEffect(() => {
+    if (!preview || !initialSectionKey) return;
+    const target = flow.items.find((item) => item.kind === 'lesson' && item.key === initialSectionKey);
+    if (!target) return;
+    navigateToPreviewSection(target.index);
+    dismissPreviewChapterIntro();
+  }, [dismissPreviewChapterIntro, flow.items, initialSectionKey, navigateToPreviewSection, preview]);
 
   // ── Current lesson (chapter phase only) ───────────────────────────────────
   const currentLesson =
@@ -114,14 +132,14 @@ export default function MotoViewer({
 
   // ── Lesson view tracking ──────────────────────────────────────────────────
   useEffect(() => {
-    if (!lessonKey || phase.phase !== 'chapter' || showChapterIntro) return;
+    if (preview || !lessonKey || phase.phase !== 'chapter' || showChapterIntro) return;
     markLessonViewed(lessonKey, course._id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lessonKey]);
+  }, [course._id, lessonKey, markLessonViewed, phase.phase, preview, showChapterIntro]);
 
   // ── Weak topics for AI quiz generation ───────────────────────────────────
   const [disclaimerCanProceed, setDisclaimerCanProceed] = useState(true);
   const { topics: weakTopics } = useWeakTopics({
+    enabled: !preview,
     phase,
     structure,
     visited,
@@ -173,7 +191,7 @@ export default function MotoViewer({
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <LessonFrame {...frameProps}>
+    <LessonFrame {...frameProps} contained={preview}>
       <AnimatePresence mode="wait" custom={navDirection}>
         <motion.div
           key={slideKey}
@@ -217,6 +235,7 @@ export default function MotoViewer({
               finishChapterQuiz={nav.finishChapterQuiz}
               dismissChapterIntro={nav.dismissChapterIntro}
               onDisclaimerCanProceedChange={setDisclaimerCanProceed}
+              preview={preview}
             />
           </ErrorBoundary>
         </motion.div>
@@ -233,6 +252,7 @@ export default function MotoViewer({
         showBurst={showBurst}
         progressError={progressError}
         persistSession={persistSession}
+        allowAssistant={!preview}
         onNavigate={navigateToSection}
         onCloseNavMap={() => setShowNavMap(false)}
       />

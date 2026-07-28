@@ -14,6 +14,7 @@ export type {
   CourseAsset,
   CourseChapter,
   CourseLesson,
+  CourseLessonTrash,
   CourseQuiz,
   CourseReview,
   CourseReviewFeedback,
@@ -31,10 +32,53 @@ export const prisma =
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
 export {
+  COURSE_LESSON_TYPES,
+  createChapter,
   createCourseTemplate,
+  createLesson,
+  deleteChapter,
+  duplicateLesson,
   getAuthoringCourse,
   getPublishedCourseBySlug,
   listAuthoringCourses,
   listPublishedCourseSummaries,
+  reorderCourseItem,
+  updateChapter,
+  updateCourseDetails,
+  updateLesson,
 } from './course-repository';
-export type { CourseGraph, CourseGraphChapter, CourseGraphLesson } from './course-repository';
+export {
+  emptyCourseTrash,
+  listCourseTrash,
+  permanentlyDeleteCourseTrashItem,
+  restoreCourseTrashItem,
+  trashLesson,
+} from './course-trash-repository';
+export {
+  createCourseReview,
+  createCourseRevision,
+  createReviewFeedback,
+  getReviewByToken,
+  listCourseReviewFeedback,
+  listCourseRevisions,
+  resolveCourseReviewFeedback,
+} from './course-review-repository';
+export type {
+  CourseFeedbackSummary,
+  CourseReviewSnapshot,
+  CourseRevisionSummary,
+} from './course-review-repository';
+export type {
+  ChapterInput,
+  CourseDetailsInput,
+  CourseGraph,
+  CourseGraphChapter,
+  CourseGraphLesson,
+  CourseLessonType,
+  LessonInput,
+} from './course-repository';
+export type {
+  CourseTrashItem,
+  RestoreTrashItemResult,
+  TrashLessonResult,
+} from './course-trash-repository';

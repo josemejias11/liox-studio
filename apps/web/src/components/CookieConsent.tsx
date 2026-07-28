@@ -3,19 +3,24 @@
 import { useEffect, useState } from 'react';
 import { X, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePathname } from 'next/navigation';
 import { getConsent, setConsent } from '@/lib/consent';
 
 export function CookieConsent() {
+  const pathname = usePathname();
   const [show, setShow] = useState(false);
+  const isCourseStudio = pathname === '/studio' || pathname.startsWith('/studio/');
 
   useEffect(() => {
+    if (isCourseStudio) return;
+
     // Check if the user has already made a choice
     if (getConsent() === 'unset') {
       // Delay showing it slightly for a smoother entry
       const timer = setTimeout(() => setShow(true), 1500);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [isCourseStudio]);
 
   function handleAccept() {
     setConsent('accepted');
@@ -28,6 +33,8 @@ export function CookieConsent() {
     setConsent('declined');
     setShow(false);
   }
+
+  if (isCourseStudio) return null;
 
   return (
     <AnimatePresence>

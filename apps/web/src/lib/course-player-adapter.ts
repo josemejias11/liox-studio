@@ -59,7 +59,6 @@ function rawCourse(course: CourseGraph) {
   return {
     _id: course.id,
     title: course.title,
-    courseMode: course.courseMode,
     description: course.description ?? undefined,
     learningObjectives: course.learningObjectives ?? undefined,
     thumbnail: cover.thumbnail,
@@ -94,7 +93,6 @@ export function toPlayerCourseSummary(input: {
   id: string;
   slug: string;
   title: string;
-  courseMode: string;
   description: string | null;
   learningObjectives: unknown;
   cover: unknown;
@@ -104,7 +102,6 @@ export function toPlayerCourseSummary(input: {
   const parsed = courseSummarySchema.safeParse({
     _id: input.id,
     title: input.title,
-    courseMode: input.courseMode,
     slug: { current: input.slug },
     description: input.description ?? undefined,
     thumbnail: cover.thumbnail,

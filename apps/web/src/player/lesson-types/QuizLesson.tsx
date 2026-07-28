@@ -22,6 +22,7 @@ export interface QuizLessonProps {
    */
   sessionId?: string;
   courseId?: string;
+  preview?: boolean;
 }
 
 // ── Lesson entry point ────────────────────────────────────────────────────────
@@ -36,6 +37,7 @@ export function QuizLesson({
   onFail,
   sessionId,
   courseId,
+  preview = false,
 }: QuizLessonProps) {
   if (courseQuiz) {
     return (
@@ -45,6 +47,7 @@ export function QuizLesson({
         onFail={onFail}
         sessionId={sessionId}
         courseId={courseId}
+        preview={preview}
       />
     );
   }
@@ -69,6 +72,7 @@ export function QuizLesson({
             sessionId={sessionId}
             onPass={onPass}
             onFail={onFail}
+            preview={preview}
           />
         </div>
       </div>

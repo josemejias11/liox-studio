@@ -23,6 +23,7 @@ interface ContentLessonProps {
   onVisit: (label: string) => void;
   /** Forwarded to DiscoveryPanel for its AI chat calls. */
   courseId?: string;
+  preview?: boolean;
 }
 
 interface ActivePanel {
@@ -82,6 +83,7 @@ export function ContentLesson({
   visitedLabels,
   onVisit,
   courseId,
+  preview = false,
 }: ContentLessonProps) {
   const [activeLearningTarget, setActiveLearningTarget] = useState<CourseHotspot | null>(null);
   const [activeTutorTarget, setActiveTutorTarget] = useState<ActivePanel | null>(null);
@@ -293,6 +295,7 @@ export function ContentLesson({
         y={activeTutorTarget?.y}
         mode="popover"
         courseId={courseId}
+        preview={preview}
       />
     </div>
   );

@@ -90,7 +90,7 @@ export default async function Home() {
                       {course.title}
                     </h2>
                     <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
-                      {course.courseMode === 'canvas' ? 'Canvas course' : 'Standard course'}
+                      Unified learning course
                     </p>
                     {course.description && (
                       <p className="text-muted-foreground line-clamp-2 text-sm font-light">

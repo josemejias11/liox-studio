@@ -40,6 +40,7 @@ export interface CoursePhaseScreenProps {
   finishChapterQuiz: (chapterIndex: number) => void;
   dismissChapterIntro: () => void;
   onDisclaimerCanProceedChange: (canProceed: boolean) => void;
+  preview: boolean;
 }
 
 export function getCoursePhaseSlideKey(args: {
@@ -85,6 +86,7 @@ export function CoursePhaseScreen({
   finishChapterQuiz,
   dismissChapterIntro,
   onDisclaimerCanProceedChange,
+  preview,
 }: CoursePhaseScreenProps) {
   const { currentLesson } = lessonRuntime;
   switch (phase.phase) {
@@ -126,6 +128,7 @@ export function CoursePhaseScreen({
               onFail={finishQuiz}
               sessionId={persistSession ? sessionId : undefined}
               courseId={course._id}
+              preview={preview}
             />
           </div>
         </div>
@@ -146,6 +149,7 @@ export function CoursePhaseScreen({
             onFail={() => finishChapterQuiz(phase.chapterIndex)}
             sessionId={persistSession ? sessionId : undefined}
             courseId={course._id}
+            preview={preview}
           />
         </div>
       );
@@ -199,6 +203,7 @@ export function CoursePhaseScreen({
           sessionId={sessionId}
           persistSession={persistSession}
           courseId={course._id}
+          preview={preview}
         />
       );
     }

@@ -8,6 +8,7 @@ const MAX_SESSION_WEAK_TOPICS = 10;
 const MAX_MERGED_WEAK_TOPICS = 15;
 
 export interface UseWeakTopicsArgs {
+  enabled?: boolean;
   phase: CoursePhase;
   structure: CourseStructure;
   visited: Record<string, Set<string>>;
@@ -48,6 +49,7 @@ export function mergeWeakTopics(
 }
 
 export function useWeakTopics({
+  enabled = true,
   phase,
   structure,
   visited,
@@ -68,12 +70,12 @@ export function useWeakTopics({
     (phase.phase === 'chapter' && currentLessonType === 'quiz');
 
   const topics = useMemo(
-    () => mergeWeakTopics(isQuizPhase, sessionWeakTopics, apiWeakTopics),
-    [apiWeakTopics, isQuizPhase, sessionWeakTopics],
+    () => enabled ? mergeWeakTopics(isQuizPhase, sessionWeakTopics, apiWeakTopics) : [],
+    [apiWeakTopics, enabled, isQuizPhase, sessionWeakTopics],
   );
 
   useEffect(() => {
-    if (!isQuizPhase) return;
+    if (!enabled || !isQuizPhase) return;
 
     const controller = new AbortController();
 
@@ -112,7 +114,7 @@ export function useWeakTopics({
 
     void loadWeakTopics();
     return () => controller.abort();
-  }, [courseId, isQuizPhase, structure.lessonSections]);
+  }, [courseId, enabled, isQuizPhase, structure.lessonSections]);
 
   return { topics, isLoading };
 }

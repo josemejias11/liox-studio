@@ -25,6 +25,8 @@ export interface CourseQuizProps {
   onPass?: (score: number) => void;
   /** Called when the learner fails and chooses to move on / retry. */
   onFail?: () => void;
+  /** Previews must not create quiz jobs or submit answers for grading. */
+  preview?: boolean;
 }
 
 type Step = 'idle' | 'generating' | 'ready' | 'playing';
@@ -57,13 +59,35 @@ async function waitForQuizJob(jobId: string, onProgress: (progress: string | nul
 // (no correct_answer fields) and renders the per-question results returned by
 // /api/quiz/grade.
 
-export function CourseQuiz({ courseId, weakTopics, sessionId, onPass, onFail }: CourseQuizProps) {
+export function CourseQuiz({
+  courseId,
+  weakTopics,
+  sessionId,
+  onPass,
+  onFail,
+  preview = false,
+}: CourseQuizProps) {
   const [step, setStep] = useState<Step>('idle');
   const [quiz, setQuiz] = useState<ClientQuiz | null>(null);
   const [session, dispatch] = useReducer(quizSessionReducer, undefined, createQuizSessionState);
   const [grading, setGrading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [generationProgress, setGenerationProgress] = useState<string | null>(null);
+
+  if (preview) {
+    return (
+      <div className="border-border/20 bg-background mx-auto flex h-[600px] w-full max-w-2xl flex-col items-center justify-center rounded-2xl border p-8 text-center shadow-xl backdrop-blur-xl">
+        <div className="bg-accent/10 mb-6 flex h-20 w-20 items-center justify-center rounded-full">
+          <Brain className="text-accent h-10 w-10" />
+        </div>
+        <h2 className="text-foreground text-2xl font-bold">Adaptive AI quiz preview</h2>
+        <p className="text-muted-foreground mt-3 max-w-md leading-relaxed">
+          This quiz is generated for each learner from their course activity. It is unavailable in
+          preview, so no quiz is generated or graded here.
+        </p>
+      </div>
+    );
+  }
 
   const generateQuiz = async () => {
     setStep('generating');

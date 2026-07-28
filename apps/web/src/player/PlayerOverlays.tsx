@@ -18,6 +18,7 @@ interface PlayerOverlaysProps {
   showBurst: boolean;
   progressError: unknown;
   persistSession: boolean;
+  allowAssistant: boolean;
   onNavigate: (index: number) => void;
   onCloseNavMap: () => void;
 }
@@ -33,6 +34,7 @@ export function PlayerOverlays({
   showBurst,
   progressError,
   persistSession,
+  allowAssistant,
   onNavigate,
   onCloseNavMap,
 }: PlayerOverlaysProps) {
@@ -54,7 +56,7 @@ export function PlayerOverlays({
         />
       )}
 
-      {showAssistant && <CourseAIFab courseId={courseId} />}
+      {allowAssistant && showAssistant && <CourseAIFab courseId={courseId} />}
 
       {progressError && persistSession && (
         <div

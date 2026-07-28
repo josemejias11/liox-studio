@@ -3,11 +3,15 @@
 import { useEffect, useState } from 'react';
 import { CONSENT_EVENT, SESSION_KEY, getConsent, type ConsentStatus } from '@/lib/consent';
 
-export function useCourseSession(): { sessionId: string; persistSession: boolean } {
+export function useCourseSession(preview = false): { sessionId: string; persistSession: boolean } {
   const [sessionId, setSessionId] = useState<string>('');
   const [persistSession, setPersistSession] = useState(false);
+  const [previewSessionId] = useState(() => crypto.randomUUID());
 
   useEffect(() => {
+    // Studio and review previews must not observe or mutate learner identity.
+    if (preview) return;
+
     const consent = getConsent();
     let sid = consent === 'accepted' ? localStorage.getItem(SESSION_KEY) : null;
     if (consent === 'accepted' && !sid) {
@@ -35,7 +39,10 @@ export function useCourseSession(): { sessionId: string; persistSession: boolean
 
     window.addEventListener(CONSENT_EVENT, onConsentChange);
     return () => window.removeEventListener(CONSENT_EVENT, onConsentChange);
-  }, []);
+  }, [preview]);
 
-  return { sessionId, persistSession };
+  return {
+    sessionId: preview ? previewSessionId : sessionId,
+    persistSession: preview ? false : persistSession,
+  };
 }
