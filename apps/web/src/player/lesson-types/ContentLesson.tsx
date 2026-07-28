@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import Image from 'next/image';
 import { BookOpen, MousePointer2, PlayCircle } from 'lucide-react';
 import { PortableText } from '@portabletext/react';
@@ -15,6 +15,7 @@ import {
   InlineDiscoveryCueProvider,
   type InlineDiscoveryCueResolver,
 } from './InlineDiscoveryCue';
+import { FeatureLearningLoop } from './FeatureLearningLoop';
 
 interface ContentLessonProps {
   lesson: LessonSection;
@@ -83,7 +84,10 @@ export function ContentLesson({
   onVisit,
   courseId,
 }: ContentLessonProps) {
-  const [activePanel, setActivePanel] = useState<ActivePanel | null>(null);
+  const [activeLearningTarget, setActiveLearningTarget] = useState<SanityHotspot | null>(null);
+  const [activeTutorTarget, setActiveTutorTarget] = useState<ActivePanel | null>(null);
+  const hotspotRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const activeLearningHotspotRef = useRef<HTMLButtonElement | null>(null);
 
   const imageUrl = lesson.media?.asset?.url;
   const overlayX = lesson.textOverlay?.x ?? 6;
@@ -105,11 +109,14 @@ export function ContentLesson({
       visited: visitedLabels.has(label),
       onActivate: () => {
         onVisit(label);
-        if (hotspot) setActivePanel(toActivePanel(hotspot));
+        if (hotspot) setActiveTutorTarget(toActivePanel(hotspot));
       },
     };
   };
   const linkedHotspotLabels = isInteraction ? new Set<string>() : getLayerLinkLabels(lesson.body);
+  const visibleHotspots = hotspots.filter(
+    (hotspot) => isInteraction || !linkedHotspotLabels.has(hotspot.label),
+  );
 
   return (
     <div
@@ -236,11 +243,12 @@ export function ContentLesson({
       )}
 
       {/* Hotspots */}
-      {hotspots
-        .filter((hotspot) => isInteraction || !linkedHotspotLabels.has(hotspot.label))
-        .map((h, i) => (
+      {visibleHotspots.map((h, i) => (
           <Hotspot
             key={i}
+            ref={(element) => {
+              hotspotRefs.current[i] = element;
+            }}
             x={h.x}
             y={h.y}
             label={h.label}
@@ -250,21 +258,41 @@ export function ContentLesson({
               h.videoFile?.asset?.url ? <PlayCircle className="h-5 w-5 text-white" /> : undefined
             }
             onVisit={() => onVisit(h.label)}
-            onOpen={() => setActivePanel(toActivePanel(h))}
+            onOpen={() => {
+              activeLearningHotspotRef.current = hotspotRefs.current[i];
+              setActiveLearningTarget(h);
+            }}
           />
         ))}
 
+      {activeLearningTarget && (
+        <FeatureLearningLoop
+          label={activeLearningTarget.label}
+          body={activeLearningTarget.body}
+          photos={activeLearningTarget.photos}
+          videoFile={activeLearningTarget.videoFile}
+          videoAspectRatio={activeLearningTarget.videoAspectRatio}
+          onClose={() => setActiveLearningTarget(null)}
+          onAskTutor={() => {
+            const tutorTarget = toActivePanel(activeLearningTarget);
+            setActiveLearningTarget(null);
+            setActiveTutorTarget(tutorTarget);
+          }}
+          returnFocusRef={activeLearningHotspotRef}
+        />
+      )}
+
       <DiscoveryPanel
-        open={activePanel !== null}
-        onClose={() => setActivePanel(null)}
-        label={activePanel?.title ?? ''}
-        topic={activePanel?.topic}
-        body={activePanel?.body}
-        photos={activePanel?.photos}
-        videoFile={activePanel?.videoFile}
-        videoAspectRatio={activePanel?.videoAspectRatio}
-        x={activePanel?.x}
-        y={activePanel?.y}
+        open={activeTutorTarget !== null}
+        onClose={() => setActiveTutorTarget(null)}
+        label={activeTutorTarget?.title ?? ''}
+        topic={activeTutorTarget?.topic}
+        body={activeTutorTarget?.body}
+        photos={activeTutorTarget?.photos}
+        videoFile={activeTutorTarget?.videoFile}
+        videoAspectRatio={activeTutorTarget?.videoAspectRatio}
+        x={activeTutorTarget?.x}
+        y={activeTutorTarget?.y}
         mode="popover"
         courseId={courseId}
       />

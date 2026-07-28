@@ -1,6 +1,6 @@
 # Moto Tutor AI — eLearning Platform
 
-An AI-powered eLearning platform that replaces traditional authoring tools (Articulate Storyline, Adobe Captivate) with a modern CMS-driven system. Instructional designers author content in a headless CMS and upload course files directly to the CMS. Learners interact with a 16:9 interactive course player featuring a localized AI course assistant and adaptive quiz generation based on their analytics.
+An AI-powered eLearning platform that replaces traditional authoring tools (Articulate Storyline, Adobe Captivate) with a modern CMS-driven system. Lionbridge instructional designers create Motorola learning masters in the embedded Course Studio authoring workspace and manage course assets in Sanity. Learners interact with a 16:9 interactive course player featuring a localized AI course assistant and adaptive quiz generation based on their analytics.
 
 ---
 
@@ -17,7 +17,7 @@ apps/web (Next.js 16) ───────► apps/job-worker ─────�
   /course library                     │                    /api/upload
   /course/[slug]                      │                    /api/document
   /analytics                          │                    /api/chat
-  /studio                             │                    /api/generate-quiz
+  /studio (Sanity + Course Studio)    │                    /api/generate-quiz
                                      ▼
                               packages/database (PostgreSQL)
 ```
@@ -289,11 +289,17 @@ Strict 16:9 interactive player with animated lesson transitions, hotspot-gated n
 | `SanityQuizPlayer` | Static CMS-authored quiz — shown only when a quiz document is explicitly attached to the course         |
 | `NavMap`           | Full-course map with type icons and completion dots; Knowledge Check entry always visible               |
 
-### Sanity Studio — authoring tool
+### Sanity Studio and Course Studio — authoring tools
 
 `http://localhost:3000/studio`
 
-Where instructional designers create and publish course content.
+`http://localhost:3000/studio` is the Lionbridge-only authoring environment. It contains both the standard Sanity tools and the custom **Course Studio** tool.
+
+**Course Studio** — use this canvas-first workspace to create a Course from the Lionbridge template, add Chapters and learning screens, select screens in the outline, and edit the selected Course, Chapter, or Lesson in the inspector. Its block library exposes the ten learner-supported lesson types: Content, Hotspot Exploration, Product Stage, Video, In-lesson Quiz, Canvas Inspection, Colour Switcher, Split Screen, Drag and Drop, and Scroll Story.
+
+Course Studio also keeps a **Master history**. **Freeze master** records the complete authored Course, its source revision, and a SHA-256 fingerprint as an immutable Sanity snapshot linked to that Course. A master is an internal Lionbridge record; it is not a localization workflow, agency package, asset export, or learner-content publishing action.
+
+Use the standard Sanity structure and document editors for existing content management tasks that are not part of the Course Studio workflow.
 
 **Course Material file library** — the Course document includes a persistent, additive file library. Upload `.pdf`, `.docx`, `.pptx`, and `.xlsx` files directly into ChromaDB for the AI to learn from. Each upload appends an entry; re-uploading the same filename replaces its chunks without adding a duplicate row. The ✕ button removes the Sanity record **and** purges the file's chunks from ChromaDB in one action.
 

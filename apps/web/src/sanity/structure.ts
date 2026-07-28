@@ -105,17 +105,6 @@ export function structure(S: StructureBuilder) {
             ),
         ),
 
-      S.listItem()
-        .title('Course Studio')
-        .icon(BookIcon)
-        .child(
-          S.documentList()
-            .title('Localization releases')
-            .schemaType('courseLocaleRelease')
-            .filter('_type == "courseLocaleRelease"')
-            .defaultOrdering([{ field: '_createdAt', direction: 'desc' }]),
-        ),
-
       S.divider(),
 
       // ── Standalone archives (for authoring before assigning) ──────────────
