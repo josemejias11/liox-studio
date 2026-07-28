@@ -47,8 +47,6 @@ local environment files.
 | `PARSER_SERVICE_URL` | Yes for AI features | Internal parser-service base URL |
 | `PARSER_SERVICE_TOKEN` | Yes for AI features | Shared secret used by the web app, worker, and parser service |
 | `JOB_WORKER_POLL_INTERVAL_MS` | No | Worker polling interval; defaults to the repository setting |
-| `UPSTASH_REDIS_REST_URL` | No | Optional rate-limit store |
-| `UPSTASH_REDIS_REST_TOKEN` | No | Optional rate-limit store credential |
 
 `COURSE_STUDIO_PASSWORD`, `ANALYTICS_PASSWORD`, and
 `PARSER_SERVICE_TOKEN` must be separate random values.

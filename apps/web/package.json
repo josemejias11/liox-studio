@@ -16,8 +16,6 @@
     "@moto-ai/parser-client": "0.1.0",
     "@portabletext/react": "^6.2.0",
     "@portabletext/types": "^4.0.2",
-    "@upstash/ratelimit": "^2.0.8",
-    "@upstash/redis": "^1.38.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.40.0",
     "lucide-react": "^1.17.0",

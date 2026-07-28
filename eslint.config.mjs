@@ -13,7 +13,7 @@ const eslintConfig = defineConfig([
     '**/build/**',
     '**/next-env.d.ts',
     'packages/database/src/generated/**',
-    // The Figma plugin has its own TypeScript build and generated artifacts.
+    // The parser service uses Python tooling and is not part of ESLint.
     'services/parser-service/**',
   ]),
   {

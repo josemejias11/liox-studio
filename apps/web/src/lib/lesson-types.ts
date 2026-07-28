@@ -1,4 +1,4 @@
-export const STANDARD_LESSON_TYPES = [
+export const ALL_LESSON_TYPES = [
   'content',
   'interaction',
   'stage',
@@ -8,13 +8,7 @@ export const STANDARD_LESSON_TYPES = [
   'dragDrop',
   'colorSwitcher',
   'scrollStory',
-] as const;
-
-export const CANVAS_LESSON_TYPES = ['canvas'] as const;
-
-export const ALL_LESSON_TYPES = [
-  ...STANDARD_LESSON_TYPES,
-  ...CANVAS_LESSON_TYPES,
+  'canvas',
 ] as const;
 
 export type LessonType = (typeof ALL_LESSON_TYPES)[number];

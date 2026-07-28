@@ -10,9 +10,6 @@
 !.yarn/releases
 !.yarn/versions
 
-# testing
-/coverage
-
 # next.js
 **/.next/
 /out/
@@ -39,9 +36,6 @@ yarn-error.log*
 .env*
 !.env.example
 !.env.local.example
-
-# vercel
-.vercel
 
 # typescript
 *.tsbuildinfo

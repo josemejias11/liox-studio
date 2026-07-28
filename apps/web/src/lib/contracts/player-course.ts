@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { PortableTextBlock } from '@portabletext/types';
-import { ALL_LESSON_TYPES } from '@/lib/course-modes';
+import { ALL_LESSON_TYPES } from '@/lib/lesson-types';
 
 // ── Course content contract ──────────────────────────────────────────────────
 // Single source of truth for the app-owned course graph loaded from Postgres.
