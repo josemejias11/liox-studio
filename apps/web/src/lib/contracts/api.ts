@@ -53,7 +53,7 @@ export type UploadResponse = JobAcceptedResponse;
 // ── Weak-topics contract (browser ⇄ /api/analytics/weak-topics) ───────────────
 // Called by MotoViewer before quiz generation to fetch cross-session engagement
 // signals. The client sends lesson metadata so the server can map lessonIds to
-// human-readable topics without a Sanity round-trip.
+// human-readable topics without an additional content-store round trip.
 
 export const WeakTopicsRequestSchema = z.object({
   courseId: z.string().min(1).max(100),

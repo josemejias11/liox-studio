@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import type { SanityDisclaimer } from '@/lib/contracts/sanity';
+import type { CourseDisclaimer } from '@/lib/contracts/course';
 
-type DisclaimerCategory = NonNullable<SanityDisclaimer['category']>;
+type DisclaimerCategory = NonNullable<CourseDisclaimer['category']>;
 
 interface DisclaimerPageProps {
-  disclaimer: SanityDisclaimer;
+  disclaimer: CourseDisclaimer;
   onNext: () => void;
   onCanProceedChange?: (canProceed: boolean) => void;
 }

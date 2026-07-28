@@ -39,7 +39,7 @@ export function useLessonProgress(
     }).catch(() => {});
   };
   const { data, error, isLoading, mutate } = useSWR<ProgressData>(
-    sessionId ? `/api/progress?sessionId=${sessionId}` : null,
+    sessionId && persist ? `/api/progress?sessionId=${sessionId}` : null,
     fetcher,
     {
       revalidateOnFocus: false,

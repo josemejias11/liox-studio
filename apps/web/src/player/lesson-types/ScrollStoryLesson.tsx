@@ -3,7 +3,7 @@ import { motion, AnimatePresence, useScroll, useReducedMotion } from 'framer-mot
 import { PortableText } from '@portabletext/react';
 import { supMark } from '@/lib/portable-text-components';
 import { CheckCircle2 } from 'lucide-react';
-import type { SanityLesson } from '@/lib/contracts/sanity';
+import type { CourseLesson } from '@/lib/contracts/course';
 import Image from 'next/image';
 import {
   InlineDiscoveryCueMark,
@@ -12,7 +12,7 @@ import {
 } from './InlineDiscoveryCue';
 
 interface ScrollStoryLessonProps {
-  lesson: SanityLesson;
+  lesson: CourseLesson;
   isCompleted: boolean;
   onComplete: () => void;
   visitedLabels: Set<string>;
@@ -192,7 +192,7 @@ export default function ScrollStoryLesson({
                 ) : (
                   <InlineDiscoveryCueProvider resolveLinkedLayer={resolveLinkedLayer}>
                     <PortableText
-                      value={chapter.body as import('sanity').PortableTextBlock[]}
+                      value={chapter.body as import('@portabletext/types').PortableTextBlock[]}
                       components={SCROLL_STORY_PORTABLE_TEXT_COMPONENTS}
                     />
                   </InlineDiscoveryCueProvider>

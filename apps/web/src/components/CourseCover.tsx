@@ -3,7 +3,6 @@
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
-import { sanityImageLoader } from '@/lib/sanity-image-loader';
 
 interface CourseCoverProps {
   title: string;
@@ -49,7 +48,6 @@ export function CourseCover({
             fill
             priority
             sizes="100vw"
-            loader={sanityImageLoader}
             className="object-cover"
           />
         </motion.div>

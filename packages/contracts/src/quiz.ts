@@ -6,8 +6,8 @@ import { z } from 'zod';
 //   1. /api/quiz        — generates an AI quiz, persists the full payload
 //                         (ServerAiQuizSchema) in Prisma, returns ClientQuizSchema.
 //   2. /api/quiz/grade  — grades a single question or a full submission against
-//                         the server-side source of truth (Prisma for AI quizzes,
-//                         Sanity for CMS quizzes) and records the attempt.
+//                         the server-side source of truth in Postgres and records
+//                         the attempt.
 //   3. QuizLesson.tsx   — consumes ClientQuizSchema and the grade responses.
 
 // ── Generate request (browser → /api/quiz) ────────────────────────────────────
@@ -54,11 +54,11 @@ export const ClientQuizQuestionSchema = z.object({
 
 export type ClientQuizQuestion = z.infer<typeof ClientQuizQuestionSchema>;
 
-export const QuizSourceSchema = z.enum(['ai', 'sanity']);
+export const QuizSourceSchema = z.enum(['ai', 'course']);
 export type QuizSource = z.infer<typeof QuizSourceSchema>;
 
 export const ClientQuizSchema = z.object({
-  /** GeneratedQuiz.id (ai) or the Sanity quiz document _id (sanity). */
+  /** GeneratedQuiz.id (ai) or the authored CourseQuiz.id (course). */
   quizId: z.string().min(1).max(100),
   source: QuizSourceSchema,
   title: z.string().max(200),

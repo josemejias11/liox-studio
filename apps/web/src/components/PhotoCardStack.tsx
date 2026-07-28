@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { titleFromFilename } from '@/lib/utils';
-import type { SanityPhoto } from '@/lib/contracts/sanity';
+import type { CoursePhoto } from '@/lib/contracts/course';
 
 interface PhotoCardStackProps {
-  photos: SanityPhoto[];
+  photos: CoursePhoto[];
   autoScrollInterval?: number;
 }
 

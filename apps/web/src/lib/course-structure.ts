@@ -1,10 +1,10 @@
 import type {
   CourseSection,
   LessonSection,
-  SanityDisclaimer,
-  SanityQuizDoc,
-  SanitySpecification,
-} from '@/lib/contracts/sanity';
+  CourseDisclaimer,
+  AuthoredQuiz,
+  CourseSpecification,
+} from '@/lib/contracts/course';
 
 // ── Derived course structure ──────────────────────────────────────────────────
 // One source of truth for grouping raw course sections into chapter-aware lesson
@@ -14,7 +14,7 @@ import type {
 export interface ChapterGroup {
   chapterIndex: number;
   chapterTitle: string;
-  quickCheck?: SanityQuizDoc;
+  quickCheck?: AuthoredQuiz;
   /** Lessons in this chapter, each carrying its absolute section index. */
   lessons: Array<{ section: LessonSection; absoluteIndex: number }>;
 }
@@ -22,8 +22,8 @@ export interface ChapterGroup {
 export interface CourseStructure {
   sections: CourseSection[];
   lessonSections: LessonSection[];
-  specSections: SanitySpecification[];
-  disclaimerSection: SanityDisclaimer | undefined;
+  specSections: CourseSpecification[];
+  disclaimerSection: CourseDisclaimer | undefined;
   /** Unique chapters in course order, with their lessons grouped. */
   chapters: ChapterGroup[];
   totalSections: number;
@@ -31,14 +31,14 @@ export interface CourseStructure {
 
 export function deriveCourseStructure(
   sections: CourseSection[],
-  rawChapters: Array<{ quickCheck?: SanityQuizDoc }> = [],
+  rawChapters: Array<{ quickCheck?: AuthoredQuiz }> = [],
 ): CourseStructure {
   const lessonSections = sections.filter((s): s is LessonSection => s.sectionType === 'lesson');
   const specSections = sections.filter(
-    (s): s is SanitySpecification => s.sectionType === 'specification',
+    (s): s is CourseSpecification => s.sectionType === 'specification',
   );
   const disclaimerSection = sections.find(
-    (s): s is SanityDisclaimer => s.sectionType === 'disclaimer',
+    (s): s is CourseDisclaimer => s.sectionType === 'disclaimer',
   );
 
   // Group lessons by chapterIndex while preserving absolute section indices.

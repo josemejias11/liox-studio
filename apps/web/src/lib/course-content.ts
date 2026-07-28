@@ -1,12 +1,12 @@
-import { courseSchema, type CourseSection, type LessonSection, type SanityCourse } from '@/lib/contracts/sanity';
+import { courseSchema, type CourseSection, type LessonSection, type CourseContent } from '@/lib/contracts/course';
 
 export interface NormalizedCourseContent {
-  course: SanityCourse;
+  course: CourseContent;
   sections: CourseSection[];
 }
 
 /**
- * Validate raw Sanity data and normalize it into a flat sections array.
+ * Validate the persisted course graph and normalize it into a flat sections array.
  * Returns `null` when the payload fails contract validation.
  */
 export function normalizeCourseContent(raw: unknown): NormalizedCourseContent | null {

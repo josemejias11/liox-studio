@@ -7,10 +7,9 @@ import { Check, CheckCircle2 } from 'lucide-react';
 import { Hotspot } from '@/components/Hotspot';
 import { DiscoveryPanel } from '@/components/DiscoveryPanel';
 import { CompletionBurst } from '@/components/CompletionBurst';
-import { sanityImageLoader } from '@/lib/sanity-image-loader';
 import { PortableText } from '@portabletext/react';
 import { supMark } from '@/lib/portable-text-components';
-import type { RichText, SanityHotspot, SanityPhoto } from '@/lib/contracts/sanity';
+import type { RichText, CourseHotspot, CoursePhoto } from '@/lib/contracts/course';
 
 interface ProductStageProps {
   headline: string;
@@ -19,7 +18,7 @@ interface ProductStageProps {
   stageBackground?: string;
   enableCompletionAnimation?: boolean;
   completionTransition?: 'spin' | 'rise' | 'fade';
-  hotspots: SanityHotspot[];
+  hotspots: CourseHotspot[];
   visited: Set<string>;
   onVisit: (label: string) => void;
   onNext: () => void;
@@ -43,7 +42,7 @@ export function ProductStage({
     label: string;
     topic: string;
     body?: RichText;
-    photos?: SanityPhoto[];
+    photos?: CoursePhoto[];
     videoFile?: { asset?: { url?: string } };
     videoAspectRatio?: string;
     x?: number;
@@ -258,7 +257,6 @@ export function ProductStage({
             fill
             priority
             sizes="100vw"
-            loader={sanityImageLoader}
             className="object-cover"
           />
         </motion.div>
@@ -316,7 +314,6 @@ export function ProductStage({
                 alt={headline}
                 width={1200}
                 height={1200}
-                loader={sanityImageLoader}
                 sizes="(max-width: 768px) 100vw, 80vw"
                 className="h-[78vh] max-h-full w-auto object-contain drop-shadow-[0_24px_64px_rgba(0,0,0,0.75)]"
               />
@@ -503,7 +500,7 @@ export function ProductStage({
         </h2>
         {body && (
           <div className="prose prose-sm max-w-none font-light leading-relaxed text-white/70 md:prose-base prose-invert">
-            {typeof body === 'string' ? <p>{body}</p> : <PortableText value={body as import('sanity').PortableTextBlock[]} components={{ marks: supMark }} />}
+            {typeof body === 'string' ? <p>{body}</p> : <PortableText value={body as import('@portabletext/types').PortableTextBlock[]} components={{ marks: supMark }} />}
           </div>
         )}
       </div>

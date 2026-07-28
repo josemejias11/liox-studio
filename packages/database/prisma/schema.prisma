@@ -5,18 +5,178 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")       // pooled (PgBouncer) URL for runtime queries
-  directUrl = env("DIRECT_URL")         // direct connection for migrations only
+  url       = env("DATABASE_URL") // pooled (PgBouncer) URL for runtime queries
+  directUrl = env("DIRECT_URL") // direct connection for migrations only
+}
+
+// ── App-owned course authoring ──────────────────────────────────────────────
+//
+// Course identity deliberately uses a caller-provided String ID. The one-time
+// The one-time legacy import preserves existing document IDs, so historical learner progress
+// continues to point at the same course and lesson identifiers after cutover.
+
+enum CoursePublicationStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum CourseRevisionStatus {
+  DRAFT
+  IN_REVIEW
+  CHANGES_REQUESTED
+  APPROVED
+  ARCHIVED
+}
+
+enum CourseFeedbackStatus {
+  OPEN
+  RESOLVED
+}
+
+model Course {
+  id                 String                  @id
+  slug               String                  @unique
+  title              String
+  description        String?
+  courseMode         String                  @default("standard")
+  status             CoursePublicationStatus @default(DRAFT)
+  learningObjectives Json?
+  cover              Json?
+  specifications     Json?
+  disclaimer         Json?
+  sourceFiles        Json?
+  chapters           CourseChapter[]
+  quizzes            CourseQuiz[]
+  revisions          CourseRevision[]
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+
+  @@index([status, createdAt])
+}
+
+model CourseChapter {
+  id                String         @id
+  courseId          String
+  title             String
+  position          Int
+  estimatedDuration Int?
+  quickCheckId      String?        @unique
+  course            Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons           CourseLesson[]
+  quickCheck        CourseQuiz?    @relation("ChapterQuickCheck", fields: [quickCheckId], references: [id], onDelete: SetNull)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@unique([courseId, position])
+  @@index([courseId])
+}
+
+model CourseLesson {
+  id         String        @id
+  chapterId  String
+  position   Int
+  lessonType String
+  headline   String
+  body       Json?
+  payload    Json          @default("{}")
+  chapter    CourseChapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@unique([chapterId, position])
+  @@index([chapterId])
+}
+
+// Course quizzes remain separately addressable because server-side grading
+// receives their IDs. Their editable question/answer structure is stored as
+// JSON preserves every authored quiz shape without leaking answer keys.
+model CourseQuiz {
+  id                String         @id
+  courseId          String
+  title             String?
+  instructions      String?
+  payload           Json           @default("{}")
+  course            Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  chapterQuickCheck CourseChapter? @relation("ChapterQuickCheck")
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@index([courseId])
+}
+
+// R2 owns the bytes. This table is the durable application inventory for asset
+// identity, object location, and delivery metadata.
+model CourseAsset {
+  id          String   @id @default(cuid())
+  r2Key       String   @unique
+  filename    String
+  contentType String?
+  byteSize    Int?
+  publicUrl   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// A revision is an immutable learner-ready snapshot used for client review and
+// approval. A later localization/export adapter will consume approved revisions
+// without changing the authoring graph or review history.
+model CourseRevision {
+  id          String               @id @default(cuid())
+  courseId    String
+  sourceHash  String
+  sourceTitle String
+  version     Int
+  status      CourseRevisionStatus @default(DRAFT)
+  snapshot    Json
+  notes       String?
+  submittedAt DateTime?
+  approvedAt  DateTime?
+  createdAt   DateTime             @default(now())
+  course      Course               @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  review      CourseReview?
+
+  @@unique([courseId, version])
+  @@unique([courseId, sourceHash])
+  @@index([courseId, createdAt])
+}
+
+// A review link grants read-only access to exactly one immutable revision.
+// The token is stored only as a hash so the original review URL cannot be
+// reconstructed from the database.
+model CourseReview {
+  id              String                 @id @default(cuid())
+  revisionId      String                 @unique
+  accessTokenHash String                 @unique
+  expiresAt       DateTime?
+  createdAt       DateTime               @default(now())
+  revision        CourseRevision         @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+  feedback        CourseReviewFeedback[]
+}
+
+model CourseReviewFeedback {
+  id         String               @id @default(cuid())
+  reviewId   String
+  lessonId   String?
+  anchor     Json?
+  authorName String
+  message    String
+  status     CourseFeedbackStatus @default(OPEN)
+  createdAt  DateTime             @default(now())
+  resolvedAt DateTime?
+  review     CourseReview         @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId, status, createdAt])
 }
 
 // Tracks user sessions
 model Session {
-  id          String          @id // Browser-generated UUID
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt // Tracks last activity
-  progress    LessonProgress[]
-  quizzes     QuizAttempt[]
-  hotspots    HotspotVisit[]
+  id        String           @id // Browser-generated UUID
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt // Tracks last activity
+  progress  LessonProgress[]
+  quizzes   QuizAttempt[]
+  hotspots  HotspotVisit[]
 }
 
 // Tracks per-lesson progress for a session
@@ -42,7 +202,7 @@ model HotspotVisit {
   label     String
   createdAt DateTime @default(now())
 
-  session   Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@id([sessionId, lessonId, layerId, label])
   @@index([label])
@@ -53,7 +213,7 @@ model HotspotVisit {
 // stripped projection and grade against this record via /api/quiz/grade.
 model GeneratedQuiz {
   id        String   @id @default(cuid())
-  payload   String   // JSON: AiQuizResponse (questions incl. correct_answer / explanation)
+  payload   String // JSON: AiQuizResponse (questions incl. correct_answer / explanation)
   createdAt DateTime @default(now())
 
   @@index([createdAt])
@@ -61,7 +221,7 @@ model GeneratedQuiz {
 
 // Records the latest quiz attempt per (session, quiz) — re-submitting the same
 // quiz upserts rather than inserting a duplicate row. `quizId` is the
-// GeneratedQuiz.id for AI quizzes or the Sanity document _id for CMS quizzes.
+// GeneratedQuiz.id for AI quizzes or CourseQuiz.id for authored quizzes.
 // Legacy rows (pre-quizId) were backfilled with their own `id` as quizId so
 // the unique constraint holds without dropping history.
 model QuizAttempt {
@@ -72,10 +232,11 @@ model QuizAttempt {
   score     Int
   total     Int
   passed    Boolean  @default(false)
-  answers   String   // JSON
+  answers   String // JSON
   createdAt DateTime @default(now())
 
-  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
   @@unique([sessionId, quizId])
   @@index([sessionId])
   @@index([sessionId, passed])

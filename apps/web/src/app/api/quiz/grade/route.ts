@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@moto-ai/database';
-import { readClient } from '@/sanity/lib/client';
-import { QUIZ_GRADING_QUERY } from '@/sanity/lib/queries';
 import { QuizGradeRequestSchema, ServerAiQuizSchema, type QuizSource } from '@moto-ai/contracts/quiz';
 import {
   DEFAULT_PASSING_SCORE,
@@ -12,17 +10,16 @@ import {
 } from '@/lib/quiz-grading';
 import { jsonError, readJson, unexpectedApiError } from '@/lib/server/http';
 
-class CmsConfigurationError extends Error {
+class CourseConfigurationError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'CmsConfigurationError';
+    this.name = 'CourseConfigurationError';
   }
 }
 
 // ── Server-side answer key — never serialized to the browser ─────────────────
 
-/** Shape of QUIZ_GRADING_QUERY (GROQ returns null for missing fields). */
-const sanityGradingSchema = z.object({
+const courseGradingSchema = z.object({
   questions: z
     .array(
       z.object({
@@ -80,18 +77,20 @@ async function loadAnswerKey(source: QuizSource, quizId: string): Promise<Answer
     };
   }
 
-  // source === "sanity" — re-derive the answer key from the CMS document.
-  const raw = await readClient.fetch<unknown>(QUIZ_GRADING_QUERY, { id: quizId });
-  if (!raw) return null;
-  const parsed = sanityGradingSchema.safeParse(raw);
+  const record = await prisma.courseQuiz.findUnique({
+    where: { id: quizId },
+    select: { payload: true },
+  });
+  if (!record) return null;
+  const parsed = courseGradingSchema.safeParse(record.payload);
   if (!parsed.success || parsed.data.questions.length === 0) return null;
 
   return {
     questions: parsed.data.questions.map((q, index) => {
       const correctIndex = q.answers.findIndex((a) => a.isCorrect);
       if (correctIndex === -1) {
-        throw new CmsConfigurationError(
-          `CMS Quiz misconfigured: Question ${index + 1} has no correct answer marked.`,
+        throw new CourseConfigurationError(
+          `Course quiz misconfigured: Question ${index + 1} has no correct answer marked.`,
         );
       }
       return {
@@ -178,7 +177,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(result);
   } catch (err) {
-    if (err instanceof CmsConfigurationError) {
+    if (err instanceof CourseConfigurationError) {
       return jsonError(err.message, 422);
     }
     return unexpectedApiError('api/quiz/grade', err);

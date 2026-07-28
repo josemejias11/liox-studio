@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import { CourseCover } from '@/components/CourseCover';
 import { CourseComplete } from '@/components/CourseComplete';
 import type { CourseStructure } from '@/lib/course-structure';
-import type { LessonSection, SanityCourse } from '@/lib/contracts/sanity';
+import type { LessonSection, CourseContent } from '@/lib/contracts/course';
 import type { CoursePhase } from './hooks/useCourseNavigation';
 import type { LessonRuntime } from './hooks/useLessonRuntime';
 import { ChapterIntro } from './ChapterIntro';
@@ -25,7 +25,7 @@ const DisclaimerPage = dynamic(() =>
 
 export interface CoursePhaseScreenProps {
   phase: CoursePhase;
-  course: SanityCourse;
+  course: CourseContent;
   structure: CourseStructure;
   lessonRuntime: LessonRuntime;
   weakTopics: string[];
@@ -140,7 +140,7 @@ export function CoursePhaseScreen({
         <div className="absolute inset-0 flex items-center justify-center overflow-y-auto bg-[#111225] p-6">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(104,91,199,0.42),transparent_42%)]" />
           <QuizLessonDynamic
-            sanityQuiz={chapterGroup?.quickCheck}
+            courseQuiz={chapterGroup?.quickCheck}
             weakTopics={weakTopics}
             onPass={() => finishChapterQuiz(phase.chapterIndex)}
             onFail={() => finishChapterQuiz(phase.chapterIndex)}

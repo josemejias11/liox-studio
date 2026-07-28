@@ -2,14 +2,14 @@
 
 import { PortableText } from '@portabletext/react';
 import { Sparkles } from 'lucide-react';
-import type { RichText, SanityPhoto } from '@/lib/contracts/sanity';
+import type { RichText, CoursePhoto } from '@/lib/contracts/course';
 import { supMark } from '@/lib/portable-text-components';
 import { cssAspectRatio } from '@/lib/utils';
 import { PhotoCardStack } from '../PhotoCardStack';
 
 interface DiscoveryLearnContentProps {
   body?: RichText;
-  photos: SanityPhoto[];
+  photos: CoursePhoto[];
   videoFile?: { asset?: { url?: string } };
   videoAspectRatio?: string;
 }

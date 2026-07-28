@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { X, Sparkles } from 'lucide-react';
 import { useFocusTrap } from '@/lib/useFocusTrap';
-import type { RichText, SanityPhoto } from '@/lib/contracts/sanity';
+import type { RichText, CoursePhoto } from '@/lib/contracts/course';
 import { useChatConversation } from './course-ai/useChatConversation';
 import { DiscoveryConversation } from './discovery/DiscoveryConversation';
 import { DiscoveryLearnContent } from './discovery/DiscoveryLearnContent';
@@ -14,7 +14,7 @@ interface DiscoveryPanelProps {
   label: string;
   topic?: string;
   body?: RichText;
-  photos?: SanityPhoto[];
+  photos?: CoursePhoto[];
   videoFile?: { asset?: { url?: string } };
   videoAspectRatio?: string;
   x?: number;

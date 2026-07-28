@@ -7,7 +7,7 @@ import { useLessonProgress } from './hooks/useLessonProgress';
 import { useCourseNavigation } from './hooks/useCourseNavigation';
 import { getChapterLessons } from '@/lib/course-structure';
 import { deriveCourseFlow } from '@/lib/course-flow';
-import type { CourseSection, SanityCourse } from '@/lib/contracts/sanity';
+import type { CourseSection, CourseContent } from '@/lib/contracts/course';
 import { useCourseSession } from './hooks/useCourseSession';
 import { useWeakTopics } from './hooks/useWeakTopics';
 import { CoursePhaseScreen, getCoursePhaseSlideKey } from './CoursePhaseScreen';
@@ -42,9 +42,11 @@ const slideVariants = {
 export default function MotoViewer({
   course,
   sections,
+  preview = false,
 }: {
-  course: SanityCourse;
+  course: CourseContent;
   sections: CourseSection[];
+  preview?: boolean;
 }) {
   const flow = useMemo(
     () => deriveCourseFlow(sections, course.chapters ?? []),
@@ -55,7 +57,8 @@ export default function MotoViewer({
   const [showNavMap, setShowNavMap] = useState(false);
 
   // ── Session ───────────────────────────────────────────────────────────────
-  const { sessionId, persistSession } = useCourseSession();
+  const { sessionId, persistSession: userPersistSession } = useCourseSession();
+  const persistSession = userPersistSession && !preview;
 
   const {
     visited,

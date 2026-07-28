@@ -1,25 +1,19 @@
 import { notFound } from 'next/navigation';
-import { readClient } from '@/sanity/lib/client';
-import { COURSE_BY_SLUG_QUERY } from '@/sanity/lib/queries';
+import { getPublishedCourseBySlug } from '@moto-ai/database';
 import MotoViewer from '@/player/MotoViewer';
-import { normalizeCourseContent } from '@/lib/course-content';
+import { toPostgresCourseContent } from '@/lib/postgres-course-content';
 
 export default async function CoursePage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = await params;
 
-  const raw = await readClient.fetch<unknown>(
-    COURSE_BY_SLUG_QUERY,
-    { slug: resolvedParams.slug },
-    { next: { revalidate: 300 } },
-  );
-
-  if (!raw) {
+  const course = await getPublishedCourseBySlug(resolvedParams.slug);
+  if (!course) {
     notFound();
   }
 
-  const content = normalizeCourseContent(raw);
+  const content = toPostgresCourseContent(course);
   if (!content) {
-    console.error(`[course/${resolvedParams.slug}] Sanity payload failed contract validation`);
+    console.error(`[course/${resolvedParams.slug}] Postgres payload failed course contract validation`);
     notFound();
   }
 

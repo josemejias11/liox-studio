@@ -1,22 +1,18 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Bot, BarChart2, BookOpen, PlayCircle } from 'lucide-react';
-import { readClient } from '@/sanity/lib/client';
-import { COURSES_QUERY } from '@/sanity/lib/queries';
-import { courseSummarySchema, type CourseSummary } from '@/lib/contracts/sanity';
+import { listPublishedCourseSummaries } from '@moto-ai/database';
+import type { CourseSummary } from '@/lib/contracts/course';
+import { toPostgresCourseSummary } from '@/lib/postgres-course-content';
 import { ThemeToggle } from '@/components/theme';
 
 export const revalidate = 60;
 
 export default async function Home() {
-  const raw = await readClient.fetch<unknown[]>(COURSES_QUERY);
-  const courses: CourseSummary[] = (raw ?? []).flatMap((item) => {
-    const result = courseSummarySchema.safeParse(item);
-    if (!result.success) {
-      console.error('[home] course summary failed contract validation:', result.error.issues);
-      return [];
-    }
-    return [result.data];
+  const records = await listPublishedCourseSummaries();
+  const courses: CourseSummary[] = records.flatMap((record) => {
+    const course = toPostgresCourseSummary(record);
+    return course ? [course] : [];
   });
 
   return (

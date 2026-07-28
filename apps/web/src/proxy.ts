@@ -1,13 +1,5 @@
 /**
  * Next.js proxy — protects the /analytics instructor dashboard.
- *
- * Guard: checks for an httpOnly cookie `analytics_token` whose value must
- * match the ANALYTICS_PASSWORD environment variable. Any mismatch or absence
- * redirects to /analytics/login.
- *
- * The matcher explicitly excludes /analytics/login to prevent an infinite
- * redirect loop, and also excludes Next.js internal paths (_next/*) and
- * static assets.
  */
 
 import { NextRequest, NextResponse } from 'next/server';

@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto';
-import { createClient } from '@sanity/client';
 import { type ClientQuiz, type ServerAiQuiz } from '@moto-ai/contracts/quiz';
 import {
   DocumentIndexPayloadSchema,
@@ -10,45 +9,40 @@ import { prisma } from '@moto-ai/database';
 import { generateCourseQuiz, RagServiceError, uploadCourseDocument } from '@moto-ai/parser-client';
 import { NonRetryableJobError, type ClaimedJob } from '@moto-ai/jobs';
 
-const sanityClient = createClient({
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID ?? 'REPLACE_ME',
-  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET ?? 'production',
-  apiVersion: '2024-01-01',
-  useCdn: false,
-  token: process.env.SANITY_API_TOKEN,
-});
-
-async function getCourseDocumentId(courseId: string): Promise<string> {
-  if (!process.env.SANITY_API_TOKEN) {
-    throw new NonRetryableJobError('Sanity write access is not configured.');
-  }
-
-  const documentId = await sanityClient.fetch<string | null>(
-    'coalesce(*[_id == $draftId][0]._id, *[_id == $publishedId][0]._id)',
-    { draftId: `drafts.${courseId}`, publishedId: courseId },
-  );
-  if (!documentId) {
-    throw new NonRetryableJobError('The course no longer exists in Sanity.');
-  }
-  return documentId;
+async function getCourse(courseId: string) {
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: { id: true, sourceFiles: true },
+  });
+  if (!course) throw new NonRetryableJobError('The course no longer exists.');
+  return course;
 }
 
-async function persistIndexedDocument(documentId: string, filename: string, chunks: number) {
-  const filenamePath = `courseMaterial[filename == ${JSON.stringify(filename)}]`;
-  await sanityClient
-    .patch(documentId)
-    .setIfMissing({ courseMaterial: [] })
-    .unset([filenamePath])
-    .append('courseMaterial', [
-      {
-        _key: randomUUID().replaceAll('-', ''),
-        _type: 'uploadedFile',
-        filename,
-        chunks,
-        uploadedAt: new Date().toISOString(),
-      },
-    ])
-    .commit();
+async function persistIndexedDocument(courseId: string, filename: string, chunks: number) {
+  const course = await getCourse(courseId);
+  const current = Array.isArray(course.sourceFiles) ? course.sourceFiles : [];
+  const remaining = current.filter(
+    (item) =>
+      !item ||
+      typeof item !== 'object' ||
+      Array.isArray(item) ||
+      !('filename' in item) ||
+      item.filename !== filename,
+  );
+  await prisma.course.update({
+    where: { id: courseId },
+    data: {
+      sourceFiles: [
+        ...remaining,
+        {
+          id: randomUUID(),
+          filename,
+          chunks,
+          uploadedAt: new Date().toISOString(),
+        },
+      ],
+    },
+  });
 }
 
 async function persistAndStrip(quiz: ServerAiQuiz): Promise<ClientQuiz> {
@@ -80,9 +74,9 @@ async function indexDocument(job: ClaimedJob): Promise<{ filename: string; chunk
   const file = new File([new Uint8Array(job.artifact.bytes)], job.artifact.filename, {
     type: job.artifact.contentType ?? 'application/octet-stream',
   });
-  const courseDocumentId = await getCourseDocumentId(payload.data.courseId);
+  await getCourse(payload.data.courseId);
   const result = await uploadCourseDocument(payload.data.courseId, file);
-  await persistIndexedDocument(courseDocumentId, result.filename, result.chunksStored);
+  await persistIndexedDocument(payload.data.courseId, result.filename, result.chunksStored);
   return { filename: result.filename, chunksStored: result.chunksStored };
 }
 

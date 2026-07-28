@@ -6,8 +6,7 @@ import { Crosshair, RotateCcw, ScanSearch, ZoomIn, ZoomOut } from 'lucide-react'
 import { DiscoveryPanel } from '@/components/DiscoveryPanel';
 import { Hotspot } from '@/components/Hotspot';
 import { clampCanvasZoom, MAX_CANVAS_ZOOM, MIN_CANVAS_ZOOM } from '@/lib/canvas';
-import { sanityImageLoader } from '@/lib/sanity-image-loader';
-import type { LessonSection, RichText, SanityHotspot, SanityPhoto } from '@/lib/contracts/sanity';
+import type { LessonSection, RichText, CourseHotspot, CoursePhoto } from '@/lib/contracts/course';
 
 interface CanvasInspectionLessonProps {
   lesson: LessonSection;
@@ -20,7 +19,7 @@ interface ActiveTarget {
   label: string;
   topic: string;
   body?: RichText;
-  photos?: SanityPhoto[];
+  photos?: CoursePhoto[];
   videoFile?: { asset?: { url?: string } };
   videoAspectRatio?: string;
   x: number;
@@ -29,7 +28,7 @@ interface ActiveTarget {
 
 const ZOOM_STEP = 0.25;
 
-function toActiveTarget(target: SanityHotspot): ActiveTarget {
+function toActiveTarget(target: CourseHotspot): ActiveTarget {
   return {
     label: target.label,
     topic: target.topic,
@@ -70,7 +69,7 @@ export function CanvasInspectionLesson({
     if (clamped === MIN_CANVAS_ZOOM) setOffset({ x: 0, y: 0 });
   }
 
-  function openInspectionTarget(target: SanityHotspot) {
+  function openInspectionTarget(target: CourseHotspot) {
     const focusedZoom = clampCanvasZoom(Math.max(zoom, 1.25));
     const maxOffset = (focusedZoom - 1) * 35;
     const nextX = Math.max(-maxOffset, Math.min(maxOffset, (50 - target.x) * 0.18));
@@ -199,14 +198,13 @@ export function CanvasInspectionLesson({
                 fill
                 priority
                 sizes="100vw"
-                loader={sanityImageLoader}
                 className="object-cover opacity-88 saturate-[0.82]"
                 draggable={false}
               />
             ) : (
               <div className="bg-muted absolute inset-0 flex items-center justify-center">
                 <p className="text-muted-foreground">
-                  Add a primary product image in Sanity to build this Canvas lesson.
+                  Add a primary product image in Course Studio to build this Canvas lesson.
                 </p>
               </div>
             )}

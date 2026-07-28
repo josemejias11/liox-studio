@@ -3,12 +3,12 @@ import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { PortableText } from '@portabletext/react';
 import { supMark } from '@/lib/portable-text-components';
-import { SanityLesson } from '@/lib/contracts/sanity';
+import { CourseLesson } from '@/lib/contracts/course';
 import Image from 'next/image';
 import { CheckCircle2 } from 'lucide-react';
 
 interface DragDropLessonProps {
-  lesson: SanityLesson;
+  lesson: CourseLesson;
   isCompleted: boolean;
   onComplete: () => void;
 }
@@ -260,7 +260,7 @@ export default function DragDropLesson({ lesson, isCompleted, onComplete }: Drag
         <h2 className="mb-4 text-3xl font-bold">{headline}</h2>
         {body && (
           <div className="prose prose-invert mb-8 max-w-none text-white/65">
-            {typeof body === 'string' ? <p>{body}</p> : <PortableText value={body as import('sanity').PortableTextBlock[]} components={{ marks: supMark }} />}
+            {typeof body === 'string' ? <p>{body}</p> : <PortableText value={body as import('@portabletext/types').PortableTextBlock[]} components={{ marks: supMark }} />}
           </div>
         )}
 

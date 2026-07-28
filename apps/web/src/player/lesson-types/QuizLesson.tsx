@@ -1,17 +1,17 @@
 'use client';
 
 import { CourseQuiz } from '@/components/course-ai/CourseQuiz';
-import type { SanityQuizDoc } from '@/lib/contracts/sanity';
+import type { AuthoredQuiz } from '@/lib/contracts/course';
 
-import { SanityQuizPlayer } from '@/components/SanityQuizPlayer';
+import { CourseQuizPlayer } from '@/components/CourseQuizPlayer';
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 export interface QuizLessonProps {
-  /** Topics the learner has not explored yet — steers AI quiz generation when sanityQuiz is absent. */
+  /** Topics the learner has not explored yet — steers AI quiz generation when courseQuiz is absent. */
   weakTopics?: string[];
-  /** When provided, renders the Sanity-authored questions instead of an AI quiz. */
-  sanityQuiz?: SanityQuizDoc;
+  /** When provided, renders the authored questions instead of an AI quiz. */
+  courseQuiz?: AuthoredQuiz;
   /** Called with the server-graded score 0–100 (percentage) on pass. */
   onPass: (score: number) => void;
   /** Called when the learner fails and retry is not allowed (or chooses to move on). */
@@ -25,22 +25,22 @@ export interface QuizLessonProps {
 }
 
 // ── Lesson entry point ────────────────────────────────────────────────────────
-// CMS-authored quizzes render the Sanity player; otherwise an adaptive AI quiz
+// Authored quizzes render directly; otherwise an adaptive AI quiz
 // is generated from the uploaded course materials via /api/quiz. Both sources
 // are graded exclusively server-side by /api/quiz/grade.
 
 export function QuizLesson({
   weakTopics,
-  sanityQuiz,
+  courseQuiz,
   onPass,
   onFail,
   sessionId,
   courseId,
 }: QuizLessonProps) {
-  if (sanityQuiz) {
+  if (courseQuiz) {
     return (
-      <SanityQuizPlayer
-        sanityQuiz={sanityQuiz}
+      <CourseQuizPlayer
+        courseQuiz={courseQuiz}
         onPass={onPass}
         onFail={onFail}
         sessionId={sessionId}

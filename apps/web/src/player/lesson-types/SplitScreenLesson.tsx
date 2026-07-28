@@ -5,8 +5,7 @@ import Image from 'next/image';
 import { PortableText } from '@portabletext/react';
 import { ArrowLeftRight, Focus } from 'lucide-react';
 import { supMark } from '@/lib/portable-text-components';
-import { sanityImageLoader } from '@/lib/sanity-image-loader';
-import type { SanityLesson } from '@/lib/contracts/sanity';
+import type { CourseLesson } from '@/lib/contracts/course';
 import {
   InlineDiscoveryCueMark,
   InlineDiscoveryCueProvider,
@@ -14,7 +13,7 @@ import {
 } from './InlineDiscoveryCue';
 
 interface SplitScreenLessonProps {
-  lesson: SanityLesson;
+  lesson: CourseLesson;
   visitedLabels: Set<string>;
   onVisit: (label: string) => void;
 }
@@ -59,7 +58,6 @@ export function SplitScreenLesson({ lesson, visitedLabels, onVisit }: SplitScree
                 fill
                 priority
                 sizes="(max-width: 768px) 100vw, 50vw"
-                loader={sanityImageLoader}
                 className="object-cover"
               />
             </div>

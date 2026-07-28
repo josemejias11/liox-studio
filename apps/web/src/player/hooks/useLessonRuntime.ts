@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from 'react';
 import { getRequiredCanvasTargetCount, isCanvasComplete } from '@/lib/canvas';
-import type { LessonSection, SanityHotspot } from '@/lib/contracts/sanity';
+import type { LessonSection, CourseHotspot } from '@/lib/contracts/course';
 import { getCoveredFeatureLabels, isRefresherComplete } from '@/lib/refresher';
 import { getLessonCompletionMode, LessonCompletionMode } from '../lesson-types/registry';
 
@@ -18,7 +18,7 @@ export type BaseMarkVisited = (
 export interface LessonRuntime {
   currentLesson?: LessonSection;
   lessonKey: string;
-  hotspots: SanityHotspot[];
+  hotspots: CourseHotspot[];
   visitedLabels: Set<string>;
   completionMode: LessonCompletionMode;
   isSpecialComplete: boolean;

@@ -1,7 +1,7 @@
 import type { QuestionResult, SubmitQuizResponse } from '@moto-ai/contracts/quiz';
 
 // ── Pure server-side grading ──────────────────────────────────────────────────
-// Both quiz sources (Prisma-persisted AI quizzes, Sanity CMS quizzes) are
+// Both quiz sources (AI-generated and authored course quizzes) are
 // normalized into GradableQuestion[] by the /api/quiz/grade route; everything
 // below is pure and source-agnostic.
 

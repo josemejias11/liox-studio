@@ -8,7 +8,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@sanity/client": "^7.24.0",
     "@moto-ai/contracts": "0.1.0",
     "@moto-ai/database": "0.1.0",
     "@moto-ai/jobs": "0.1.0",

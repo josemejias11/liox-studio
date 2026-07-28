@@ -1,4 +1,4 @@
-import type { CourseSection, SanityCourse } from '@/lib/contracts/sanity';
+import type { CourseSection, CourseContent } from '@/lib/contracts/course';
 import { deriveCourseStructure } from '@/lib/course-structure';
 
 export type CourseFlowItem =
@@ -14,7 +14,7 @@ export interface CourseFlow {
 
 export function deriveCourseFlow(
   sections: CourseSection[],
-  chapters: SanityCourse['chapters'] = [],
+  chapters: CourseContent['chapters'] = [],
 ): CourseFlow {
   const structure = deriveCourseStructure(sections, chapters);
   const items: CourseFlowItem[] = [];

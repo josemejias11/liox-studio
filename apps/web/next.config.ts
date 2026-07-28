@@ -4,12 +4,10 @@ import type { NextConfig } from 'next';
 
 const isDev = process.env.NODE_ENV !== 'production';
 
-// Shared directives that apply to both the main app and the Studio path.
 const SHARED_IMG_SRC = [
   "'self'",
   'data:',
   'blob:',
-  'https://cdn.sanity.io',
   'https://github.com',
   'https://avatars.githubusercontent.com',
 ].join(' ');
@@ -30,39 +28,12 @@ const MAIN_CSP = [
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
   "style-src 'self' 'unsafe-inline'",
   `img-src ${SHARED_IMG_SRC}`,
-  "media-src 'self' https://cdn.sanity.io",
+  "media-src 'self'",
   "font-src 'self'",
   "connect-src 'self'",
   "worker-src 'self'",
   "frame-src 'none'",
   "frame-ancestors 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-]
-  .join('; ')
-  .trim();
-
-/**
- * Relaxed CSP for Sanity Studio (/studio/*).
- *
- * - 'unsafe-eval' is required by Sanity's React runtime and styled-components
- *   when running in the browser (used for dynamic expression evaluation).
- * - worker-src blob: is required by Sanity's web workers (e.g. content-lake sync).
- * - connect-src is broadened to Sanity's API and CDN endpoints.
- * - frame-ancestors 'self' allows Studio to embed preview iframes on the same origin.
- */
-const STUDIO_CSP = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-  "style-src 'self' 'unsafe-inline'",
-  `img-src ${SHARED_IMG_SRC}`,
-  "font-src 'self' https://fonts.gstatic.com",
-  // Sanity Studio 5.31 checks its auto-updating modules through sanity-cdn.com
-  // (and sanity-cdn.work for staging) in addition to the Content Lake hosts.
-  "connect-src 'self' https://api.sanity.io https://*.api.sanity.io wss://*.api.sanity.io https://cdn.sanity.io https://sanity-cdn.com https://sanity-cdn.work https://accounts.sanity.io https://registry.npmjs.org",
-  "worker-src 'self' blob:",
-  "frame-src 'self' https://accounts.sanity.io",
-  "frame-ancestors 'self'",
   "base-uri 'self'",
   "form-action 'self'",
 ]
@@ -90,36 +61,10 @@ const nextConfig: NextConfig = {
     '@moto-ai/jobs',
     '@moto-ai/parser-client',
   ],
-  // Enable the SWC styled-components transform so Turbopack can handle the
-  // CSS-in-JS runtime that Sanity Studio (and the project itself) relies on.
-  // Without this, Turbopack falls back to the Babel plugin path which conflicts
-  // with its HMR chunk graph, producing ChunkLoadError for the hmr-client chunks.
-  compiler: {
-    styledComponents: true,
-  },
-  images: {
-    loaderFile: './src/lib/sanity-image-loader.ts',
-    remotePatterns: [
-      // Sanity CDN for course images
-      { protocol: 'https', hostname: 'cdn.sanity.io' },
-    ],
-  },
-
   async headers() {
     return [
-      // ── Sanity Studio — relaxed policy (must come first; more-specific match) ──
       {
-        source: '/studio(.*)',
-        headers: [
-          ...COMMON_HEADERS,
-          { key: 'Content-Security-Policy', value: STUDIO_CSP },
-          // Override X-Frame-Options to allow Studio's own preview iframes.
-          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
-        ],
-      },
-      // ── Main application — strict policy (excludes /studio/* and internal Next.js assets to prevent overwrite/HMR breaking) ──
-      {
-        source: '/((?!studio|_next/static|_next/image|favicon.ico).*)',
+        source: '/((?!_next/static|_next/image|favicon.ico).*)',
         headers: [...COMMON_HEADERS, { key: 'Content-Security-Policy', value: MAIN_CSP }],
       },
     ];

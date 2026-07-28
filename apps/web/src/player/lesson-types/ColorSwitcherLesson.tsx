@@ -3,11 +3,10 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { CircleGauge, Palette, SwatchBook } from 'lucide-react';
-import { sanityImageLoader } from '@/lib/sanity-image-loader';
-import type { SanityLesson } from '@/lib/contracts/sanity';
+import type { CourseLesson } from '@/lib/contracts/course';
 
 interface ColorSwitcherLessonProps {
-  lesson: SanityLesson;
+  lesson: CourseLesson;
 }
 
 export function ColorSwitcherLesson({ lesson }: ColorSwitcherLessonProps) {
@@ -62,7 +61,6 @@ export function ColorSwitcherLesson({ lesson }: ColorSwitcherLessonProps) {
                 fill
                 priority={i === 0}
                 sizes="100vw"
-                loader={sanityImageLoader}
                 className="object-contain drop-shadow-[0_30px_45px_rgba(24,25,29,0.2)]"
               />
             </div>

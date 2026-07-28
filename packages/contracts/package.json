@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./course": "./src/course.ts",
     "./jobs": "./src/jobs.ts",
     "./quiz": "./src/quiz.ts"
   },

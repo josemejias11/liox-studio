@@ -4,13 +4,13 @@ import { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { titleFromFilename } from '@/lib/utils';
-import type { SanityPhoto } from '@/lib/contracts/sanity';
+import type { CoursePhoto } from '@/lib/contracts/course';
 
 export function FullWidthCarousel({
   photos,
   className = '',
 }: {
-  photos: SanityPhoto[];
+  photos: CoursePhoto[];
   className?: string;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);

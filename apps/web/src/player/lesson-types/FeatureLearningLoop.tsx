@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Eye, Lightbulb, X } from 'lucide-react';
 import { DiscoveryLearnContent } from '@/components/discovery/DiscoveryLearnContent';
-import type { RichText, SanityPhoto } from '@/lib/contracts/sanity';
+import type { RichText, CoursePhoto } from '@/lib/contracts/course';
 import { useFocusTrap } from '@/lib/useFocusTrap';
 
 type LearningStep = 'notice' | 'insight' | 'demonstrate';
@@ -11,7 +11,7 @@ type LearningStep = 'notice' | 'insight' | 'demonstrate';
 export interface FeatureLearningLoopProps {
   label: string;
   body?: RichText;
-  photos?: SanityPhoto[];
+  photos?: CoursePhoto[];
   videoFile?: { asset?: { url?: string } };
   videoAspectRatio?: string;
   onAskTutor: () => void;

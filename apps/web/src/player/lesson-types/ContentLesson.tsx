@@ -7,9 +7,8 @@ import { PortableText } from '@portabletext/react';
 import { supMark } from '@/lib/portable-text-components';
 import { Hotspot } from '@/components/Hotspot';
 import { DiscoveryPanel } from '@/components/DiscoveryPanel';
-import { sanityImageLoader } from '@/lib/sanity-image-loader';
 import { getSemanticWidthClass } from '@/lib/utils';
-import type { LessonSection, RichText, SanityHotspot, SanityPhoto } from '@/lib/contracts/sanity';
+import type { LessonSection, RichText, CourseHotspot, CoursePhoto } from '@/lib/contracts/course';
 import {
   InlineDiscoveryCueMark,
   InlineDiscoveryCueProvider,
@@ -19,7 +18,7 @@ import { FeatureLearningLoop } from './FeatureLearningLoop';
 
 interface ContentLessonProps {
   lesson: LessonSection;
-  hotspots: SanityHotspot[];
+  hotspots: CourseHotspot[];
   visitedLabels: Set<string>;
   onVisit: (label: string) => void;
   /** Forwarded to DiscoveryPanel for its AI chat calls. */
@@ -32,12 +31,12 @@ interface ActivePanel {
   body?: RichText;
   x?: number;
   y?: number;
-  photos?: SanityPhoto[];
+  photos?: CoursePhoto[];
   videoFile?: { asset?: { url?: string } };
   videoAspectRatio?: string;
 }
 
-function toActivePanel(hotspot: SanityHotspot): ActivePanel {
+function toActivePanel(hotspot: CourseHotspot): ActivePanel {
   return {
     topic: hotspot.topic,
     title: hotspot.label,
@@ -84,7 +83,7 @@ export function ContentLesson({
   onVisit,
   courseId,
 }: ContentLessonProps) {
-  const [activeLearningTarget, setActiveLearningTarget] = useState<SanityHotspot | null>(null);
+  const [activeLearningTarget, setActiveLearningTarget] = useState<CourseHotspot | null>(null);
   const [activeTutorTarget, setActiveTutorTarget] = useState<ActivePanel | null>(null);
   const hotspotRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const activeLearningHotspotRef = useRef<HTMLButtonElement | null>(null);
@@ -132,7 +131,6 @@ export function ContentLesson({
           fill
           priority
           sizes="100vw"
-          loader={sanityImageLoader}
           className={`object-cover ${
             isInteraction ? 'opacity-78 saturate-[0.82]' : 'opacity-90 saturate-[0.86]'
           }`}

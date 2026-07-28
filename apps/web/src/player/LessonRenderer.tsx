@@ -1,7 +1,7 @@
 'use client';
 
 import { CourseQuiz } from '@/components/course-ai/CourseQuiz';
-import type { LessonSection, SanityHotspot } from '@/lib/contracts/sanity';
+import type { LessonSection, CourseHotspot } from '@/lib/contracts/course';
 import { RefresherFeaturePanel } from './RefresherFeaturePanel';
 import {
   ContentLessonDynamic,
@@ -19,7 +19,7 @@ import {
 export interface LessonRendererProps {
   lesson: LessonSection;
   lessonKey: string;
-  hotspots: SanityHotspot[];
+  hotspots: CourseHotspot[];
   visited: Set<string>;
   isSpecialComplete: boolean;
   goNext: () => void;
