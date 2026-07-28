@@ -38,13 +38,15 @@ Course Studio preview never writes learner progress. Static authored quiz answer
 
 ## Environment
 
-Copy the environment template and replace every placeholder:
+Create the root defaults and the separate local-secret file:
 
 ```bash
-cp .env.example .env.local
+cp .env.example .env
+cp .env.local.example .env.local
 ```
 
-Required application configuration:
+`.env` owns the database URLs and non-secret service defaults. `.env.local`
+owns application secrets and R2 credentials:
 
 ```env
 DATABASE_URL="postgresql://<user>:<password>@localhost:5432/moto_ai_dev"
@@ -61,7 +63,10 @@ PARSER_SERVICE_URL="http://localhost:8000"
 PARSER_SERVICE_TOKEN="<shared-internal-token>"
 ```
 
-The R2 bucket can remain private. The application serves stable course asset URLs through its authenticated R2 integration. Keep all credentials only in `.env.local` or the deployment platform’s secret store.
+Set the same `PARSER_SERVICE_TOKEN` in `services/parser-service/.env`. The R2
+bucket can remain private; the application serves stable course asset URLs
+through its authenticated R2 integration. Keep production credentials only in
+the deployment platform’s secret store.
 
 ## Local development
 
