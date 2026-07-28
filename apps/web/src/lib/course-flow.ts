@@ -1,4 +1,4 @@
-import type { CourseSection, CourseContent } from '@/lib/contracts/course';
+import type { CourseSection, CourseContent } from '@/lib/contracts/player-course';
 import { deriveCourseStructure } from '@/lib/course-structure';
 
 export type CourseFlowItem =

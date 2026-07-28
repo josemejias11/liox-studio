@@ -26,7 +26,7 @@ Next.js validates requests, writes durable job state, and returns `202 Accepted`
 - `POST /api/upload` persists an artifact and enqueues `document_index`.
 - `POST /api/quiz` enqueues `quiz_generate`.
 - `GET /api/jobs/[id]` reports public status, progress, result, and retryable error information.
-- Sanity Studio renders queued, processing, success, and failure state for uploads.
+- Course Studio renders queued, processing, success, and failure state for uploads.
 - The learner quiz UI stays in its generating state and polls until the generated quiz is ready or fails.
 
 ## Constraints

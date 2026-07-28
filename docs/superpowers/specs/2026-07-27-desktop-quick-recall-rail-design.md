@@ -28,7 +28,7 @@ The rail must respect the player’s existing navigation and not cover the cours
 4. Selecting **Next feature** advances to the next unvisited prompt.
 5. When every answer has been revealed, the rail shows the final answer and a completion acknowledgement. Existing navigation unlock behavior remains unchanged.
 
-The stored Sanity fields and persisted visited labels remain unchanged.
+The stored authoring fields and persisted visited labels remain unchanged.
 
 ## Visual Language
 

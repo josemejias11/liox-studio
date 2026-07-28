@@ -3,7 +3,7 @@ import { motion, AnimatePresence, useScroll, useReducedMotion } from 'framer-mot
 import { PortableText } from '@portabletext/react';
 import { supMark } from '@/lib/portable-text-components';
 import { CheckCircle2 } from 'lucide-react';
-import type { CourseLesson } from '@/lib/contracts/course';
+import type { CourseLesson } from '@/lib/contracts/player-course';
 import Image from 'next/image';
 import {
   InlineDiscoveryCueMark,

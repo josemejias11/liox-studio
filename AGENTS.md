@@ -3,7 +3,7 @@
 ## Detected Stack
 
 - Language: TypeScript/JavaScript, Python
-- Frameworks: Next.js 16, React 19, Sanity, Prisma, FastAPI
+- Frameworks: Next.js 16, React 19, Prisma, FastAPI
 - CI / infra: npm workspaces, Prisma migrations, Next.js headers/CSP config, local Ollama-backed parser service
 - Key folders: `apps/web/`, `apps/job-worker/`, `packages/database/`, `packages/contracts/`, `packages/jobs/`, `packages/parser-client/`, `services/parser-service/`
 
@@ -23,7 +23,7 @@
 
 ## Subagent Routing
 
-- **Next.js app, React UI, Sanity Studio, shared TypeScript code** -> `application-engineer`.
+- **Next.js app, React UI, Course Studio, shared TypeScript code** -> `application-engineer`.
 - **Python `services/parser-service`, FastAPI routes, local AI backend logic** -> `ai-ml-engineer`.
 - **Browser verification and release evidence** -> `quality-engineer`.
 - **Cross-cutting architecture and boundary decisions** -> `software-architecture-lead`.

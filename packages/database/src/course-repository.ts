@@ -1,7 +1,7 @@
-import { Prisma } from './generated/prisma';
+import { Prisma } from '@prisma/client';
 import { prisma } from './index';
 
-export interface AuthoringLesson {
+export interface CourseGraphLesson {
   id: string;
   position: number;
   lessonType: string;
@@ -10,12 +10,12 @@ export interface AuthoringLesson {
   payload: Prisma.JsonValue;
 }
 
-export interface AuthoringChapter {
+export interface CourseGraphChapter {
   id: string;
   title: string;
   position: number;
   estimatedDuration: number | null;
-  lessons: AuthoringLesson[];
+  lessons: CourseGraphLesson[];
   quickCheck: {
     id: string;
     title: string | null;
@@ -24,7 +24,7 @@ export interface AuthoringChapter {
   } | null;
 }
 
-export interface AuthoringCourse {
+export interface CourseGraph {
   id: string;
   slug: string;
   title: string;
@@ -35,7 +35,7 @@ export interface AuthoringCourse {
   specifications: Prisma.JsonValue | null;
   disclaimer: Prisma.JsonValue | null;
   sourceFiles: Prisma.JsonValue | null;
-  chapters: AuthoringChapter[];
+  chapters: CourseGraphChapter[];
 }
 
 function slugify(value: string): string {
@@ -51,7 +51,7 @@ function newId(prefix: string): string {
   return `${prefix}.${crypto.randomUUID()}`;
 }
 
-function toAuthoringCourse(course: {
+function toCourseGraph(course: {
   id: string;
   slug: string;
   title: string;
@@ -62,19 +62,19 @@ function toAuthoringCourse(course: {
   specifications: Prisma.JsonValue | null;
   disclaimer: Prisma.JsonValue | null;
   sourceFiles: Prisma.JsonValue | null;
-  chapters: Array<AuthoringChapter>;
-}): AuthoringCourse {
+  chapters: Array<CourseGraphChapter>;
+}): CourseGraph {
   return course;
 }
 
-export async function listAuthoringCourses(): Promise<Array<Pick<AuthoringCourse, 'id' | 'slug' | 'title' | 'description' | 'courseMode'>>> {
+export async function listAuthoringCourses(): Promise<Array<Pick<CourseGraph, 'id' | 'slug' | 'title' | 'description' | 'courseMode'>>> {
   return prisma.course.findMany({
     orderBy: { updatedAt: 'desc' },
     select: { id: true, slug: true, title: true, description: true, courseMode: true },
   });
 }
 
-export async function getAuthoringCourse(courseId: string): Promise<AuthoringCourse | null> {
+export async function getAuthoringCourse(courseId: string): Promise<CourseGraph | null> {
   const course = await prisma.course.findUnique({
     where: { id: courseId },
     select: {
@@ -106,10 +106,10 @@ export async function getAuthoringCourse(courseId: string): Promise<AuthoringCou
       },
     },
   });
-  return course ? toAuthoringCourse(course) : null;
+  return course ? toCourseGraph(course) : null;
 }
 
-export async function createCourseTemplate(title: string): Promise<AuthoringCourse> {
+export async function createCourseTemplate(title: string): Promise<CourseGraph> {
   const baseSlug = slugify(title);
   const existing = await prisma.course.count({ where: { slug: { startsWith: baseSlug } } });
   const slug = existing === 0 ? baseSlug : `${baseSlug}-${existing + 1}`;
@@ -163,7 +163,7 @@ export async function listPublishedCourseSummaries() {
   });
 }
 
-export async function getPublishedCourseBySlug(slug: string): Promise<AuthoringCourse | null> {
+export async function getPublishedCourseBySlug(slug: string): Promise<CourseGraph | null> {
   const course = await prisma.course.findFirst({
     where: { slug, status: 'PUBLISHED' },
     select: {
@@ -195,5 +195,5 @@ export async function getPublishedCourseBySlug(slug: string): Promise<AuthoringC
       },
     },
   });
-  return course ? toAuthoringCourse(course) : null;
+  return course ? toCourseGraph(course) : null;
 }

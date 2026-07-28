@@ -1,5 +1,5 @@
-import type { AuthoringCourse } from '@moto-ai/database';
-import { courseSummarySchema, type CourseSummary } from '@/lib/contracts/course';
+import type { CourseGraph } from '@moto-ai/database';
+import { courseSummarySchema, type CourseSummary } from '@/lib/contracts/player-course';
 import { normalizeCourseContent, type NormalizedCourseContent } from '@/lib/course-content';
 
 function objectPayload(value: unknown): Record<string, unknown> {
@@ -8,7 +8,7 @@ function objectPayload(value: unknown): Record<string, unknown> {
     : {};
 }
 
-function clientSafeQuiz(quiz: NonNullable<AuthoringCourse['chapters'][number]['quickCheck']>) {
+function clientSafeQuiz(quiz: NonNullable<CourseGraph['chapters'][number]['quickCheck']>) {
   const payload = objectPayload(quiz.payload);
   const questions = Array.isArray(payload.questions)
     ? payload.questions.map((question) => {
@@ -54,7 +54,7 @@ function courseSections(value: unknown, sectionType: 'specification' | 'disclaim
   });
 }
 
-function rawCourse(course: AuthoringCourse) {
+function rawCourse(course: CourseGraph) {
   const cover = objectPayload(course.cover);
   return {
     _id: course.id,
@@ -86,11 +86,11 @@ function rawCourse(course: AuthoringCourse) {
   };
 }
 
-export function toPostgresCourseContent(course: AuthoringCourse): NormalizedCourseContent | null {
+export function toPlayerCourseContent(course: CourseGraph): NormalizedCourseContent | null {
   return normalizeCourseContent(rawCourse(course));
 }
 
-export function toPostgresCourseSummary(input: {
+export function toPlayerCourseSummary(input: {
   id: string;
   slug: string;
   title: string;

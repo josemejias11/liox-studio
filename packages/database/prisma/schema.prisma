@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -11,9 +10,8 @@ datasource db {
 
 // ── App-owned course authoring ──────────────────────────────────────────────
 //
-// Course identity deliberately uses a caller-provided String ID. The one-time
-// The one-time legacy import preserves existing document IDs, so historical learner progress
-// continues to point at the same course and lesson identifiers after cutover.
+// Course and lesson identity use caller-provided String IDs so revisions retain
+// stable progress references across the authoring and learner surfaces.
 
 enum CoursePublicationStatus {
   DRAFT
@@ -90,7 +88,7 @@ model CourseLesson {
 
 // Course quizzes remain separately addressable because server-side grading
 // receives their IDs. Their editable question/answer structure is stored as
-// JSON preserves every authored quiz shape without leaking answer keys.
+// JSON to preserve every authored quiz shape without leaking answer keys.
 model CourseQuiz {
   id                String         @id
   courseId          String
@@ -113,7 +111,7 @@ model CourseAsset {
   filename    String
   contentType String?
   byteSize    Int?
-  publicUrl   String
+  deliveryUrl String   @map("publicUrl")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

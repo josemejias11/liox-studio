@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from 'react';
 import { getRequiredCanvasTargetCount, isCanvasComplete } from '@/lib/canvas';
-import type { LessonSection, CourseHotspot } from '@/lib/contracts/course';
+import type { LessonSection, CourseHotspot } from '@/lib/contracts/player-course';
 import { getCoveredFeatureLabels, isRefresherComplete } from '@/lib/refresher';
 import { getLessonCompletionMode, LessonCompletionMode } from '../lesson-types/registry';
 

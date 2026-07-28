@@ -8,7 +8,7 @@ Lionbridge authors the complete e-learning master in Course Studio: course struc
 
 ## Non-negotiable boundaries
 
-- Course Studio remains inside the embedded Sanity Studio at `/studio`; there is no separate dashboard, login system, Motorola account, or agency account.
+- Course Studio remains the internal authoring surface at `/studio`, protected by its dedicated credential; there is no Motorola account or agency account.
 - Desktop is the target experience at 1440×900. Mobile authoring is not a priority.
 - Course Studio does not geolocate, translate, replace, package, or manage localization of individual assets. Assets belong to the authored master and remain unchanged.
 - Motorola Insiders and HaLight are downstream delivery platforms. Course Studio preserves that relationship and does not reproduce their functions.
@@ -17,7 +17,7 @@ Lionbridge authors the complete e-learning master in Course Studio: course struc
 
 ## Authoring experience
 
-Course Studio becomes a custom top-level Sanity Studio tool titled `Course Studio`. Its normal desktop layout is canvas-first:
+Course Studio is a first-party application surface. Its normal desktop layout is canvas-first:
 
 ```text
 Course outline                     Live learner canvas                 Inspector
@@ -53,13 +53,13 @@ Course Studio is a guided visual editor, not a freeform Storyline clone. It inte
 
 ## Data model and compatibility
 
-Existing `course`, `chapter`, `lesson`, and `quiz` documents remain the live authoring model and continue to power the learner route. The authoring tool writes through normal Sanity mutations:
+PostgreSQL `Course`, `CourseChapter`, `CourseLesson`, and `CourseQuiz` records are the live authoring model and continue to power the learner route. The authoring tool writes through protected application APIs and database transactions:
 
 - `course.chapters[]` owns chapter order.
 - `chapter.lessons[]` owns screen order.
 - each `lesson.lessonType` selects the existing player presentation.
 
-The tool reads a resolved authoring graph, not the public learner query. It can create valid Course, Chapter, and Lesson documents from deterministic defaults, and it can patch ordering and selection safely using Sanity transactions. Existing authored courses remain editable; the authoring tool must never rewrite or flatten their rich text, media references, or interaction data without an explicit author action.
+The tool reads a resolved authoring graph, not the public learner projection. It can create valid Course, Chapter, and Lesson records from deterministic defaults, and it can update ordering and selection safely in PostgreSQL transactions. Existing authored courses remain editable; the authoring tool must never rewrite or flatten their rich text, media references, or interaction data without an explicit author action.
 
 ## Master release
 

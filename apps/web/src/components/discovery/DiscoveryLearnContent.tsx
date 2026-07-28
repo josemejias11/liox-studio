@@ -2,7 +2,7 @@
 
 import { PortableText } from '@portabletext/react';
 import { Sparkles } from 'lucide-react';
-import type { RichText, CoursePhoto } from '@/lib/contracts/course';
+import type { RichText, CoursePhoto } from '@/lib/contracts/player-course';
 import { supMark } from '@/lib/portable-text-components';
 import { cssAspectRatio } from '@/lib/utils';
 import { PhotoCardStack } from '../PhotoCardStack';

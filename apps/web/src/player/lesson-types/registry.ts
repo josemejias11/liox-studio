@@ -1,6 +1,6 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
-import type { LessonSection } from '@/lib/contracts/course';
+import type { LessonSection } from '@/lib/contracts/player-course';
 
 const LoadingSkeleton = () =>
   React.createElement('div', { className: 'absolute inset-0 bg-background animate-pulse' });

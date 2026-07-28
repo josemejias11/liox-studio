@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useFocusTrap } from '@/lib/useFocusTrap';
 import { ThemeToggle } from '@/components/theme';
-import type { LessonSection } from '@/lib/contracts/course';
+import type { LessonSection } from '@/lib/contracts/player-course';
 import { getNavItems, type CourseFlow } from '@/lib/course-flow';
 
 // ── Icon/color metadata per sectionType / lessonType ─────────────────────────

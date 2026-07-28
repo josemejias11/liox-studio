@@ -1,4 +1,4 @@
-import { courseSchema, type CourseSection, type LessonSection, type CourseContent } from '@/lib/contracts/course';
+import { courseSchema, type CourseSection, type LessonSection, type CourseContent } from '@/lib/contracts/player-course';
 
 export interface NormalizedCourseContent {
   course: CourseContent;

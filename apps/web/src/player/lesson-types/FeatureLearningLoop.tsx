@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Eye, Lightbulb, X } from 'lucide-react';
 import { DiscoveryLearnContent } from '@/components/discovery/DiscoveryLearnContent';
-import type { RichText, CoursePhoto } from '@/lib/contracts/course';
+import type { RichText, CoursePhoto } from '@/lib/contracts/player-course';
 import { useFocusTrap } from '@/lib/useFocusTrap';
 
 type LearningStep = 'notice' | 'insight' | 'demonstrate';

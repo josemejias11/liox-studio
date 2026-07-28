@@ -131,5 +131,3 @@ npm run jobs:worker
 - Learner progress keeps stable course and lesson IDs across authoring revisions.
 - Source documents are indexed by the parser service; the worker records indexing receipts in `Course.sourceFiles`.
 - AI-generated quiz answer keys and authored quiz answer keys never leave server-side storage.
-
-Remote legacy source data is not part of the runtime and is not deleted by this repository.

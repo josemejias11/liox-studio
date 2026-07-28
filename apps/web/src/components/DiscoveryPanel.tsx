@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { X, Sparkles } from 'lucide-react';
 import { useFocusTrap } from '@/lib/useFocusTrap';
-import type { RichText, CoursePhoto } from '@/lib/contracts/course';
+import type { RichText, CoursePhoto } from '@/lib/contracts/player-course';
 import { useChatConversation } from './course-ai/useChatConversation';
 import { DiscoveryConversation } from './discovery/DiscoveryConversation';
 import { DiscoveryLearnContent } from './discovery/DiscoveryLearnContent';

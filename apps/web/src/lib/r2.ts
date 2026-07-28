@@ -1,5 +1,5 @@
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import type { CourseAssetRef } from '@moto-ai/contracts/course';
+import type { CourseAssetRef } from '@moto-ai/contracts/course-assets';
 
 interface R2Config {
   accountId: string;

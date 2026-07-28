@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { CircleGauge, Palette, SwatchBook } from 'lucide-react';
-import type { CourseLesson } from '@/lib/contracts/course';
+import type { CourseLesson } from '@/lib/contracts/player-course';
 
 interface ColorSwitcherLessonProps {
   lesson: CourseLesson;

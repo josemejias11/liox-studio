@@ -2,8 +2,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Bot, BarChart2, BookOpen, PlayCircle } from 'lucide-react';
 import { listPublishedCourseSummaries } from '@moto-ai/database';
-import type { CourseSummary } from '@/lib/contracts/course';
-import { toPostgresCourseSummary } from '@/lib/postgres-course-content';
+import type { CourseSummary } from '@/lib/contracts/player-course';
+import { toPlayerCourseSummary } from '@/lib/course-player-adapter';
 import { ThemeToggle } from '@/components/theme';
 
 export const revalidate = 60;
@@ -11,7 +11,7 @@ export const revalidate = 60;
 export default async function Home() {
   const records = await listPublishedCourseSummaries();
   const courses: CourseSummary[] = records.flatMap((record) => {
-    const course = toPostgresCourseSummary(record);
+    const course = toPlayerCourseSummary(record);
     return course ? [course] : [];
   });
 

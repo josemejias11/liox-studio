@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { PortableText } from '@portabletext/react';
 import { supMark } from '@/lib/portable-text-components';
-import { CourseLesson } from '@/lib/contracts/course';
+import { CourseLesson } from '@/lib/contracts/player-course';
 import Image from 'next/image';
 import { CheckCircle2 } from 'lucide-react';
 

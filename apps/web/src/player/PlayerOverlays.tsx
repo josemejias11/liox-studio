@@ -3,7 +3,7 @@
 import { CompletionBurst } from '@/components/CompletionBurst';
 import { CourseAIFab } from '@/components/CourseAIFab';
 import type { CourseFlow } from '@/lib/course-flow';
-import type { LessonSection } from '@/lib/contracts/course';
+import type { LessonSection } from '@/lib/contracts/player-course';
 import type { CoursePhase } from './hooks/useCourseNavigation';
 import { NavMap } from './NavMap';
 

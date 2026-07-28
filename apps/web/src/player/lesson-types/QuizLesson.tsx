@@ -1,7 +1,7 @@
 'use client';
 
 import { CourseQuiz } from '@/components/course-ai/CourseQuiz';
-import type { AuthoredQuiz } from '@/lib/contracts/course';
+import type { AuthoredQuiz } from '@/lib/contracts/player-course';
 
 import { CourseQuizPlayer } from '@/components/CourseQuizPlayer';
 

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { PortableText } from '@portabletext/react';
 import { ArrowLeftRight, Focus } from 'lucide-react';
 import { supMark } from '@/lib/portable-text-components';
-import type { CourseLesson } from '@/lib/contracts/course';
+import type { CourseLesson } from '@/lib/contracts/player-course';
 import {
   InlineDiscoveryCueMark,
   InlineDiscoveryCueProvider,

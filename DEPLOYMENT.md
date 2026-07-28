@@ -1,263 +1,165 @@
 # Deployment Guide
 
-This document covers production deployment of Moto Tutor AI across the web app, background job worker, Python parser service, PostgreSQL, and the LLM host.
+Moto AI runs as four cooperating services:
 
-## Architecture Overview
-
-```
-Browser ──→ apps/web (port 3000) ───────────────→ services/parser-service (port 8000)
-                │                                      ▲          │
-                ▼                                      │          ▼
-          PostgreSQL ──→ apps/job-worker ──────────────┘    Ollama + ChromaDB
-          (Prisma ORM)      (queued uploads/quizzes)        (LLM + vector store)
-                │
-                ▼
-           Sanity CMS
-        (hosted headless)
+```text
+Browser ──► Next.js web app ──► PostgreSQL
+                    │              ▲
+                    ├──► R2        │
+                    │              │
+                    └──► job worker ──► parser service ──► Ollama + ChromaDB
 ```
 
-The browser never reaches the parser service directly. Next.js proxies synchronous chat and deletion requests, while queued uploads and quiz generation flow through PostgreSQL and the worker.
+- PostgreSQL is the source of truth for authored courses, immutable revisions, review feedback, learner progress, jobs, and asset metadata.
+- A private Cloudflare R2 bucket stores course media and source files.
+- The Next.js app owns Course Studio, the learner player, review surfaces, and authenticated asset delivery.
+- The worker and parser service handle document indexing, grounded chat, and generated quizzes.
 
-Node applications read the repository's root environment (`.env`/`.env.local` in development). The parser service keeps its own environment and ChromaDB state under `services/parser-service/`.
+The browser never connects directly to PostgreSQL, R2, or the parser service.
 
 ## Prerequisites
 
-- Node.js 20+
-- Python 3.11+
-- PostgreSQL 16+ (managed or self-hosted)
-- A server or VM with GPU access for the Ollama LLM (CPU-only works for `llama3` but is slower)
-- A Sanity project (free tier: [sanity.io/manage](https://sanity.io/manage))
+- Node.js 20 or newer
+- PostgreSQL 16 or newer
+- A private Cloudflare R2 bucket and scoped API credentials
+- Python 3.11 or newer for the parser service
+- Ollama with `llama3` and `nomic-embed-text` for local AI features
 
-## 1. PostgreSQL
+## Environment
 
-### Option A — Managed (recommended)
+Use `.env.example` for database and non-secret runtime defaults. Use
+`.env.local.example` for application secrets and R2 credentials. In production,
+store the same values in the deployment platform's secret manager; do not deploy
+local environment files.
 
-Use Supabase, Neon, or any managed Postgres provider.
+### Web app and worker
 
-1. Create a new database (e.g. `moto_ai_prod`).
-2. Get the connection string (pooled and direct).
-3. Set both env vars in the Next.js deployment:
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `DATABASE_URL` | Yes | Runtime PostgreSQL connection; use a pooled URL when available |
+| `DIRECT_URL` | Yes | Direct PostgreSQL connection used by Prisma migrations |
+| `COURSE_STUDIO_PASSWORD` | Yes | Independent Course Studio sign-in secret |
+| `ANALYTICS_PASSWORD` | Yes | Independent analytics sign-in secret |
+| `R2_ACCOUNT_ID` | Yes for assets | Cloudflare account containing the R2 bucket |
+| `R2_ACCESS_KEY_ID` | Yes for assets | Scoped R2 API access key |
+| `R2_SECRET_ACCESS_KEY` | Yes for assets | Scoped R2 API secret |
+| `R2_BUCKET` | Yes for assets | Private course asset bucket |
+| `PARSER_SERVICE_URL` | Yes for AI features | Internal parser-service base URL |
+| `PARSER_SERVICE_TOKEN` | Yes for AI features | Shared secret used by the web app, worker, and parser service |
+| `JOB_WORKER_POLL_INTERVAL_MS` | No | Worker polling interval; defaults to the repository setting |
+| `UPSTASH_REDIS_REST_URL` | No | Optional rate-limit store |
+| `UPSTASH_REDIS_REST_TOKEN` | No | Optional rate-limit store credential |
 
-```bash
-DATABASE_URL="postgresql://user:pass@host:6543/moto_ai_prod?pgbouncer=true"
-DIRECT_URL="postgresql://user:pass@host:5432/moto_ai_prod"
-```
+`COURSE_STUDIO_PASSWORD`, `ANALYTICS_PASSWORD`, and
+`PARSER_SERVICE_TOKEN` must be separate random values.
 
-4. Run migrations once after deployment:
+### Parser service
 
-```bash
-npm run db:migrate
-```
+The parser service reads its own environment from
+`services/parser-service/.env`.
 
-### Option B — Self-hosted
+| Variable | Required | Default | Purpose |
+| --- | --- | --- | --- |
+| `PARSER_SERVICE_TOKEN` | Yes | — | Must exactly match the web app and worker |
+| `OLLAMA_BASE_URL` | No | `http://localhost:11434` | Ollama server URL |
+| `PARSER_PORT` | No | `8000` | Service port |
+| `CHROMA_DIR` | No | service-local `chroma_db` | Vector-store persistence path |
 
-```bash
-# Install PostgreSQL and create the database
-psql -U postgres -c "CREATE DATABASE moto_ai_prod;"
+## Database
 
-# Set env vars pointing to localhost
-DATABASE_URL="postgresql://user:pass@localhost:5432/moto_ai_prod"
-DIRECT_URL="postgresql://user:pass@localhost:5432/moto_ai_prod"
-```
-
-## 2. LLM Host (Ollama)
-
-The parser service requires Ollama with two models.
-
-### Self-hosted Ollama
-
-1. Install Ollama on a server with at least 8 GB RAM and a GPU if available:
-
-   ```bash
-   curl -fsSL https://ollama.com/install.sh | sh
-   ```
-
-2. Pull the required models:
-
-   ```bash
-   ollama pull llama3
-   ollama pull nomic-embed-text
-   ```
-
-3. Bind Ollama to listen on the network interface (default is localhost-only):
-
-   ```bash
-   OLLAMA_HOST=0.0.0.0:11434 ollama serve
-   ```
-
-4. Configure the parser service to point to this host:
-   ```bash
-   OLLAMA_BASE_URL="http://<ollama-server-ip>:11434"
-   ```
-
-### CPU-only fallback
-
-`llama3` runs on CPU at reduced speed. Expect 3-10 second response times for chat queries.
-
-## 3. Python Parser Service
-
-### Deploy as a systemd service (Linux)
-
-```ini
-# /etc/systemd/system/moto-parser.service
-[Unit]
-Description=Moto Tutor AI Parser Service
-After=network.target
-
-[Service]
-Type=simple
-User=moto
-WorkingDirectory=/opt/moto-ai/services/parser-service
-Environment=PARSER_SERVICE_TOKEN=<strong-secret>
-Environment=OLLAMA_BASE_URL=http://localhost:11434
-Environment=PARSER_PORT=8000
-ExecStart=/opt/moto-ai/services/parser-service/venv/bin/python -m moto_parser
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-```
-
-```bash
-sudo systemctl enable moto-parser
-sudo systemctl start moto-parser
-```
-
-### Environment variables
-
-| Variable               | Required | Default                   | Description                             |
-| ---------------------- | -------- | ------------------------- | --------------------------------------- |
-| `PARSER_SERVICE_TOKEN` | Yes      | —                         | Shared secret for Next.js ↔ parser auth |
-| `OLLAMA_BASE_URL`      | No       | `http://localhost:11434`  | Ollama server URL                       |
-| `PARSER_PORT`          | No       | `8000`                    | Port the parser service listens on      |
-| `CHROMA_DIR`           | No       | service-local `chroma_db` | Where ChromaDB stores vector data       |
-
-### Health check
-
-```bash
-curl http://localhost:8000/health
-# {"status":"ok","ollama_reachable":true,"chroma_dir_writable":true}
-```
-
-## 4. Next.js App
-
-### Environment variables
-
-| Variable                        | Required | Description                                                     |
-| ------------------------------- | -------- | --------------------------------------------------------------- |
-| `DATABASE_URL`                  | Yes      | Pooled Postgres connection (Prisma migrations use `DIRECT_URL`) |
-| `DIRECT_URL`                    | Yes      | Direct Postgres connection for migrations                       |
-| `SANITY_API_TOKEN`              | Yes      | Sanity Editor role token                                        |
-| `NEXT_PUBLIC_SANITY_PROJECT_ID` | Yes      | Sanity project ID (e.g. `e7l925v5`)                             |
-| `NEXT_PUBLIC_SANITY_DATASET`    | No       | Dataset name (default: `production`)                            |
-| `PARSER_SERVICE_URL`            | Yes      | URL of the parser service (e.g. `http://localhost:8000`)        |
-| `PARSER_SERVICE_TOKEN`          | Yes      | Must match the parser service's `PARSER_SERVICE_TOKEN`          |
-| `ANALYTICS_PASSWORD`            | Yes      | Password for the instructor dashboard login                     |
-| `UPSTASH_REDIS_REST_URL`        | No       | Upstash Redis URL for rate limiting (omit to disable)           |
-| `UPSTASH_REDIS_REST_TOKEN`      | No       | Upstash Redis token for rate limiting                           |
-
-### Deploy to Vercel (recommended)
-
-1. Push the repo to GitHub.
-2. Import the project in Vercel.
-3. Use the repository build command: `npm run build`.
-4. Set all env vars listed above in the Vercel dashboard.
-5. Add `http://localhost:3000` to Sanity CORS Origins (with credentials).
-6. Deploy.
-
-The Sanity Studio is embedded at `/studio` — no separate deployment needed.
-
-### Deploy to a Linux server
+Create a production database and configure both connection URLs. Apply committed
+migrations before starting the application:
 
 ```bash
 npm install
 npm run db:migrate
+```
+
+`npm run build` also applies committed migrations, so the configured database
+must be reachable during the build.
+
+## Cloudflare R2
+
+Create a private bucket and API credentials limited to that bucket. Course
+assets are addressed through `/api/course-assets/[...key]`; the bucket does not
+need a public URL or public-read policy.
+
+Back up the bucket using R2 object versioning, replication, or an external
+object-store backup process appropriate to the deployment.
+
+## Web app
+
+Build and run the application from the repository root:
+
+```bash
 npm run build
-npm start  # runs on port 3000
+npm start
 ```
 
-Use a process manager (pm2, systemd, or supervisor) to keep it running.
+The deployment must keep `/studio`, `/course/[slug]`, `/analytics`, and
+`/api/course-assets/[...key]` on the same Next.js application. HTTPS is required
+in production so authentication cookies remain protected in transit.
 
-## 5. Background job worker
+## Background worker
 
-Run the worker as a separate long-lived process from the repository root:
+Run one or more long-lived workers separately from the web process:
 
 ```bash
-npm install
 npm run jobs:worker
 ```
 
-It claims durable PostgreSQL jobs and calls the internal parser service. Provide the same database and parser connection variables used by the web app.
+Each worker needs the same database, parser URL, and parser token as the web
+application. Workers claim jobs through PostgreSQL leases, so multiple
+instances may share the queue.
 
-## 6. Sanity Configuration
+## Parser service
 
-1. Go to [sanity.io/manage](https://sanity.io/manage) → your project → API.
-2. Create a token with **Editor** role.
-3. Set `SANITY_API_TOKEN` in the Next.js env.
-4. Go to **API → CORS Origins** and add your production domain with **Allow credentials** checked.
-
-## 7. Rate Limiting (optional)
-
-Rate limiting uses Upstash Redis and is gracefully disabled when env vars are unset.
-
-1. Create a free Upstash Redis instance at [upstash.com](https://upstash.com).
-2. Set `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`.
-
-## 8. Post-Deployment Checklist
-
-- [ ] PostgreSQL is running and `DATABASE_URL`/`DIRECT_URL` are set.
-- [ ] Ollama is running with `llama3` and `nomic-embed-text` models pulled.
-- [ ] Parser service health check returns `{"status":"ok"}`.
-- [ ] Parser service token matches between Next.js and the parser env.
-- [ ] Sanity CORS origin includes the production domain.
-- [ ] Analytics dashboard password is set and not the dev default.
-- [ ] HTTPS is enabled (Vercel handles this automatically; for self-hosted, use a reverse proxy like nginx or Caddy).
-- [ ] `npm run db:migrate` ran successfully on the production database.
-
-## Security Notes
-
-- The parser service must be **internal-only**. Bind it to `127.0.0.1` or use a firewall to block external access. The browser only calls Next.js routes, never the parser directly.
-- `PARSER_SERVICE_TOKEN` is the shared secret between Next.js and the parser. Use a long random string. Never expose it in client-side code.
-- Quiz answer keys are **server-side only**. The `QUIZ_GRADING_QUERY` is never exposed to the browser.
-- All course file uploads are routed through the server, never from the browser to the parser.
-- The analytics dashboard is now gated behind the `analytics_token` cookie. Set a strong `ANALYTICS_PASSWORD`.
-
-## Backup & Recovery
-
-### PostgreSQL
-
-Back up with `pg_dump`:
+Install and start the parser service:
 
 ```bash
-pg_dump -U user -h host moto_ai_prod > moto_backup_$(date +%Y-%m-%d).sql
+cd services/parser-service
+python3 -m venv venv
+source venv/bin/activate
+pip install -e '.[dev]'
+python -m moto_parser
 ```
 
-Restore:
+Keep the parser and Ollama internal-only. The browser must reach AI features
+through the Next.js API and durable worker, never by calling the parser directly.
 
-```bash
-psql -U user -h host moto_ai_prod < moto_backup_2026-07-07.sql
-```
+## Release checklist
 
-### ChromaDB
+- [ ] PostgreSQL is reachable through both configured URLs.
+- [ ] `npm run db:migrate` completed against the production database.
+- [ ] The R2 bucket is private and credentials are scoped to it.
+- [ ] Course Studio and analytics use separate strong passwords.
+- [ ] The parser token matches across the web app, worker, and parser service.
+- [ ] The parser health endpoint reports healthy dependencies.
+- [ ] The web app, worker, and parser are supervised and restart on failure.
+- [ ] HTTPS, database backups, R2 backups, and ChromaDB backups are enabled.
+- [ ] A draft course can be previewed without writing learner progress.
+- [ ] A published course loads through `/course/[slug]`.
 
-Back up the persist directory:
+## Backup and recovery
 
-```bash
-tar -czf chroma_backup_$(date +%Y-%m-%d).tar.gz services/parser-service/chroma_db/
-```
+Back up PostgreSQL with the managed provider's point-in-time recovery or
+`pg_dump`. PostgreSQL backups are authoritative for course structure, releases,
+reviews, progress, jobs, and R2 object references.
 
-Restore by extracting to the same path and restarting the parser service.
+Back up `services/parser-service/chroma_db` only when the deployment relies on
+local Chroma persistence. It can be rebuilt from approved source documents, but
+restoring it is faster than re-indexing.
 
-### Sanity
+Restore PostgreSQL and R2 to a mutually consistent point whenever possible.
+Missing R2 objects remain missing even when their metadata row is present.
 
-Sanity stores content in their cloud. No backup needed for authored content — it's versioned automatically. Use Sanity's export API if you need an offline copy.
+## Security
 
-## Monitoring
-
-Recommended (not included in the repo):
-
-- **Uptime**: health check the parser at `/health` and monitor a known public Next.js page such as `/`
-- **Errors**: Sentry or similar for both Next.js and the parser service
-- **Performance**: Vercel Analytics (if deployed on Vercel) or CloudWatch (if on AWS)
-- **LLM metrics**: track Ollama request latency and failure rate via the parser service logs
+- Never expose database, R2, parser, or password values to client-side code.
+- Keep the R2 bucket and parser service private.
+- Rotate credentials independently; do not reuse the authoring password for
+  analytics or internal service authentication.
+- Quiz answer keys remain server-side and must not be added to learner payloads.
+- Treat immutable course revisions as the delivery audit boundary. Downstream
+  Motorola and localization packaging remains a future adapter, not a runtime
+  dependency.

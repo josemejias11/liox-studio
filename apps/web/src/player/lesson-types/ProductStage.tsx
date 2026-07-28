@@ -9,7 +9,7 @@ import { DiscoveryPanel } from '@/components/DiscoveryPanel';
 import { CompletionBurst } from '@/components/CompletionBurst';
 import { PortableText } from '@portabletext/react';
 import { supMark } from '@/lib/portable-text-components';
-import type { RichText, CourseHotspot, CoursePhoto } from '@/lib/contracts/course';
+import type { RichText, CourseHotspot, CoursePhoto } from '@/lib/contracts/player-course';
 
 interface ProductStageProps {
   headline: string;

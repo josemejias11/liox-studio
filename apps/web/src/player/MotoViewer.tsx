@@ -7,7 +7,7 @@ import { useLessonProgress } from './hooks/useLessonProgress';
 import { useCourseNavigation } from './hooks/useCourseNavigation';
 import { getChapterLessons } from '@/lib/course-structure';
 import { deriveCourseFlow } from '@/lib/course-flow';
-import type { CourseSection, CourseContent } from '@/lib/contracts/course';
+import type { CourseSection, CourseContent } from '@/lib/contracts/player-course';
 import { useCourseSession } from './hooks/useCourseSession';
 import { useWeakTopics } from './hooks/useWeakTopics';
 import { CoursePhaseScreen, getCoursePhaseSlideKey } from './CoursePhaseScreen';

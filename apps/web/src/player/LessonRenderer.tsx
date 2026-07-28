@@ -1,7 +1,7 @@
 'use client';
 
 import { CourseQuiz } from '@/components/course-ai/CourseQuiz';
-import type { LessonSection, CourseHotspot } from '@/lib/contracts/course';
+import type { LessonSection, CourseHotspot } from '@/lib/contracts/player-course';
 import { RefresherFeaturePanel } from './RefresherFeaturePanel';
 import {
   ContentLessonDynamic,

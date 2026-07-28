@@ -47,15 +47,13 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/packages/database/src/generated/prisma
-
 # Prisma local SQLite database
 *.db
 *.db-journal
 *.db-shm
 *.db-wal
 
-# sanity schema extract output
+# local temporary artifacts
 /tmp/
 
 

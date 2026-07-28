@@ -37,7 +37,10 @@ Course Studio is a Lionbridge-only production tool.
 
 ### Initial access model
 
-The first Course Studio release lives inside the existing embedded Sanity Studio. Existing Sanity-authenticated Lionbridge users are the internal production users. Course Studio does not introduce a separate dashboard, login system, Motorola account, or agency account in this phase.
+Course Studio lives at `/studio` in the Moto AI application. Lionbridge users
+authenticate with the dedicated Course Studio credential; Motorola and agency
+accounts remain out of scope. PostgreSQL owns authoring and review state, while
+private Cloudflare R2 storage owns media and source-file bytes.
 
 ## Structured authoring model
 

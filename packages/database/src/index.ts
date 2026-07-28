@@ -1,4 +1,4 @@
-import { PrismaClient } from './generated/prisma';
+import { PrismaClient } from '@prisma/client';
 
 export {
   BackgroundJobKind,
@@ -7,7 +7,7 @@ export {
   CoursePublicationStatus,
   CourseRevisionStatus,
   Prisma,
-} from './generated/prisma';
+} from '@prisma/client';
 export type {
   BackgroundJob,
   Course,
@@ -18,7 +18,7 @@ export type {
   CourseReview,
   CourseReviewFeedback,
   CourseRevision,
-} from './generated/prisma';
+} from '@prisma/client';
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
@@ -36,5 +36,5 @@ export {
   getPublishedCourseBySlug,
   listAuthoringCourses,
   listPublishedCourseSummaries,
-} from './course-authoring';
-export type { AuthoringChapter, AuthoringCourse, AuthoringLesson } from './course-authoring';
+} from './course-repository';
+export type { CourseGraph, CourseGraphChapter, CourseGraphLesson } from './course-repository';

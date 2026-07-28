@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import { CourseCover } from '@/components/CourseCover';
 import { CourseComplete } from '@/components/CourseComplete';
 import type { CourseStructure } from '@/lib/course-structure';
-import type { LessonSection, CourseContent } from '@/lib/contracts/course';
+import type { LessonSection, CourseContent } from '@/lib/contracts/player-course';
 import type { CoursePhase } from './hooks/useCourseNavigation';
 import type { LessonRuntime } from './hooks/useLessonRuntime';
 import { ChapterIntro } from './ChapterIntro';

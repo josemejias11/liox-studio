@@ -29,7 +29,7 @@ export function toPlainText(value: unknown): string {
 const opt = <T extends z.ZodType>(schema: T) =>
   schema.nullish().transform((v) => (v ?? undefined) as z.output<T> | undefined);
 
-// Imported legacy arrays may contain null entries; ignore them at the boundary.
+// Persisted arrays may contain null entries; ignore them at the boundary.
 const resolvedArray = <T extends z.ZodType>(schema: T) =>
   z.array(schema.nullable()).transform((values) =>
     values.filter((value): value is z.output<T> => value !== null),
@@ -42,7 +42,7 @@ export const portableTextSchema = z.custom<PortableTextBlock[]>((v) => Array.isA
 export type RichText = string | PortableTextBlock[];
 const richTextSchema = z.union([z.string(), portableTextSchema]);
 
-/** Headline/label fields: tolerate legacy PortableText values, emit a string. */
+/** Headline/label fields: tolerate persisted Portable Text values, emit a string. */
 const plainStringSchema = z
   .union([z.string(), portableTextSchema])
   .catch('')
@@ -244,7 +244,7 @@ export type { CourseMode };
 /** Flat discriminated union of every section type in the course flow. */
 export type CourseSection = LessonSection | CourseSpecification | AuthoredQuiz | CourseDisclaimer;
 
-// ── Course summary (COURSES_QUERY) ────────────────────────────────────────────
+// ── Published course library summary ──────────────────────────────────────────
 
 export const courseSummarySchema = z.object({
   _id: z.string(),

@@ -4,7 +4,7 @@ import type {
   CourseDisclaimer,
   AuthoredQuiz,
   CourseSpecification,
-} from '@/lib/contracts/course';
+} from '@/lib/contracts/player-course';
 
 // ── Derived course structure ──────────────────────────────────────────────────
 // One source of truth for grouping raw course sections into chapter-aware lesson

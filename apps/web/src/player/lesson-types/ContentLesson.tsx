@@ -8,7 +8,7 @@ import { supMark } from '@/lib/portable-text-components';
 import { Hotspot } from '@/components/Hotspot';
 import { DiscoveryPanel } from '@/components/DiscoveryPanel';
 import { getSemanticWidthClass } from '@/lib/utils';
-import type { LessonSection, RichText, CourseHotspot, CoursePhoto } from '@/lib/contracts/course';
+import type { LessonSection, RichText, CourseHotspot, CoursePhoto } from '@/lib/contracts/player-course';
 import {
   InlineDiscoveryCueMark,
   InlineDiscoveryCueProvider,

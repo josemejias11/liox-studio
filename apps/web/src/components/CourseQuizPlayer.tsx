@@ -12,7 +12,7 @@ import {
   type ClientQuiz,
 } from '@moto-ai/contracts/quiz';
 import { createQuizSessionState, quizSessionReducer } from '@/lib/quiz-session';
-import type { AuthoredQuiz } from '@/lib/contracts/course';
+import type { AuthoredQuiz } from '@/lib/contracts/player-course';
 
 // ── Authored course quiz player ──────────────────────────────────────────────
 

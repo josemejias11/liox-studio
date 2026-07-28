@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import type { CourseSpecification } from '@/lib/contracts/course';
+import type { CourseSpecification } from '@/lib/contracts/player-course';
 
 interface SpecificationPageProps {
   spec: CourseSpecification;

@@ -14,12 +14,12 @@ The system must feel consistent through Moto indigo, spring motion, focus behavi
 - Preserve the traditional pulsing hotspot and its current discovery-panel behavior.
 - Signal the intended learning action before the learner interacts.
 - Give Stage, Canvas, and reading-focused lessons interaction patterns that fit their purpose.
-- Keep progress, completion, and Sanity hotspot content compatible.
+- Keep progress, completion, and persisted hotspot content compatible.
 - Support desktop, touch, keyboard, and reduced-motion experiences.
 
 ## Non-goals
 
-- Do not create a separate course route, player, or Sanity content model.
+- Do not create a separate course route, player, or parallel content model.
 - Do not make authors choose from a complicated list of marker styles.
 - Do not add hotspots to task-based lessons that already have an appropriate native interaction.
 - Do not create automated tests or testing files.
@@ -88,11 +88,11 @@ Each expression consumes the same core interaction values:
 - body, photos, and video
 - accessible name
 
-The lesson type selects the default expression. No new Sanity authoring field is required in the first implementation.
+The lesson type selects the default expression. No new authoring field is required in the first implementation.
 
 ## Data and Progress Flow
 
-1. Sanity returns the existing lesson and hotspot content.
+1. The course repository returns the existing lesson and hotspot content.
 2. The lesson registry identifies the lesson type.
 3. The lesson renderer selects the corresponding Moto interaction family.
 4. The family component renders the appropriate marker or inline cue.
@@ -133,7 +133,7 @@ Implementation verification will use:
 - Desktop and mobile layout review.
 - Keyboard navigation and focus review.
 - Reduced-motion review.
-- Confirmation that visited counts, completion gates, and existing Sanity content still work.
+- Confirmation that visited counts, completion gates, and existing authored content still work.
 
 ## Acceptance Criteria
 
@@ -144,4 +144,4 @@ Implementation verification will use:
 - Content, Split Screen, and Scroll Story prefer inline cues instead of image hotspots.
 - Task-based lessons do not gain unnecessary hotspots.
 - All families share Moto visual and completion states.
-- Existing Sanity hotspot content and saved progress remain compatible.
+- Existing hotspot content and saved progress remain compatible.

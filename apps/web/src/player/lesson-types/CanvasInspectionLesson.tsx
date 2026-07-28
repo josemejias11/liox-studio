@@ -6,7 +6,7 @@ import { Crosshair, RotateCcw, ScanSearch, ZoomIn, ZoomOut } from 'lucide-react'
 import { DiscoveryPanel } from '@/components/DiscoveryPanel';
 import { Hotspot } from '@/components/Hotspot';
 import { clampCanvasZoom, MAX_CANVAS_ZOOM, MIN_CANVAS_ZOOM } from '@/lib/canvas';
-import type { LessonSection, RichText, CourseHotspot, CoursePhoto } from '@/lib/contracts/course';
+import type { LessonSection, RichText, CourseHotspot, CoursePhoto } from '@/lib/contracts/player-course';
 
 interface CanvasInspectionLessonProps {
   lesson: LessonSection;

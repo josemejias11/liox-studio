@@ -18,7 +18,7 @@ The learner can choose **Ask the AI tutor** at any point after the insight is re
 
 ## V1 scope: Content lessons
 
-V1 changes image hotspots rendered by `ContentLesson` only. Product Stage, Canvas, inline Portable Text cues, task-based lesson controls, authored Sanity documents, and progress data remain unchanged.
+V1 changes image hotspots rendered by `ContentLesson` only. Product Stage, Canvas, inline Portable Text cues, task-based lesson controls, authored course records, and progress data remain unchanged.
 
 For an image hotspot, the current floating `DiscoveryPanel` no longer opens as the default. Instead, a compact **Product Lens** card is positioned near the chosen feature without covering the main lesson text or navigation.
 
@@ -30,7 +30,7 @@ The card has three states:
 | Reveal insight | Existing authored hotspot body, with concise feature media if present | Continue to practice |
 | Demonstrate | A practical prompt: “How would you point out this benefit?” | Ask the AI tutor or close |
 
-Existing `hotspot.body`, photos, video, topic, label, and coordinates are reused. V1 adds no Sanity fields. The notice and demonstrate prompts are intentionally consistent system copy so authors do not need to maintain a second parallel content model.
+Existing `hotspot.body`, photos, video, topic, label, and coordinates are reused. V1 adds no authoring fields. The notice and demonstrate prompts are intentionally consistent system copy so authors do not need to maintain a second parallel content model.
 
 ## AI tutor distinction
 

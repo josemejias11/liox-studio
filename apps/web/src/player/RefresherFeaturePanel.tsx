@@ -3,7 +3,7 @@
 import { Check, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { getCoveredFeatureLabels } from '@/lib/refresher';
-import type { LessonSection } from '@/lib/contracts/course';
+import type { LessonSection } from '@/lib/contracts/player-course';
 
 interface RefresherFeaturePanelProps {
   lesson: LessonSection;

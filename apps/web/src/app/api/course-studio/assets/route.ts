@@ -39,7 +39,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         filename: uploaded.filename ?? file.name,
         contentType: uploaded.contentType,
         byteSize: file.size,
-        publicUrl: uploaded.url,
+        deliveryUrl: uploaded.url,
       },
     });
     return NextResponse.json({ asset }, { status: 201 });
