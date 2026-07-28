@@ -18,11 +18,10 @@ interface ProgressData {
 }
 
 /**
- * @param sessionId Browser session id (persisted UUID, or an ephemeral one
- *                  when storage consent is declined/undecided).
- * @param persist   When false (no consent), progress is kept only in the local
- *                  SWR cache — no POSTs are sent, so nothing is recorded
- *                  server-side or on the device.
+ * @param sessionId Browser session id persisted in local storage for learners
+ *                  and ephemeral for previews.
+ * @param persist   When false, progress is kept only in the local SWR cache;
+ *                  previews use this mode so they cannot write learner data.
  */
 export function useLessonProgress(
   sessionId: string,
@@ -93,8 +92,8 @@ export function useLessonProgress(
       },
     };
 
-    // Optimistically update the SWR cache; only POST when consent allows
-    // persistence (otherwise progress lives solely in this tab's memory).
+    // Optimistically update the SWR cache; previews keep progress solely in
+    // this tab's memory and never POST learner data.
     // Throwing on non-2xx is what makes rollbackOnError actually roll back.
     await mutate(
       persist

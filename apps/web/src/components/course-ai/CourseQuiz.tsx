@@ -19,7 +19,7 @@ export interface CourseQuizProps {
   courseId?: string;
   /** Topics the learner has not explored yet — steers quiz generation. */
   weakTopics?: string[];
-  /** Session identity for recording the attempt server-side; omit when storage consent was declined. */
+  /** Session identity for recording the attempt server-side; omitted in previews. */
   sessionId?: string;
   /** Called with the server-graded score 0–100 (percentage) — only on a passing score. */
   onPass?: (score: number) => void;
@@ -174,7 +174,7 @@ export function CourseQuiz({
           source: quiz.source,
           quizId: quiz.quizId,
           answers: finalAnswers,
-          // Identity is only attached when consent allows persistence.
+          // Identity is only attached for learner sessions, never previews.
           ...(sessionId && courseId ? { sessionId, courseId } : {}),
         }),
       });

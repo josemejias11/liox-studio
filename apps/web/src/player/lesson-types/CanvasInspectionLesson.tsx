@@ -14,6 +14,7 @@ interface CanvasInspectionLessonProps {
   onVisit: (label: string) => void;
   courseId?: string;
   preview?: boolean;
+  imageSizes?: string;
 }
 
 interface ActiveTarget {
@@ -48,6 +49,7 @@ export function CanvasInspectionLesson({
   onVisit,
   courseId,
   preview = false,
+  imageSizes = '100vw',
 }: CanvasInspectionLessonProps) {
   const [zoom, setZoom] = useState(MIN_CANVAS_ZOOM);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -199,7 +201,7 @@ export function CanvasInspectionLesson({
                 alt={lesson.headline}
                 fill
                 priority
-                sizes="100vw"
+                sizes={imageSizes}
                 className="object-cover opacity-88 saturate-[0.82]"
                 draggable={false}
               />

@@ -86,7 +86,7 @@ export const GradeQuestionRequestSchema = z.object({
 /**
  * Final submission — the server re-grades every answer, derives `passed` from
  * the server-side passing score, and records the QuizAttempt itself when a
- * sessionId/courseId pair is provided (omitted when consent was declined).
+ * sessionId/courseId pair is provided (omitted in preview mode).
  */
 export const SubmitQuizRequestSchema = z.object({
   action: z.literal('submit'),

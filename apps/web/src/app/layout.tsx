@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme';
-import { CookieConsent } from '@/components/CookieConsent';
 import React from 'react';
 
 const geistSans = Geist({
@@ -34,7 +33,6 @@ export default function RootLayout({
       <body className="flex min-h-full flex-col">
         <ThemeProvider attribute="class" defaultTheme="system" disableTransitionOnChange>
           {children}
-          <CookieConsent />
         </ThemeProvider>
       </body>
     </html>

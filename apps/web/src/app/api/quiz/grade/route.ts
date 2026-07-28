@@ -132,8 +132,8 @@ export async function POST(req: NextRequest) {
     const result = gradeSubmission(key.questions, body.answers, key.passingScore);
 
     // Record the attempt server-side — `passed` is server-derived, never
-    // client-supplied. sessionId/courseId are absent when consent was declined;
-    // in that case nothing is persisted.
+    // client-supplied. sessionId/courseId are absent in preview mode; in that
+    // case nothing is persisted.
     if (body.sessionId && body.courseId) {
       const { sessionId, courseId } = body;
       await prisma.$transaction(async (tx) => {

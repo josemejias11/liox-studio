@@ -17,8 +17,8 @@ export interface QuizLessonProps {
   /** Called when the learner fails and retry is not allowed (or chooses to move on). */
   onFail: () => void;
   /**
-   * Session identity for recording the attempt server-side. Omit when storage
-   * consent was declined — the quiz still grades, but nothing is persisted.
+   * Session identity for recording the attempt server-side. Omit in previews;
+   * the quiz still grades, but nothing is persisted there.
    */
   sessionId?: string;
   courseId?: string;

@@ -25,6 +25,7 @@ interface ProductStageProps {
   onPrev?: () => void;
   courseId: string;
   preview?: boolean;
+  imageSizes?: string;
 }
 
 export function ProductStage({
@@ -39,6 +40,7 @@ export function ProductStage({
   onVisit,
   courseId,
   preview = false,
+  imageSizes = '100vw',
 }: ProductStageProps) {
   const [activePanel, setActivePanel] = useState<{
     label: string;
@@ -258,7 +260,7 @@ export function ProductStage({
             alt=""
             fill
             priority
-            sizes="100vw"
+            sizes={imageSizes}
             className="object-cover"
           />
         </motion.div>

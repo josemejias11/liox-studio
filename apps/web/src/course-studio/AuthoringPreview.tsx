@@ -34,6 +34,8 @@ export function AuthoringPreview({
     return () => observer.disconnect();
   }, []);
 
+  const imageSizes = scale > 0 ? `${Math.ceil(PLAYER_WIDTH * scale)}px` : '100vw';
+
   return (
     <div
       ref={containerRef}
@@ -62,6 +64,7 @@ export function AuthoringPreview({
             initialSectionKey={selectedLessonId}
             sections={content.sections}
             preview
+            imageSizes={imageSizes}
           />
         </div>
       </div>

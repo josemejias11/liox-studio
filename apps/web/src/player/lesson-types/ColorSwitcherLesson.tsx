@@ -7,9 +7,10 @@ import type { CourseLesson } from '@/lib/contracts/player-course';
 
 interface ColorSwitcherLessonProps {
   lesson: CourseLesson;
+  imageSizes?: string;
 }
 
-export function ColorSwitcherLesson({ lesson }: ColorSwitcherLessonProps) {
+export function ColorSwitcherLesson({ lesson, imageSizes = '100vw' }: ColorSwitcherLessonProps) {
   const variants = lesson.colorVariants || [];
   const [sliderValue, setSliderValue] = useState(0);
 
@@ -60,7 +61,7 @@ export function ColorSwitcherLesson({ lesson }: ColorSwitcherLessonProps) {
                 alt={variant.label || 'Color variant'}
                 fill
                 priority={i === 0}
-                sizes="100vw"
+                sizes={imageSizes}
                 className="object-contain drop-shadow-[0_30px_45px_rgba(24,25,29,0.2)]"
               />
             </div>

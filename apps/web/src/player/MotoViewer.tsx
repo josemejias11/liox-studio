@@ -44,11 +44,13 @@ export default function MotoViewer({
   sections,
   preview = false,
   initialSectionKey,
+  imageSizes = '100vw',
 }: {
   course: CourseContent;
   sections: CourseSection[];
   preview?: boolean;
   initialSectionKey?: string;
+  imageSizes?: string;
 }) {
   const flow = useMemo(
     () => deriveCourseFlow(sections, course.chapters ?? []),
@@ -236,6 +238,7 @@ export default function MotoViewer({
               dismissChapterIntro={nav.dismissChapterIntro}
               onDisclaimerCanProceedChange={setDisclaimerCanProceed}
               preview={preview}
+              imageSizes={imageSizes}
             />
           </ErrorBoundary>
         </motion.div>

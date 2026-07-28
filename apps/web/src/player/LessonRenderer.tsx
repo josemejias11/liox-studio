@@ -31,6 +31,7 @@ export interface LessonRendererProps {
   persistSession: boolean;
   courseId: string;
   preview: boolean;
+  imageSizes: string;
 }
 
 export function LessonRenderer({
@@ -48,6 +49,7 @@ export function LessonRenderer({
   persistSession,
   courseId,
   preview,
+  imageSizes,
 }: LessonRendererProps) {
   const completionMode = getLessonCompletionMode(lesson);
   const handleManualCompletion =
@@ -74,6 +76,7 @@ export function LessonRenderer({
           onPrev={goPrev}
           courseId={courseId}
           preview={preview}
+          imageSizes={imageSizes}
         />
       );
       break;
@@ -111,7 +114,7 @@ export function LessonRenderer({
       break;
 
     case 'colorSwitcher':
-      lessonContent = <ColorSwitcherLessonDynamic lesson={lesson} />;
+      lessonContent = <ColorSwitcherLessonDynamic imageSizes={imageSizes} lesson={lesson} />;
       break;
 
     case 'splitScreen':
@@ -150,6 +153,7 @@ export function LessonRenderer({
           onVisit={markVisited}
           courseId={courseId}
           preview={preview}
+          imageSizes={imageSizes}
         />
       );
       break;
@@ -163,6 +167,7 @@ export function LessonRenderer({
           onVisit={markVisited}
           courseId={courseId}
           preview={preview}
+          imageSizes={imageSizes}
         />
       );
   }

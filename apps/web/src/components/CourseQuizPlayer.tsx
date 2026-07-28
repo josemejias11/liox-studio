@@ -163,7 +163,7 @@ export function CourseQuizPlayer({
           source: quiz.source,
           quizId: quiz.quizId,
           answers,
-          // Identity is only attached when consent allows persistence.
+          // Identity is only attached for learner sessions, never previews.
           ...(sessionId && courseId ? { sessionId, courseId } : {}),
         }),
       });

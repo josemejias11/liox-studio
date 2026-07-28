@@ -24,6 +24,7 @@ interface ContentLessonProps {
   /** Forwarded to DiscoveryPanel for its AI chat calls. */
   courseId?: string;
   preview?: boolean;
+  imageSizes?: string;
 }
 
 interface ActivePanel {
@@ -84,6 +85,7 @@ export function ContentLesson({
   onVisit,
   courseId,
   preview = false,
+  imageSizes = '100vw',
 }: ContentLessonProps) {
   const [activeLearningTarget, setActiveLearningTarget] = useState<CourseHotspot | null>(null);
   const [activeTutorTarget, setActiveTutorTarget] = useState<ActivePanel | null>(null);
@@ -132,7 +134,7 @@ export function ContentLesson({
           alt={lesson.headline}
           fill
           priority
-          sizes="100vw"
+          sizes={imageSizes}
           className={`object-cover ${
             isInteraction ? 'opacity-78 saturate-[0.82]' : 'opacity-90 saturate-[0.86]'
           }`}

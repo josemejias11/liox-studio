@@ -11,6 +11,7 @@ interface CourseCoverProps {
   buttonText?: string;
   buttonColor?: string;
   learningObjectives?: string[];
+  imageSizes?: string;
   onStart: () => void;
 }
 
@@ -21,6 +22,7 @@ export function CourseCover({
   buttonText = 'Start Course',
   buttonColor,
   learningObjectives,
+  imageSizes = '100vw',
   onStart,
 }: CourseCoverProps) {
   const finalHeadline = coverHeadline || title;
@@ -47,7 +49,7 @@ export function CourseCover({
             alt="Course cover"
             fill
             priority
-            sizes="100vw"
+            sizes={imageSizes}
             className="object-cover"
           />
         </motion.div>

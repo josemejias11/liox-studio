@@ -41,6 +41,7 @@ export interface CoursePhaseScreenProps {
   dismissChapterIntro: () => void;
   onDisclaimerCanProceedChange: (canProceed: boolean) => void;
   preview: boolean;
+  imageSizes: string;
 }
 
 export function getCoursePhaseSlideKey(args: {
@@ -87,6 +88,7 @@ export function CoursePhaseScreen({
   dismissChapterIntro,
   onDisclaimerCanProceedChange,
   preview,
+  imageSizes,
 }: CoursePhaseScreenProps) {
   const { currentLesson } = lessonRuntime;
   switch (phase.phase) {
@@ -104,6 +106,7 @@ export function CoursePhaseScreen({
           buttonText={course.coverButtonText}
           buttonColor={course.coverButtonColor}
           learningObjectives={course.learningObjectives}
+          imageSizes={imageSizes}
           onStart={goNext}
         />
       );
@@ -204,6 +207,7 @@ export function CoursePhaseScreen({
           persistSession={persistSession}
           courseId={course._id}
           preview={preview}
+          imageSizes={imageSizes}
         />
       );
     }
