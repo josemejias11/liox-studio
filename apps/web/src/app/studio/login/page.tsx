@@ -1,3 +1,5 @@
+import { BookOpen } from 'lucide-react';
+
 interface CourseStudioLoginPageProps {
   searchParams: Promise<{ error?: string }>;
 }
@@ -8,7 +10,10 @@ export default async function CourseStudioLoginPage({ searchParams }: CourseStud
   return (
     <main className="bg-background text-foreground flex min-h-screen items-center justify-center px-4">
       <section className="w-full max-w-sm">
-        <header className="mb-8 text-center">
+        <header className="mb-8 flex flex-col items-center gap-3 text-center">
+          <div className="bg-primary text-primary-foreground flex h-12 w-12 items-center justify-center rounded-2xl">
+            <BookOpen className="h-6 w-6" aria-hidden="true" />
+          </div>
           <div>
             <h1 className="text-xl font-semibold">Course Studio</h1>
             <p className="text-muted-foreground mt-0.5 text-sm">Authoring workspace</p>

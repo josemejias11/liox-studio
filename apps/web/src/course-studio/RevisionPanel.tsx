@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Clipboard, Snowflake } from 'lucide-react';
 
 export interface StudioRevision {
   id: string;
@@ -179,7 +180,7 @@ function RevisionPanelContent({
     <section className="border-t border-border bg-card p-4">
       <div className="flex items-center justify-between gap-3">
         <div><h2 className="text-sm font-semibold">Client review</h2><p className="text-[11px] text-muted-foreground">Freeze the current course before sharing.</p></div>
-        <button className="inline-flex items-center rounded-lg bg-foreground px-3 py-2 text-xs font-semibold text-background disabled:opacity-50" disabled={disabled || busy} onClick={freeze} type="button">Freeze</button>
+        <button className="inline-flex items-center gap-1.5 rounded-lg bg-foreground px-3 py-2 text-xs font-semibold text-background disabled:opacity-50" disabled={disabled || busy} onClick={freeze} type="button"><Snowflake className="h-3.5 w-3.5" />Freeze</button>
       </div>
       {loading && <p className="mt-3 text-xs text-muted-foreground" role="status">Loading review history…</p>}
       {loadError && (
@@ -190,7 +191,7 @@ function RevisionPanelContent({
       )}
       {message && <p className="mt-3 text-xs text-muted-foreground">{message}</p>}
       {reviewUrl && (
-        <button className="mt-3 flex w-full items-center rounded-lg border border-primary bg-primary/5 p-2 text-left text-xs text-primary" onClick={() => navigator.clipboard.writeText(reviewUrl)} type="button"><span className="truncate">Copy review link</span></button>
+        <button className="mt-3 flex w-full items-center gap-2 rounded-lg border border-primary bg-primary/5 p-2 text-left text-xs text-primary" onClick={() => navigator.clipboard.writeText(reviewUrl)} type="button"><Clipboard className="h-4 w-4 shrink-0" /><span className="truncate">Copy review link</span></button>
       )}
       <div className="mt-3 max-h-36 space-y-2 overflow-y-auto">
         {revisions.map((revision) => (

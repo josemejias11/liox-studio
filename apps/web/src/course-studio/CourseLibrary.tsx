@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { BookOpen, X } from 'lucide-react';
 import { useState } from 'react';
 import { RevisionPanel } from './RevisionPanel';
 
@@ -62,7 +63,7 @@ export function CourseLibrary({ courses }: CourseLibraryProps) {
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
-                    <span className="text-muted-foreground text-sm">No thumbnail</span>
+                    <BookOpen className="text-muted-foreground/30 h-10 w-10" />
                   </div>
                 )}
               </div>
@@ -108,10 +109,11 @@ export function CourseLibrary({ courses }: CourseLibraryProps) {
               </p>
             </div>
             <button
-              className="inline-flex w-fit items-center rounded-lg border border-border px-3 py-2 text-sm font-medium hover:border-primary hover:text-primary"
+              className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium hover:border-primary hover:text-primary"
               onClick={() => setSelectedCourse(null)}
               type="button"
             >
+              <X className="h-4 w-4" />
               Clear selection
             </button>
           </div>

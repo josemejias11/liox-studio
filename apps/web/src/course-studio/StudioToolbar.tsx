@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Expand, Minimize2 } from 'lucide-react';
 
 export function StudioToolbar({
   title,
@@ -30,7 +31,7 @@ export function StudioToolbar({
           if (onNavigateToLibrary && !onNavigateToLibrary()) event.preventDefault();
         }}
       >
-        Courses
+        ← Courses
       </Link>
       <div className="h-6 w-px bg-border" />
       <div className="order-3 min-w-0 basis-full sm:order-none sm:basis-auto sm:flex-1">
@@ -49,7 +50,8 @@ export function StudioToolbar({
           )}
         </div>
       </div>
-      <button className="inline-flex items-center rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted" onClick={onToggleFocus} type="button">
+      <button className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted" onClick={onToggleFocus} type="button">
+        {focusPreview ? <Minimize2 className="h-4 w-4" /> : <Expand className="h-4 w-4" />}
         {focusPreview ? 'Return to editor' : 'Focus preview'}
       </button>
     </header>

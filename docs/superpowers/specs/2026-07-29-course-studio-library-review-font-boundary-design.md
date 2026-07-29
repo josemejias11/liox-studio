@@ -17,7 +17,6 @@ Course Studio remains the authoring surface for complete learning masters. The l
 3. Move the course-settings save/status footer into the editor's left outline while keeping the course-settings fields in the bottom tools area.
 4. Apply MotoSans only to the learner-facing product experience and its embedded product preview. Use the existing Geist font for the application shell and internal tools.
 5. Reuse the existing revision, review-link, and feedback APIs and preserve the immutable revision behavior.
-6. Keep the application/editor surfaces text-led and free of decorative icon controls.
 
 ## Non-goals
 
@@ -27,7 +26,6 @@ Course Studio remains the authoring surface for complete learning masters. The l
 - No redesign of the Course Studio canvas or lesson inspectors beyond relocating the save/status footer.
 - No requirement for client review to become a full authoring workflow.
 - No server-side persistence for panel dimensions.
-- No decorative iconography in Course Studio, the library, review controls, analytics, login screens, or application shell controls. The favicon and purposeful learner lesson controls are separate product concerns.
 
 ## User experience
 
@@ -69,10 +67,6 @@ Both separators support pointer/touch dragging and keyboard adjustment. They exp
 Persist the two dimensions in browser local storage for the current authoring environment. Restore them on future visits, clamp stored values to the current viewport and safe bounds, and fall back to the existing default layout when no valid value exists. No new server or database setting is required.
 
 The desktop shell must not retain a minimum height that forces page scrolling on shorter screens. On mobile, the editor remains a naturally stacked flow because the panels no longer sit side-by-side; bounded internal scrolling should prevent the outline and tools content from creating unnecessary duplicate page height.
-
-### Application iconography
-
-Course Studio and surrounding application surfaces use explicit text labels and typographic/spacing affordances. Remove decorative Lucide icons from editor actions, review actions, library placeholders, navigation controls, login branding, analytics cards, loading/error actions, and theme controls. Preserve accessible names and action clarity in the text itself. The Motorola favicon remains branding, and icons that are intrinsic to a learner lesson interaction may remain inside the product canvas.
 
 ## Component and data design
 

@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
+import { Bot, Users, Zap, Trophy, BookOpen, ArrowLeft } from 'lucide-react';
 import { getAnalyticsData } from '@/services/analytics.service';
+import React from 'react';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,16 +33,19 @@ function relativeTime(date: Date): string {
 }
 
 function StatCard({
+  icon: Icon,
   label,
   value,
   accent,
 }: {
+  icon: React.ElementType;
   label: string;
   value: string | number;
   accent: string;
 }) {
   return (
     <div className="bg-background border-border/8 flex flex-col gap-2.5 rounded-2xl border px-5 py-5">
+      <Icon className={`h-4 w-4 ${accent}`} aria-hidden="true" />
       <p className={`text-[32px] leading-none font-bold tabular-nums ${accent}`}>{value}</p>
       <p className="text-foreground/30 text-[10px] font-semibold tracking-widest uppercase">
         {label}
@@ -72,15 +77,19 @@ export default async function AnalyticsPage() {
     <div className="bg-background text-foreground min-h-screen">
       {/* Header */}
       <header className="border-border bg-background/95 sticky top-0 z-10 flex h-16 items-center gap-3 border-b px-6 backdrop-blur-sm">
-        <div className="text-primary text-lg font-semibold">moto tutor</div>
+        <div className="text-primary flex items-center gap-2 text-lg font-semibold">
+          <Bot className="h-6 w-6" aria-hidden="true" />
+          <span>moto tutor</span>
+        </div>
         <span className="text-muted-foreground select-none">·</span>
         <span className="text-muted-foreground text-sm font-medium">Instructor Dashboard</span>
 
         <div className="ml-auto">
           <Link
             href="/"
-            className="text-muted-foreground hover:text-foreground border-border hover:bg-accent flex items-center rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-150"
+            className="text-muted-foreground hover:text-foreground border-border hover:bg-accent flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-150"
           >
+            <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
             Course Player
           </Link>
         </div>
@@ -90,12 +99,13 @@ export default async function AnalyticsPage() {
         {totalSessions === 0 ? (
           /* ── Empty state ── */
           <div className="flex flex-col items-center justify-center gap-4 py-32 text-center">
+            <Users className="text-muted-foreground h-10 w-10" aria-hidden="true" />
             <p className="text-muted-foreground text-base font-medium">No learner activity yet.</p>
             <p className="text-muted-foreground/50 text-sm">
               Share the course link to start tracking progress.
             </p>
             <Link href="/" className="text-primary mt-2 text-sm transition-colors hover:underline">
-              Open Course
+              Open Course →
             </Link>
           </div>
         ) : (
@@ -104,21 +114,25 @@ export default async function AnalyticsPage() {
             <section aria-label="Summary statistics">
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 <StatCard
+                  icon={Users}
                   label="Sessions"
                   value={totalSessions}
                   accent="text-accent"
                 />
                 <StatCard
+                  icon={Zap}
                   label="Features Explored"
                   value={totalHotspotsVisited}
                   accent="text-accent"
                 />
                 <StatCard
+                  icon={Trophy}
                   label="Avg Quiz Score"
                   value={avgQuizPct !== null ? `${avgQuizPct}%` : '—'}
                   accent="text-muted-foreground"
                 />
                 <StatCard
+                  icon={BookOpen}
                   label="Quiz Attempts"
                   value={totalQuizzes}
                   accent="text-muted-foreground"
