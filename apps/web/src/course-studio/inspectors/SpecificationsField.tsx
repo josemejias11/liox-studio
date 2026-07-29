@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import {
   createCourseStudioKey,
+  createStableCourseStudioKey,
   imageReference,
   jsonObject,
   mergeKnownFields,
@@ -73,18 +74,18 @@ export function createSpecification(): SpecificationDraft {
 }
 
 export function specificationDrafts(value: unknown): SpecificationDraft[] {
-  return objectArray(value).map((source) => ({
-    clientKey: createCourseStudioKey('specification'),
+  return objectArray(value).map((source, specificationIndex) => ({
+    clientKey: createStableCourseStudioKey('specification', specificationIndex),
     original: source,
     title: stringField(source.title),
     subtitle: stringField(source.subtitle),
     heroImage: imageReference(source.heroImage),
-    groups: objectArray(source.specGroups).map((group) => ({
-      clientKey: createCourseStudioKey('spec-group'),
+    groups: objectArray(source.specGroups).map((group, groupIndex) => ({
+      clientKey: createStableCourseStudioKey(`spec-group-${specificationIndex}`, groupIndex),
       original: group,
       groupName: stringField(group.groupName),
-      rows: objectArray(group.specs).map((row) => ({
-        clientKey: createCourseStudioKey('spec-row'),
+      rows: objectArray(group.specs).map((row, rowIndex) => ({
+        clientKey: createStableCourseStudioKey(`spec-row-${specificationIndex}-${groupIndex}`, rowIndex),
         original: row,
         label: stringField(row.label),
         value: stringField(row.value),
@@ -92,7 +93,7 @@ export function specificationDrafts(value: unknown): SpecificationDraft[] {
       })),
     })),
     footnotes: Array.isArray(source.footnotes)
-      ? source.footnotes.filter((item): item is string => typeof item === 'string').map((item) => ({ clientKey: createCourseStudioKey('footnote'), value: item }))
+      ? source.footnotes.filter((item): item is string => typeof item === 'string').map((item, footnoteIndex) => ({ clientKey: createStableCourseStudioKey(`footnote-${specificationIndex}`, footnoteIndex), value: item }))
       : [],
   }));
 }

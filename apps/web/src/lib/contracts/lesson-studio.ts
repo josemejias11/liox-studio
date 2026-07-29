@@ -1,6 +1,6 @@
 import type { CourseLessonType, CourseGraph } from '@moto-ai/database';
 import { toPlainText } from '@/lib/contracts/player-course';
-import { createCourseStudioKey, isJsonObject, jsonObject, mergeKnownFields, stringField, booleanField } from '@/lib/contracts/course-studio';
+import { createStableCourseStudioKey, isJsonObject, jsonObject, mergeKnownFields, stringField, booleanField } from '@/lib/contracts/course-studio';
 
 export type StudioLesson = CourseGraph['chapters'][number]['lessons'][number];
 
@@ -143,12 +143,11 @@ function textDraft(value: unknown): TextDraft {
   return { text: toPlainText(value), original: value, touched: false };
 }
 
-function rowKey(prefix: string, value: Record<string, unknown>): { clientKey: string; persistedKey?: string } {
+function rowKey(prefix: string, value: Record<string, unknown>, index: number): { clientKey: string; persistedKey?: string } {
+  const persistedKey = typeof value._key === 'string' && value._key.length > 0 ? value._key : undefined;
   return {
-    clientKey: createCourseStudioKey(prefix),
-    persistedKey: typeof value._key === 'string' && value._key.length > 0
-      ? value._key
-      : createCourseStudioKey(`${prefix}-persisted`),
+    clientKey: createStableCourseStudioKey(prefix, persistedKey ?? index),
+    persistedKey,
   };
 }
 
@@ -177,14 +176,14 @@ export function createLessonDraft(lesson: StudioLesson): LessonDraft {
       y: numberText(asObject(payload.textOverlay).y, '15'),
       width: stringField(asObject(payload.textOverlay).width),
     },
-    coveredFeatures: rawFeatures.map((value) => {
+    coveredFeatures: rawFeatures.map((value, index) => {
       const item = asObject(value);
-      return { ...rowKey('feature', item), label: stringField(item.label), summary: stringField(item.summary), original: item };
+      return { ...rowKey('feature', item, index), label: stringField(item.label), summary: stringField(item.summary), original: item };
     }),
-    hotspots: rawHotspots.map((value) => {
+    hotspots: rawHotspots.map((value, index) => {
       const item = asObject(value);
       return {
-        ...rowKey('hotspot', item),
+        ...rowKey('hotspot', item, index),
         label: stringField(item.label),
         topic: stringField(item.topic),
         body: textDraft(item.body),
@@ -204,17 +203,17 @@ export function createLessonDraft(lesson: StudioLesson): LessonDraft {
     videoAspectRatio: stringField(payload.videoAspectRatio) || '16:9',
     quizTitle: stringField(payload.title),
     quizInstructions: stringField(payload.instructions),
-    quizQuestions: rawQuestions.map((value) => {
+    quizQuestions: rawQuestions.map((value, index) => {
       const item = asObject(value);
       const answers = Array.isArray(item.answers) ? item.answers : [];
       return {
-        ...rowKey('question', item),
+        ...rowKey('question', item, index),
         questionText: stringField(item.questionText),
         questionType: stringField(item.questionType) || 'single',
         image: draftImage(item.image),
-        answers: answers.map((answer) => {
+        answers: answers.map((answer, answerIndex) => {
           const answerItem = asObject(answer);
-          return { ...rowKey('answer', answerItem), text: stringField(answerItem.text), original: answerItem };
+          return { ...rowKey(`answer-${index}`, answerItem, answerIndex), text: stringField(answerItem.text), original: answerItem };
         }),
         original: item,
       };
@@ -222,20 +221,20 @@ export function createLessonDraft(lesson: StudioLesson): LessonDraft {
     passingScore: numberText(payload.passingScore, '80'),
     allowRetry: booleanField(payload.allowRetry),
     showCorrectAnswers: booleanField(payload.showCorrectAnswers),
-    colorVariants: rawVariants.map((value) => {
+    colorVariants: rawVariants.map((value, index) => {
       const item = asObject(value);
-      return { ...rowKey('variant', item), label: stringField(item.label), colorHex: stringField(item.colorHex), image: draftImage(item.image), original: item };
+      return { ...rowKey('variant', item, index), label: stringField(item.label), colorHex: stringField(item.colorHex), image: draftImage(item.image), original: item };
     }),
     splitReverseLayout: booleanField(payload.splitReverseLayout),
-    chips: rawChips.map((value) => {
+    chips: rawChips.map((value, index) => {
       const item = asObject(value);
-      return { clientKey: createCourseStudioKey('chip'), id: stringField(item.id) || createCourseStudioKey('chip-id'), text: stringField(item.text), original: item };
+      return { clientKey: createStableCourseStudioKey('chip', index), id: stringField(item.id) || createStableCourseStudioKey('chip-id', index), text: stringField(item.text), original: item };
     }),
-    dropZones: rawZones.map((value) => {
+    dropZones: rawZones.map((value, index) => {
       const item = asObject(value);
       return {
-        clientKey: createCourseStudioKey('drop-zone'),
-        id: stringField(item.id) || createCourseStudioKey('zone-id'),
+        clientKey: createStableCourseStudioKey('drop-zone', index),
+        id: stringField(item.id) || createStableCourseStudioKey('zone-id', index),
         label: stringField(item.label),
         correctChipId: stringField(item.correctChipId),
         xPositionPct: numberText(item.xPositionPct, '50'),
@@ -243,10 +242,10 @@ export function createLessonDraft(lesson: StudioLesson): LessonDraft {
         original: item,
       };
     }),
-    scrollChapters: rawScrollChapters.map((value) => {
+    scrollChapters: rawScrollChapters.map((value, index) => {
       const item = asObject(value);
       return {
-        clientKey: createCourseStudioKey('scroll-chapter'),
+        clientKey: createStableCourseStudioKey('scroll-chapter', index),
         heading: stringField(item.heading),
         body: textDraft(item.body),
         image: draftImage(item.image),

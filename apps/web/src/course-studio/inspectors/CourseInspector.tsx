@@ -6,6 +6,7 @@ import {
   booleanField,
   courseSettingsInputSchema,
   createCourseStudioKey,
+  createStableCourseStudioKey,
   disclaimerCategorySchema,
   imageReference,
   jsonObject,
@@ -80,7 +81,7 @@ const actionClass = 'inline-flex min-h-11 items-center justify-center rounded-lg
 
 function objectiveDrafts(value: unknown): StringListItem[] {
   return Array.isArray(value)
-    ? value.map((item) => ({ clientKey: createCourseStudioKey('objective'), value: typeof item === 'string' ? item : '' }))
+    ? value.map((item, index) => ({ clientKey: createStableCourseStudioKey('objective', index), value: typeof item === 'string' ? item : '' }))
     : [];
 }
 
@@ -103,13 +104,13 @@ function disclaimerDraft(value: unknown): DisclaimerDraft | null {
   const source = jsonObject(value);
   const category = disclaimerCategorySchema.safeParse(source.category);
   return {
-    clientKey: createCourseStudioKey('disclaimer'),
+    clientKey: createStableCourseStudioKey('disclaimer', 'root'),
     original: source,
     title: stringField(source.title),
     category: category.success ? category.data : 'general',
     body: stringField(source.body),
     disclaimers: Array.isArray(source.disclaimers)
-      ? source.disclaimers.map((item) => ({ clientKey: createCourseStudioKey('disclaimer-item'), value: typeof item === 'string' ? item : '' }))
+      ? source.disclaimers.map((item, index) => ({ clientKey: createStableCourseStudioKey('disclaimer-item', index), value: typeof item === 'string' ? item : '' }))
       : [],
     acknowledgementRequired: booleanField(source.acknowledgementRequired),
     acknowledgementLabel: stringField(source.acknowledgementLabel),

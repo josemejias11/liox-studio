@@ -95,6 +95,12 @@ export function createCourseStudioKey(prefix: string): string {
   return `${prefix}-${crypto.randomUUID()}`;
 }
 
+/** A deterministic client-only key for server-rendered draft collections. */
+export function createStableCourseStudioKey(prefix: string, seed: string | number): string {
+  const normalizedSeed = String(seed).replace(/[^a-zA-Z0-9_-]/g, '-');
+  return `${prefix}-${normalizedSeed}`;
+}
+
 /**
  * Merge editable known fields over their original persisted object. Omitting a
  * known optional field removes only that key; all unknown metadata survives.
