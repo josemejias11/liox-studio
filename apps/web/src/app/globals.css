@@ -31,8 +31,8 @@
   --color-moto-sandstone: #7a7670;
 
   /* Typography */
-  --font-sans: 'MotoSans', sans-serif;
-  --font-mono: var(--font-geist-mono, monospace);
+  --font-sans: var(--font-geist-sans), sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
   --font-heading: var(--font-sans);
 
   /* Radius scale */
@@ -173,6 +173,12 @@
 }
 
 @layer utilities {
+  .font-product {
+    --font-sans: 'MotoSans', sans-serif;
+    --font-heading: var(--font-sans);
+    font-family: var(--font-sans);
+  }
+
   .bg-glass-gradient {
     background: linear-gradient(
       -45deg,

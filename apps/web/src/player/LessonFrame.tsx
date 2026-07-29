@@ -62,7 +62,7 @@ export function LessonFrame({
   return (
     // Outer shell — flex-col so the device banner stacks below the frame.
     <div
-      className={`bg-glass-gradient flex w-full flex-col items-center justify-start overflow-hidden ${
+      className={`font-product bg-glass-gradient flex w-full flex-col items-center justify-start overflow-hidden ${
         contained ? 'h-full' : 'h-dvh'
       }`}
     >
