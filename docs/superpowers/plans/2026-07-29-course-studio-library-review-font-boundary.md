@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Move review preparation into the Course Studio library, move the course-settings save/status footer into the editor outline, and scope MotoSans to the learner product and product previews while the application uses Geist.
+**Goal:** Move review preparation into the Course Studio library, move the course-settings save/status footer into the editor outline, scope MotoSans to the learner product and product previews while the application uses Geist, and add persistent resizable editor panels with isolated scrolling.
 
-**Architecture:** Keep the authenticated `/studio` server page responsible for loading course cards, then hand those cards to a new client `CourseLibrary` component that owns selection and renders the existing review workflow for the selected course. Keep revision and feedback persistence on the existing API routes. Extend the CourseInspector save-state contract so CourseOutline can render the submit control through the HTML form association, while the inspector remains the owner of form validation and mutation. Make Geist the global application font and override the scoped `--font-sans` token inside the player frame so learner content and embedded previews use MotoSans.
+**Architecture:** Keep the authenticated `/studio` server page responsible for loading course cards, then hand those cards to a new client `CourseLibrary` component that owns selection and renders the existing review workflow for the selected course. Keep revision and feedback persistence on the existing API routes. Extend the CourseInspector save-state contract so CourseOutline can render the submit control through the HTML form association, while the inspector remains the owner of form validation and mutation. Make Geist the global application font and override the scoped `--font-sans` token inside the player frame so learner content and embedded previews use MotoSans. Add a client-only persistent panel-size hook and CSS-grid separator controls so the desktop editor is viewport-locked with independently scrolling outline/tools regions.
 
 **Tech Stack:** Next.js 16 App Router, React 19, TypeScript, Tailwind CSS v4, existing `next/font/google` Geist variables, existing Course Studio client components, and existing Postgres-backed revision/feedback APIs.
 
@@ -16,6 +16,8 @@
 - Use lowercase visible `moto tutor` naming and keep technical package names unchanged.
 - Use Geist for the application shell, Course Studio, library, analytics, and review controls.
 - Use MotoSans only for the learner-facing product player and embedded product preview content.
+- Persist editor panel dimensions in browser local storage only; do not add a server setting or database field.
+- Keep the desktop editor viewport-locked with no document-level scroll; outline and tools scroll internally.
 - Preserve unrelated working-tree changes and stage only files in the current task.
 
 ---
@@ -312,3 +314,71 @@ Open `/studio/[courseId]` and confirm:
 - [ ] **Step 5: Record final evidence**
 
 Capture the observed commands, browser routes, viewport sizes, console/server errors, and any blocked database/authentication flows in the final handoff. Do not report persistence, freeze, or review-link success without observing the corresponding network response and UI state.
+
+### Task 6: Add persistent resizable panels and isolate editor scrolling
+
+**Files:**
+- Create: `apps/web/src/course-studio/usePersistentPanelSize.ts`
+- Modify: `apps/web/src/course-studio/CourseStudioWorkspace.tsx`
+- Modify: `apps/web/src/course-studio/CourseOutline.tsx`
+
+**Interfaces:**
+- Consumes: current two-column/two-row Course Studio grid and the existing `CourseOutline` scroll container.
+- Produces: persisted outline width and tools height state, accessible pointer/touch/keyboard separators, and a desktop viewport-locked editor with internal panel scrolling.
+
+- [ ] **Step 1: Add the persistent size hook**
+
+Create a client hook with a numeric state, local-storage key, default value, minimum, maximum, and a `setFromInput`/clamp path. Use safe browser guards so server rendering returns the default first, then restores a valid stored value after hydration. Clamp restored and updated values to the current bounds; never throw if local storage is unavailable or contains invalid JSON.
+
+Use these dimensions:
+
+```ts
+outline: { key: 'moto-tutor:course-studio:outline-width', default: 320, min: 240, max: 420 }
+tools: { key: 'moto-tutor:course-studio:tools-height', default: 260, min: 240 }
+```
+
+The tools maximum is derived as `Math.max(240, Math.floor(window.innerHeight * 0.6))` on the client and the current value is re-clamped on resize. Storage writes must be best-effort and must not break the editor.
+
+- [ ] **Step 2: Add accessible resizer controls**
+
+In `CourseStudioWorkspace`, use the hook values as CSS custom properties for the desktop grid. Add a horizontal `role="separator" aria-orientation="vertical"` between the outline and main area and a vertical `role="separator" aria-orientation="horizontal"` between canvas and tools. Each separator must:
+
+- use pointer capture for drag updates and release cleanly on pointer cancel/up;
+- support Arrow keys in its resize axis, with Shift for larger increments, and Home/End for min/max;
+- expose `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, and an accessible label;
+- remain hidden or non-interactive in the stacked mobile layout.
+
+Keep the existing canvas, inspector, and outline component responsibilities; the separators only update panel dimensions.
+
+- [ ] **Step 3: Lock the desktop viewport and contain scrolling**
+
+Remove the desktop `xl:min-h-[720px]` behavior that can force document scrolling. Keep the editor shell at the viewport height with `min-h-0` and `overflow-hidden` at desktop. Make the outline content and tools content the scroll containers, keep the grid tracks `minmax(0, ...)`, and ensure the canvas occupies the remaining track without pushing the document height. Preserve natural stacked flow below the desktop breakpoint, with bounded internal scrolling for long outline/tools content.
+
+- [ ] **Step 4: Verify the resizer implementation statically**
+
+Run:
+
+```bash
+npm run typecheck
+npm run lint
+git diff --check
+```
+
+Expected: no hydration/lint errors, no new dependencies, and no changes to course/review API contracts. Do not create or run automated tests.
+
+- [ ] **Step 5: Verify persistence and scrolling in the browser**
+
+At `/studio/[courseId]`, verify at 1440x810 and 500x800:
+
+1. Desktop has no document-level scroll; outline/tools scroll independently.
+2. Dragging and keyboard-adjusting each separator changes the corresponding track.
+3. Reloading restores both dimensions from local storage and clamps them after viewport changes.
+4. Mobile keeps stacked content and does not show active desktop separators.
+5. Save footer, canvas, focus preview, and library review behavior remain intact.
+
+- [ ] **Step 6: Commit the layout improvement**
+
+```bash
+git add apps/web/src/course-studio/usePersistentPanelSize.ts apps/web/src/course-studio/CourseStudioWorkspace.tsx apps/web/src/course-studio/CourseOutline.tsx
+git commit -m "feat: add persistent resizable studio panels"
+```

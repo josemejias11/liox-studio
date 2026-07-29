@@ -25,6 +25,7 @@ Course Studio remains the authoring surface for complete learning masters. The l
 - No changes to learner progress, course contracts, lesson IDs, or player routing.
 - No redesign of the Course Studio canvas or lesson inspectors beyond relocating the save/status footer.
 - No requirement for client review to become a full authoring workflow.
+- No server-side persistence for panel dimensions.
 
 ## User experience
 
@@ -51,6 +52,21 @@ The course-settings fields remain in the bottom tools area. The save/status foot
 The save action remains the same form submission owned by `CourseInspector`; the left-panel control is associated with that form through a stable form identifier or an equivalent explicit callback. Dirty, valid, locked, saving, and error state must be supplied by the inspector to the outline so the button has the same enablement and messaging behavior as today.
 
 Existing unsaved-change protection remains authoritative. Switching selection, leaving the editor, changing focus-preview mode, or performing a structural action continues to request confirmation when course settings are dirty.
+
+### Resizable editor layout and scroll isolation
+
+The desktop Course Studio workspace uses a viewport-locked shell. The document itself must not become the primary scroll container while editing. The left outline and bottom tools panel each have their own bounded scroll region, and the learner canvas remains available in the remaining space.
+
+Authors can resize both editor regions:
+
+- the left outline width changes through a horizontal separator;
+- the bottom tools height changes through a vertical separator.
+
+Both separators support pointer/touch dragging and keyboard adjustment. They expose separator semantics and current/minimum/maximum values to assistive technology. Use safe bounds of 240–420px for the outline width and 240px–60vh for the tools height. The canvas grid responds immediately to either dimension.
+
+Persist the two dimensions in browser local storage for the current authoring environment. Restore them on future visits, clamp stored values to the current viewport and safe bounds, and fall back to the existing default layout when no valid value exists. No new server or database setting is required.
+
+The desktop shell must not retain a minimum height that forces page scrolling on shorter screens. On mobile, the editor remains a naturally stacked flow because the panels no longer sit side-by-side; bounded internal scrolling should prevent the outline and tools content from creating unnecessary duplicate page height.
 
 ## Component and data design
 
@@ -109,4 +125,3 @@ Use project-native checks without creating or running automated test files:
 - run `npm run build` if the local database/migration prerequisite is available;
 - use Chrome DevTools or Playwright against a running app to verify library selection, review loading, freeze/share controls, editor save placement, responsive layout, and the product/application font boundary;
 - record any database, authentication, or browser-flow verification that remains blocked.
-
