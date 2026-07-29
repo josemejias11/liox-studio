@@ -19,6 +19,7 @@ const BLOCKS: Array<{ type: CourseLessonType; label: string }> = [
 ];
 
 interface Props {
+  className?: string;
   course: CourseGraph;
   trash: StudioTrashItem[];
   selection: StudioSelection;
@@ -41,6 +42,7 @@ function selected(selection: StudioSelection, kind: StudioSelection['kind'], id:
 }
 
 export function CourseOutline({
+  className,
   course,
   trash,
   selection,
@@ -54,7 +56,7 @@ export function CourseOutline({
   onAction,
 }: Props) {
   return (
-    <aside className="flex max-h-[32rem] min-h-0 flex-col border-b border-border bg-card xl:max-h-none xl:border-r xl:border-b-0">
+    <aside className={`flex max-h-[32rem] min-h-0 flex-col border-b border-border bg-card xl:max-h-none xl:border-r xl:border-b-0 ${className ?? ''}`}>
       <div className="border-b border-border p-4">
         <button
           className={`w-full rounded-lg px-3 py-2 text-left text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${selected(selection, 'course', course.id) ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}

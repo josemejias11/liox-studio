@@ -242,21 +242,24 @@ export function CourseStudioWorkspace({
             : <div className="flex h-full items-center justify-center text-sm text-white/70">The current draft cannot be rendered. Return to the editor and correct its structured fields.</div>}
         </div>
       ) : (
-        <div className="grid flex-1 grid-cols-1 xl:min-h-0 xl:grid-cols-[20rem_minmax(0,1fr)_22rem]">
-          <CourseOutline
-            course={course}
-            disabled={saving}
-            onAction={action}
-            onAddChapter={addChapter}
-            onAddLesson={addLesson}
-            onEmptyTrash={emptyTrash}
-            onPermanentDeleteTrash={permanentlyDeleteTrashItem}
-            onRestoreTrash={restoreTrashItem}
-            onSelect={select}
-            selection={selection}
-            trash={trash}
-          />
-          <section className="min-w-0 overflow-auto bg-muted/40 p-4 sm:p-6">
+        <div className="grid min-h-0 flex-1 grid-cols-1 xl:grid-cols-[20rem_minmax(0,1fr)] xl:grid-rows-[minmax(0,1fr)_minmax(15rem,32vh)] xl:overflow-hidden">
+          <div className="min-h-0 xl:row-span-2">
+            <CourseOutline
+              className="h-full"
+              course={course}
+              disabled={saving}
+              onAction={action}
+              onAddChapter={addChapter}
+              onAddLesson={addLesson}
+              onEmptyTrash={emptyTrash}
+              onPermanentDeleteTrash={permanentlyDeleteTrashItem}
+              onRestoreTrash={restoreTrashItem}
+              onSelect={select}
+              selection={selection}
+              trash={trash}
+            />
+          </div>
+          <section className="min-h-0 min-w-0 overflow-auto bg-muted/40 p-4 sm:p-6 xl:col-start-2 xl:row-start-1">
             <div className="w-full">
               <div className="mb-3 flex items-center justify-between">
                 <div><h2 className="text-sm font-semibold">Live learner canvas</h2><p className="text-xs text-muted-foreground">Preview mode never writes learner progress.</p></div>
@@ -267,8 +270,8 @@ export function CourseStudioWorkspace({
                 : <div className="flex aspect-video items-center justify-center rounded-xl border border-destructive/30 bg-card p-8 text-center text-sm text-destructive">This draft contains invalid player content. Correct the JSON in the inspector to restore preview.</div>}
             </div>
           </section>
-          <div className="flex min-h-0 flex-col border-t border-border xl:border-t-0 xl:border-l">
-            <div className="min-h-0 flex-1 overflow-hidden">
+          <div className="flex min-h-0 flex-col border-t border-border xl:col-start-2 xl:row-start-2">
+            <div className="min-h-0 flex-1 overflow-y-auto">
               <StudioInspector
                 course={course}
                 disabled={saving}
