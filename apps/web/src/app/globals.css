@@ -237,6 +237,15 @@
       backdrop-filter: none;
     }
   }
+
+  @supports not (backdrop-filter: blur(1px)) {
+    .studio-glass,
+    .studio-glass-panel,
+    .studio-glass-control {
+      background: var(--card);
+      backdrop-filter: none;
+    }
+  }
 }
 
 /* ── Product Stage animations ──────────────────────────────────────────────── */
