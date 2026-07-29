@@ -89,6 +89,17 @@ export function CourseStudioWorkspace({
     };
   }, []);
 
+  useEffect(() => {
+    function preventUnsavedSettingsLoss(event: BeforeUnloadEvent): void {
+      if (!courseSettingsDirty) return;
+      event.preventDefault();
+      event.returnValue = '';
+    }
+
+    window.addEventListener('beforeunload', preventUnsavedSettingsLoss);
+    return () => window.removeEventListener('beforeunload', preventUnsavedSettingsLoss);
+  }, [courseSettingsDirty]);
+
   function setStudioSelection(nextSelection: StudioSelection): void {
     setSelection(nextSelection);
     if (nextSelection.kind !== 'course') setCourseSaveState(neutralCourseSaveState);
