@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { ChevronRight } from 'lucide-react';
 
 interface CourseCoverProps {
   title: string;
@@ -121,10 +120,6 @@ export function CourseCover({
           <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-white/0 via-white/20 to-white/0 transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
 
           <span className="relative z-10">{buttonText}</span>
-
-          <div className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/10 transition-colors group-hover:bg-black/20">
-            <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
-          </div>
         </button>
       </motion.div>
     </div>
