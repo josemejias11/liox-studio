@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Clipboard, Snowflake } from 'lucide-react';
 
 export interface StudioRevision {
@@ -27,28 +27,69 @@ export function RevisionPanel({
   disabled,
   initialRevisions,
   initialFeedback,
+  autoLoad = false,
 }: {
   courseId: string;
   disabled: boolean;
   initialRevisions: StudioRevision[];
   initialFeedback: StudioFeedback[];
+  autoLoad?: boolean;
 }) {
   const [revisions, setRevisions] = useState<StudioRevision[]>(initialRevisions);
   const [feedback, setFeedback] = useState<StudioFeedback[]>(initialFeedback);
   const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [reviewUrl, setReviewUrl] = useState<string | null>(null);
+  const latestLoadId = useRef(0);
 
-  async function load() {
-    const [revisionResponse, feedbackResponse] = await Promise.all([
-      fetch(`/api/course-studio/courses/${encodeURIComponent(courseId)}/revisions`),
-      fetch(`/api/course-studio/courses/${encodeURIComponent(courseId)}/feedback`),
-    ]);
-    const revisionResult = await revisionResponse.json() as { revisions?: StudioRevision[] };
-    const feedbackResult = await feedbackResponse.json() as { feedback?: StudioFeedback[] };
-    if (revisionResponse.ok) setRevisions(revisionResult.revisions ?? []);
-    if (feedbackResponse.ok) setFeedback(feedbackResult.feedback ?? []);
-  }
+  const load = useCallback(async ({ reset = false, signal }: { reset?: boolean; signal?: AbortSignal } = {}) => {
+    const loadId = latestLoadId.current + 1;
+    latestLoadId.current = loadId;
+    if (reset) {
+      setRevisions([]);
+      setFeedback([]);
+      setReviewUrl(null);
+      setMessage(null);
+    }
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const [revisionResponse, feedbackResponse] = await Promise.all([
+        fetch(`/api/course-studio/courses/${encodeURIComponent(courseId)}/revisions`, { signal }),
+        fetch(`/api/course-studio/courses/${encodeURIComponent(courseId)}/feedback`, { signal }),
+      ]);
+      const [revisionResult, feedbackResult] = await Promise.all([
+        revisionResponse.json() as Promise<{ revisions?: StudioRevision[]; error?: string }>,
+        feedbackResponse.json() as Promise<{ feedback?: StudioFeedback[]; error?: string }>,
+      ]);
+      if (!revisionResponse.ok || !feedbackResponse.ok) {
+        throw new Error(revisionResult.error || feedbackResult.error || 'Review history could not be loaded.');
+      }
+      if (signal?.aborted || loadId !== latestLoadId.current) return;
+      setRevisions(revisionResult.revisions ?? []);
+      setFeedback(feedbackResult.feedback ?? []);
+    } catch (error) {
+      if (signal?.aborted || loadId !== latestLoadId.current) return;
+      setLoadError(error instanceof Error ? error.message : 'Review history could not be loaded.');
+    } finally {
+      if (loadId === latestLoadId.current) setLoading(false);
+    }
+  }, [courseId]);
+
+  useEffect(() => {
+    if (!autoLoad) return;
+    const controller = new AbortController();
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) void load({ reset: true, signal: controller.signal });
+    });
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [autoLoad, load]);
 
   async function resolveFeedback(feedbackId: string) {
     setBusy(true);
@@ -112,6 +153,13 @@ export function RevisionPanel({
         <div><h2 className="text-sm font-semibold">Client review</h2><p className="text-[11px] text-muted-foreground">Freeze the current course before sharing.</p></div>
         <button className="inline-flex items-center gap-1.5 rounded-lg bg-foreground px-3 py-2 text-xs font-semibold text-background disabled:opacity-50" disabled={disabled || busy} onClick={freeze} type="button"><Snowflake className="h-3.5 w-3.5" />Freeze</button>
       </div>
+      {loading && <p className="mt-3 text-xs text-muted-foreground" role="status">Loading review history…</p>}
+      {loadError && (
+        <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-2 text-xs text-destructive" role="alert">
+          <span>{loadError}</span>
+          <button className="shrink-0 font-semibold hover:underline disabled:opacity-50" disabled={busy || loading} onClick={() => void load()} type="button">Retry</button>
+        </div>
+      )}
       {message && <p className="mt-3 text-xs text-muted-foreground">{message}</p>}
       {reviewUrl && (
         <button className="mt-3 flex w-full items-center gap-2 rounded-lg border border-primary bg-primary/5 p-2 text-left text-xs text-primary" onClick={() => navigator.clipboard.writeText(reviewUrl)} type="button"><Clipboard className="h-4 w-4 shrink-0" /><span className="truncate">Copy review link</span></button>

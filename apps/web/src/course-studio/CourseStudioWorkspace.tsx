@@ -12,11 +12,6 @@ import type { CourseSettingsInput } from '@/lib/contracts/course-studio';
 import { AuthoringPreview } from './AuthoringPreview';
 import { CourseOutline } from './CourseOutline';
 import { StudioInspector } from './StudioInspector';
-import {
-  RevisionPanel,
-  type StudioFeedback,
-  type StudioRevision,
-} from './RevisionPanel';
 import { StudioToolbar } from './StudioToolbar';
 import { studioClient } from './studio-client';
 import type { StudioSelection, StudioTrashItem } from './studio-types';
@@ -35,13 +30,9 @@ const neutralCourseSaveState: CourseInspectorSaveState = {
 
 export function CourseStudioWorkspace({
   initialCourse,
-  initialRevisions,
-  initialFeedback,
   initialTrash,
 }: {
   initialCourse: CourseGraph;
-  initialRevisions: StudioRevision[];
-  initialFeedback: StudioFeedback[];
   initialTrash: StudioTrashItem[];
 }) {
   const [course, setCourse] = useState(initialCourse);
@@ -305,7 +296,6 @@ export function CourseStudioWorkspace({
                 selection={selection}
               />
             </div>
-            <RevisionPanel courseId={course.id} disabled={saving} initialFeedback={initialFeedback} initialRevisions={initialRevisions} />
           </div>
         </div>
       )}
