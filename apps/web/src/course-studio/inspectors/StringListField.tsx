@@ -111,8 +111,8 @@ export function StringListField({
                     {error && <p className="mt-1 text-xs text-destructive" id={errorId}>{error}</p>}
                   </div>
                   <div className="flex shrink-0 gap-1">
-                    <button aria-label={`Move ${itemLabel.toLowerCase()} ${index + 1} up`} className={controlClass} disabled={disabled || index === 0} onClick={() => reorder(index, -1)} type="button">↑</button>
-                    <button aria-label={`Move ${itemLabel.toLowerCase()} ${index + 1} down`} className={controlClass} disabled={disabled || index === items.length - 1} onClick={() => reorder(index, 1)} type="button">↓</button>
+                    <button aria-label={`Move ${itemLabel.toLowerCase()} ${index + 1} up`} className={controlClass} disabled={disabled || index === 0} onClick={() => reorder(index, -1)} type="button">Move up</button>
+                    <button aria-label={`Move ${itemLabel.toLowerCase()} ${index + 1} down`} className={controlClass} disabled={disabled || index === items.length - 1} onClick={() => reorder(index, 1)} type="button">Move down</button>
                     <button aria-label={`Remove ${itemLabel.toLowerCase()} ${index + 1}`} className={controlClass} disabled={disabled} onClick={() => remove(index)} type="button">Remove</button>
                   </div>
                 </div>

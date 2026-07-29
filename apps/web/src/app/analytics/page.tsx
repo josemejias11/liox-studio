@@ -95,7 +95,7 @@ export default async function AnalyticsPage() {
               Share the course link to start tracking progress.
             </p>
             <Link href="/" className="text-primary mt-2 text-sm transition-colors hover:underline">
-              Open Course →
+              Open Course
             </Link>
           </div>
         ) : (

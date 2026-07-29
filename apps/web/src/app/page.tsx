@@ -44,7 +44,7 @@ export default async function Home() {
               href="/studio"
               className="text-primary mt-4 inline-block text-sm underline hover:no-underline"
             >
-              Open Studio →
+              Open Studio
             </Link>
           </div>
         ) : (

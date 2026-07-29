@@ -350,6 +350,7 @@ export function CourseStudioWorkspace({
     <main className="flex min-h-screen flex-col bg-background text-foreground xl:h-screen xl:min-h-0 xl:overflow-hidden">
       <StudioToolbar
         focusPreview={focusPreview}
+        onNavigateToLibrary={confirmDiscardCourseSettings}
         onToggleFocus={toggleFocusPreview}
         onUndo={undoTrashId ? () => void restoreTrashItem(undoTrashId) : undefined}
         status={status}

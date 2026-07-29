@@ -166,8 +166,8 @@ export function SpecificationsField({ courseId, disabled = false, errors = {}, o
                   {specification.title || 'Untitled specification'}
                 </button>
                 {hasNestedError && <span className="text-xs font-medium text-destructive">Needs attention</span>}
-                <button aria-label={`Move specification ${specificationIndex + 1} up`} className={actionClass} disabled={disabled || specificationIndex === 0} onClick={() => onChange(move(value, specificationIndex, -1))} type="button">↑</button>
-                <button aria-label={`Move specification ${specificationIndex + 1} down`} className={actionClass} disabled={disabled || specificationIndex === value.length - 1} onClick={() => onChange(move(value, specificationIndex, 1))} type="button">↓</button>
+                <button aria-label={`Move specification ${specificationIndex + 1} up`} className={actionClass} disabled={disabled || specificationIndex === 0} onClick={() => onChange(move(value, specificationIndex, -1))} type="button">Move up</button>
+                <button aria-label={`Move specification ${specificationIndex + 1} down`} className={actionClass} disabled={disabled || specificationIndex === value.length - 1} onClick={() => onChange(move(value, specificationIndex, 1))} type="button">Move down</button>
                 <button aria-label={`Remove specification ${specificationIndex + 1}`} className={actionClass} disabled={disabled} onClick={() => removeSpecification(specificationIndex)} type="button">Remove</button>
               </div>
               {open && (
@@ -216,8 +216,8 @@ function GroupsEditor({ disabled, errors, groups, onChange, specificationKey }: 
             <label className="min-w-48 flex-1 text-xs font-medium" htmlFor={`${specificationKey}-${group.clientKey}-name`}>Group name
               <input aria-describedby={groupError ? groupErrorId : undefined} aria-invalid={Boolean(groupError)} className={inputClass} disabled={disabled} id={`${specificationKey}-${group.clientKey}-name`} onChange={(event) => updateGroup(groupIndex, (item) => ({ ...item, groupName: event.target.value }))} value={group.groupName} />
             </label>
-            <button aria-label={`Move group ${groupIndex + 1} up`} className={actionClass} disabled={disabled || groupIndex === 0} onClick={() => onChange(move(groups, groupIndex, -1))} type="button">↑</button>
-            <button aria-label={`Move group ${groupIndex + 1} down`} className={actionClass} disabled={disabled || groupIndex === groups.length - 1} onClick={() => onChange(move(groups, groupIndex, 1))} type="button">↓</button>
+            <button aria-label={`Move group ${groupIndex + 1} up`} className={actionClass} disabled={disabled || groupIndex === 0} onClick={() => onChange(move(groups, groupIndex, -1))} type="button">Move up</button>
+            <button aria-label={`Move group ${groupIndex + 1} down`} className={actionClass} disabled={disabled || groupIndex === groups.length - 1} onClick={() => onChange(move(groups, groupIndex, 1))} type="button">Move down</button>
             <button aria-label={`Remove group ${groupIndex + 1}`} className={actionClass} disabled={disabled} onClick={() => removeGroup(groupIndex)} type="button">Remove</button>
           </div>
           {groupError && <p className="text-xs text-destructive" id={groupErrorId}>{groupError}</p>}
@@ -249,8 +249,8 @@ function RowsEditor({ disabled, errors, group, onChange, specificationKey }: { d
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <label className="inline-flex min-h-11 items-center gap-2 text-xs font-medium"><input checked={row.highlight} disabled={disabled} onChange={(event) => onChange({ ...group, rows: group.rows.map((item) => item.clientKey === row.clientKey ? { ...item, highlight: event.target.checked } : item) })} type="checkbox" />Highlight</label>
-            <button aria-label={`Move row ${rowIndex + 1} up`} className={actionClass} disabled={disabled || rowIndex === 0} onClick={() => onChange({ ...group, rows: move(group.rows, rowIndex, -1) })} type="button">↑</button>
-            <button aria-label={`Move row ${rowIndex + 1} down`} className={actionClass} disabled={disabled || rowIndex === group.rows.length - 1} onClick={() => onChange({ ...group, rows: move(group.rows, rowIndex, 1) })} type="button">↓</button>
+            <button aria-label={`Move row ${rowIndex + 1} up`} className={actionClass} disabled={disabled || rowIndex === 0} onClick={() => onChange({ ...group, rows: move(group.rows, rowIndex, -1) })} type="button">Move up</button>
+            <button aria-label={`Move row ${rowIndex + 1} down`} className={actionClass} disabled={disabled || rowIndex === group.rows.length - 1} onClick={() => onChange({ ...group, rows: move(group.rows, rowIndex, 1) })} type="button">Move down</button>
             <button aria-label={`Remove row ${rowIndex + 1}`} className={actionClass} disabled={disabled} onClick={() => onChange({ ...group, rows: group.rows.filter((item) => item.clientKey !== row.clientKey) })} type="button">Remove</button>
           </div>
             </>;

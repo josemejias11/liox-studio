@@ -19,8 +19,8 @@ export function RepeatableField<T>({ legend, addLabel, items, disabled, onAdd, o
       {items.map((item, index) => (
         <div className="rounded-lg border border-border/70 p-3" key={index}>
           <div className="mb-3 flex items-center justify-end gap-1">
-            <button aria-label={`Move ${legend} item ${index + 1} up`} className="rounded px-2 py-1 text-xs hover:bg-muted disabled:opacity-40" disabled={disabled || index === 0} onClick={() => onMove(index, -1)} type="button">↑</button>
-            <button aria-label={`Move ${legend} item ${index + 1} down`} className="rounded px-2 py-1 text-xs hover:bg-muted disabled:opacity-40" disabled={disabled || index === items.length - 1} onClick={() => onMove(index, 1)} type="button">↓</button>
+            <button aria-label={`Move ${legend} item ${index + 1} up`} className="rounded px-2 py-1 text-xs hover:bg-muted disabled:opacity-40" disabled={disabled || index === 0} onClick={() => onMove(index, -1)} type="button">Move up</button>
+            <button aria-label={`Move ${legend} item ${index + 1} down`} className="rounded px-2 py-1 text-xs hover:bg-muted disabled:opacity-40" disabled={disabled || index === items.length - 1} onClick={() => onMove(index, 1)} type="button">Move down</button>
             <button className="rounded px-2 py-1 text-xs text-destructive hover:bg-destructive/10 disabled:opacity-40" disabled={disabled} onClick={() => onRemove(index)} type="button">Remove</button>
           </div>
           {renderItem(item, index)}
@@ -30,4 +30,3 @@ export function RepeatableField<T>({ legend, addLabel, items, disabled, onAdd, o
     </fieldset>
   );
 }
-

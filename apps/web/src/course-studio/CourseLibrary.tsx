@@ -34,6 +34,7 @@ function courseLibraryImageUrl(cover: unknown): string | undefined {
 export function CourseLibrary({ courses }: CourseLibraryProps) {
   const [selectedCourse, setSelectedCourse] = useState<CourseLibraryItem | null>(null);
   const firstImageIndex = courses.findIndex((course) => courseLibraryImageUrl(course.cover));
+  const reviewCourse = selectedCourse ? courses.find((course) => course.id === selectedCourse.id) ?? null : null;
 
   return (
     <div className="space-y-4">
@@ -91,7 +92,7 @@ export function CourseLibrary({ courses }: CourseLibraryProps) {
         })}
       </div>
 
-      {selectedCourse && (
+      {reviewCourse && (
         <section
           aria-labelledby="course-review-heading"
           className="bg-card border-border overflow-hidden rounded-xl border"
@@ -100,7 +101,7 @@ export function CourseLibrary({ courses }: CourseLibraryProps) {
           <div className="flex flex-col gap-3 border-b border-border p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="font-semibold" id="course-review-heading">
-                Prepare {selectedCourse.title} for review
+                Prepare {reviewCourse.title} for review
               </h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 Freeze and share a revision without changing the course itself.
@@ -116,7 +117,7 @@ export function CourseLibrary({ courses }: CourseLibraryProps) {
           </div>
           <RevisionPanel
             autoLoad
-            courseId={selectedCourse.id}
+            courseId={reviewCourse.id}
             disabled={false}
             initialFeedback={[]}
             initialRevisions={[]}

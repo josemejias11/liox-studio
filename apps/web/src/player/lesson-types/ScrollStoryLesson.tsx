@@ -75,7 +75,7 @@ export default function ScrollStoryLesson({
   }, [isCompleted]);
 
   return (
-    <div ref={scrollContainerRef} className="relative h-full w-full overflow-y-scroll bg-[#f0ede9] font-sans text-[#18191d]">
+    <div ref={scrollContainerRef} className="font-product relative h-full w-full overflow-y-scroll bg-[#f0ede9] text-[#18191d]">
 
       {/* Sticky navigation layer — zero document height, content overflows visibly */}
       <div className="sticky top-0 h-0 z-50 overflow-visible pointer-events-none">
@@ -124,7 +124,7 @@ export default function ScrollStoryLesson({
               transition={{ duration: shouldReduceMotion ? 0 : 0.3 }}
             >
               <CheckCircle2 className="mb-2 h-16 w-16 text-[#b48a3a]" />
-              <span className="font-sans text-2xl font-semibold text-white">Complete</span>
+              <span className="font-product text-2xl font-semibold text-white">Complete</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -180,13 +180,13 @@ export default function ScrollStoryLesson({
 
             {/* Heading */}
             <p className="mb-3 text-xs font-semibold tracking-[0.2em] text-[#b48a3a] uppercase">Moment {String(i + 1).padStart(2, '0')}</p>
-            <h3 className="mb-6 font-sans text-4xl leading-[0.98] tracking-[-0.035em] text-[#18191d] md:text-5xl">
+            <h3 className="font-product mb-6 text-4xl leading-[0.98] tracking-[-0.035em] text-[#18191d] md:text-5xl">
               {chapter.heading}
             </h3>
 
             {/* Body */}
             {chapter.body && (
-              <div className="prose prose-lg max-w-none font-sans font-light leading-relaxed text-[#595b66]">
+              <div className="font-product prose prose-lg max-w-none font-light leading-relaxed text-[#595b66]">
                 {typeof chapter.body === 'string' ? (
                   <p>{chapter.body}</p>
                 ) : (
