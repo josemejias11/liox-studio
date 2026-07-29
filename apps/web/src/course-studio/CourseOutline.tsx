@@ -61,7 +61,7 @@ export function CourseOutline({
   onAction,
 }: Props) {
   return (
-    <aside className={`flex max-h-[32rem] min-h-0 flex-col border-b border-border bg-card xl:max-h-none xl:border-r xl:border-b-0 ${className ?? ''}`}>
+    <aside className={`flex max-h-[32rem] min-h-0 flex-col border-b border-border bg-card xl:h-full xl:max-h-none xl:border-r xl:border-b-0 xl:overflow-hidden ${className ?? ''}`}>
       <div className="border-b border-border p-4">
         <button
           className={`w-full rounded-lg px-3 py-2 text-left text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${selected(selection, 'course', course.id) ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}

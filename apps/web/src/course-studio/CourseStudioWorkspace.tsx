@@ -6,7 +6,7 @@ import type {
   CourseLessonType,
   LessonInput,
 } from '@moto-ai/database';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react';
 import { toPlayerCourseContent } from '@/lib/course-player-adapter';
 import type { CourseSettingsInput } from '@/lib/contracts/course-studio';
 import { AuthoringPreview } from './AuthoringPreview';
@@ -16,6 +16,7 @@ import { StudioToolbar } from './StudioToolbar';
 import { studioClient } from './studio-client';
 import type { StudioSelection, StudioTrashItem } from './studio-types';
 import type { CourseInspectorSaveState } from './inspectors/CourseInspector';
+import { usePersistentPanelSize } from './usePersistentPanelSize';
 
 const courseSettingsFormId = 'course-settings-form';
 const neutralCourseSaveState: CourseInspectorSaveState = {
@@ -27,6 +28,16 @@ const neutralCourseSaveState: CourseInspectorSaveState = {
   saved: false,
   error: null,
 };
+
+const outlineMinimum = 240;
+const outlineMaximum = 420;
+const toolsMinimum = 240;
+const desktopBreakpoint = 1280;
+
+function getToolsMaximum(): number {
+  if (typeof window === 'undefined') return 260;
+  return Math.max(toolsMinimum, Math.floor(window.innerHeight * 0.6));
+}
 
 export function CourseStudioWorkspace({
   initialCourse,
@@ -44,8 +55,31 @@ export function CourseStudioWorkspace({
   const [focusPreview, setFocusPreview] = useState(false);
   const [courseSettingsDirty, setCourseSettingsDirty] = useState(false);
   const [courseSaveState, setCourseSaveState] = useState<CourseInspectorSaveState>(neutralCourseSaveState);
+  const [, setViewportVersion] = useState(0);
+  const workspaceRef = useRef<HTMLDivElement>(null);
+  const outlinePointerId = useRef<number | null>(null);
+  const toolsPointerId = useRef<number | null>(null);
+  const toolsMaximum = getToolsMaximum();
+  const [outlineWidth, setOutlineWidth] = usePersistentPanelSize({
+    key: 'moto-tutor:course-studio:outline-width',
+    defaultValue: 320,
+    minimum: outlineMinimum,
+    maximum: outlineMaximum,
+  });
+  const [toolsHeight, setToolsHeight] = usePersistentPanelSize({
+    key: 'moto-tutor:course-studio:tools-height',
+    defaultValue: 260,
+    minimum: toolsMinimum,
+    maximum: toolsMaximum,
+  });
   const preview = useMemo(() => toPlayerCourseContent(course), [course]);
   const selectedLessonId = selection.kind === 'lesson' ? selection.id : undefined;
+
+  useEffect(() => {
+    const updateToolsMaximum = () => setViewportVersion((version) => version + 1);
+    window.addEventListener('resize', updateToolsMaximum);
+    return () => window.removeEventListener('resize', updateToolsMaximum);
+  }, []);
 
   function setStudioSelection(nextSelection: StudioSelection): void {
     setSelection(nextSelection);
@@ -234,8 +268,78 @@ export function CourseStudioWorkspace({
     setFocusPreview((value) => !value);
   }
 
+  function isDesktopEditor(): boolean {
+    return typeof window !== 'undefined' && window.innerWidth >= desktopBreakpoint;
+  }
+
+  function updateOutlineWidth(clientX: number): void {
+    const bounds = workspaceRef.current?.getBoundingClientRect();
+    if (bounds) setOutlineWidth(clientX - bounds.left);
+  }
+
+  function updateToolsHeight(clientY: number): void {
+    const bounds = workspaceRef.current?.getBoundingClientRect();
+    if (bounds) setToolsHeight(bounds.bottom - clientY);
+  }
+
+  function beginPointerDrag(
+    event: PointerEvent<HTMLDivElement>,
+    pointerId: { current: number | null },
+    update: (position: number) => void,
+  ): void {
+    if (!isDesktopEditor()) return;
+    pointerId.current = event.pointerId;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    update(event.currentTarget.dataset.axis === 'x' ? event.clientX : event.clientY);
+  }
+
+  function continuePointerDrag(
+    event: PointerEvent<HTMLDivElement>,
+    pointerId: { current: number | null },
+    update: (position: number) => void,
+  ): void {
+    if (pointerId.current !== event.pointerId) return;
+    update(event.currentTarget.dataset.axis === 'x' ? event.clientX : event.clientY);
+  }
+
+  function endPointerDrag(event: PointerEvent<HTMLDivElement>, pointerId: { current: number | null }): void {
+    if (pointerId.current !== event.pointerId) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    pointerId.current = null;
+  }
+
+  function adjustPanelWithKeyboard(
+    event: KeyboardEvent<HTMLDivElement>,
+    value: number,
+    setValue: (nextValue: number) => void,
+    minimum: number,
+    maximum: number,
+  ): void {
+    const increment = event.shiftKey ? 48 : 16;
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      setValue(value - increment);
+    } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      setValue(value + increment);
+    } else if (event.key === 'Home') {
+      event.preventDefault();
+      setValue(minimum);
+    } else if (event.key === 'End') {
+      event.preventDefault();
+      setValue(maximum);
+    }
+  }
+
+  const desktopGridStyle = {
+    '--course-studio-outline-width': `${outlineWidth}px`,
+    '--course-studio-tools-height': `${toolsHeight}px`,
+  } as CSSProperties;
+
   return (
-    <main className="flex h-screen min-h-screen flex-col bg-background text-foreground xl:min-h-[720px] xl:overflow-hidden">
+    <main className="flex min-h-screen flex-col bg-background text-foreground xl:h-screen xl:min-h-0 xl:overflow-hidden">
       <StudioToolbar
         focusPreview={focusPreview}
         onToggleFocus={toggleFocusPreview}
@@ -251,8 +355,12 @@ export function CourseStudioWorkspace({
             : <div className="flex h-full items-center justify-center text-sm text-white/70">The current draft cannot be rendered. Return to the editor and correct its structured fields.</div>}
         </div>
       ) : (
-        <div className="grid min-h-0 flex-1 grid-cols-1 xl:grid-cols-[20rem_minmax(0,1fr)] xl:grid-rows-[minmax(0,1fr)_minmax(15rem,32vh)] xl:overflow-hidden">
-          <div className="min-h-0 xl:row-span-2">
+        <div
+          className="grid min-h-0 flex-1 grid-cols-1 xl:grid-cols-[var(--course-studio-outline-width)_0.75rem_minmax(0,1fr)] xl:grid-rows-[minmax(0,1fr)_0.75rem_var(--course-studio-tools-height)] xl:overflow-hidden"
+          ref={workspaceRef}
+          style={desktopGridStyle}
+        >
+          <div className="min-h-0 xl:row-span-3 xl:overflow-hidden">
             <CourseOutline
               className="h-full"
               course={course}
@@ -270,7 +378,23 @@ export function CourseStudioWorkspace({
               trash={trash}
             />
           </div>
-          <section className="min-h-0 min-w-0 overflow-auto bg-muted/40 p-4 sm:p-6 xl:col-start-2 xl:row-start-1">
+          <div
+            aria-label="Resize course outline"
+            aria-orientation="vertical"
+            aria-valuemax={outlineMaximum}
+            aria-valuemin={outlineMinimum}
+            aria-valuenow={outlineWidth}
+            className="hidden cursor-col-resize touch-none bg-border/70 outline-none transition-colors hover:bg-primary focus-visible:bg-primary xl:block"
+            data-axis="x"
+            onKeyDown={(event) => adjustPanelWithKeyboard(event, outlineWidth, setOutlineWidth, outlineMinimum, outlineMaximum)}
+            onPointerCancel={(event) => endPointerDrag(event, outlinePointerId)}
+            onPointerDown={(event) => beginPointerDrag(event, outlinePointerId, updateOutlineWidth)}
+            onPointerMove={(event) => continuePointerDrag(event, outlinePointerId, updateOutlineWidth)}
+            onPointerUp={(event) => endPointerDrag(event, outlinePointerId)}
+            role="separator"
+            tabIndex={0}
+          />
+          <section className="min-w-0 overflow-visible bg-muted/40 p-4 sm:p-6 xl:col-start-3 xl:row-start-1 xl:min-h-0 xl:overflow-auto">
             <div className="w-full">
               <div className="mb-3 flex items-center justify-between">
                 <div><h2 className="text-sm font-semibold">Live learner canvas</h2><p className="text-xs text-muted-foreground">Preview mode never writes learner progress.</p></div>
@@ -281,7 +405,23 @@ export function CourseStudioWorkspace({
                 : <div className="flex aspect-video items-center justify-center rounded-xl border border-destructive/30 bg-card p-8 text-center text-sm text-destructive">This draft contains invalid player content. Correct the JSON in the inspector to restore preview.</div>}
             </div>
           </section>
-          <div className="flex min-h-0 flex-col border-t border-border xl:col-start-2 xl:row-start-2">
+          <div
+            aria-label="Resize editor tools"
+            aria-orientation="horizontal"
+            aria-valuemax={toolsMaximum}
+            aria-valuemin={toolsMinimum}
+            aria-valuenow={toolsHeight}
+            className="hidden cursor-row-resize touch-none bg-border/70 outline-none transition-colors hover:bg-primary focus-visible:bg-primary xl:col-start-3 xl:row-start-2 xl:block"
+            data-axis="y"
+            onKeyDown={(event) => adjustPanelWithKeyboard(event, toolsHeight, setToolsHeight, toolsMinimum, toolsMaximum)}
+            onPointerCancel={(event) => endPointerDrag(event, toolsPointerId)}
+            onPointerDown={(event) => beginPointerDrag(event, toolsPointerId, updateToolsHeight)}
+            onPointerMove={(event) => continuePointerDrag(event, toolsPointerId, updateToolsHeight)}
+            onPointerUp={(event) => endPointerDrag(event, toolsPointerId)}
+            role="separator"
+            tabIndex={0}
+          />
+          <div className="flex flex-col border-t border-border xl:col-start-3 xl:row-start-3 xl:min-h-0">
             <div className="min-h-0 flex-1 overflow-y-auto">
               <StudioInspector
                 course={course}
