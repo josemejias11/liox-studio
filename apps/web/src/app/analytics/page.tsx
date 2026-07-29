@@ -79,7 +79,7 @@ export default async function AnalyticsPage() {
       <header className="border-border bg-background/95 sticky top-0 z-10 flex h-16 items-center gap-3 border-b px-6 backdrop-blur-sm">
         <div className="text-primary flex items-center gap-2 text-lg font-semibold">
           <Bot className="h-6 w-6" aria-hidden="true" />
-          <span>Moto Tutor AI</span>
+          <span>moto tutor</span>
         </div>
         <span className="text-muted-foreground select-none">·</span>
         <span className="text-muted-foreground text-sm font-medium">Instructor Dashboard</span>

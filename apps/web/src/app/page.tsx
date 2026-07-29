@@ -20,7 +20,7 @@ export default async function Home() {
       <header className="bg-background sticky top-0 z-10 flex h-16 items-center gap-4 border-b px-6">
         <div className="text-primary flex items-center gap-2 text-lg font-semibold">
           <Bot className="h-6 w-6" />
-          <span>Moto Tutor AI</span>
+          <span>moto tutor</span>
         </div>
         <div className="ml-auto flex items-center gap-3">
           <Link

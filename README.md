@@ -1,6 +1,6 @@
-# Moto AI Course Studio
+# moto ai Course Studio
 
-Moto AI is an app-owned e-learning authoring and delivery platform. Course Studio creates and previews learning experiences with the same Moto Player used by learners. PostgreSQL owns course structure, authoring state, reviews, progress, and quiz records; Cloudflare R2 owns course media.
+moto ai is an app-owned e-learning authoring and delivery platform. Course Studio creates and previews learning experiences with the same moto tutor used by learners. PostgreSQL owns course structure, authoring state, reviews, progress, and quiz records; Cloudflare R2 owns course media.
 
 The downstream localization package used by Motorola partners is intentionally not hardcoded yet. Approved, immutable course revisions are the future adapter boundary once the agency workflow and Articulate 360 handoff requirements are confirmed.
 
@@ -21,7 +21,7 @@ until Motorola’s agency workflow is confirmed.
 ```text
 Course Studio (/studio) ────────────────┐
 Client review (/review/[token]) ───────┼──► PostgreSQL
-Moto Player (/course/[slug]) ──────────┘    courses, revisions, reviews,
+moto tutor (/course/[slug]) ──────────┘     courses, revisions, reviews,
              │                             feedback, progress, quizzes
              ├──► Cloudflare R2
              │    images, video, source assets
@@ -31,7 +31,7 @@ Moto Player (/course/[slug]) ──────────┘    courses, revis
 
 The repository is an npm workspace:
 
-- `apps/web` — Next.js 16 app, Course Studio, Moto Player, APIs, and analytics.
+- `apps/web` — Next.js 16 app, Course Studio, moto tutor, APIs, and analytics.
 - `apps/job-worker` — durable Postgres-backed document indexing and quiz jobs.
 - `packages/database` — Prisma schema, migrations, and course repositories.
 - `packages/contracts` — shared request and response contracts.
@@ -42,10 +42,10 @@ The repository is an npm workspace:
 ## Product surfaces
 
 - `/` — published course library backed by PostgreSQL.
-- `/course/[slug]` — learner-facing Moto Player.
+- `/course/[slug]` — learner-facing moto tutor.
 - `/studio/login` — Course Studio sign-in using `COURSE_STUDIO_PASSWORD`.
 - `/studio` — course library and course creation.
-- `/studio/[courseId]` — three-pane authoring workspace, non-persistent Moto Player preview, revisions, and review feedback.
+- `/studio/[courseId]` — three-pane authoring workspace, non-persistent moto tutor preview, revisions, and review feedback.
 - `/review/[token]` — immutable client review with course- and lesson-specific feedback.
 - `/analytics` — learning analytics.
 
@@ -54,7 +54,7 @@ Course Studio preview never writes learner progress. Static authored quiz answer
 ## Supported learning blocks
 
 All courses use the same authoring workflow. Canvas is a lesson block, not a
-course mode. Course Studio exposes the existing Moto Player interactions as
+course mode. Course Studio exposes the existing moto tutor interactions as
 controlled authoring blocks:
 
 | Authoring block     | Runtime type    |
@@ -82,7 +82,7 @@ scroll-story chapters. Authors do not need to hand-edit JSON.
 1. Create a course from `/studio`; PostgreSQL creates a safe opening chapter and content screen.
 2. Add, duplicate, reorder, edit, or remove chapters and learning blocks in the course outline.
 3. Edit course metadata and structured block content in the inspector. Course media uploads to Cloudflare R2 and is referenced from the authored graph.
-4. Validate the selected screen in the embedded Moto Player or focus-preview mode. Preview disables progress, analytics, and AI requests.
+4. Validate the selected screen in the embedded moto tutor or focus-preview mode. Preview disables progress, analytics, and AI requests.
 5. Freeze the current graph as an immutable numbered revision.
 6. Create a token-scoped review link and send it to the client.
 7. Reviewers explore that exact frozen revision and submit general or screen-specific feedback.
