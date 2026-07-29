@@ -129,10 +129,10 @@ function toCourseGraph(course: {
   return course;
 }
 
-export async function listAuthoringCourses(): Promise<Array<Pick<CourseGraph, 'id' | 'slug' | 'title' | 'description'>>> {
+export async function listAuthoringCourses(): Promise<Array<Pick<CourseGraph, 'id' | 'slug' | 'title' | 'description' | 'cover'>>> {
   return prisma.course.findMany({
     orderBy: { updatedAt: 'desc' },
-    select: { id: true, slug: true, title: true, description: true },
+    select: { id: true, slug: true, title: true, description: true, cover: true },
   });
 }
 
