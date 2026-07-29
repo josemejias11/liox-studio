@@ -80,7 +80,7 @@ export function CourseLibrary({ courses }: CourseLibraryProps) {
                   <button
                     aria-controls="course-review-panel"
                     aria-pressed={isSelected}
-                    className="studio-glass-control inline-flex items-center rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                    className="inline-flex items-center rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
                     onClick={() => setSelectedCourse(course)}
                     type="button"
                   >
