@@ -61,7 +61,7 @@ export function CourseOutline({
   onAction,
 }: Props) {
   return (
-    <aside className={`flex max-h-[32rem] min-h-0 flex-col border-b border-border bg-card xl:h-full xl:max-h-none xl:border-r xl:border-b-0 xl:overflow-hidden ${className ?? ''}`}>
+    <aside className={`studio-glass-panel flex max-h-[32rem] min-h-0 flex-col border-b border-border xl:h-full xl:max-h-none xl:border-r xl:border-b-0 xl:overflow-hidden ${className ?? ''}`}>
       <div className="border-b border-border p-4">
         <button
           className={`w-full rounded-lg px-3 py-2 text-left text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${selected(selection, 'course', course.id) ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
@@ -74,7 +74,7 @@ export function CourseOutline({
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
         {course.chapters.map((chapter) => (
-          <section className="mb-3 rounded-xl border border-border" key={chapter.id}>
+          <section className="studio-glass-control mb-3 rounded-xl border border-border" key={chapter.id}>
             <div className="flex items-center gap-1 p-2">
               <button
                 className={`min-w-0 flex-1 rounded-md px-2 py-2 text-left text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50 ${selected(selection, 'chapter', chapter.id) ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`}
@@ -110,7 +110,7 @@ export function CourseOutline({
               ))}
               <select
                 aria-label={`Add screen to ${chapter.title}`}
-                className="mt-2 w-full rounded-md border border-input bg-background px-2 py-2 text-xs"
+                className="studio-glass-control mt-2 w-full rounded-md border border-input px-2 py-2 text-xs"
                 defaultValue=""
                 disabled={disabled}
                 onChange={(event) => {
@@ -124,7 +124,7 @@ export function CourseOutline({
             </div>
           </section>
         ))}
-        <button className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm hover:border-primary hover:text-primary" disabled={disabled} onClick={onAddChapter} type="button"><Plus className="h-4 w-4" />Add chapter</button>
+        <button className="studio-glass-control flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm hover:border-primary hover:text-primary" disabled={disabled} onClick={onAddChapter} type="button"><Plus className="h-4 w-4" />Add chapter</button>
       </div>
       <TrashPanel
         disabled={disabled}
@@ -134,7 +134,7 @@ export function CourseOutline({
         onRestore={onRestoreTrash}
       />
       {selection.kind === 'course' && courseSaveState && (
-        <footer className="border-t border-border bg-card p-4">
+        <footer className="studio-glass border-x-0 border-b-0 border-t border-border p-4">
           <p aria-live="polite" className={`text-xs ${courseSaveState.error || (courseSaveState.dirty && !courseSaveState.valid) ? 'text-destructive' : 'text-muted-foreground'}`}>
             {courseSaveState.uploading
               ? 'Image upload in progress. Course settings are locked.'

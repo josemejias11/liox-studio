@@ -378,7 +378,7 @@ export function CourseStudioWorkspace({
   } as CSSProperties;
 
   return (
-    <main className="flex min-h-screen flex-col bg-background text-foreground xl:h-screen xl:min-h-0 xl:overflow-hidden">
+    <main className="studio-workspace flex min-h-screen flex-col text-foreground xl:h-screen xl:min-h-0 xl:overflow-hidden">
       <StudioToolbar
         focusPreview={focusPreview}
         onNavigateToLibrary={confirmDiscardCourseSettings}
@@ -424,7 +424,7 @@ export function CourseStudioWorkspace({
             aria-valuemax={outlineMaximum}
             aria-valuemin={outlineMinimum}
             aria-valuenow={outlineWidth}
-            className="hidden cursor-col-resize touch-none bg-border/70 outline-none transition-colors hover:bg-primary focus-visible:bg-primary xl:block"
+            className="hidden cursor-col-resize touch-none bg-border/55 shadow-[inset_1px_0_0_rgb(255_255_255_/_22%)] outline-none transition-colors hover:bg-primary/70 focus-visible:bg-primary xl:block"
             data-axis="x"
             onKeyDown={(event) => adjustPanelWithKeyboard(event, outlineWidth, setOutlineWidth, outlineMinimum, outlineMaximum)}
             onPointerCancel={(event) => endPointerDrag(event, outlinePointerId)}
@@ -434,7 +434,7 @@ export function CourseStudioWorkspace({
             role="separator"
             tabIndex={0}
           />
-          <section className="min-w-0 overflow-visible bg-muted/40 p-4 sm:p-6 xl:col-start-3 xl:row-start-1 xl:min-h-0 xl:overflow-auto">
+          <section className="min-w-0 overflow-visible bg-[radial-gradient(circle_at_top_right,rgba(104,91,199,0.1),transparent_38%),linear-gradient(145deg,rgba(255,255,255,0.2),transparent_48%)] bg-muted/35 p-4 sm:p-6 xl:col-start-3 xl:row-start-1 xl:min-h-0 xl:overflow-auto">
             <div className="w-full">
               <div className="mb-3 flex items-center justify-between">
                 <div><h2 className="text-sm font-semibold">Live learner canvas</h2><p className="text-xs text-muted-foreground">Preview mode never writes learner progress.</p></div>
@@ -451,7 +451,7 @@ export function CourseStudioWorkspace({
             aria-valuemax={toolsMaximum}
             aria-valuemin={toolsMinimum}
             aria-valuenow={toolsHeight}
-            className="hidden cursor-row-resize touch-none bg-border/70 outline-none transition-colors hover:bg-primary focus-visible:bg-primary xl:col-start-3 xl:row-start-2 xl:block"
+            className="hidden cursor-row-resize touch-none bg-border/55 shadow-[inset_0_1px_0_rgb(255_255_255_/_22%)] outline-none transition-colors hover:bg-primary/70 focus-visible:bg-primary xl:col-start-3 xl:row-start-2 xl:block"
             data-axis="y"
             onKeyDown={(event) => adjustPanelWithKeyboard(event, toolsHeight, setToolsHeight, toolsMinimum, toolsMaximum)}
             onPointerCancel={(event) => endPointerDrag(event, toolsPointerId)}

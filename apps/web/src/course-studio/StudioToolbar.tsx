@@ -23,7 +23,7 @@ export function StudioToolbar({
   undoDisabled?: boolean;
 }) {
   return (
-    <header className="flex min-h-16 flex-wrap items-center gap-3 border-b border-border bg-card px-3 py-2 sm:h-16 sm:flex-nowrap sm:gap-4 sm:px-5">
+    <header className="studio-glass flex min-h-16 flex-wrap items-center gap-3 border-x-0 border-t-0 border-b-primary/25 px-3 py-2 shadow-[0_12px_36px_rgb(104_91_199_/_10%)] sm:h-16 sm:flex-nowrap sm:gap-4 sm:px-5">
       <Link
         className="text-sm font-medium text-primary hover:underline"
         href="/studio"
@@ -40,7 +40,7 @@ export function StudioToolbar({
           <p aria-live="polite" className="text-xs text-muted-foreground">{status || 'All changes are stored in PostgreSQL'}</p>
           {onUndo && (
             <button
-              className="rounded-md border border-border px-2 py-1 text-xs font-medium hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+              className="studio-glass-control rounded-md border px-2 py-1 text-xs font-medium hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
               disabled={undoDisabled}
               onClick={onUndo}
               type="button"
@@ -50,7 +50,7 @@ export function StudioToolbar({
           )}
         </div>
       </div>
-      <button className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted" onClick={onToggleFocus} type="button">
+      <button className="studio-glass-control inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:border-primary hover:text-primary" onClick={onToggleFocus} type="button">
         {focusPreview ? <Minimize2 className="h-4 w-4" /> : <Expand className="h-4 w-4" />}
         {focusPreview ? 'Return to editor' : 'Focus preview'}
       </button>
