@@ -7,6 +7,7 @@ interface PersistentPanelSizeOptions {
   defaultValue: number;
   minimum: number;
   maximum: number;
+  restoreWhen?: boolean;
 }
 
 function clamp(value: number, minimum: number, maximum: number): number {
@@ -37,19 +38,20 @@ export function usePersistentPanelSize({
   defaultValue,
   minimum,
   maximum,
+  restoreWhen = true,
 }: PersistentPanelSizeOptions): [number, Dispatch<SetStateAction<number>>] {
   const [size, setSize] = useState(() => clamp(defaultValue, minimum, maximum));
   const [restoredKey, setRestoredKey] = useState<string | null>(null);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || !restoreWhen || restoredKey === key) return;
 
     const animationFrame = window.requestAnimationFrame(() => {
       setSize(readStoredSize(key, defaultValue, minimum, maximum));
       setRestoredKey(key);
     });
     return () => window.cancelAnimationFrame(animationFrame);
-  }, [defaultValue, key, maximum, minimum]);
+  }, [defaultValue, key, maximum, minimum, restoreWhen, restoredKey]);
 
   useEffect(() => {
     const animationFrame = window.requestAnimationFrame(() => {

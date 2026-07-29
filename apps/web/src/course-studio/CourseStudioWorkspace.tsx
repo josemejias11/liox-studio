@@ -32,10 +32,10 @@ const neutralCourseSaveState: CourseInspectorSaveState = {
 const outlineMinimum = 240;
 const outlineMaximum = 420;
 const toolsMinimum = 240;
+const defaultToolsMaximum = 260;
 const desktopBreakpoint = 1280;
 
-function getToolsMaximum(): number {
-  if (typeof window === 'undefined') return 260;
+function getViewportToolsMaximum(): number {
   return Math.max(toolsMinimum, Math.floor(window.innerHeight * 0.6));
 }
 
@@ -55,11 +55,11 @@ export function CourseStudioWorkspace({
   const [focusPreview, setFocusPreview] = useState(false);
   const [courseSettingsDirty, setCourseSettingsDirty] = useState(false);
   const [courseSaveState, setCourseSaveState] = useState<CourseInspectorSaveState>(neutralCourseSaveState);
-  const [, setViewportVersion] = useState(0);
+  const [toolsMaximum, setToolsMaximum] = useState(defaultToolsMaximum);
+  const [toolsMaximumReady, setToolsMaximumReady] = useState(false);
   const workspaceRef = useRef<HTMLDivElement>(null);
   const outlinePointerId = useRef<number | null>(null);
   const toolsPointerId = useRef<number | null>(null);
-  const toolsMaximum = getToolsMaximum();
   const [outlineWidth, setOutlineWidth] = usePersistentPanelSize({
     key: 'moto-tutor:course-studio:outline-width',
     defaultValue: 320,
@@ -71,14 +71,22 @@ export function CourseStudioWorkspace({
     defaultValue: 260,
     minimum: toolsMinimum,
     maximum: toolsMaximum,
+    restoreWhen: toolsMaximumReady,
   });
   const preview = useMemo(() => toPlayerCourseContent(course), [course]);
   const selectedLessonId = selection.kind === 'lesson' ? selection.id : undefined;
 
   useEffect(() => {
-    const updateToolsMaximum = () => setViewportVersion((version) => version + 1);
+    const updateToolsMaximum = () => {
+      setToolsMaximum(getViewportToolsMaximum());
+      setToolsMaximumReady(true);
+    };
+    const animationFrame = window.requestAnimationFrame(updateToolsMaximum);
     window.addEventListener('resize', updateToolsMaximum);
-    return () => window.removeEventListener('resize', updateToolsMaximum);
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      window.removeEventListener('resize', updateToolsMaximum);
+    };
   }, []);
 
   function setStudioSelection(nextSelection: StudioSelection): void {
