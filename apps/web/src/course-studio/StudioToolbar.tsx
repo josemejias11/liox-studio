@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { Expand, Minimize2 } from 'lucide-react';
 
 export function StudioToolbar({
   title,
@@ -40,8 +39,7 @@ export function StudioToolbar({
           )}
         </div>
       </div>
-      <button className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted" onClick={onToggleFocus} type="button">
-        {focusPreview ? <Minimize2 className="h-4 w-4" /> : <Expand className="h-4 w-4" />}
+      <button className="inline-flex items-center rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted" onClick={onToggleFocus} type="button">
         {focusPreview ? 'Return to editor' : 'Focus preview'}
       </button>
     </header>

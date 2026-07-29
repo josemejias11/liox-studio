@@ -1,6 +1,5 @@
 'use client';
 
-import { ChevronDown, ChevronRight, RotateCcw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import type { StudioTrashItem } from './studio-types';
 
@@ -40,7 +39,6 @@ export function TrashPanel({
           onClick={() => setExpanded((value) => !value)}
           type="button"
         >
-          {expanded ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
           <span>Trash</span>
           <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">{items.length}</span>
         </button>
@@ -76,7 +74,7 @@ export function TrashPanel({
                     onClick={() => void onRestore(item.id)}
                     type="button"
                   >
-                    <RotateCcw className="h-3.5 w-3.5" />Restore
+                    Restore
                   </button>
                   <button
                     aria-label={`Permanently delete ${item.headline}`}
@@ -85,7 +83,7 @@ export function TrashPanel({
                     onClick={() => void permanentlyDelete(item.id)}
                     type="button"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />Delete
+                    Delete
                   </button>
                 </div>
               </article>

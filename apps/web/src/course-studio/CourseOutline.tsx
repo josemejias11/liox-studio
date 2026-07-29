@@ -1,7 +1,6 @@
 'use client';
 
 import type { CourseGraph, CourseLessonType } from '@moto-ai/database';
-import { ChevronDown, ChevronUp, Copy, Plus, Trash2 } from 'lucide-react';
 import type { CourseInspectorSaveState } from './inspectors/CourseInspector';
 import { TrashPanel } from './TrashPanel';
 import type { StudioSelection, StudioTrashItem } from './studio-types';
@@ -84,9 +83,9 @@ export function CourseOutline({
               >
                 {chapter.title}
               </button>
-              <button aria-label="Move chapter up" className="rounded p-2 hover:bg-muted" disabled={disabled} onClick={() => onAction('up', 'chapter', chapter.id)} type="button"><ChevronUp className="h-4 w-4" /></button>
-              <button aria-label="Move chapter down" className="rounded p-2 hover:bg-muted" disabled={disabled} onClick={() => onAction('down', 'chapter', chapter.id)} type="button"><ChevronDown className="h-4 w-4" /></button>
-              <button aria-label="Delete chapter" className="rounded p-2 text-destructive hover:bg-destructive/10" disabled={disabled} onClick={() => onAction('delete', 'chapter', chapter.id)} type="button"><Trash2 className="h-4 w-4" /></button>
+              <button aria-label="Move chapter up" className="rounded px-2 py-2 text-xs hover:bg-muted" disabled={disabled} onClick={() => onAction('up', 'chapter', chapter.id)} type="button">Move up</button>
+              <button aria-label="Move chapter down" className="rounded px-2 py-2 text-xs hover:bg-muted" disabled={disabled} onClick={() => onAction('down', 'chapter', chapter.id)} type="button">Move down</button>
+              <button aria-label="Delete chapter" className="rounded px-2 py-2 text-xs text-destructive hover:bg-destructive/10" disabled={disabled} onClick={() => onAction('delete', 'chapter', chapter.id)} type="button">Delete</button>
             </div>
             <div className="space-y-1 border-t border-border p-2">
               {chapter.lessons.map((lesson) => (
@@ -101,10 +100,10 @@ export function CourseOutline({
                     <span className="block opacity-65">{lesson.lessonType}</span>
                   </button>
                   <div className="hidden items-center group-hover:flex group-focus-within:flex">
-                    <button aria-label="Move screen up" className="rounded p-1.5 hover:bg-muted" disabled={disabled} onClick={() => onAction('up', 'lesson', lesson.id)} type="button"><ChevronUp className="h-3.5 w-3.5" /></button>
-                    <button aria-label="Move screen down" className="rounded p-1.5 hover:bg-muted" disabled={disabled} onClick={() => onAction('down', 'lesson', lesson.id)} type="button"><ChevronDown className="h-3.5 w-3.5" /></button>
-                    <button aria-label="Duplicate screen" className="rounded p-1.5 hover:bg-muted" disabled={disabled} onClick={() => onAction('duplicate', 'lesson', lesson.id)} type="button"><Copy className="h-3.5 w-3.5" /></button>
-                    <button aria-label="Delete screen" className="rounded p-1.5 text-destructive hover:bg-destructive/10" disabled={disabled} onClick={() => onAction('delete', 'lesson', lesson.id)} type="button"><Trash2 className="h-3.5 w-3.5" /></button>
+                    <button aria-label="Move screen up" className="rounded px-2 py-1.5 text-[11px] hover:bg-muted" disabled={disabled} onClick={() => onAction('up', 'lesson', lesson.id)} type="button">Move up</button>
+                    <button aria-label="Move screen down" className="rounded px-2 py-1.5 text-[11px] hover:bg-muted" disabled={disabled} onClick={() => onAction('down', 'lesson', lesson.id)} type="button">Move down</button>
+                    <button aria-label="Duplicate screen" className="rounded px-2 py-1.5 text-[11px] hover:bg-muted" disabled={disabled} onClick={() => onAction('duplicate', 'lesson', lesson.id)} type="button">Duplicate</button>
+                    <button aria-label="Delete screen" className="rounded px-2 py-1.5 text-[11px] text-destructive hover:bg-destructive/10" disabled={disabled} onClick={() => onAction('delete', 'lesson', lesson.id)} type="button">Delete</button>
                   </div>
                 </div>
               ))}
@@ -118,13 +117,13 @@ export function CourseOutline({
                   event.target.value = '';
                 }}
               >
-                <option disabled value="">+ Add screen</option>
+                <option disabled value="">Add screen</option>
                 {BLOCKS.map((block) => <option key={block.type} value={block.type}>{block.label}</option>)}
               </select>
             </div>
           </section>
         ))}
-        <button className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm hover:border-primary hover:text-primary" disabled={disabled} onClick={onAddChapter} type="button"><Plus className="h-4 w-4" />Add chapter</button>
+        <button className="flex w-full items-center justify-center rounded-lg border border-dashed border-border px-3 py-2 text-sm hover:border-primary hover:text-primary" disabled={disabled} onClick={onAddChapter} type="button">Add chapter</button>
       </div>
       <TrashPanel
         disabled={disabled}

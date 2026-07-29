@@ -6,8 +6,6 @@
  * route handler in route.ts) which sets the auth cookie.
  */
 
-import { Bot } from 'lucide-react';
-
 interface LoginPageProps {
   searchParams: Promise<{ error?: string }>;
 }
@@ -20,10 +18,7 @@ export default async function AnalyticsLoginPage({ searchParams }: LoginPageProp
     <div className="bg-background text-foreground flex min-h-screen flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm">
         {/* Brand mark */}
-        <div className="mb-8 flex flex-col items-center gap-3">
-          <div className="bg-primary text-primary-foreground flex h-12 w-12 items-center justify-center rounded-2xl">
-            <Bot className="h-6 w-6" aria-hidden="true" />
-          </div>
+        <div className="mb-8">
           <div className="text-center">
             <h1 className="text-foreground text-xl font-semibold">moto tutor</h1>
             <p className="text-muted-foreground mt-0.5 text-sm">Instructor Dashboard</p>

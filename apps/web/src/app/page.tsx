@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Bot, BarChart2, BookOpen, PlayCircle } from 'lucide-react';
 import { listPublishedCourseSummaries } from '@moto-ai/database';
 import type { CourseSummary } from '@/lib/contracts/player-course';
 import { toPlayerCourseSummary } from '@/lib/course-player-adapter';
@@ -18,16 +17,12 @@ export default async function Home() {
   return (
     <div className="bg-background flex min-h-screen flex-col">
       <header className="bg-background sticky top-0 z-10 flex h-16 items-center gap-4 border-b px-6">
-        <div className="text-primary flex items-center gap-2 text-lg font-semibold">
-          <Bot className="h-6 w-6" />
-          <span>moto tutor</span>
-        </div>
+        <div className="text-primary text-lg font-semibold">moto tutor</div>
         <div className="ml-auto flex items-center gap-3">
           <Link
             href="/analytics"
-            className="text-muted-foreground hover:text-foreground border-border hover:border-foreground/20 hover:bg-accent flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-all duration-150"
+            className="text-muted-foreground hover:text-foreground border-border hover:border-foreground/20 hover:bg-accent flex items-center rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-all duration-150"
           >
-            <BarChart2 className="h-3.5 w-3.5" aria-hidden="true" />
             Analytics
           </Link>
           <ThemeToggle />
@@ -76,13 +71,11 @@ export default async function Home() {
                       />
                     ) : (
                       <div className="bg-background flex h-full w-full items-center justify-center">
-                        <BookOpen className="text-muted-foreground/30 h-10 w-10" />
+                        <span className="text-muted-foreground text-sm">No thumbnail</span>
                       </div>
                     )}
                     <div className="bg-background/0 group-hover:bg-background/20 absolute inset-0 flex items-center justify-center transition-colors duration-300">
-                      <div className="bg-background text-foreground translate-y-4 transform rounded-full p-3 opacity-0 shadow-lg transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                        <PlayCircle className="h-6 w-6" />
-                      </div>
+                      <span className="bg-background text-foreground translate-y-4 transform rounded-lg px-3 py-2 text-sm font-medium opacity-0 shadow-lg transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">Open course</span>
                     </div>
                   </div>
                   <div className="group/card-header @container/card-header grid flex-1 auto-rows-min items-start gap-1 space-y-2 rounded-t-xl p-5">
@@ -99,10 +92,7 @@ export default async function Home() {
                     )}
                   </div>
                   <div className="mt-auto p-5 pt-0">
-                    <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium">
-                      <BookOpen className="h-3.5 w-3.5" />
-                      {course.chapterCount} {course.chapterCount === 1 ? 'Chapter' : 'Chapters'}
-                    </div>
+                    <p className="text-muted-foreground text-xs font-medium">{course.chapterCount} {course.chapterCount === 1 ? 'Chapter' : 'Chapters'}</p>
                   </div>
                 </div>
               </Link>

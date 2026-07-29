@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
 import { type ThemeProviderProps } from 'next-themes';
-import { Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
@@ -20,21 +19,16 @@ export function ThemeToggle() {
   }, []);
 
   if (!mounted) {
-    return <div className="h-9 w-9" />;
+    return <div className="h-9 w-32" />;
   }
 
   return (
     <button
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-      className="bg-background border-border text-foreground hover:bg-muted focus-visible:ring-ring inline-flex h-9 w-9 items-center justify-center rounded-full border shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"
-      aria-label="Toggle theme"
+      className="bg-background border-border text-foreground hover:bg-muted focus-visible:ring-ring inline-flex h-9 items-center justify-center rounded-full border px-3 text-xs font-medium shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"
+      aria-label={theme === 'dark' ? 'Use light theme' : 'Use dark theme'}
     >
-      {theme === 'dark' ? (
-        <Sun className="h-[1.2rem] w-[1.2rem] transition-all" />
-      ) : (
-        <Moon className="h-[1.2rem] w-[1.2rem] transition-all" />
-      )}
-      <span className="sr-only">Toggle theme</span>
+      {theme === 'dark' ? 'Use light theme' : 'Use dark theme'}
     </button>
   );
 }
