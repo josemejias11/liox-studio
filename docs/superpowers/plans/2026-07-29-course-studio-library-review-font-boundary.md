@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Move review preparation into the Course Studio library, move the course-settings save/status footer into the editor outline, scope MotoSans to the learner product and product previews while the application uses Geist, and add persistent resizable editor panels with isolated scrolling.
+**Goal:** Move review preparation into the Course Studio library, move the course-settings save/status footer into the editor outline, scope MotoSans to the learner product and product previews while the application uses Geist, add persistent resizable editor panels with isolated scrolling, and remove decorative iconography from application surfaces.
 
 **Architecture:** Keep the authenticated `/studio` server page responsible for loading course cards, then hand those cards to a new client `CourseLibrary` component that owns selection and renders the existing review workflow for the selected course. Keep revision and feedback persistence on the existing API routes. Extend the CourseInspector save-state contract so CourseOutline can render the submit control through the HTML form association, while the inspector remains the owner of form validation and mutation. Make Geist the global application font and override the scoped `--font-sans` token inside the player frame so learner content and embedded previews use MotoSans. Add a client-only persistent panel-size hook and CSS-grid separator controls so the desktop editor is viewport-locked with independently scrolling outline/tools regions.
 
@@ -18,6 +18,7 @@
 - Use MotoSans only for the learner-facing product player and embedded product preview content.
 - Persist editor panel dimensions in browser local storage only; do not add a server setting or database field.
 - Keep the desktop editor viewport-locked with no document-level scroll; outline and tools scroll internally.
+- Keep Course Studio and application shell actions text-led; no decorative icons in application surfaces.
 - Preserve unrelated working-tree changes and stage only files in the current task.
 
 ---
@@ -381,4 +382,57 @@ At `/studio/[courseId]`, verify at 1440x810 and 500x800:
 ```bash
 git add apps/web/src/course-studio/usePersistentPanelSize.ts apps/web/src/course-studio/CourseStudioWorkspace.tsx apps/web/src/course-studio/CourseOutline.tsx
 git commit -m "feat: add persistent resizable studio panels"
+```
+
+### Task 7: Remove decorative icons from application surfaces
+
+**Files:**
+- Modify: `apps/web/src/course-studio/CourseOutline.tsx`
+- Modify: `apps/web/src/course-studio/TrashPanel.tsx`
+- Modify: `apps/web/src/course-studio/StudioToolbar.tsx`
+- Modify: `apps/web/src/course-studio/RevisionPanel.tsx`
+- Modify: `apps/web/src/course-studio/CourseLibrary.tsx`
+- Modify: `apps/web/src/app/studio/page.tsx`
+- Modify: `apps/web/src/app/studio/login/page.tsx`
+- Modify: `apps/web/src/app/analytics/login/page.tsx`
+- Modify: `apps/web/src/app/analytics/page.tsx`
+- Modify: `apps/web/src/app/page.tsx`
+- Modify: `apps/web/src/app/loading.tsx`
+- Modify: `apps/web/src/app/error.tsx`
+- Modify: `apps/web/src/components/theme.tsx`
+
+**Interfaces:**
+- Consumes: existing text labels, accessible button names, and application action behavior.
+- Produces: text-led application surfaces with no decorative Lucide icon controls or icon-only buttons. The favicon and purposeful learner lesson controls remain unchanged.
+
+- [ ] **Step 1: Replace Course Studio action icons with text**
+
+Remove `lucide-react` imports and rendered icons from CourseOutline, TrashPanel, StudioToolbar, RevisionPanel, and CourseLibrary. Keep every action but express it as visible text: Move up, Move down, Duplicate, Delete, Add chapter, Restore, Empty Trash, Freeze, Copy review link, Clear selection, Focus preview, and Return to editor. Replace the library empty-image icon with a text placeholder such as `No thumbnail`.
+
+- [ ] **Step 2: Replace application-shell and page icons with typography**
+
+Remove decorative icons from the Studio library header, create-course button, Studio login branding, analytics login branding, analytics header/stat cards/back link/empty state, public course catalog header/cards, global loading state, and global error action. Keep the text and links fully understandable without an icon. Refactor analytics `StatCard` so it no longer accepts or renders an icon component.
+
+- [ ] **Step 3: Make theme control text-led**
+
+Replace the theme toggle's Sun/Moon icons with an explicit text button such as `Use dark theme` / `Use light theme`, retaining its current theme behavior, accessible label, hydration guard, and focus styles.
+
+- [ ] **Step 4: Verify icon removal and behavior statically**
+
+Run:
+
+```bash
+rg -n -- "lucide-react|<([A-Z][A-Za-z]+) className=.*h-|aria-label=\".*\".*<" apps/web/src/course-studio apps/web/src/app apps/web/src/components/theme.tsx
+npm run typecheck
+npm run lint
+git diff --check
+```
+
+The search should return no Lucide imports or rendered icon components in the listed application surfaces. Do not create or run automated tests.
+
+- [ ] **Step 5: Commit the text-led application surface**
+
+```bash
+git add apps/web/src/course-studio/CourseOutline.tsx apps/web/src/course-studio/TrashPanel.tsx apps/web/src/course-studio/StudioToolbar.tsx apps/web/src/course-studio/RevisionPanel.tsx apps/web/src/course-studio/CourseLibrary.tsx apps/web/src/app/studio/page.tsx apps/web/src/app/studio/login/page.tsx apps/web/src/app/analytics/login/page.tsx apps/web/src/app/analytics/page.tsx apps/web/src/app/page.tsx apps/web/src/app/loading.tsx apps/web/src/app/error.tsx apps/web/src/components/theme.tsx
+git commit -m "refactor: remove decorative application icons"
 ```
