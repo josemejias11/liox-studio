@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Clipboard, Snowflake } from 'lucide-react';
 
 export interface StudioRevision {
@@ -22,19 +22,25 @@ export interface StudioFeedback {
   createdAt: string;
 }
 
-export function RevisionPanel({
-  courseId,
-  disabled,
-  initialRevisions,
-  initialFeedback,
-  autoLoad = false,
-}: {
+interface RevisionPanelProps {
   courseId: string;
   disabled: boolean;
   initialRevisions: StudioRevision[];
   initialFeedback: StudioFeedback[];
   autoLoad?: boolean;
-}) {
+}
+
+export function RevisionPanel(props: RevisionPanelProps) {
+  return <RevisionPanelContent key={props.courseId} {...props} />;
+}
+
+function RevisionPanelContent({
+  courseId,
+  disabled,
+  initialRevisions,
+  initialFeedback,
+  autoLoad = false,
+}: RevisionPanelProps) {
   const [revisions, setRevisions] = useState<StudioRevision[]>(initialRevisions);
   const [feedback, setFeedback] = useState<StudioFeedback[]>(initialFeedback);
   const [busy, setBusy] = useState(false);
@@ -43,8 +49,19 @@ export function RevisionPanel({
   const [message, setMessage] = useState<string | null>(null);
   const [reviewUrl, setReviewUrl] = useState<string | null>(null);
   const latestLoadId = useRef(0);
+  const courseGeneration = useRef(0);
+
+  const isCurrentCourse = useCallback(
+    (generation: number) => generation === courseGeneration.current,
+    [],
+  );
+
+  useLayoutEffect(() => () => {
+    courseGeneration.current += 1;
+  }, []);
 
   const load = useCallback(async ({ reset = false, signal }: { reset?: boolean; signal?: AbortSignal } = {}) => {
+    const generation = courseGeneration.current;
     const loadId = latestLoadId.current + 1;
     latestLoadId.current = loadId;
     if (reset) {
@@ -67,16 +84,16 @@ export function RevisionPanel({
       if (!revisionResponse.ok || !feedbackResponse.ok) {
         throw new Error(revisionResult.error || feedbackResult.error || 'Review history could not be loaded.');
       }
-      if (signal?.aborted || loadId !== latestLoadId.current) return;
+      if (signal?.aborted || loadId !== latestLoadId.current || !isCurrentCourse(generation)) return;
       setRevisions(revisionResult.revisions ?? []);
       setFeedback(feedbackResult.feedback ?? []);
     } catch (error) {
-      if (signal?.aborted || loadId !== latestLoadId.current) return;
+      if (signal?.aborted || loadId !== latestLoadId.current || !isCurrentCourse(generation)) return;
       setLoadError(error instanceof Error ? error.message : 'Review history could not be loaded.');
     } finally {
-      if (loadId === latestLoadId.current) setLoading(false);
+      if (loadId === latestLoadId.current && isCurrentCourse(generation)) setLoading(false);
     }
-  }, [courseId]);
+  }, [courseId, isCurrentCourse]);
 
   useEffect(() => {
     if (!autoLoad) return;
@@ -92,6 +109,7 @@ export function RevisionPanel({
   }, [autoLoad, load]);
 
   async function resolveFeedback(feedbackId: string) {
+    const generation = courseGeneration.current;
     setBusy(true);
     try {
       const response = await fetch(`/api/course-studio/courses/${encodeURIComponent(courseId)}/feedback`, {
@@ -99,18 +117,22 @@ export function RevisionPanel({
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ feedbackId }),
       });
+      if (!isCurrentCourse(generation)) return;
       if (!response.ok) throw new Error('Feedback could not be resolved.');
       await load();
+      if (!isCurrentCourse(generation)) return;
       setMessage('Feedback marked resolved.');
     } catch (error) {
+      if (!isCurrentCourse(generation)) return;
       setMessage(error instanceof Error ? error.message : 'Feedback could not be resolved.');
     } finally {
-      setBusy(false);
+      if (isCurrentCourse(generation)) setBusy(false);
     }
   }
 
   async function freeze() {
     const notes = window.prompt('Revision notes (optional)', '') ?? undefined;
+    const generation = courseGeneration.current;
     setBusy(true);
     setMessage('Freezing immutable revision…');
     try {
@@ -120,30 +142,37 @@ export function RevisionPanel({
         body: JSON.stringify({ notes }),
       });
       const result = await response.json() as { error?: string };
+      if (!isCurrentCourse(generation)) return;
       if (!response.ok) throw new Error(result.error || 'Revision could not be created.');
       await load();
+      if (!isCurrentCourse(generation)) return;
       setMessage('Revision frozen. Future edits will not change it.');
     } catch (error) {
+      if (!isCurrentCourse(generation)) return;
       setMessage(error instanceof Error ? error.message : 'Revision could not be created.');
     } finally {
-      setBusy(false);
+      if (isCurrentCourse(generation)) setBusy(false);
     }
   }
 
   async function createLink(revisionId: string) {
+    const generation = courseGeneration.current;
     setBusy(true);
     setReviewUrl(null);
     try {
       const response = await fetch(`/api/course-studio/revisions/${encodeURIComponent(revisionId)}/review`, { method: 'POST' });
       const result = await response.json() as { reviewUrl?: string; error?: string };
+      if (!isCurrentCourse(generation)) return;
       if (!response.ok || !result.reviewUrl) throw new Error(result.error || 'Review link could not be created.');
       setReviewUrl(result.reviewUrl);
       setMessage('A new review link was created. Copy it now.');
       await load();
+      if (!isCurrentCourse(generation)) return;
     } catch (error) {
+      if (!isCurrentCourse(generation)) return;
       setMessage(error instanceof Error ? error.message : 'Review link could not be created.');
     } finally {
-      setBusy(false);
+      if (isCurrentCourse(generation)) setBusy(false);
     }
   }
 
