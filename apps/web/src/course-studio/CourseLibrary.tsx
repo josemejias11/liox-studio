@@ -46,8 +46,8 @@ export function CourseLibrary({ courses }: CourseLibraryProps) {
 
           return (
             <article
-              className={`bg-card border-border overflow-hidden rounded-xl border transition-colors ${
-                isSelected ? 'border-primary ring-primary/25 ring-2' : 'hover:border-primary'
+              className={`studio-glass-panel overflow-hidden rounded-xl border transition-colors ${
+                isSelected ? 'studio-glass-selected' : 'hover:border-primary'
               }`}
               key={course.id}
             >
@@ -80,7 +80,7 @@ export function CourseLibrary({ courses }: CourseLibraryProps) {
                   <button
                     aria-controls="course-review-panel"
                     aria-pressed={isSelected}
-                    className="inline-flex items-center rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                    className="studio-glass-control inline-flex items-center rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
                     onClick={() => setSelectedCourse(course)}
                     type="button"
                   >
@@ -96,7 +96,7 @@ export function CourseLibrary({ courses }: CourseLibraryProps) {
       {reviewCourse && (
         <section
           aria-labelledby="course-review-heading"
-          className="bg-card border-border overflow-hidden rounded-xl border"
+          className="studio-glass-panel overflow-hidden rounded-xl border"
           id="course-review-panel"
         >
           <div className="flex flex-col gap-3 border-b border-border p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -109,7 +109,7 @@ export function CourseLibrary({ courses }: CourseLibraryProps) {
               </p>
             </div>
             <button
-              className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium hover:border-primary hover:text-primary"
+              className="studio-glass-control inline-flex w-fit items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium hover:border-primary hover:text-primary"
               onClick={() => setSelectedCourse(null)}
               type="button"
             >

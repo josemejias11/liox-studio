@@ -13,13 +13,13 @@ export default async function CourseStudioHome() {
   const courses = await listAuthoringCourses();
 
   return (
-    <main className="bg-background min-h-screen px-6 py-10 text-foreground">
+    <main className="studio-workspace bg-background min-h-screen px-6 py-10 text-foreground">
       <div className="mx-auto max-w-5xl">
-        <header className="mb-10 flex items-start justify-between gap-6">
+        <header className="studio-glass mb-10 flex items-start justify-between gap-6 rounded-2xl p-6">
           <div><h1 className="text-3xl font-semibold">Course Studio</h1><p className="text-muted-foreground mt-2">Create, revise, preview, and submit learning experiences for review.</p></div>
           <BookOpen className="text-primary h-8 w-8" aria-hidden="true" />
         </header>
-        <section className="bg-card border-border mb-8 rounded-2xl border p-6">
+        <section className="studio-glass mb-8 rounded-2xl p-6">
           <h2 className="mb-4 text-lg font-semibold">Start a course</h2>
           <form action={createCourseAction} className="flex gap-3">
             <input className="border-input bg-background flex-1 rounded-lg border px-3 py-2" name="title" placeholder="Course title" required />
