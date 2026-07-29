@@ -6,7 +6,7 @@ import type {
   CourseLessonType,
   LessonInput,
 } from '@moto-ai/database';
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react';
 import { toPlayerCourseContent } from '@/lib/course-player-adapter';
 import type { CourseSettingsInput } from '@/lib/contracts/course-studio';
 import { AuthoringPreview } from './AuthoringPreview';
@@ -60,6 +60,7 @@ export function CourseStudioWorkspace({
   const workspaceRef = useRef<HTMLDivElement>(null);
   const outlinePointerId = useRef<number | null>(null);
   const toolsPointerId = useRef<number | null>(null);
+  const allowBrowserBack = useRef(false);
   const [outlineWidth, setOutlineWidth] = usePersistentPanelSize({
     key: 'moto-tutor:course-studio:outline-width',
     defaultValue: 320,
@@ -75,6 +76,21 @@ export function CourseStudioWorkspace({
   });
   const preview = useMemo(() => toPlayerCourseContent(course), [course]);
   const selectedLessonId = selection.kind === 'lesson' ? selection.id : undefined;
+
+  const discardCourseSettings = useCallback((): void => {
+    setCourseSettingsDirty(false);
+    // Give the Course Inspector the persisted graph again so a confirmed discard
+    // also resets its local form if a later structural mutation cannot complete.
+    setCourse((current) => ({ ...current }));
+  }, []);
+
+  const confirmDiscardCourseSettings = useCallback((): boolean => {
+    if (saving) return false;
+    if (selection.kind !== 'course' || !courseSettingsDirty) return true;
+    if (!window.confirm('Discard unsaved course changes?')) return false;
+    discardCourseSettings();
+    return true;
+  }, [courseSettingsDirty, discardCourseSettings, saving, selection.kind]);
 
   useEffect(() => {
     const updateToolsMaximum = () => {
@@ -100,24 +116,28 @@ export function CourseStudioWorkspace({
     return () => window.removeEventListener('beforeunload', preventUnsavedSettingsLoss);
   }, [courseSettingsDirty]);
 
+  useEffect(() => {
+    if (!courseSettingsDirty) return;
+    const editorUrl = window.location.href;
+
+    function preventBrowserBack(): void {
+      if (allowBrowserBack.current) {
+        allowBrowserBack.current = false;
+        return;
+      }
+      window.history.pushState(window.history.state, '', editorUrl);
+      if (!confirmDiscardCourseSettings()) return;
+      allowBrowserBack.current = true;
+      window.history.back();
+    }
+
+    window.addEventListener('popstate', preventBrowserBack);
+    return () => window.removeEventListener('popstate', preventBrowserBack);
+  }, [confirmDiscardCourseSettings, courseSettingsDirty]);
+
   function setStudioSelection(nextSelection: StudioSelection): void {
     setSelection(nextSelection);
     if (nextSelection.kind !== 'course') setCourseSaveState(neutralCourseSaveState);
-  }
-
-  function discardCourseSettings(): void {
-    setCourseSettingsDirty(false);
-    // Give the Course Inspector the persisted graph again so a confirmed discard
-    // also resets its local form if a later structural mutation cannot complete.
-    setCourse((current) => ({ ...current }));
-  }
-
-  function confirmDiscardCourseSettings(): boolean {
-    if (saving) return false;
-    if (selection.kind !== 'course' || !courseSettingsDirty) return true;
-    if (!window.confirm('Discard unsaved course changes?')) return false;
-    discardCourseSettings();
-    return true;
   }
 
   function select(nextSelection: StudioSelection): void {
