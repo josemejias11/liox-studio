@@ -48,8 +48,8 @@ interface SpecificationsFieldProps {
   value: SpecificationDraft[];
 }
 
-const inputClass = 'mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
-const actionClass = 'inline-flex min-h-11 items-center justify-center rounded-lg border border-input bg-background px-3 text-xs font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+const inputClass = 'studio-glass-control mt-1 w-full rounded-lg border border-input px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
+const actionClass = 'studio-glass-control inline-flex min-h-11 items-center justify-center rounded-lg border border-input px-3 text-xs font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 function objectArray(value: unknown): JsonObject[] {
   return Array.isArray(value) ? value.filter((item): item is JsonObject => Object.keys(jsonObject(item)).length > 0) : [];
@@ -139,7 +139,7 @@ export function SpecificationsField({ courseId, disabled = false, errors = {}, o
   }
 
   return (
-    <fieldset className="space-y-3 rounded-xl border border-border p-3">
+    <fieldset className="studio-glass-control space-y-3 rounded-xl border border-border p-3">
       <legend className="px-1 text-sm font-semibold">Specifications</legend>
       {value.length === 0 && <p className="text-xs text-muted-foreground">No specifications have been added.</p>}
       <div className="space-y-3">
@@ -149,7 +149,7 @@ export function SpecificationsField({ courseId, disabled = false, errors = {}, o
           const open = hasNestedError || !collapsed.has(specification.clientKey);
           const titleError = errors[`${specification.clientKey}.title`];
           return (
-            <section className="rounded-xl border border-border" key={specification.clientKey}>
+            <section className="studio-glass-panel rounded-xl border border-border" key={specification.clientKey}>
               <div className="flex items-center gap-2 p-3">
                 <button
                   aria-controls={`${specification.clientKey}-content`}
@@ -204,10 +204,10 @@ function GroupsEditor({ disabled, errors, groups, onChange, specificationKey }: 
     onChange(groups.filter((_, groupIndex) => groupIndex !== index));
   }
   return (
-    <fieldset className="space-y-3 rounded-lg border border-border p-3">
+    <fieldset className="studio-glass-control space-y-3 rounded-lg border border-border p-3">
       <legend className="px-1 text-xs font-semibold">Specification groups</legend>
       {groups.map((group, groupIndex) => (
-        <section className="space-y-3 rounded-lg border border-border p-3" key={group.clientKey}>
+        <section className="studio-glass-panel space-y-3 rounded-lg border border-border p-3" key={group.clientKey}>
           {(() => {
             const groupError = errors[`${specificationKey}.${group.clientKey}.groupName`];
             const groupErrorId = `${specificationKey}-${group.clientKey}-name-error`;
@@ -233,10 +233,10 @@ function GroupsEditor({ disabled, errors, groups, onChange, specificationKey }: 
 
 function RowsEditor({ disabled, errors, group, onChange, specificationKey }: { disabled: boolean; errors: Record<string, string | undefined>; group: SpecificationGroupDraft; onChange: (group: SpecificationGroupDraft) => void; specificationKey: string }) {
   return (
-    <fieldset className="space-y-3 rounded-lg bg-muted/30 p-3">
+    <fieldset className="studio-glass-control space-y-3 rounded-lg p-3">
       <legend className="px-1 text-xs font-semibold">Rows</legend>
       {group.rows.map((row, rowIndex) => (
-        <div className="grid gap-2 rounded-lg border border-border p-3" key={row.clientKey}>
+        <div className="studio-glass-panel grid gap-2 rounded-lg border border-border p-3" key={row.clientKey}>
           {(() => {
             const labelError = errors[`${specificationKey}.${group.clientKey}.${row.clientKey}.label`];
             const valueError = errors[`${specificationKey}.${group.clientKey}.${row.clientKey}.value`];

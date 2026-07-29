@@ -18,8 +18,8 @@ interface StringListFieldProps {
   onChange: (items: StringListItem[]) => void;
 }
 
-const controlClass = 'inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-input bg-background px-2 text-xs font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
-const inputClass = 'w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
+const controlClass = 'studio-glass-control inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-input px-2 text-xs font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+const inputClass = 'studio-glass-control w-full rounded-lg border border-input px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
 
 function move<T>(items: T[], from: number, to: number): T[] {
   const next = [...items];
@@ -82,7 +82,7 @@ export function StringListField({
   }
 
   return (
-    <fieldset className="space-y-3 rounded-xl border border-border p-3">
+    <fieldset className="studio-glass-control space-y-3 rounded-xl border border-border p-3">
       <legend className="px-1 text-sm font-semibold">{legend}</legend>
       <p aria-live="polite" className="sr-only" ref={liveRef} />
       {items.length === 0 ? (
@@ -93,7 +93,7 @@ export function StringListField({
             const error = errors[item.clientKey];
             const errorId = `${item.clientKey}-error`;
             return (
-              <li className="rounded-lg border border-border p-3" key={item.clientKey}>
+              <li className="studio-glass-panel rounded-lg border border-border p-3" key={item.clientKey}>
                 <div className="flex items-start gap-2">
                   <span aria-hidden="true" className="mt-2.5 w-5 text-right text-xs font-semibold text-muted-foreground">{index + 1}</span>
                   <div className="min-w-0 flex-1">

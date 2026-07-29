@@ -76,8 +76,8 @@ export interface CourseInspectorSaveState {
   error: string | null;
 }
 
-const inputClass = 'mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
-const actionClass = 'inline-flex min-h-11 items-center justify-center rounded-lg border border-input bg-background px-3 text-xs font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+const inputClass = 'studio-glass-control mt-1 w-full rounded-lg border border-input px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
+const actionClass = 'studio-glass-control inline-flex min-h-11 items-center justify-center rounded-lg border border-input px-3 text-xs font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 function objectiveDrafts(value: unknown): StringListItem[] {
   return Array.isArray(value)
@@ -282,13 +282,13 @@ export function CourseInspector({
 
   const disclaimer = form.disclaimer;
   return (
-    <form className="flex h-full min-h-0 flex-col overflow-y-auto overscroll-contain bg-card" id={formId} noValidate onSubmit={submit}>
-      <header className="sticky top-0 z-10 border-b border-border bg-card px-5 py-4">
+    <form className="studio-glass-panel flex h-full min-h-0 flex-col overflow-y-auto overscroll-contain" id={formId} noValidate onSubmit={submit}>
+      <header className="studio-glass sticky top-0 z-10 border-x-0 border-t-0 border-b border-border px-5 py-4">
         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">Course settings</p>
         <p className="mt-1 text-xs text-muted-foreground">Edit the learner-facing course experience with guided controls.</p>
       </header>
       <div className="space-y-5 px-5 py-5">
-        <fieldset className="space-y-4 rounded-xl border border-border p-3">
+        <fieldset className="studio-glass-control space-y-4 rounded-xl border border-border p-3">
           <legend className="px-1 text-sm font-semibold">General</legend>
           <label className="block text-xs font-medium" htmlFor="course-title">Title
             <input aria-describedby={fieldError('title') ? 'course-title-error' : undefined} aria-invalid={Boolean(fieldError('title'))} className={inputClass} disabled={locked} id="course-title" maxLength={120} onChange={(event) => update((current) => ({ ...current, title: event.target.value }))} value={form.title} />
@@ -306,7 +306,7 @@ export function CourseInspector({
 
         <StringListField addLabel="Add objective" disabled={locked} emptyMessage="No objectives have been added." errors={objectiveErrors} itemLabel="Objective" items={form.learningObjectives} legend="Learning objectives" onChange={(learningObjectives) => update((current) => ({ ...current, learningObjectives }))} />
 
-        <fieldset className="space-y-4 rounded-xl border border-border p-3">
+        <fieldset className="studio-glass-control space-y-4 rounded-xl border border-border p-3">
           <legend className="px-1 text-sm font-semibold">Course cover</legend>
           <label className="block text-xs font-medium" htmlFor="cover-headline">Cover headline
             <input className={inputClass} disabled={locked} id="cover-headline" onChange={(event) => update((current) => ({ ...current, cover: { ...current.cover, present: true, coverHeadline: event.target.value } }))} value={form.cover.coverHeadline} />
@@ -323,7 +323,7 @@ export function CourseInspector({
 
         <SpecificationsField courseId={course.id} disabled={locked} errors={specificationErrors} onChange={(specifications) => update((current) => ({ ...current, specifications }))} onUploadStateChange={onUploadStateChange} value={form.specifications} />
 
-        <section className="rounded-xl border border-border">
+        <section className="studio-glass-control rounded-xl border border-border">
           <div className="flex items-center justify-between gap-3 p-3">
             <button aria-controls="disclaimer-content" aria-expanded={disclaimerOpen} className="min-h-11 flex-1 rounded-lg px-2 text-left text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => setDisclaimerOpen((current) => !current)} type="button">Disclaimer</button>
             {disclaimer && <button className={actionClass} disabled={locked} onClick={() => update((current) => ({ ...current, disclaimer: null }))} type="button">Remove disclaimer</button>}

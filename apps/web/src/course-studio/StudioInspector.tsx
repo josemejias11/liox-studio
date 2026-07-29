@@ -19,7 +19,7 @@ interface Props {
   onSaveLesson: (lessonId: string, input: LessonInput) => Promise<void>;
 }
 
-const inputClass = 'mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm';
+const inputClass = 'studio-glass-control mt-1 w-full rounded-lg border border-input px-3 py-2 text-sm';
 
 export function StudioInspector({
   course,
@@ -83,15 +83,15 @@ export function StudioInspector({
   }
 
   if (!chapter && !lesson) {
-    return <aside className="border-l border-border bg-card p-5 text-sm text-muted-foreground">Select an item to edit it.</aside>;
+    return <aside className="studio-glass-panel border-l border-border p-5 text-sm text-muted-foreground">Select an item to edit it.</aside>;
   }
 
   return (
-    <aside className="h-full min-h-0 overflow-y-auto overscroll-contain border-l border-border bg-card p-5">
+    <aside className="studio-glass-panel h-full min-h-0 overflow-y-auto overscroll-contain border-l border-border p-5">
       <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
         Chapter settings
       </p>
-      <div className="mt-5 space-y-4">
+      <div className="studio-glass-control mt-5 space-y-4 rounded-xl border border-border p-3">
         {chapter && (
           <>
             <label className="block text-xs font-medium">Chapter title<input className={inputClass} name="chapter-title" onChange={(event) => field('title', event.target.value)} value={form.title ?? ''} /></label>

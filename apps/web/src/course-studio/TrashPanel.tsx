@@ -32,11 +32,11 @@ export function TrashPanel({
   }
 
   return (
-    <section className="border-t border-border bg-card" aria-label="Trash">
+    <section className="studio-glass border-x-0 border-b-0 border-t border-border" aria-label="Trash">
       <div className="flex items-center gap-2 p-3">
         <button
           aria-expanded={expanded}
-          className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-2 text-left text-sm font-semibold hover:bg-muted"
+          className="studio-glass-control flex min-w-0 flex-1 items-center gap-2 rounded-md border px-2 py-2 text-left text-sm font-semibold hover:border-primary hover:text-primary"
           onClick={() => setExpanded((value) => !value)}
           type="button"
         >
@@ -46,7 +46,7 @@ export function TrashPanel({
         </button>
         {items.length > 0 && expanded && (
           <button
-            className="rounded-md px-2 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
+            className="studio-glass-control rounded-md border px-2 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={disabled}
             onClick={() => void emptyTrash()}
             type="button"
@@ -58,10 +58,10 @@ export function TrashPanel({
       {expanded && (
         <div className="max-h-64 space-y-2 overflow-y-auto px-3 pb-3">
           {items.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-border px-3 py-4 text-center text-xs text-muted-foreground">No screens in Trash.</p>
+            <p className="studio-glass-control rounded-lg border border-dashed border-border px-3 py-4 text-center text-xs text-muted-foreground">No screens in Trash.</p>
           ) : (
             items.map((item) => (
-              <article className="rounded-lg border border-border p-3" key={item.id}>
+              <article className="studio-glass-panel rounded-lg border border-border p-3" key={item.id}>
                 <p className="truncate text-sm font-medium">{item.headline}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {item.lessonType} · {item.chapterTitle} · Original position {item.position + 1}
@@ -71,7 +71,7 @@ export function TrashPanel({
                 </time>
                 <div className="mt-3 flex items-center gap-2">
                   <button
-                    className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1.5 text-xs font-medium hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                    className="studio-glass-control inline-flex items-center gap-1 rounded-md border border-border px-2 py-1.5 text-xs font-medium hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={disabled}
                     onClick={() => void onRestore(item.id)}
                     type="button"
@@ -80,7 +80,7 @@ export function TrashPanel({
                   </button>
                   <button
                     aria-label={`Permanently delete ${item.headline}`}
-                    className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="studio-glass-control inline-flex items-center gap-1 rounded-md border px-2 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={disabled}
                     onClick={() => void permanentlyDelete(item.id)}
                     type="button"

@@ -13,7 +13,7 @@ interface CourseMediaFieldProps {
   value: ImageReference | undefined;
 }
 
-const buttonClass = 'inline-flex min-h-11 items-center justify-center rounded-lg border border-input bg-background px-3 text-xs font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+const buttonClass = 'studio-glass-control inline-flex min-h-11 items-center justify-center rounded-lg border border-input px-3 text-xs font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 /** Uploads an image to the authenticated Studio endpoint without persisting it. */
 export function CourseMediaField({
@@ -67,7 +67,7 @@ export function CourseMediaField({
 
   const locked = disabled || uploading;
   return (
-    <section aria-labelledby={`${id}-label`} className="rounded-lg border border-border p-3">
+    <section aria-labelledby={`${id}-label`} className="studio-glass-control rounded-lg border border-border p-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h4 className="text-sm font-medium" id={`${id}-label`}>{label}</h4>
