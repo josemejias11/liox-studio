@@ -58,9 +58,21 @@ interface CourseFormDraft {
 export interface CourseInspectorProps {
   course: CourseGraph;
   disabled?: boolean;
+  formId?: string;
   /** The integration owner uses this to guard selection changes while dirty. */
   onDirtyChange?: (dirty: boolean) => void;
+  onSaveStateChange?: (state: CourseInspectorSaveState) => void;
   onSave: (input: CourseSettingsInput) => Promise<void>;
+}
+
+export interface CourseInspectorSaveState {
+  dirty: boolean;
+  valid: boolean;
+  locked: boolean;
+  saving: boolean;
+  uploading: boolean;
+  saved: boolean;
+  error: string | null;
 }
 
 const inputClass = 'mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
@@ -157,7 +169,14 @@ function errorMap(issues: Array<{ path: PropertyKey[]; message: string }>): Reco
 }
 
 /** Structured Course Settings form. It does not mutate server state until Save. */
-export function CourseInspector({ course, disabled = false, onDirtyChange, onSave }: CourseInspectorProps) {
+export function CourseInspector({
+  course,
+  disabled = false,
+  formId = 'course-settings-form',
+  onDirtyChange,
+  onSaveStateChange,
+  onSave,
+}: CourseInspectorProps) {
   const initial = useMemo(() => formDraft(course), [course]);
   const [form, setForm] = useState<CourseFormDraft>(initial);
   const [sourceCourse, setSourceCourse] = useState(course);
@@ -186,6 +205,17 @@ export function CourseInspector({ course, disabled = false, onDirtyChange, onSav
     [dirty, validation],
   );
   useEffect(() => onDirtyChange?.(dirty), [dirty, onDirtyChange]);
+  useEffect(() => {
+    onSaveStateChange?.({
+      dirty,
+      valid,
+      locked,
+      saving,
+      uploading,
+      saved,
+      error: saveError,
+    });
+  }, [dirty, locked, onSaveStateChange, saveError, saved, saving, uploading, valid]);
 
   const objectiveErrors = useMemo(() => Object.fromEntries(form.learningObjectives.map((item, index) => [item.clientKey, errors[`learningObjectives.${index}`]])), [errors, form.learningObjectives]);
   const disclaimerErrors = useMemo(() => form.disclaimer
@@ -251,7 +281,7 @@ export function CourseInspector({ course, disabled = false, onDirtyChange, onSav
 
   const disclaimer = form.disclaimer;
   return (
-    <form className="flex h-full min-h-0 flex-col overflow-y-auto overscroll-contain bg-card" noValidate onSubmit={submit}>
+    <form className="flex h-full min-h-0 flex-col overflow-y-auto overscroll-contain bg-card" id={formId} noValidate onSubmit={submit}>
       <header className="sticky top-0 z-10 border-b border-border bg-card px-5 py-4">
         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">Course settings</p>
         <p className="mt-1 text-xs text-muted-foreground">Edit the learner-facing course experience with guided controls.</p>
@@ -316,10 +346,6 @@ export function CourseInspector({ course, disabled = false, onDirtyChange, onSav
           )}
         </section>
       </div>
-      <footer className="sticky bottom-0 z-10 mt-auto border-t border-border bg-card px-5 py-4">
-        <p aria-live="polite" className={`text-xs ${saveError || (dirty && !valid) ? 'text-destructive' : 'text-muted-foreground'}`}>{uploading ? 'Image upload in progress. Course settings are locked.' : saving ? 'Saving course settings…' : saveError ?? (saved ? 'Course settings saved.' : dirty && !valid ? 'Correct the highlighted fields before saving.' : dirty ? 'Unsaved changes.' : 'No unsaved changes.')}</p>
-        <button className="mt-3 min-h-11 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" disabled={locked || !dirty || !valid} type="submit">{saving ? 'Saving…' : 'Save course settings'}</button>
-      </footer>
     </form>
   );
 }

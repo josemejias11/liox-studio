@@ -3,7 +3,7 @@
 import type { CourseGraph, LessonInput } from '@moto-ai/database';
 import { useState } from 'react';
 import type { CourseSettingsInput } from '@/lib/contracts/course-studio';
-import { CourseInspector } from './inspectors/CourseInspector';
+import { CourseInspector, type CourseInspectorSaveState } from './inspectors/CourseInspector';
 import { LessonInspector } from './inspectors/LessonInspector';
 import type { StudioSelection } from './studio-types';
 
@@ -11,7 +11,9 @@ interface Props {
   course: CourseGraph;
   selection: StudioSelection;
   disabled: boolean;
+  courseSettingsFormId?: string;
   onDirtyChange?: (dirty: boolean) => void;
+  onSaveStateChange?: (state: CourseInspectorSaveState) => void;
   onSaveCourse: (input: CourseSettingsInput) => Promise<void>;
   onSaveChapter: (chapterId: string, input: Record<string, unknown>) => Promise<void>;
   onSaveLesson: (lessonId: string, input: LessonInput) => Promise<void>;
@@ -23,7 +25,9 @@ export function StudioInspector({
   course,
   selection,
   disabled,
+  courseSettingsFormId,
   onDirtyChange,
+  onSaveStateChange,
   onSaveCourse,
   onSaveChapter,
   onSaveLesson,
@@ -71,7 +75,7 @@ export function StudioInspector({
   }
 
   if (selection.kind === 'course') {
-    return <CourseInspector course={course} disabled={disabled} onDirtyChange={onDirtyChange} onSave={onSaveCourse} />;
+    return <CourseInspector course={course} disabled={disabled} formId={courseSettingsFormId} onDirtyChange={onDirtyChange} onSave={onSaveCourse} onSaveStateChange={onSaveStateChange} />;
   }
 
   if (lesson) {

@@ -20,6 +20,18 @@ import {
 import { StudioToolbar } from './StudioToolbar';
 import { studioClient } from './studio-client';
 import type { StudioSelection, StudioTrashItem } from './studio-types';
+import type { CourseInspectorSaveState } from './inspectors/CourseInspector';
+
+const courseSettingsFormId = 'course-settings-form';
+const neutralCourseSaveState: CourseInspectorSaveState = {
+  dirty: false,
+  valid: true,
+  locked: false,
+  saving: false,
+  uploading: false,
+  saved: false,
+  error: null,
+};
 
 export function CourseStudioWorkspace({
   initialCourse,
@@ -40,8 +52,14 @@ export function CourseStudioWorkspace({
   const [undoTrashId, setUndoTrashId] = useState<string | null>(null);
   const [focusPreview, setFocusPreview] = useState(false);
   const [courseSettingsDirty, setCourseSettingsDirty] = useState(false);
+  const [courseSaveState, setCourseSaveState] = useState<CourseInspectorSaveState>(neutralCourseSaveState);
   const preview = useMemo(() => toPlayerCourseContent(course), [course]);
   const selectedLessonId = selection.kind === 'lesson' ? selection.id : undefined;
+
+  function setStudioSelection(nextSelection: StudioSelection): void {
+    setSelection(nextSelection);
+    if (nextSelection.kind !== 'course') setCourseSaveState(neutralCourseSaveState);
+  }
 
   function discardCourseSettings(): void {
     setCourseSettingsDirty(false);
@@ -61,7 +79,7 @@ export function CourseStudioWorkspace({
   function select(nextSelection: StudioSelection): void {
     if (nextSelection.kind === selection.kind && nextSelection.id === selection.id) return;
     if (!confirmDiscardCourseSettings()) return;
-    setSelection(nextSelection);
+    setStudioSelection(nextSelection);
   }
 
   function reconcileSelection(nextCourse: CourseGraph) {
@@ -106,7 +124,7 @@ export function CourseStudioWorkspace({
     await run('Chapter', async () => {
       const next = await studioClient.createChapter(course.id, title.trim());
       const created = next.chapters[next.chapters.length - 1];
-      if (created) setSelection({ kind: 'chapter', id: created.id });
+      if (created) setStudioSelection({ kind: 'chapter', id: created.id });
       return next;
     }, { structural: true });
   }
@@ -117,7 +135,7 @@ export function CourseStudioWorkspace({
       const previousIds = new Set(course.chapters.flatMap((chapter) => chapter.lessons.map((lesson) => lesson.id)));
       const next = await studioClient.createLesson(course.id, chapterId, lessonType);
       const created = next.chapters.flatMap((chapter) => chapter.lessons).find((lesson) => !previousIds.has(lesson.id));
-      if (created) setSelection({ kind: 'lesson', id: created.id });
+      if (created) setStudioSelection({ kind: 'lesson', id: created.id });
       return next;
     }, { structural: true });
   }
@@ -149,7 +167,7 @@ export function CourseStudioWorkspace({
       const next = await studioClient.restoreTrashItem(course.id, trashId);
       setCourse(next.course);
       setTrash(next.trash);
-      if (next.restoredLessonId) setSelection({ kind: 'lesson', id: next.restoredLessonId });
+      if (next.restoredLessonId) setStudioSelection({ kind: 'lesson', id: next.restoredLessonId });
       setUndoTrashId(null);
       setStatus('Screen restored from Trash.');
     } catch (error) {
@@ -247,6 +265,8 @@ export function CourseStudioWorkspace({
             <CourseOutline
               className="h-full"
               course={course}
+              courseSaveState={courseSaveState}
+              courseSettingsFormId={courseSettingsFormId}
               disabled={saving}
               onAction={action}
               onAddChapter={addChapter}
@@ -274,12 +294,14 @@ export function CourseStudioWorkspace({
             <div className="min-h-0 flex-1 overflow-y-auto">
               <StudioInspector
                 course={course}
+                courseSettingsFormId={courseSettingsFormId}
                 disabled={saving}
                 key={`${selection.kind}:${selection.id}`}
                 onSaveChapter={(chapterId, input) => run('Chapter', () => studioClient.updateChapter(course.id, chapterId, input as ChapterInput))}
                 onDirtyChange={setCourseSettingsDirty}
                 onSaveCourse={saveCourse}
                 onSaveLesson={(lessonId, input) => run('Screen', () => studioClient.updateLesson(course.id, lessonId, input as LessonInput))}
+                onSaveStateChange={setCourseSaveState}
                 selection={selection}
               />
             </div>

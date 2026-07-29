@@ -2,6 +2,7 @@
 
 import type { CourseGraph, CourseLessonType } from '@moto-ai/database';
 import { ChevronDown, ChevronUp, Copy, Plus, Trash2 } from 'lucide-react';
+import type { CourseInspectorSaveState } from './inspectors/CourseInspector';
 import { TrashPanel } from './TrashPanel';
 import type { StudioSelection, StudioTrashItem } from './studio-types';
 
@@ -24,6 +25,8 @@ interface Props {
   trash: StudioTrashItem[];
   selection: StudioSelection;
   disabled: boolean;
+  courseSaveState?: CourseInspectorSaveState;
+  courseSettingsFormId?: string;
   onSelect: (selection: StudioSelection) => void;
   onAddChapter: () => void;
   onAddLesson: (chapterId: string, type: CourseLessonType) => void;
@@ -47,6 +50,8 @@ export function CourseOutline({
   trash,
   selection,
   disabled,
+  courseSaveState,
+  courseSettingsFormId,
   onSelect,
   onAddChapter,
   onAddLesson,
@@ -128,6 +133,31 @@ export function CourseOutline({
         onPermanentDelete={onPermanentDeleteTrash}
         onRestore={onRestoreTrash}
       />
+      {selection.kind === 'course' && courseSaveState && (
+        <footer className="border-t border-border bg-card p-4">
+          <p aria-live="polite" className={`text-xs ${courseSaveState.error || (courseSaveState.dirty && !courseSaveState.valid) ? 'text-destructive' : 'text-muted-foreground'}`}>
+            {courseSaveState.uploading
+              ? 'Image upload in progress. Course settings are locked.'
+              : courseSaveState.saving
+                ? 'Saving course settings…'
+                : courseSaveState.error ?? (courseSaveState.saved
+                  ? 'Course settings saved.'
+                  : courseSaveState.dirty && !courseSaveState.valid
+                    ? 'Correct the highlighted fields before saving.'
+                    : courseSaveState.dirty
+                      ? 'Unsaved changes.'
+                      : 'No unsaved changes.')}
+          </p>
+          <button
+            className="mt-3 min-h-11 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            disabled={disabled || courseSaveState.locked || !courseSaveState.dirty || !courseSaveState.valid}
+            form={courseSettingsFormId}
+            type="submit"
+          >
+            {courseSaveState.saving ? 'Saving…' : 'Save course settings'}
+          </button>
+        </footer>
+      )}
     </aside>
   );
 }
