@@ -104,21 +104,29 @@ export async function enqueueDocumentIndexJob(
   payload: DocumentIndexPayload,
   bytes: Buffer,
 ): Promise<JobAcceptedResponse> {
-  return enqueue('document_index', payload, `document:${payload.courseId}:${payload.filename}`, {
-    filename: payload.filename,
-    contentType: payload.contentType,
-    bytes,
-  });
+  return enqueue(
+    'document_index',
+    payload,
+    `document:${payload.courseId}:${payload.sourceId}:${payload.sha256}`,
+    {
+      filename: payload.filename,
+      contentType: payload.contentType,
+      bytes,
+    },
+  );
 }
 
 export async function enqueueQuizGenerationJob(
   payload: QuizGenerationPayload,
 ): Promise<JobAcceptedResponse> {
   const weakTopics = normalizeWeakTopics(payload.weakTopics);
+  const sourceIds = [...new Set(payload.sourceIds)].sort((left, right) =>
+    left.localeCompare(right),
+  );
   return enqueue(
     'quiz_generate',
-    { ...payload, weakTopics },
-    `quiz:${payload.courseId}:${JSON.stringify(weakTopics)}`,
+    { ...payload, sourceIds, weakTopics },
+    `quiz:${payload.courseId}:${payload.revisionId}:${JSON.stringify(sourceIds)}:${JSON.stringify(weakTopics)}`,
   );
 }
 

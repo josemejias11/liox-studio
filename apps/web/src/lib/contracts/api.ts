@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { JobAcceptedResponseSchema, type JobAcceptedResponse } from '@moto-ai/contracts/jobs';
 
 // ── Chat wire contract (browser ⇄ /api/chat) ──────────────────────────────────
 // /api/chat is a server-to-server proxy in front of the self-hosted parser/RAG
@@ -41,14 +40,6 @@ const LessonProgressSchema = z.object({
 export const ProgressRequestSchema = z.discriminatedUnion('type', [LessonProgressSchema]);
 
 export type ProgressRequestBody = z.infer<typeof ProgressRequestSchema>;
-
-// ── Upload wire contract (browser ⇄ /api/upload) ──────────────────────────────
-// /api/upload persists the multipart file and returns a durable indexing job.
-
-export const MAX_UPLOAD_BYTES = 50 * 1024 * 1024; // 50MB — enforced before forwarding
-
-export const UploadResponseSchema = JobAcceptedResponseSchema;
-export type UploadResponse = JobAcceptedResponse;
 
 // ── Weak-topics contract (browser ⇄ /api/analytics/weak-topics) ───────────────
 // Called by MotoViewer before quiz generation to fetch cross-session engagement

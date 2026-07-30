@@ -7,12 +7,14 @@ from .settings import validate_course_id
 
 class UploadResponse(BaseModel):
     status: str
+    source_id: str
     filename: str
     chunks_stored: int
 
 
 class ChatRequest(BaseModel):
     course_id: str
+    source_ids: list[str] = Field(max_length=500)
     query: str = Field(max_length=2000)
 
     @field_validator("course_id")
@@ -28,6 +30,7 @@ class ChatResponse(BaseModel):
 
 class QuizRequest(BaseModel):
     course_id: str
+    source_ids: list[str] = Field(max_length=500)
     weak_topics: list[str] = Field(min_length=1)
 
     @field_validator("course_id")
@@ -48,7 +51,7 @@ class QuizResponse(BaseModel):
 
 class DeleteDocumentRequest(BaseModel):
     course_id: str
-    filename: str
+    source_id: str = Field(min_length=1, max_length=100)
 
     @field_validator("course_id")
     @classmethod

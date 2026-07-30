@@ -1,0 +1,43 @@
+import { removeCourseSource } from '@moto-ai/database';
+import { deleteCourseDocument, RagServiceError } from '@moto-ai/parser-client';
+import { NextRequest, NextResponse } from 'next/server';
+import { isCourseStudioAuthorized } from '@/lib/course-studio-auth';
+import { deleteCourseAsset } from '@/lib/r2';
+import { jsonError, unexpectedApiError } from '@/lib/server/http';
+
+export const runtime = 'nodejs';
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ courseId: string; sourceId: string }> },
+): Promise<NextResponse> {
+  if (!(await isCourseStudioAuthorized(request))) return jsonError('Unauthorized', 401);
+
+  const { courseId, sourceId } = await params;
+  try {
+    const source = await removeCourseSource(courseId, sourceId);
+    const cleanup = await Promise.allSettled([
+      deleteCourseAsset(source.r2Key),
+      deleteCourseDocument(courseId, sourceId),
+    ]);
+    const rejected = cleanup.filter(
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
+    );
+    if (rejected.length > 0) {
+      for (const result of rejected) {
+        console.error('[course-studio/sources] source cleanup failed:', result.reason);
+      }
+      return jsonError('The source record was removed, but stored data cleanup failed', 502);
+    }
+    return NextResponse.json({ source });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'COURSE_SOURCE_NOT_FOUND') {
+      return jsonError('Source not found', 404);
+    }
+    if (error instanceof Error && error.message === 'COURSE_SOURCE_FROZEN') {
+      return jsonError('Sources attached to a frozen revision cannot be deleted', 409);
+    }
+    if (error instanceof RagServiceError) return jsonError(error.message, 502);
+    return unexpectedApiError('course-studio/source', error);
+  }
+}

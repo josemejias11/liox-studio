@@ -7,9 +7,11 @@ export const JobStatusSchema = z.enum(['queued', 'running', 'succeeded', 'failed
 export type JobStatus = z.infer<typeof JobStatusSchema>;
 
 export const DocumentIndexPayloadSchema = z.object({
+  sourceId: z.string().min(1).max(100),
   courseId: z.string().min(1).max(100),
+  sha256: z.string().regex(/^[0-9a-f]{64}$/),
   filename: z.string().min(1).max(255),
-  contentType: z.string().max(255).optional(),
+  contentType: z.string().min(1).max(255),
 });
 export type DocumentIndexPayload = z.infer<typeof DocumentIndexPayloadSchema>;
 
@@ -21,6 +23,8 @@ export type DocumentIndexResult = z.infer<typeof DocumentIndexResultSchema>;
 
 export const QuizGenerationPayloadSchema = z.object({
   courseId: z.string().min(1).max(100),
+  revisionId: z.string().min(1).max(100),
+  sourceIds: z.array(z.string().min(1).max(100)).max(500),
   weakTopics: z.array(z.string().min(1).max(200)).max(20),
 });
 export type QuizGenerationPayload = z.infer<typeof QuizGenerationPayloadSchema>;

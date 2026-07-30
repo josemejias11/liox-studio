@@ -2,6 +2,7 @@
 
 import logging
 import os
+import re
 import secrets
 import shutil
 import tempfile
@@ -86,12 +87,23 @@ def extract_document_text(file_path: str) -> str:
     return cast(str, text_content)
 
 
-def store_course_document(course_id: str, filename: str, file_obj: BinaryIO) -> tuple[str, int]:
+def store_course_document(
+    course_id: str,
+    source_id: str,
+    sha256: str,
+    filename: str,
+    file_obj: BinaryIO,
+) -> tuple[str, int]:
     """Validate, stage, parse, and index one course document."""
     try:
         validate_course_id(course_id)
     except ValueError as error:
         raise InvalidCourseIdError(str(error)) from error
+
+    if not source_id or len(source_id) > 100:
+        raise InvalidUploadError("source_id must be between 1 and 100 characters.")
+    if not re.fullmatch(r"[0-9a-f]{64}", sha256):
+        raise InvalidUploadError("sha256 must be a lowercase hexadecimal SHA-256 digest.")
 
     original_filename = os.path.basename(filename or "")
     try:
@@ -99,12 +111,23 @@ def store_course_document(course_id: str, filename: str, file_obj: BinaryIO) -> 
     except ValueError as error:
         raise InvalidUploadError(str(error)) from error
 
-    logger.info("Upload request: course=%s file=%s", course_id, original_filename)
+    logger.info(
+        "Source index request: course=%s source=%s file=%s",
+        course_id,
+        source_id,
+        original_filename,
+    )
     temp_dir: str | None = None
     try:
         temp_dir, temp_file_path = stream_upload_to_disk(file_obj, extension)
         chunks = build_text_splitter().split_text(extract_document_text(temp_file_path))
-        return original_filename, replace_document_chunks(course_id, original_filename, chunks)
+        return original_filename, replace_document_chunks(
+            course_id,
+            source_id,
+            sha256,
+            original_filename,
+            chunks,
+        )
     except ValueError as error:
         detail = str(error)
         if "MB upload limit" in detail:
@@ -120,16 +143,19 @@ def store_course_document(course_id: str, filename: str, file_obj: BinaryIO) -> 
             shutil.rmtree(temp_dir, ignore_errors=True)
 
 
-def remove_course_document(course_id: str, filename: str) -> str:
+def remove_course_document(course_id: str, source_id: str) -> str:
     """Remove one document's chunks and return the public deletion status."""
-    logger.info("Delete request: course=%s file=%s", course_id, filename)
+    logger.info("Source delete request: course=%s source=%s", course_id, source_id)
     try:
-        deleted = delete_document_chunks(course_id, filename)
+        deleted = delete_document_chunks(course_id, source_id)
     except Exception as error:
         logger.warning(
-            "Could not delete chunks for %s in course %s", filename, course_id, exc_info=True
+            "Could not delete chunks for source %s in course %s",
+            source_id,
+            course_id,
+            exc_info=True,
         )
         raise DocumentDeletionError("Failed to delete document chunks.") from error
     if deleted:
-        logger.info("Deleted chunks for %s in course %s", filename, course_id)
+        logger.info("Deleted chunks for source %s in course %s", source_id, course_id)
     return "deleted" if deleted else "not_found"

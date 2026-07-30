@@ -82,13 +82,14 @@ const ParserQuizResponseSchema = z.object({
 
 const ParserUploadResponseSchema = z.object({
   status: z.string(),
+  source_id: z.string(),
   filename: z.string(),
   chunks_stored: z.number().int().min(0),
 });
 
 const ParserDeleteResponseSchema = z.object({
   status: z.string(),
-  filename: z.string(),
+  source_id: z.string(),
 });
 
 // ── Deep Interface ────────────────────────────────────────────────────────────
@@ -110,21 +111,26 @@ export interface RagQuizResponse {
 
 export interface RagUploadResponse {
   status: string;
+  sourceId: string;
   filename: string;
   chunksStored: number;
 }
 
 export interface RagDeleteResponse {
   status: string;
-  filename: string;
+  sourceId: string;
 }
 
-export async function askCourseQuestion(courseId: string, query: string): Promise<RagChatResponse> {
+export async function askCourseQuestion(
+  courseId: string,
+  sourceIds: string[],
+  query: string,
+): Promise<RagChatResponse> {
   const userSafe = 'The AI assistant is temporarily unavailable. Please try again in a moment.';
   const raw = await parserRequest(
     'POST',
     '/api/chat',
-    { json: { course_id: courseId, query }, timeoutMs: 60_000 },
+    { json: { course_id: courseId, source_ids: sourceIds, query }, timeoutMs: 60_000 },
     'api/chat',
     userSafe,
   );
@@ -140,13 +146,17 @@ export async function askCourseQuestion(courseId: string, query: string): Promis
 
 export async function generateCourseQuiz(
   courseId: string,
+  sourceIds: string[],
   weakTopics: string[],
 ): Promise<RagQuizResponse> {
   const userSafe = 'Quiz generation is temporarily unavailable. Please try again in a moment.';
   const raw = await parserRequest(
     'POST',
     '/api/generate-quiz',
-    { json: { course_id: courseId, weak_topics: weakTopics }, timeoutMs: 120_000 },
+    {
+      json: { course_id: courseId, source_ids: sourceIds, weak_topics: weakTopics },
+      timeoutMs: 120_000,
+    },
     'api/quiz',
     userSafe,
   );
@@ -168,11 +178,15 @@ export async function generateCourseQuiz(
 
 export async function uploadCourseDocument(
   courseId: string,
+  sourceId: string,
+  sha256: string,
   file: File,
 ): Promise<RagUploadResponse> {
   const userSafe = 'The upload service is temporarily unavailable. Please try again in a moment.';
   const formData = new FormData();
   formData.append('course_id', courseId);
+  formData.append('source_id', sourceId);
+  formData.append('sha256', sha256);
   formData.append('file', file, file.name);
 
   const raw = await parserRequest(
@@ -191,6 +205,7 @@ export async function uploadCourseDocument(
 
   return {
     status: parsed.data.status,
+    sourceId: parsed.data.source_id,
     filename: parsed.data.filename,
     chunksStored: parsed.data.chunks_stored,
   };
@@ -198,13 +213,13 @@ export async function uploadCourseDocument(
 
 export async function deleteCourseDocument(
   courseId: string,
-  filename: string,
+  sourceId: string,
 ): Promise<RagDeleteResponse> {
   const userSafe = 'The upload service is temporarily unavailable. Please try again in a moment.';
   const raw = await parserRequest(
     'DELETE',
     '/api/document',
-    { json: { course_id: courseId, filename } },
+    { json: { course_id: courseId, source_id: sourceId } },
     'api/upload DELETE',
     userSafe,
   );
@@ -215,5 +230,5 @@ export async function deleteCourseDocument(
     throw new RagServiceError(userSafe);
   }
 
-  return parsed.data;
+  return { status: parsed.data.status, sourceId: parsed.data.source_id };
 }

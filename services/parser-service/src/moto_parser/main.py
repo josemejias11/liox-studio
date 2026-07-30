@@ -32,8 +32,11 @@ from .settings import CHROMA_DIR, EMBEDDING_MODEL, LLM_MODEL, OLLAMA_BASE_URL
 logger = logging.getLogger(__name__)
 app = FastAPI(
     title="Moto AI Parser Service",
-    description="Internal microservice to parse course documents and chat using a local LLM",
-    version="1.1.0",
+    description=(
+        "Internal development service that indexes immutable Course Studio sources and "
+        "retrieves only the source IDs attached to a frozen revision using local Ollama."
+    ),
+    version="1.2.0",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
@@ -55,10 +58,26 @@ def require_internal_token(
     dependencies=[Depends(require_internal_token)],
     tags=["documents"],
 )
-def upload_file(course_id: str = Form(...), file: UploadFile = File(...)) -> UploadResponse:  # noqa: B008
+def upload_file(  # noqa: B008
+    course_id: str = Form(...),
+    source_id: str = Form(..., min_length=1, max_length=100),
+    sha256: str = Form(..., pattern=r"^[0-9a-f]{64}$"),
+    file: UploadFile = File(...),  # noqa: B008
+) -> UploadResponse:
     try:
-        filename, chunks_stored = store_course_document(course_id, file.filename or "", file.file)
-        return UploadResponse(status="success", filename=filename, chunks_stored=chunks_stored)
+        filename, chunks_stored = store_course_document(
+            course_id,
+            source_id,
+            sha256,
+            file.filename or "",
+            file.file,
+        )
+        return UploadResponse(
+            status="success",
+            source_id=source_id,
+            filename=filename,
+            chunks_stored=chunks_stored,
+        )
     except InvalidCourseIdError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
     except UploadTooLargeError as error:
@@ -77,7 +96,7 @@ def upload_file(course_id: str = Form(...), file: UploadFile = File(...)) -> Upl
 )
 def chat(request: ChatRequest) -> ChatResponse:
     try:
-        answer, sources = answer_question(request.course_id, request.query)
+        answer, sources = answer_question(request.course_id, request.source_ids, request.query)
         return ChatResponse(answer=answer, sources=sources)
     except Exception as error:
         logger.exception("Error during chat generation for course %s", request.course_id)
@@ -97,7 +116,13 @@ def generate_quiz_route(request: QuizRequest) -> QuizResponse:
         return cast(
             QuizResponse,
             QuizResponse.model_validate(
-                {"questions": generate_quiz(request.course_id, request.weak_topics)}
+                {
+                    "questions": generate_quiz(
+                        request.course_id,
+                        request.source_ids,
+                        request.weak_topics,
+                    )
+                }
             ),
         )
     except LookupError as error:
@@ -115,8 +140,8 @@ def generate_quiz_route(request: QuizRequest) -> QuizResponse:
 def delete_document(request: DeleteDocumentRequest) -> dict[str, str]:
     try:
         return {
-            "status": remove_course_document(request.course_id, request.filename),
-            "filename": request.filename,
+            "status": remove_course_document(request.course_id, request.source_id),
+            "source_id": request.source_id,
         }
     except DocumentDeletionError as error:
         raise HTTPException(status_code=500, detail=str(error)) from error

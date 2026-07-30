@@ -6,6 +6,13 @@ import { deleteCourseAsset, putCourseAsset } from '@/lib/r2';
 export const runtime = 'nodejs';
 
 const MAX_ASSET_BYTES = 50 * 1024 * 1024;
+const SOURCE_EXTENSIONS = new Set(['.pdf', '.pptx', '.docx', '.xlsx']);
+
+function extension(filename: string): string {
+  const normalized = filename.trim().toLowerCase();
+  const dot = normalized.lastIndexOf('.');
+  return dot >= 0 ? normalized.slice(dot) : '';
+}
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!(await isCourseStudioAuthorized(request))) {
@@ -20,6 +27,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
   if (file.size > MAX_ASSET_BYTES) {
     return NextResponse.json({ error: 'Assets must be 50 MB or smaller' }, { status: 413 });
+  }
+  if (SOURCE_EXTENSIONS.has(extension(file.name))) {
+    return NextResponse.json(
+      { error: 'Course documents must be uploaded through the course source library' },
+      { status: 400 },
+    );
   }
 
   const course = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true } });

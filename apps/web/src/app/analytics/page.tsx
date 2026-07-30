@@ -8,8 +8,8 @@ import React from 'react';
 export const dynamic = 'force-dynamic';
 
 // ── Auth gate ──────────────────────────────────────────────────────────────
-// Same pattern as /api/upload: checks the httpOnly analytics_token cookie
-// set by POST /api/analytics/login. Redirects to login if missing or wrong.
+// Checks the httpOnly analytics_token cookie set by POST /api/analytics/login.
+// Redirects to login if the cookie is missing or wrong.
 
 async function requireAuth(): Promise<void> {
   const cookieStore = await cookies();

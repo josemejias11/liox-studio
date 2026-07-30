@@ -1,8 +1,10 @@
 # Moto AI Parser Service
 
-The parser service is Moto AI's internal FastAPI service for document parsing,
-embedding, course-grounded chat, and quiz generation. It is called by the Next.js
-backend and background worker; browsers never call it directly.
+The parser service is Moto AI's internal FastAPI service for source parsing,
+embedding, revision-grounded chat, and supplemental quiz generation. It is
+called by the Next.js backend and background worker; browsers never call it
+directly. Ollama is a local-development runtime behind this service boundary,
+not a browser or production integration.
 
 ## Quick start
 
@@ -28,15 +30,21 @@ readiness with `curl http://127.0.0.1:8000/health`; when enabled, Swagger is at
 
 ## Endpoints
 
-| Method   | Path                 | Purpose                               |
-| -------- | -------------------- | ------------------------------------- |
-| `POST`   | `/api/upload`        | Parse and index one course document.  |
-| `POST`   | `/api/chat`          | Answer from indexed course materials. |
-| `POST`   | `/api/generate-quiz` | Generate a quiz from weak topics.     |
-| `DELETE` | `/api/document`      | Delete one indexed document.          |
-| `GET`    | `/health`            | Report Ollama and Chroma readiness.   |
+| Method   | Path                 | Purpose                                                      |
+| -------- | -------------------- | ------------------------------------------------------------ |
+| `POST`   | `/api/upload`        | Index one immutable source ID and its SHA-256.               |
+| `POST`   | `/api/chat`          | Answer from explicit frozen-revision source IDs.             |
+| `POST`   | `/api/generate-quiz` | Generate a supplemental quiz from explicit revision sources. |
+| `DELETE` | `/api/document`      | Delete chunks for one source ID.                             |
+| `GET`    | `/health`            | Report local Ollama and Chroma readiness.                    |
 
 All endpoints except `/health` require `X-Internal-Token`.
+
+Chat requests use `{ "course_id", "source_ids", "query" }`. Quiz requests add
+`source_ids` alongside `course_id` and `weak_topics`. An empty `source_ids`
+list never expands to the course corpus: retrieval returns no context. Uploads
+carry `source_id` and `sha256` multipart fields, and every Chroma chunk stores
+`course_id`, `source_id`, and `sha256` metadata.
 
 ## Documentation
 

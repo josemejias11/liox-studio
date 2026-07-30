@@ -152,9 +152,9 @@ def get_vectorstore(course_id: str) -> Chroma:
     return vectorstore
 
 
-def chunk_ids(course_id: str, filename: str, count: int) -> list[str]:
+def chunk_ids(course_id: str, source_id: str, sha256: str, count: int) -> list[str]:
     return [
-        hashlib.sha256(f"{course_id}|{filename}|{index}".encode()).hexdigest()
+        hashlib.sha256(f"{course_id}|{source_id}|{sha256}|{index}".encode()).hexdigest()
         for index in range(count)
     ]
 
@@ -165,35 +165,65 @@ def build_text_splitter() -> RecursiveCharacterTextSplitter:
     )
 
 
-def replace_document_chunks(course_id: str, filename: str, chunks: list[str]) -> int:
+def replace_document_chunks(
+    course_id: str,
+    source_id: str,
+    sha256: str,
+    filename: str,
+    chunks: list[str],
+) -> int:
     vectorstore = get_vectorstore(course_id)
     try:
-        vectorstore._collection.delete(where={"source": filename})  # noqa: SLF001
+        vectorstore._collection.delete(  # noqa: SLF001
+            where={
+                "$and": [
+                    {"course_id": course_id},
+                    {"source_id": source_id},
+                ]
+            }
+        )
     except Exception:
-        logger.warning("Could not delete previous chunks for %s", filename, exc_info=True)
+        logger.warning("Could not delete previous chunks for source %s", source_id, exc_info=True)
     vectorstore.add_texts(
         texts=chunks,
-        metadatas=[{"source": filename, "course_id": course_id} for _ in chunks],
-        ids=chunk_ids(course_id, filename, len(chunks)),
+        metadatas=[
+            {
+                "source": filename,
+                "course_id": course_id,
+                "source_id": source_id,
+                "sha256": sha256,
+            }
+            for _ in chunks
+        ],
+        ids=chunk_ids(course_id, source_id, sha256, len(chunks)),
     )
     return len(chunks)
 
 
-def delete_document_chunks(course_id: str, filename: str) -> bool:
+def delete_document_chunks(course_id: str, source_id: str) -> bool:
     if not collection_exists(course_id):
         return False
-    get_vectorstore(course_id)._collection.delete(where={"source": filename})  # noqa: SLF001
+    get_vectorstore(course_id)._collection.delete(  # noqa: SLF001
+        where={
+            "$and": [
+                {"course_id": course_id},
+                {"source_id": source_id},
+            ]
+        }
+    )
     _vectorstores.pop(course_id)
     return True
 
 
-def retrieve_course_documents(course_id: str, query: str, k: int) -> list[Document]:
-    if not collection_exists(course_id):
+def retrieve_course_documents(
+    course_id: str, source_ids: list[str], query: str, k: int
+) -> list[Document]:
+    if not source_ids or not collection_exists(course_id):
         return []
     return [
         doc
         for doc, score in get_vectorstore(course_id).similarity_search_with_relevance_scores(
-            query, k=k
+            query, k=k, filter={"source_id": {"$in": source_ids}}
         )
         if score >= RELEVANCE_THRESHOLD
     ]
@@ -206,11 +236,13 @@ def format_context(documents: list[Document]) -> str:
     )
 
 
-def answer_question(course_id: str, query: str) -> tuple[str, list[str]]:
-    logger.info("Chat query for course: %s", course_id)
+def answer_question(course_id: str, source_ids: list[str], query: str) -> tuple[str, list[str]]:
+    logger.info("Revision-bound chat query for course: %s", course_id)
+    if not source_ids:
+        return NO_CONTEXT_ANSWER, []
     if not collection_exists(course_id):
         return NO_MATERIALS_ANSWER, []
-    documents = retrieve_course_documents(course_id, query, RETRIEVAL_K_CHAT)
+    documents = retrieve_course_documents(course_id, source_ids, query, RETRIEVAL_K_CHAT)
     if not documents:
         return NO_CONTEXT_ANSWER, []
     context_str = format_context(documents)
@@ -239,14 +271,18 @@ Answer:"""
     return answer, sorted({document.metadata.get("source", "Unknown") for document in documents})
 
 
-def generate_quiz(course_id: str, weak_topics: list[str]) -> list[dict]:
-    logger.info("Quiz generation request: course=%s topics=%s", course_id, weak_topics)
+def generate_quiz(course_id: str, source_ids: list[str], weak_topics: list[str]) -> list[dict]:
+    logger.info("Revision-bound quiz request: course=%s topics=%s", course_id, weak_topics)
+    if not source_ids:
+        raise LookupError("No revision sources are available to generate a quiz.")
     if not collection_exists(course_id):
         raise LookupError("No materials found for this course to generate a quiz.")
     documents: list[Document] = []
     seen: set[str] = set()
     for topic in weak_topics:
-        for document in retrieve_course_documents(course_id, topic, RETRIEVAL_K_PER_TOPIC):
+        for document in retrieve_course_documents(
+            course_id, source_ids, topic, RETRIEVAL_K_PER_TOPIC
+        ):
             key = hashlib.sha256(document.page_content.encode()).hexdigest()
             if key not in seen:
                 seen.add(key)
