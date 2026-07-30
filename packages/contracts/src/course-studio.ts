@@ -13,6 +13,32 @@ export const COURSE_LESSON_TYPES = [
 
 export type CourseLessonType = (typeof COURSE_LESSON_TYPES)[number];
 
+export const COURSE_SOURCE_INDEX_STATUSES = ['pending', 'indexed', 'failed'] as const;
+
+export type CourseSourceIndexStatus = (typeof COURSE_SOURCE_INDEX_STATUSES)[number];
+
+export interface CourseSourceFile {
+  id: string;
+  courseId: string;
+  r2Key: string;
+  filename: string;
+  contentType: string;
+  byteSize: number;
+  sha256: string;
+  indexStatus: CourseSourceIndexStatus;
+  chunksStored: number | null;
+  indexError: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CourseRevisionSource {
+  revisionId: string;
+  sourceFileId: string;
+  sha256: string;
+  filename: string;
+}
+
 export interface ChapterInput {
   title?: string;
   estimatedDuration?: number | null;
@@ -56,6 +82,5 @@ export interface CourseGraph {
   cover: unknown | null;
   specifications: unknown | null;
   disclaimer: unknown | null;
-  sourceFiles: unknown | null;
   chapters: CourseGraphChapter[];
 }

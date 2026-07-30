@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from './index';
-import { getAuthoringCourse, type CourseGraph } from './course-repository';
+import { courseGraphSelect, toCourseGraph, type CourseGraph } from './course-repository';
 
 export interface CourseRevisionSummary {
   id: string;
@@ -76,21 +76,39 @@ export async function listCourseRevisions(courseId: string): Promise<CourseRevis
   return revisions.map(summary);
 }
 
-export async function createCourseRevision(
+export async function freezeCourseRevision(
   courseId: string,
   notes?: string,
 ): Promise<CourseRevisionSummary> {
-  const course = await getAuthoringCourse(courseId);
-  if (!course) throw new Error('COURSE_NOT_FOUND');
-  const serialized = stableJson(course);
-  const sourceHash = await sha256(serialized);
-  const existing = await prisma.courseRevision.findUnique({
-    where: { courseId_sourceHash: { courseId, sourceHash } },
-    include: { review: { select: { id: true } } },
-  });
-  if (existing) return summary(existing);
-
   const revision = await prisma.$transaction(async (tx) => {
+    const course = await tx.course.findUnique({
+      where: { id: courseId },
+      select: courseGraphSelect,
+    });
+    if (!course) throw new Error('COURSE_NOT_FOUND');
+
+    const sources = await tx.courseSourceFile.findMany({
+      where: { courseId },
+      orderBy: { id: 'asc' },
+      select: { id: true, sha256: true, filename: true, indexStatus: true },
+    });
+    if (sources.some((source) => source.indexStatus !== 'INDEXED')) {
+      throw new Error('COURSE_SOURCES_NOT_INDEXED');
+    }
+
+    const graph = toCourseGraph(course);
+    const frozenSources = sources.map(({ id, sha256: sourceSha256, filename }) => ({
+      sourceFileId: id,
+      sha256: sourceSha256,
+      filename,
+    }));
+    const sourceHash = await sha256(stableJson({ graph, sources: frozenSources }));
+    const existing = await tx.courseRevision.findUnique({
+      where: { courseId_sourceHash: { courseId, sourceHash } },
+      include: { review: { select: { id: true } } },
+    });
+    if (existing) return existing;
+
     const latest = await tx.courseRevision.findFirst({
       where: { courseId },
       orderBy: { version: 'desc' },
@@ -103,15 +121,23 @@ export async function createCourseRevision(
         sourceTitle: course.title,
         version: (latest?.version ?? 0) + 1,
         status: 'IN_REVIEW',
-        snapshot: course as unknown as Prisma.InputJsonValue,
+        snapshot: graph as unknown as Prisma.InputJsonValue,
         notes: notes?.trim() || null,
         submittedAt: new Date(),
+        sources: {
+          create: frozenSources,
+        },
       },
       include: { review: { select: { id: true } } },
     });
-  });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   return summary(revision);
 }
+
+// Compatibility for the current Studio revision endpoint. The source-aware
+// operation is the only implementation and will be called directly by the
+// next source-bound endpoint update.
+export const createCourseRevision = freezeCourseRevision;
 
 export async function createCourseReview(
   revisionId: string,

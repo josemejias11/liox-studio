@@ -69,18 +69,36 @@ async function lessonLocation(lessonId: string): Promise<{ courseId: string; cha
   return { courseId: lesson.chapter.courseId, chapterId: lesson.chapterId };
 }
 
-function toCourseGraph(course: {
-  id: string;
-  slug: string;
-  title: string;
-  description: string | null;
-  learningObjectives: Prisma.JsonValue | null;
-  cover: Prisma.JsonValue | null;
-  specifications: Prisma.JsonValue | null;
-  disclaimer: Prisma.JsonValue | null;
-  sourceFiles: Prisma.JsonValue | null;
-  chapters: Array<CourseGraphChapter>;
-}): CourseGraph {
+export const courseGraphSelect = Prisma.validator<Prisma.CourseSelect>()({
+  id: true,
+  slug: true,
+  title: true,
+  description: true,
+  learningObjectives: true,
+  cover: true,
+  specifications: true,
+  disclaimer: true,
+  chapters: {
+    orderBy: { position: 'asc' },
+    select: {
+      id: true,
+      title: true,
+      position: true,
+      estimatedDuration: true,
+      lessons: {
+        orderBy: { position: 'asc' },
+        select: { id: true, position: true, lessonType: true, headline: true, body: true, payload: true },
+      },
+      quickCheck: {
+        select: { id: true, title: true, instructions: true, payload: true },
+      },
+    },
+  },
+});
+
+export type AuthoringCourseRecord = Prisma.CourseGetPayload<{ select: typeof courseGraphSelect }>;
+
+export function toCourseGraph(course: AuthoringCourseRecord): CourseGraph {
   return course;
 }
 
@@ -94,33 +112,7 @@ export async function listAuthoringCourses(): Promise<Array<Pick<CourseGraph, 'i
 export async function getAuthoringCourse(courseId: string): Promise<CourseGraph | null> {
   const course = await prisma.course.findUnique({
     where: { id: courseId },
-    select: {
-      id: true,
-      slug: true,
-      title: true,
-      description: true,
-      learningObjectives: true,
-      cover: true,
-      specifications: true,
-      disclaimer: true,
-      sourceFiles: true,
-      chapters: {
-        orderBy: { position: 'asc' },
-        select: {
-          id: true,
-          title: true,
-          position: true,
-          estimatedDuration: true,
-          lessons: {
-            orderBy: { position: 'asc' },
-            select: { id: true, position: true, lessonType: true, headline: true, body: true, payload: true },
-          },
-          quickCheck: {
-            select: { id: true, title: true, instructions: true, payload: true },
-          },
-        },
-      },
-    },
+    select: courseGraphSelect,
   });
   return course ? toCourseGraph(course) : null;
 }
@@ -358,54 +350,4 @@ export async function reorderCourseItem(
     });
   });
   return requireGraph(courseId);
-}
-
-export async function listPublishedCourseSummaries() {
-  return prisma.course.findMany({
-    where: { status: 'PUBLISHED' },
-    orderBy: { updatedAt: 'desc' },
-    select: {
-      id: true,
-      slug: true,
-      title: true,
-      description: true,
-      learningObjectives: true,
-      cover: true,
-      _count: { select: { chapters: true } },
-    },
-  });
-}
-
-export async function getPublishedCourseBySlug(slug: string): Promise<CourseGraph | null> {
-  const course = await prisma.course.findFirst({
-    where: { slug, status: 'PUBLISHED' },
-    select: {
-      id: true,
-      slug: true,
-      title: true,
-      description: true,
-      learningObjectives: true,
-      cover: true,
-      specifications: true,
-      disclaimer: true,
-      sourceFiles: true,
-      chapters: {
-        orderBy: { position: 'asc' },
-        select: {
-          id: true,
-          title: true,
-          position: true,
-          estimatedDuration: true,
-          lessons: {
-            orderBy: { position: 'asc' },
-            select: { id: true, position: true, lessonType: true, headline: true, body: true, payload: true },
-          },
-          quickCheck: {
-            select: { id: true, title: true, instructions: true, payload: true },
-          },
-        },
-      },
-    },
-  });
-  return course ? toCourseGraph(course) : null;
 }

@@ -13,12 +13,6 @@ datasource db {
 // Course and lesson identity use caller-provided String IDs so revisions retain
 // stable progress references across the authoring and learner surfaces.
 
-enum CoursePublicationStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
-}
-
 enum CourseRevisionStatus {
   DRAFT
   IN_REVIEW
@@ -32,25 +26,36 @@ enum CourseFeedbackStatus {
   RESOLVED
 }
 
+enum CourseSourceIndexStatus {
+  PENDING
+  INDEXED
+  FAILED
+}
+
+enum CourseGenerationStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
 model Course {
-  id                 String                  @id
-  slug               String                  @unique
+  id                 String              @id
+  slug               String              @unique
   title              String
   description        String?
-  status             CoursePublicationStatus @default(DRAFT)
   learningObjectives Json?
   cover              Json?
   specifications     Json?
   disclaimer         Json?
-  sourceFiles        Json?
   chapters           CourseChapter[]
   quizzes            CourseQuiz[]
   trashItems         CourseLessonTrash[]
   revisions          CourseRevision[]
-  createdAt          DateTime                @default(now())
-  updatedAt          DateTime                @updatedAt
-
-  @@index([status, createdAt])
+  sourceFiles        CourseSourceFile[]
+  generatedBy        CourseGeneration?   @relation("GeneratedCourse")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 }
 
 model CourseChapter {
@@ -134,27 +139,90 @@ model CourseAsset {
   updatedAt   DateTime @updatedAt
 }
 
+// R2 owns source bytes. This table is the course-scoped inventory and indexing
+// lifecycle for those bytes; revisions copy the immutable file identity they use.
+model CourseSourceFile {
+  id            String                  @id @default(cuid())
+  courseId      String
+  r2Key         String                  @unique
+  filename      String
+  contentType   String
+  byteSize      Int
+  sha256        String
+  indexStatus   CourseSourceIndexStatus @default(PENDING)
+  chunksStored  Int?
+  indexError    String?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+  course        Course                  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  revisionLinks CourseRevisionSource[]
+
+  @@index([courseId, indexStatus])
+  @@index([courseId, createdAt])
+}
+
 // A revision is an immutable learner-ready snapshot used for client review and
 // approval. A later localization/export adapter will consume approved revisions
 // without changing the authoring graph or review history.
 model CourseRevision {
-  id          String               @id @default(cuid())
+  id          String                 @id @default(cuid())
   courseId    String
   sourceHash  String
   sourceTitle String
   version     Int
-  status      CourseRevisionStatus @default(DRAFT)
+  status      CourseRevisionStatus   @default(DRAFT)
   snapshot    Json
   notes       String?
   submittedAt DateTime?
   approvedAt  DateTime?
-  createdAt   DateTime             @default(now())
-  course      Course               @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdAt   DateTime               @default(now())
+  course      Course                 @relation(fields: [courseId], references: [id], onDelete: Cascade)
   review      CourseReview?
+  sources     CourseRevisionSource[]
+  generations CourseGeneration[]
 
   @@unique([courseId, version])
   @@unique([courseId, sourceHash])
   @@index([courseId, createdAt])
+}
+
+// This is the immutable source binding for a frozen revision. The copied hash
+// and filename continue to identify the reviewed source even if the live record
+// is later renamed or reindexed.
+model CourseRevisionSource {
+  revisionId   String
+  sourceFileId String
+  sha256       String
+  filename     String
+  revision     CourseRevision   @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+  sourceFile   CourseSourceFile @relation(fields: [sourceFileId], references: [id], onDelete: Restrict)
+
+  @@id([revisionId, sourceFileId])
+}
+
+// A generation is durable work provenance, not a partially-created course.
+// The course relation becomes populated only after a validated graph is written.
+model CourseGeneration {
+  id                    String                 @id @default(cuid())
+  jobId                 String                 @unique
+  sourceRevisionId      String
+  brief                 String
+  promptTemplateVersion String
+  requestedSourceIds    Json
+  requestedSourceHashes Json
+  modelIdentifier       String?
+  status                CourseGenerationStatus @default(QUEUED)
+  result                Json?
+  error                 String?
+  createdCourseId       String?                @unique
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  job                   BackgroundJob          @relation(fields: [jobId], references: [id], onDelete: Restrict)
+  sourceRevision        CourseRevision         @relation(fields: [sourceRevisionId], references: [id], onDelete: Restrict)
+  createdCourse         Course?                @relation("GeneratedCourse", fields: [createdCourseId], references: [id], onDelete: Restrict)
+
+  @@index([sourceRevisionId, createdAt])
+  @@index([status, createdAt])
 }
 
 // A review link grants read-only access to exactly one immutable revision.
@@ -294,6 +362,7 @@ model BackgroundJob {
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   artifact       JobArtifact?
+  generation     CourseGeneration?
 
   @@index([status, runAfter])
   @@index([leaseExpiresAt])

@@ -4,8 +4,9 @@ export {
   BackgroundJobKind,
   BackgroundJobStatus,
   CourseFeedbackStatus,
-  CoursePublicationStatus,
+  CourseGenerationStatus,
   CourseRevisionStatus,
+  CourseSourceIndexStatus,
   Prisma,
 } from '@prisma/client';
 export type {
@@ -13,12 +14,15 @@ export type {
   Course,
   CourseAsset,
   CourseChapter,
+  CourseGeneration,
   CourseLesson,
   CourseLessonTrash,
   CourseQuiz,
   CourseReview,
   CourseReviewFeedback,
   CourseRevision,
+  CourseRevisionSource,
+  CourseSourceFile,
 } from '@prisma/client';
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
@@ -38,9 +42,7 @@ export {
   deleteChapter,
   duplicateLesson,
   getAuthoringCourse,
-  getPublishedCourseBySlug,
   listAuthoringCourses,
-  listPublishedCourseSummaries,
   reorderCourseItem,
   updateChapter,
   updateCourseDetails,
@@ -60,6 +62,7 @@ export {
   getReviewByToken,
   listCourseReviewFeedback,
   listCourseRevisions,
+  freezeCourseRevision,
   resolveCourseReviewFeedback,
 } from './course-review-repository';
 export type {
@@ -69,7 +72,32 @@ export type {
 } from './course-review-repository';
 export type { CourseDetailsInput } from './course-repository';
 export {
+  createPendingSource,
+  getCourseSource,
+  listCourseSources,
+  listFrozenRevisionSourceIds,
+  listRevisionSources,
+  markSourceFailed,
+  markSourceIndexed,
+  removeCourseSource,
+} from './course-source-repository';
+export type { CreatePendingSourceInput } from './course-source-repository';
+export {
+  createCourseGeneration,
+  getCourseGeneration,
+  markCourseGenerationFailed,
+  markCourseGenerationRunning,
+  markCourseGenerationSucceeded,
+} from './course-generation-repository';
+export type {
+  CourseGenerationRecord,
+  CourseGenerationStatus as CourseGenerationRecordStatus,
+  CreateCourseGenerationInput,
+  RequestedGenerationSource,
+} from './course-generation-repository';
+export {
   COURSE_LESSON_TYPES,
+  COURSE_SOURCE_INDEX_STATUSES,
 } from '@moto-ai/contracts/course-studio';
 export type {
   ChapterInput,
@@ -77,6 +105,9 @@ export type {
   CourseGraphChapter,
   CourseGraphLesson,
   CourseLessonType,
+  CourseRevisionSource as CourseRevisionSourceContract,
+  CourseSourceFile as CourseSourceFileContract,
+  CourseSourceIndexStatus as CourseSourceIndexStatusContract,
   LessonInput,
 } from '@moto-ai/contracts/course-studio';
 export type {
