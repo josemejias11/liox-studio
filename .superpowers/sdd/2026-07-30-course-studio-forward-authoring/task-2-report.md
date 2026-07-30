@@ -185,3 +185,38 @@ no longer referenced the intentionally deleted legacy upload route.
   acceptance run is: upload one source, observe queued to indexed, freeze a
   revision, inspect its source IDs/hashes, then make a review-token chat request
   and verify the reported source set contains only that frozen source.
+
+## Review round 1 fixes
+
+The first independent review found three integration/security gaps in commit
+`4677bd1`. They were corrected without adding a course-wide or public learner
+fallback:
+
+- `ChatRequestSchema` and `RevisionBoundQuizRequestSchema` are now strict unions
+  that accept exactly one identity: `revisionId` or `reviewToken`. Supplying
+  both, neither, or unknown fields fails before the browser makes a request.
+- `chat-client.ts` serializes only the successfully validated shared request.
+  A legacy caller that has only a course ID is stopped client-side instead of
+  sending an under-scoped request.
+- `CourseQuiz.tsx` accepts Studio revision or review-token identity, validates
+  the same strict shared contract, and serializes the validated payload. Its
+  existing course-only contexts cannot enqueue AI generation.
+- Chat and quiz route handlers require a valid Course Studio session before
+  resolving any raw `revisionId`. The alternative `reviewToken` path continues
+  to resolve only through `getReviewByToken`, which hashes the token and rejects
+  missing/expired reviews.
+- Retryable parser/network errors keep their intermediate queue retries. When
+  `job.attempts >= job.maxAttempts`, the worker now marks that exact
+  `CourseSourceFile` failed with a safe retry message before the queue records
+  its terminal failure.
+
+Focused static evidence after the fixes:
+
+| Command | Observed result |
+| --- | --- |
+| `npm run typecheck --workspace=@moto-ai/web --workspace=@moto-ai/job-worker` | Job worker passed. Web reported only the same downstream Task 5 public-catalog exports/type error; no Task 2 diagnostic remained. |
+| `npm run lint` | Exit 0 with the same unrelated unused `CourseGraphChapter` warning and no Task 2 error. |
+| `./node_modules/.bin/prettier --check <review-fix files>` | All review-fix files matched Prettier style after formatting the affected route/client files. |
+| Source scan of `/api/chat` and `/api/quiz` callers | Network bodies are built only from strict validated requests; the old course-only JSON payloads are absent. |
+| Source scan of chat/quiz route authorization | Both routes check `isCourseStudioAuthorized` on the `revisionId` branch before database source resolution; review-token branches still use `getReviewByToken`. |
+| Source scan of terminal indexing behavior | `markSourceFailed` runs for non-retryable errors and for retryable errors on the claimed job's final attempt; intermediate retryable attempts remain pending. |

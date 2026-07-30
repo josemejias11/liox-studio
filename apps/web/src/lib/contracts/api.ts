@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { GenerateQuizRequestSchema } from '@moto-ai/contracts/quiz';
 
 // ── Chat wire contract (browser ⇄ /api/chat) ──────────────────────────────────
 // /api/chat is a server-to-server proxy in front of the self-hosted parser/RAG
@@ -6,10 +7,28 @@ import { z } from 'zod';
 // handler and every client (CourseChat, DiscoveryPanel) validate against these
 // schemas so the two sides cannot drift.
 
-export const ChatRequestSchema = z.object({
+const revisionIdField = z.string().min(1).max(100);
+const reviewTokenField = z.string().min(1).max(200);
+
+const chatRequestBase = z.object({
   courseId: z.string().min(1).max(100),
   query: z.string().min(1).max(2000),
 });
+
+export const ChatRequestSchema = z.union([
+  chatRequestBase
+    .extend({
+      revisionId: revisionIdField,
+      reviewToken: z.never().optional(),
+    })
+    .strict(),
+  chatRequestBase
+    .extend({
+      reviewToken: reviewTokenField,
+      revisionId: z.never().optional(),
+    })
+    .strict(),
+]);
 
 export type ChatRequest = z.infer<typeof ChatRequestSchema>;
 
@@ -19,6 +38,19 @@ export const ChatResponseSchema = z.object({
 });
 
 export type ChatResponse = z.infer<typeof ChatResponseSchema>;
+
+export const RevisionBoundQuizRequestSchema = z.union([
+  GenerateQuizRequestSchema.extend({
+    revisionId: revisionIdField,
+    reviewToken: z.never().optional(),
+  }).strict(),
+  GenerateQuizRequestSchema.extend({
+    reviewToken: reviewTokenField,
+    revisionId: z.never().optional(),
+  }).strict(),
+]);
+
+export type RevisionBoundQuizRequest = z.infer<typeof RevisionBoundQuizRequestSchema>;
 
 // ── Progress wire contract (browser ⇄ /api/progress) ─────────────────────────
 

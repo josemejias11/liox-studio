@@ -11,12 +11,17 @@ import {
   type ClientQuiz,
 } from '@moto-ai/contracts/quiz';
 import { JobAcceptedResponseSchema, JobStatusResponseSchema } from '@moto-ai/contracts/jobs';
+import { RevisionBoundQuizRequestSchema } from '@/lib/contracts/api';
 import { createQuizSessionState, quizSessionReducer } from '@/lib/quiz-session';
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 export interface CourseQuizProps {
   courseId?: string;
+  /** Frozen revision identity for authenticated Course Studio generation. */
+  revisionId?: string;
+  /** Hashed, non-expired review access token for external review generation. */
+  reviewToken?: string;
   /** Topics the learner has not explored yet — steers quiz generation. */
   weakTopics?: string[];
   /** Session identity for recording the attempt server-side; omitted in previews. */
@@ -61,6 +66,8 @@ async function waitForQuizJob(jobId: string, onProgress: (progress: string | nul
 
 export function CourseQuiz({
   courseId,
+  revisionId,
+  reviewToken,
   weakTopics,
   sessionId,
   onPass,
@@ -95,10 +102,17 @@ export function CourseQuiz({
     setGenerationProgress('queueing');
     try {
       if (!courseId) throw new Error('Missing courseId');
+      const request = RevisionBoundQuizRequestSchema.safeParse({
+        courseId,
+        weakTopics: weakTopics ?? [],
+        ...(revisionId ? { revisionId } : {}),
+        ...(reviewToken ? { reviewToken } : {}),
+      });
+      if (!request.success) throw new Error('Missing or ambiguous revision identity');
       const res = await fetch('/api/quiz', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ courseId, weakTopics: weakTopics ?? [] }),
+        body: JSON.stringify(request.data),
       });
       if (!res.ok) throw new Error(`Quiz request failed (${res.status})`);
       const parsed = JobAcceptedResponseSchema.safeParse(await res.json());

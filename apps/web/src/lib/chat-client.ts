@@ -1,22 +1,24 @@
-import { ChatResponseSchema, type ChatResponse } from '@/lib/contracts/api';
+import { ChatRequestSchema, ChatResponseSchema, type ChatResponse } from '@/lib/contracts/api';
 
 export interface ChatInput {
   courseId: string;
   query: string;
+  revisionId?: string;
+  reviewToken?: string;
 }
 
 /**
  * Send a chat request to `/api/chat` and return the validated response.
  * Throws on network or validation errors.
  */
-export async function askCourseChat(
-  input: ChatInput,
-  signal?: AbortSignal,
-): Promise<ChatResponse> {
+export async function askCourseChat(input: ChatInput, signal?: AbortSignal): Promise<ChatResponse> {
+  const request = ChatRequestSchema.safeParse(input);
+  if (!request.success) throw new Error('Chat request requires one revision identity');
+
   const res = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ courseId: input.courseId, query: input.query }),
+    body: JSON.stringify(request.data),
     signal,
   });
 

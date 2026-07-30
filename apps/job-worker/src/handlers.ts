@@ -74,14 +74,14 @@ async function indexDocument(job: ClaimedJob): Promise<{ filename: string; chunk
     await markSourceIndexed(courseId, sourceId, result.chunksStored);
     return { filename: result.filename, chunksStored: result.chunksStored };
   } catch (error: unknown) {
-    if (
-      error instanceof NonRetryableJobError ||
-      (error instanceof RagServiceError && error.status !== undefined && error.status < 500)
-    ) {
+    const retryable = isRetryableJobError(error);
+    if (!retryable || job.attempts >= job.maxAttempts) {
       await markSourceFailed(
         courseId,
         sourceId,
-        'This source could not be indexed. Check the file contents and format, then upload it again.',
+        retryable
+          ? 'This source could not be indexed after multiple attempts. Upload it again to retry.'
+          : 'This source could not be indexed. Check the file contents and format, then upload it again.',
       );
     }
     throw error;

@@ -1,23 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GenerateQuizRequestSchema } from '@moto-ai/contracts/quiz';
 import { getReviewByToken, listFrozenRevisionSourceIds } from '@moto-ai/database';
 import { enqueueQuizGenerationJob } from '@moto-ai/jobs';
-import { readJson, unexpectedApiError } from '@/lib/server/http';
-import { jsonError } from '@/lib/server/http';
-import { z } from 'zod';
+import { RevisionBoundQuizRequestSchema, type RevisionBoundQuizRequest } from '@/lib/contracts/api';
+import { isCourseStudioAuthorized } from '@/lib/course-studio-auth';
+import { jsonError, readJson, unexpectedApiError } from '@/lib/server/http';
 
 // Creates a durable AI quiz job. The worker persists the full answer key and
 // exposes only the existing client-safe quiz projection through job status.
 
-const revisionBoundQuizSchema = GenerateQuizRequestSchema.extend({
-  revisionId: z.string().min(1).max(100).optional(),
-  reviewToken: z.string().min(1).max(200).optional(),
-}).refine((value) => Number(!!value.revisionId) + Number(!!value.reviewToken) === 1, {
-  message: 'Provide exactly one revisionId or reviewToken',
-});
-
-async function resolveRevisionSources(input: z.infer<typeof revisionBoundQuizSchema>) {
-  if (input.reviewToken) {
+async function resolveRevisionSources(input: RevisionBoundQuizRequest) {
+  if (typeof input.reviewToken === 'string') {
     const review = await getReviewByToken(input.reviewToken);
     if (!review) throw new Error('REVIEW_NOT_FOUND');
     if (review.course.id !== input.courseId) throw new Error('REVISION_COURSE_MISMATCH');
@@ -27,16 +19,19 @@ async function resolveRevisionSources(input: z.infer<typeof revisionBoundQuizSch
     };
   }
   return {
-    revisionId: input.revisionId!,
-    sourceIds: await listFrozenRevisionSourceIds(input.courseId, input.revisionId!),
+    revisionId: input.revisionId,
+    sourceIds: await listFrozenRevisionSourceIds(input.courseId, input.revisionId),
   };
 }
 
 export async function POST(req: NextRequest) {
-  const parsed = await readJson(req, revisionBoundQuizSchema, {
+  const parsed = await readJson(req, RevisionBoundQuizRequestSchema, {
     invalidJsonMessage: 'Invalid request payload',
   });
   if (!parsed.success) return parsed.response;
+  if ('revisionId' in parsed.data && !(await isCourseStudioAuthorized(req))) {
+    return jsonError('Unauthorized', 401);
+  }
 
   try {
     const { revisionId, sourceIds } = await resolveRevisionSources(parsed.data);
