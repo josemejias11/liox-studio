@@ -132,7 +132,10 @@ repository constraint.
 | `services/parser-service/venv/bin/python -m compileall -q services/parser-service/src` | Exit 0. |
 | `./node_modules/.bin/prettier --check <Task 2 TypeScript and README files>` | Exit 0, all matched files use Prettier style. |
 | `git diff --check` | Exit 0. |
-| `pg_isready -h localhost -p 5432` | `localhost:5432 - no response`. |
+| Host-level `pg_isready -h localhost -p 5432` | `localhost:5432 - accepting connections`. The sandbox-local probe still cannot reach the host listener. |
+| `npm run db:migrate` | Exit 0. Applied `20260730120000_forward_course_studio`; Prisma reported all migrations successfully applied. |
+| `npx prisma migrate status --schema packages/database/prisma/schema.prisma` | Exit 0. Eight migrations found and database schema reported up to date. |
+| Read-only Prisma table query | Successfully queried `CourseSourceFile`, `CourseRevisionSource`, `CourseRevision`, and `CourseGeneration`: 0 sources, 0 revision-source links, 2 revisions, and 0 generations. |
 | Source scan for parser retrieval calls | The only similarity retrieval call is `retrieve_course_documents`, which stops on an empty source set and applies the Chroma `$in` source-ID filter. |
 
 The stale generated `.next` cache was removed before the second typecheck so it
@@ -143,8 +146,9 @@ no longer referenced the intentionally deleted legacy upload route.
 - Static contract evaluation covered the browser-to-Next-to-typed-client-to-
   FastAPI boundary and found no unfiltered parser retrieval call.
 - No online quality, retrieval relevance, latency, or cost measurements were
-  collected because PostgreSQL was unavailable and the authenticated durable
-  flow could not start.
+  collected. PostgreSQL migration and read-only persistence checks now pass,
+  but no indexed source fixture exists and the authenticated web, worker, R2,
+  parser, Chroma, and Ollama flow was not started.
 - No LLM call was made. This task adds no provider cost. Local Ollama remains
   behind parser-service and is described as development-only.
 - Source upload intentionally stores bytes in both R2 and the job artifact until
@@ -168,10 +172,11 @@ no longer referenced the intentionally deleted legacy upload route.
 
 ## Unresolved risks and monitoring
 
-- PostgreSQL unavailability blocked migration-backed upload, queued-to-indexed
-  status, frozen revision row/hash inspection, authenticated browser evidence,
-  and a real review-context retrieval. None of those runtime outcomes are
-  claimed.
+- The forward Course Studio migration is now applied and all four Task 2 Prisma
+  models are queryable. There are two existing revisions but no source,
+  revision-source, or generation records, so upload, queued-to-indexed status,
+  frozen revision source/hash inspection, and real review-context retrieval
+  remain unexercised. None of those runtime outcomes are claimed.
 - The full root typecheck remains red until downstream Task 5 publishes its
   public-catalog database exports. Task 2-owned workspaces are green.
 - If R2 or parser cleanup fails after `removeCourseSource` has atomically
@@ -181,10 +186,11 @@ no longer referenced the intentionally deleted legacy upload route.
 - Monitor `CourseSourceFile.indexStatus/indexError/chunksStored`,
   `BackgroundJob.status/attempts/errorMessage`, parser 4xx/5xx responses, source
   identity mismatch logs, and source cleanup failures.
-- Once PostgreSQL and authenticated local services are available, the remaining
-  acceptance run is: upload one source, observe queued to indexed, freeze a
-  revision, inspect its source IDs/hashes, then make a review-token chat request
-  and verify the reported source set contains only that frozen source.
+- Once an authenticated local app plus R2, worker, parser, Chroma, and Ollama
+  are available, the remaining acceptance run is: upload one source, observe
+  queued to indexed, freeze a revision, inspect its source IDs/hashes, then make
+  a review-token chat request and verify the reported source set contains only
+  that frozen source.
 
 ## Review round 1 fixes
 
@@ -273,5 +279,7 @@ Focused verification after browser propagation:
 | `git diff --check` | Exit 0. |
 | Browser call-site scan | Studio authoring preview originates a revision ID, external review originates its review token, and the public course page supplies neither. Assistant rendering requires the propagated identity. |
 
-Runtime browser proof remains blocked by the same unavailable local PostgreSQL
-prerequisite. No authenticated preview or review request is claimed as executed.
+Runtime browser proof was not run because the full authenticated web and source
+indexing service chain was outside this persistence check. PostgreSQL itself is
+no longer the blocker. No authenticated preview or review request is claimed as
+executed.
