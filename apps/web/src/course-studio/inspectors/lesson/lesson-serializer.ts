@@ -1,4 +1,4 @@
-import type { LessonInput } from '@moto-ai/database';
+import type { LessonInput } from '@moto-ai/contracts/course-studio';
 import { imagePayload, mergeImage, mergeRow, numericValue, type LessonDraft } from '@/lib/contracts/lesson-studio';
 import { jsonObject } from '@/lib/contracts/course-studio';
 

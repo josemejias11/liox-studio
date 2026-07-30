@@ -1,4 +1,4 @@
-import type { CourseLessonType, CourseGraph } from '@moto-ai/database';
+import type { CourseLessonType, CourseGraph } from '@moto-ai/contracts/course-studio';
 import { toPlainText } from '@/lib/contracts/player-course';
 import { createStableCourseStudioKey, isJsonObject, jsonObject, mergeKnownFields, stringField, booleanField } from '@/lib/contracts/course-studio';
 

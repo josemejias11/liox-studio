@@ -3,7 +3,7 @@ import type {
   CourseGraph,
   CourseLessonType,
   LessonInput,
-} from '@moto-ai/database';
+} from '@moto-ai/contracts/course-studio';
 import type { CourseSettingsInput } from '@/lib/contracts/course-studio';
 
 export interface StudioTrashItem {

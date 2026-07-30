@@ -1,6 +1,6 @@
 'use client';
 
-import type { CourseGraph, LessonInput } from '@moto-ai/database';
+import type { CourseGraph, LessonInput } from '@moto-ai/contracts/course-studio';
 import { useEffect, useMemo, useState } from 'react';
 import { createLessonDraft, validateLessonDraft, type LessonDraft } from '@/lib/contracts/lesson-studio';
 import { serializeLessonDraft } from './lesson/lesson-serializer';

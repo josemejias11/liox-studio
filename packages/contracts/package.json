@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     "./course-assets": "./src/course-assets.ts",
+    "./course-studio": "./src/course-studio.ts",
     "./jobs": "./src/jobs.ts",
     "./quiz": "./src/quiz.ts"
   },

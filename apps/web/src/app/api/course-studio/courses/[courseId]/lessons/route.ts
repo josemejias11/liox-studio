@@ -1,13 +1,12 @@
 import {
-  COURSE_LESSON_TYPES,
   createLesson,
   duplicateLesson,
   getAuthoringCourse,
   trashLesson,
   updateLesson,
   type CourseTrashItem,
-  type LessonInput,
 } from '@moto-ai/database';
+import { COURSE_LESSON_TYPES, type LessonInput } from '@moto-ai/contracts/course-studio';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { isCourseStudioAuthorized } from '@/lib/course-studio-auth';

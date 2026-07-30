@@ -1,6 +1,6 @@
 'use client';
 
-import type { CourseGraph, LessonInput } from '@moto-ai/database';
+import type { CourseGraph, LessonInput } from '@moto-ai/contracts/course-studio';
 import { useState } from 'react';
 import type { CourseSettingsInput } from '@/lib/contracts/course-studio';
 import { CourseInspector, type CourseInspectorSaveState } from './inspectors/CourseInspector';

@@ -5,7 +5,7 @@ import type {
   CourseGraph,
   CourseLessonType,
   LessonInput,
-} from '@moto-ai/database';
+} from '@moto-ai/contracts/course-studio';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react';
 import { toPlayerCourseContent } from '@/lib/course-player-adapter';
 import type { CourseSettingsInput } from '@/lib/contracts/course-studio';

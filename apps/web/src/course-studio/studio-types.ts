@@ -1,4 +1,4 @@
-import type { CourseGraph } from '@moto-ai/database';
+import type { CourseGraph } from '@moto-ai/contracts/course-studio';
 
 export type { StudioTrashItem, StudioTrashMutation } from './studio-client';
 

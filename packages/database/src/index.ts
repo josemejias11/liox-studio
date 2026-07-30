@@ -32,7 +32,6 @@ export const prisma =
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
 export {
-  COURSE_LESSON_TYPES,
   createChapter,
   createCourseTemplate,
   createLesson,
@@ -68,15 +67,18 @@ export type {
   CourseReviewSnapshot,
   CourseRevisionSummary,
 } from './course-review-repository';
+export type { CourseDetailsInput } from './course-repository';
+export {
+  COURSE_LESSON_TYPES,
+} from '@moto-ai/contracts/course-studio';
 export type {
   ChapterInput,
-  CourseDetailsInput,
   CourseGraph,
   CourseGraphChapter,
   CourseGraphLesson,
   CourseLessonType,
   LessonInput,
-} from './course-repository';
+} from '@moto-ai/contracts/course-studio';
 export type {
   CourseTrashItem,
   RestoreTrashItemResult,

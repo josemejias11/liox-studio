@@ -1,20 +1,22 @@
 import { Prisma } from '@prisma/client';
+import type {
+  ChapterInput,
+  CourseGraph,
+  CourseGraphChapter,
+  CourseLessonType,
+  LessonInput,
+} from '@moto-ai/contracts/course-studio';
 import { prisma } from './index';
 
-export const COURSE_LESSON_TYPES = [
-  'content',
-  'interaction',
-  'stage',
-  'video',
-  'quiz',
-  'canvas',
-  'colorSwitcher',
-  'splitScreen',
-  'dragDrop',
-  'scrollStory',
-] as const;
-
-export type CourseLessonType = (typeof COURSE_LESSON_TYPES)[number];
+export { COURSE_LESSON_TYPES } from '@moto-ai/contracts/course-studio';
+export type {
+  ChapterInput,
+  CourseGraph,
+  CourseGraphChapter,
+  CourseGraphLesson,
+  CourseLessonType,
+  LessonInput,
+} from '@moto-ai/contracts/course-studio';
 
 export interface CourseDetailsInput {
   title?: string;
@@ -24,53 +26,6 @@ export interface CourseDetailsInput {
   cover?: Prisma.InputJsonValue | null;
   specifications?: Prisma.InputJsonValue | null;
   disclaimer?: Prisma.InputJsonValue | null;
-}
-
-export interface ChapterInput {
-  title?: string;
-  estimatedDuration?: number | null;
-}
-
-export interface LessonInput {
-  headline?: string;
-  body?: Prisma.InputJsonValue | null;
-  payload?: Prisma.InputJsonValue;
-}
-
-export interface CourseGraphLesson {
-  id: string;
-  position: number;
-  lessonType: string;
-  headline: string;
-  body: Prisma.JsonValue | null;
-  payload: Prisma.JsonValue;
-}
-
-export interface CourseGraphChapter {
-  id: string;
-  title: string;
-  position: number;
-  estimatedDuration: number | null;
-  lessons: CourseGraphLesson[];
-  quickCheck: {
-    id: string;
-    title: string | null;
-    instructions: string | null;
-    payload: Prisma.JsonValue;
-  } | null;
-}
-
-export interface CourseGraph {
-  id: string;
-  slug: string;
-  title: string;
-  description: string | null;
-  learningObjectives: Prisma.JsonValue | null;
-  cover: Prisma.JsonValue | null;
-  specifications: Prisma.JsonValue | null;
-  disclaimer: Prisma.JsonValue | null;
-  sourceFiles: Prisma.JsonValue | null;
-  chapters: CourseGraphChapter[];
 }
 
 function slugify(value: string): string {
@@ -312,8 +267,10 @@ export async function updateLesson(
     where: { id: lessonId },
     data: {
       ...(input.headline !== undefined ? { headline: input.headline } : {}),
-      ...(input.body !== undefined ? { body: jsonValue(input.body) } : {}),
-      ...(input.payload !== undefined ? { payload: input.payload } : {}),
+      ...(input.body !== undefined
+        ? { body: jsonValue(input.body as Prisma.InputJsonValue | null) }
+        : {}),
+      ...(input.payload !== undefined ? { payload: input.payload as Prisma.InputJsonValue } : {}),
     },
   });
   return requireGraph(courseId);

@@ -1,6 +1,6 @@
 'use client';
 
-import type { CourseGraph } from '@moto-ai/database';
+import type { CourseGraph } from '@moto-ai/contracts/course-studio';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   booleanField,

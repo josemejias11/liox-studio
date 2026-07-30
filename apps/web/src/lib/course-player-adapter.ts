@@ -1,4 +1,4 @@
-import type { CourseGraph } from '@moto-ai/database';
+import type { CourseGraph } from '@moto-ai/contracts/course-studio';
 import { courseSummarySchema, type CourseSummary } from '@/lib/contracts/player-course';
 import { normalizeCourseContent, type NormalizedCourseContent } from '@/lib/course-content';
 
