@@ -2,6 +2,7 @@
 
 import { CourseQuiz } from '@/components/course-ai/CourseQuiz';
 import type { AuthoredQuiz } from '@/lib/contracts/player-course';
+import type { RevisionIdentity } from '@/lib/contracts/api';
 
 import { CourseQuizPlayer } from '@/components/CourseQuizPlayer';
 
@@ -23,6 +24,7 @@ export interface QuizLessonProps {
   sessionId?: string;
   courseId?: string;
   preview?: boolean;
+  aiIdentity?: RevisionIdentity;
 }
 
 // ── Lesson entry point ────────────────────────────────────────────────────────
@@ -38,6 +40,7 @@ export function QuizLesson({
   sessionId,
   courseId,
   preview = false,
+  aiIdentity,
 }: QuizLessonProps) {
   if (courseQuiz) {
     return (
@@ -67,6 +70,7 @@ export function QuizLesson({
         </div>
         <div className="flex justify-center">
           <CourseQuiz
+            {...aiIdentity}
             courseId={courseId}
             weakTopics={weakTopics}
             sessionId={sessionId}

@@ -3,10 +3,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Sparkles, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { RevisionIdentity } from '@/lib/contracts/api';
 import { useChatConversation } from './useChatConversation';
 
-export function CourseChat({ courseId }: { courseId?: string }) {
-  const { messages, isLoading, send } = useChatConversation({ courseId });
+type CourseChatProps = { courseId: string } & RevisionIdentity;
+
+export function CourseChat({ courseId, revisionId, reviewToken }: CourseChatProps) {
+  const { messages, isLoading, send } = useChatConversation({
+    courseId,
+    revisionId,
+    reviewToken,
+  });
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 

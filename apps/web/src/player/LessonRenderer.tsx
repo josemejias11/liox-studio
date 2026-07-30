@@ -2,6 +2,7 @@
 
 import { CourseQuiz } from '@/components/course-ai/CourseQuiz';
 import type { LessonSection, CourseHotspot } from '@/lib/contracts/player-course';
+import type { RevisionIdentity } from '@/lib/contracts/api';
 import { RefresherFeaturePanel } from './RefresherFeaturePanel';
 import {
   ContentLessonDynamic,
@@ -32,6 +33,7 @@ export interface LessonRendererProps {
   courseId: string;
   preview: boolean;
   imageSizes: string;
+  aiIdentity?: RevisionIdentity;
 }
 
 export function LessonRenderer({
@@ -50,6 +52,7 @@ export function LessonRenderer({
   courseId,
   preview,
   imageSizes,
+  aiIdentity,
 }: LessonRendererProps) {
   const completionMode = getLessonCompletionMode(lesson);
   const handleManualCompletion =
@@ -101,6 +104,7 @@ export function LessonRenderer({
               Practice challenge
             </p>
             <CourseQuiz
+              {...aiIdentity}
               weakTopics={weakTopics}
               onPass={goNext}
               onFail={goNext}

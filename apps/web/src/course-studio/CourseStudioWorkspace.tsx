@@ -6,7 +6,16 @@ import type {
   CourseLessonType,
   LessonInput,
 } from '@moto-ai/contracts/course-studio';
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type PointerEvent,
+} from 'react';
 import { toPlayerCourseContent } from '@/lib/course-player-adapter';
 import type { CourseSettingsInput } from '@/lib/contracts/course-studio';
 import { AuthoringPreview } from './AuthoringPreview';
@@ -42,19 +51,25 @@ function getViewportToolsMaximum(): number {
 export function CourseStudioWorkspace({
   initialCourse,
   initialTrash,
+  initialRevisionId,
 }: {
   initialCourse: CourseGraph;
   initialTrash: StudioTrashItem[];
+  initialRevisionId?: string;
 }) {
   const [course, setCourse] = useState(initialCourse);
-  const [selection, setSelection] = useState<StudioSelection>({ kind: 'course', id: initialCourse.id });
+  const [selection, setSelection] = useState<StudioSelection>({
+    kind: 'course',
+    id: initialCourse.id,
+  });
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [trash, setTrash] = useState(initialTrash);
   const [undoTrashId, setUndoTrashId] = useState<string | null>(null);
   const [focusPreview, setFocusPreview] = useState(false);
   const [courseSettingsDirty, setCourseSettingsDirty] = useState(false);
-  const [courseSaveState, setCourseSaveState] = useState<CourseInspectorSaveState>(neutralCourseSaveState);
+  const [courseSaveState, setCourseSaveState] =
+    useState<CourseInspectorSaveState>(neutralCourseSaveState);
   const [toolsMaximum, setToolsMaximum] = useState(defaultToolsMaximum);
   const [toolsMaximumReady, setToolsMaximumReady] = useState(false);
   const workspaceRef = useRef<HTMLDivElement>(null);
@@ -155,7 +170,9 @@ export function CourseStudioWorkspace({
       if (current.kind === 'chapter') {
         return chapter ? current : { kind: 'course', id: nextCourse.id };
       }
-      const lessonExists = nextCourse.chapters.some((item) => item.lessons.some((lesson) => lesson.id === current.id));
+      const lessonExists = nextCourse.chapters.some((item) =>
+        item.lessons.some((lesson) => lesson.id === current.id),
+      );
       return lessonExists ? current : { kind: 'course', id: nextCourse.id };
     });
   }
@@ -185,23 +202,35 @@ export function CourseStudioWorkspace({
     const title = window.prompt('Chapter title', 'New chapter');
     if (!title?.trim()) return;
     if (!confirmDiscardCourseSettings()) return;
-    await run('Chapter', async () => {
-      const next = await studioClient.createChapter(course.id, title.trim());
-      const created = next.chapters[next.chapters.length - 1];
-      if (created) setStudioSelection({ kind: 'chapter', id: created.id });
-      return next;
-    }, { structural: true });
+    await run(
+      'Chapter',
+      async () => {
+        const next = await studioClient.createChapter(course.id, title.trim());
+        const created = next.chapters[next.chapters.length - 1];
+        if (created) setStudioSelection({ kind: 'chapter', id: created.id });
+        return next;
+      },
+      { structural: true },
+    );
   }
 
   async function addLesson(chapterId: string, lessonType: CourseLessonType) {
     if (!confirmDiscardCourseSettings()) return;
-    await run('Screen', async () => {
-      const previousIds = new Set(course.chapters.flatMap((chapter) => chapter.lessons.map((lesson) => lesson.id)));
-      const next = await studioClient.createLesson(course.id, chapterId, lessonType);
-      const created = next.chapters.flatMap((chapter) => chapter.lessons).find((lesson) => !previousIds.has(lesson.id));
-      if (created) setStudioSelection({ kind: 'lesson', id: created.id });
-      return next;
-    }, { structural: true });
+    await run(
+      'Screen',
+      async () => {
+        const previousIds = new Set(
+          course.chapters.flatMap((chapter) => chapter.lessons.map((lesson) => lesson.id)),
+        );
+        const next = await studioClient.createLesson(course.id, chapterId, lessonType);
+        const created = next.chapters
+          .flatMap((chapter) => chapter.lessons)
+          .find((lesson) => !previousIds.has(lesson.id));
+        if (created) setStudioSelection({ kind: 'lesson', id: created.id });
+        return next;
+      },
+      { structural: true },
+    );
   }
 
   async function moveScreenToTrash(lessonId: string) {
@@ -249,7 +278,9 @@ export function CourseStudioWorkspace({
       setUndoTrashId(null);
       setStatus('Screen permanently deleted.');
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Screen could not be permanently deleted.');
+      setStatus(
+        error instanceof Error ? error.message : 'Screen could not be permanently deleted.',
+      );
     } finally {
       setSaving(false);
     }
@@ -284,18 +315,23 @@ export function CourseStudioWorkspace({
       !window.confirm(
         'Permanently delete this chapter and its active screens? Screens already in Trash are kept. This cannot be undone.',
       )
-    ) return;
+    )
+      return;
     if (!confirmDiscardCourseSettings()) return;
-    await run(kind === 'lesson' ? 'Screen' : 'Chapter', async () => {
-      if (actionName === 'up' || actionName === 'down') {
-        return studioClient.reorder(course.id, { kind, id, direction: actionName });
-      }
-      if (kind === 'lesson' && actionName === 'duplicate') {
-        return studioClient.duplicateLesson(course.id, id);
-      }
-      const next = await studioClient.deleteChapter(course.id, id);
-      return next;
-    }, { structural: true, reconcileSelection: actionName === 'delete' && kind === 'chapter' });
+    await run(
+      kind === 'lesson' ? 'Screen' : 'Chapter',
+      async () => {
+        if (actionName === 'up' || actionName === 'down') {
+          return studioClient.reorder(course.id, { kind, id, direction: actionName });
+        }
+        if (kind === 'lesson' && actionName === 'duplicate') {
+          return studioClient.duplicateLesson(course.id, id);
+        }
+        const next = await studioClient.deleteChapter(course.id, id);
+        return next;
+      },
+      { structural: true, reconcileSelection: actionName === 'delete' && kind === 'chapter' },
+    );
   }
 
   async function saveCourse(input: CourseSettingsInput): Promise<void> {
@@ -341,7 +377,10 @@ export function CourseStudioWorkspace({
     update(event.currentTarget.dataset.axis === 'x' ? event.clientX : event.clientY);
   }
 
-  function endPointerDrag(event: PointerEvent<HTMLDivElement>, pointerId: { current: number | null }): void {
+  function endPointerDrag(
+    event: PointerEvent<HTMLDivElement>,
+    pointerId: { current: number | null },
+  ): void {
     if (pointerId.current !== event.pointerId) return;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
@@ -378,7 +417,7 @@ export function CourseStudioWorkspace({
   } as CSSProperties;
 
   return (
-    <main className="studio-workspace flex min-h-screen flex-col text-foreground xl:h-screen xl:min-h-0 xl:overflow-hidden">
+    <main className="studio-workspace text-foreground flex min-h-screen flex-col xl:h-screen xl:min-h-0 xl:overflow-hidden">
       <StudioToolbar
         focusPreview={focusPreview}
         onNavigateToLibrary={confirmDiscardCourseSettings}
@@ -390,9 +429,19 @@ export function CourseStudioWorkspace({
       />
       {focusPreview ? (
         <div className="min-h-0 flex-1 bg-zinc-950 p-5">
-          {preview
-            ? <AuthoringPreview content={preview} fill selectedLessonId={selectedLessonId} />
-            : <div className="flex h-full items-center justify-center text-sm text-white/70">The current draft cannot be rendered. Return to the editor and correct its structured fields.</div>}
+          {preview ? (
+            <AuthoringPreview
+              aiIdentity={initialRevisionId ? { revisionId: initialRevisionId } : undefined}
+              content={preview}
+              fill
+              selectedLessonId={selectedLessonId}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-white/70">
+              The current draft cannot be rendered. Return to the editor and correct its structured
+              fields.
+            </div>
+          )}
         </div>
       ) : (
         <div
@@ -424,25 +473,53 @@ export function CourseStudioWorkspace({
             aria-valuemax={outlineMaximum}
             aria-valuemin={outlineMinimum}
             aria-valuenow={outlineWidth}
-            className="hidden cursor-col-resize touch-none bg-border/55 shadow-[inset_1px_0_0_rgb(255_255_255_/_22%)] outline-none transition-colors hover:bg-primary/70 focus-visible:bg-primary xl:block"
+            className="bg-border/55 hover:bg-primary/70 focus-visible:bg-primary hidden cursor-col-resize touch-none shadow-[inset_1px_0_0_rgb(255_255_255_/_22%)] transition-colors outline-none xl:block"
             data-axis="x"
-            onKeyDown={(event) => adjustPanelWithKeyboard(event, outlineWidth, setOutlineWidth, outlineMinimum, outlineMaximum)}
+            onKeyDown={(event) =>
+              adjustPanelWithKeyboard(
+                event,
+                outlineWidth,
+                setOutlineWidth,
+                outlineMinimum,
+                outlineMaximum,
+              )
+            }
             onPointerCancel={(event) => endPointerDrag(event, outlinePointerId)}
             onPointerDown={(event) => beginPointerDrag(event, outlinePointerId, updateOutlineWidth)}
-            onPointerMove={(event) => continuePointerDrag(event, outlinePointerId, updateOutlineWidth)}
+            onPointerMove={(event) =>
+              continuePointerDrag(event, outlinePointerId, updateOutlineWidth)
+            }
             onPointerUp={(event) => endPointerDrag(event, outlinePointerId)}
             role="separator"
             tabIndex={0}
           />
-          <section className="min-w-0 overflow-visible bg-[radial-gradient(circle_at_top_right,rgba(104,91,199,0.1),transparent_38%),linear-gradient(145deg,rgba(255,255,255,0.2),transparent_48%)] bg-muted/35 p-4 sm:p-6 xl:col-start-3 xl:row-start-1 xl:min-h-0 xl:overflow-auto">
+          <section className="bg-muted/35 min-w-0 overflow-visible bg-[radial-gradient(circle_at_top_right,rgba(104,91,199,0.1),transparent_38%),linear-gradient(145deg,rgba(255,255,255,0.2),transparent_48%)] p-4 sm:p-6 xl:col-start-3 xl:row-start-1 xl:min-h-0 xl:overflow-auto">
             <div className="w-full">
               <div className="mb-3 flex items-center justify-between">
-                <div><h2 className="text-sm font-semibold">Live learner canvas</h2><p className="text-xs text-muted-foreground">Preview mode never writes learner progress.</p></div>
-                {selectedLessonId && <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">Selected screen</span>}
+                <div>
+                  <h2 className="text-sm font-semibold">Live learner canvas</h2>
+                  <p className="text-muted-foreground text-xs">
+                    Preview mode never writes learner progress.
+                  </p>
+                </div>
+                {selectedLessonId && (
+                  <span className="bg-primary/10 text-primary rounded-full px-3 py-1 text-xs font-medium">
+                    Selected screen
+                  </span>
+                )}
               </div>
-              {preview
-                ? <AuthoringPreview content={preview} selectedLessonId={selectedLessonId} />
-                : <div className="flex aspect-video items-center justify-center rounded-xl border border-destructive/30 bg-card p-8 text-center text-sm text-destructive">This draft contains invalid player content. Correct the JSON in the inspector to restore preview.</div>}
+              {preview ? (
+                <AuthoringPreview
+                  aiIdentity={initialRevisionId ? { revisionId: initialRevisionId } : undefined}
+                  content={preview}
+                  selectedLessonId={selectedLessonId}
+                />
+              ) : (
+                <div className="border-destructive/30 bg-card text-destructive flex aspect-video items-center justify-center rounded-xl border p-8 text-center text-sm">
+                  This draft contains invalid player content. Correct the JSON in the inspector to
+                  restore preview.
+                </div>
+              )}
             </div>
           </section>
           <div
@@ -451,9 +528,17 @@ export function CourseStudioWorkspace({
             aria-valuemax={toolsMaximum}
             aria-valuemin={toolsMinimum}
             aria-valuenow={toolsHeight}
-            className="hidden cursor-row-resize touch-none bg-border/55 shadow-[inset_0_1px_0_rgb(255_255_255_/_22%)] outline-none transition-colors hover:bg-primary/70 focus-visible:bg-primary xl:col-start-3 xl:row-start-2 xl:block"
+            className="bg-border/55 hover:bg-primary/70 focus-visible:bg-primary hidden cursor-row-resize touch-none shadow-[inset_0_1px_0_rgb(255_255_255_/_22%)] transition-colors outline-none xl:col-start-3 xl:row-start-2 xl:block"
             data-axis="y"
-            onKeyDown={(event) => adjustPanelWithKeyboard(event, toolsHeight, setToolsHeight, toolsMinimum, toolsMaximum)}
+            onKeyDown={(event) =>
+              adjustPanelWithKeyboard(
+                event,
+                toolsHeight,
+                setToolsHeight,
+                toolsMinimum,
+                toolsMaximum,
+              )
+            }
             onPointerCancel={(event) => endPointerDrag(event, toolsPointerId)}
             onPointerDown={(event) => beginPointerDrag(event, toolsPointerId, updateToolsHeight)}
             onPointerMove={(event) => continuePointerDrag(event, toolsPointerId, updateToolsHeight)}
@@ -461,17 +546,25 @@ export function CourseStudioWorkspace({
             role="separator"
             tabIndex={0}
           />
-          <div className="flex flex-col border-t border-border xl:col-start-3 xl:row-start-3 xl:min-h-0">
+          <div className="border-border flex flex-col border-t xl:col-start-3 xl:row-start-3 xl:min-h-0">
             <div className="min-h-0 flex-1 overflow-y-auto">
               <StudioInspector
                 course={course}
                 courseSettingsFormId={courseSettingsFormId}
                 disabled={saving}
                 key={`${selection.kind}:${selection.id}`}
-                onSaveChapter={(chapterId, input) => run('Chapter', () => studioClient.updateChapter(course.id, chapterId, input as ChapterInput))}
+                onSaveChapter={(chapterId, input) =>
+                  run('Chapter', () =>
+                    studioClient.updateChapter(course.id, chapterId, input as ChapterInput),
+                  )
+                }
                 onDirtyChange={setCourseSettingsDirty}
                 onSaveCourse={saveCourse}
-                onSaveLesson={(lessonId, input) => run('Screen', () => studioClient.updateLesson(course.id, lessonId, input as LessonInput))}
+                onSaveLesson={(lessonId, input) =>
+                  run('Screen', () =>
+                    studioClient.updateLesson(course.id, lessonId, input as LessonInput),
+                  )
+                }
                 onSaveStateChange={setCourseSaveState}
                 selection={selection}
               />

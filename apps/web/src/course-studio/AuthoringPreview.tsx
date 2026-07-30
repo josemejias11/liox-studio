@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import MotoViewer from '@/player/MotoViewer';
 import type { NormalizedCourseContent } from '@/lib/course-content';
+import type { RevisionIdentity } from '@/lib/contracts/api';
 
 const PLAYER_WIDTH = 1440;
 const PLAYER_HEIGHT = 810;
@@ -11,10 +12,12 @@ export function AuthoringPreview({
   content,
   selectedLessonId,
   fill = false,
+  aiIdentity,
 }: {
   content: NormalizedCourseContent;
   selectedLessonId?: string;
   fill?: boolean;
+  aiIdentity?: RevisionIdentity;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0);
@@ -44,7 +47,7 @@ export function AuthoringPreview({
       }`}
     >
       <div
-        className="relative shrink-0 overflow-hidden rounded-xl border border-border bg-background"
+        className="border-border bg-background relative shrink-0 overflow-hidden rounded-xl border"
         style={{
           width: PLAYER_WIDTH * scale,
           height: PLAYER_HEIGHT * scale,
@@ -64,6 +67,7 @@ export function AuthoringPreview({
             initialSectionKey={selectedLessonId}
             sections={content.sections}
             preview
+            aiIdentity={aiIdentity}
             imageSizes={imageSizes}
           />
         </div>

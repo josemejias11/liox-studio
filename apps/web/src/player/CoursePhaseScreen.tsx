@@ -5,6 +5,7 @@ import { CourseCover } from '@/components/CourseCover';
 import { CourseComplete } from '@/components/CourseComplete';
 import type { CourseStructure } from '@/lib/course-structure';
 import type { LessonSection, CourseContent } from '@/lib/contracts/player-course';
+import type { RevisionIdentity } from '@/lib/contracts/api';
 import type { CoursePhase } from './hooks/useCourseNavigation';
 import type { LessonRuntime } from './hooks/useLessonRuntime';
 import { ChapterIntro } from './ChapterIntro';
@@ -42,6 +43,7 @@ export interface CoursePhaseScreenProps {
   onDisclaimerCanProceedChange: (canProceed: boolean) => void;
   preview: boolean;
   imageSizes: string;
+  aiIdentity?: RevisionIdentity;
 }
 
 export function getCoursePhaseSlideKey(args: {
@@ -89,6 +91,7 @@ export function CoursePhaseScreen({
   onDisclaimerCanProceedChange,
   preview,
   imageSizes,
+  aiIdentity,
 }: CoursePhaseScreenProps) {
   const { currentLesson } = lessonRuntime;
   switch (phase.phase) {
@@ -126,6 +129,7 @@ export function CoursePhaseScreen({
               Final knowledge check
             </p>
             <CourseQuizDynamic
+              {...aiIdentity}
               weakTopics={weakTopics}
               onPass={finishQuiz}
               onFail={finishQuiz}
@@ -146,6 +150,7 @@ export function CoursePhaseScreen({
         <div className="absolute inset-0 flex items-center justify-center overflow-y-auto bg-[#111225] p-6">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(104,91,199,0.42),transparent_42%)]" />
           <QuizLessonDynamic
+            aiIdentity={aiIdentity}
             courseQuiz={chapterGroup?.quickCheck}
             weakTopics={weakTopics}
             onPass={() => finishChapterQuiz(phase.chapterIndex)}
@@ -193,6 +198,7 @@ export function CoursePhaseScreen({
 
       return (
         <LessonRenderer
+          aiIdentity={aiIdentity}
           lesson={currentLesson}
           lessonKey={lessonRuntime.lessonKey}
           hotspots={lessonRuntime.hotspots}

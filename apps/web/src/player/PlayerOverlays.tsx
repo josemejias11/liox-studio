@@ -4,6 +4,7 @@ import { CompletionBurst } from '@/components/CompletionBurst';
 import { CourseAIFab } from '@/components/CourseAIFab';
 import type { CourseFlow } from '@/lib/course-flow';
 import type { LessonSection } from '@/lib/contracts/player-course';
+import type { RevisionIdentity } from '@/lib/contracts/api';
 import type { CoursePhase } from './hooks/useCourseNavigation';
 import { NavMap } from './NavMap';
 
@@ -19,6 +20,7 @@ interface PlayerOverlaysProps {
   progressError: unknown;
   persistSession: boolean;
   allowAssistant: boolean;
+  aiIdentity?: RevisionIdentity;
   onNavigate: (index: number) => void;
   onCloseNavMap: () => void;
 }
@@ -35,6 +37,7 @@ export function PlayerOverlays({
   progressError,
   persistSession,
   allowAssistant,
+  aiIdentity,
   onNavigate,
   onCloseNavMap,
 }: PlayerOverlaysProps) {
@@ -56,7 +59,9 @@ export function PlayerOverlays({
         />
       )}
 
-      {allowAssistant && showAssistant && <CourseAIFab courseId={courseId} />}
+      {allowAssistant && aiIdentity && showAssistant && (
+        <CourseAIFab courseId={courseId} {...aiIdentity} />
+      )}
 
       {progressError && persistSession && (
         <div

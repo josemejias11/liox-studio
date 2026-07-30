@@ -8,6 +8,7 @@ import { useCourseNavigation } from './hooks/useCourseNavigation';
 import { getChapterLessons } from '@/lib/course-structure';
 import { deriveCourseFlow } from '@/lib/course-flow';
 import type { CourseSection, CourseContent } from '@/lib/contracts/player-course';
+import type { RevisionIdentity } from '@/lib/contracts/api';
 import { useCourseSession } from './hooks/useCourseSession';
 import { useWeakTopics } from './hooks/useWeakTopics';
 import { CoursePhaseScreen, getCoursePhaseSlideKey } from './CoursePhaseScreen';
@@ -45,12 +46,14 @@ export default function MotoViewer({
   preview = false,
   initialSectionKey,
   imageSizes = '100vw',
+  aiIdentity,
 }: {
   course: CourseContent;
   sections: CourseSection[];
   preview?: boolean;
   initialSectionKey?: string;
   imageSizes?: string;
+  aiIdentity?: RevisionIdentity;
 }) {
   const flow = useMemo(
     () => deriveCourseFlow(sections, course.chapters ?? []),
@@ -84,11 +87,19 @@ export default function MotoViewer({
 
   useEffect(() => {
     if (!preview || !initialSectionKey) return;
-    const target = flow.items.find((item) => item.kind === 'lesson' && item.key === initialSectionKey);
+    const target = flow.items.find(
+      (item) => item.kind === 'lesson' && item.key === initialSectionKey,
+    );
     if (!target) return;
     navigateToPreviewSection(target.index);
     dismissPreviewChapterIntro();
-  }, [dismissPreviewChapterIntro, flow.items, initialSectionKey, navigateToPreviewSection, preview]);
+  }, [
+    dismissPreviewChapterIntro,
+    flow.items,
+    initialSectionKey,
+    navigateToPreviewSection,
+    preview,
+  ]);
 
   // ── Current lesson (chapter phase only) ───────────────────────────────────
   const currentLesson =
@@ -170,8 +181,7 @@ export default function MotoViewer({
             nextDisabled: nextLocked,
             onToggleNavMap: () => setShowNavMap((v) => !v),
             moduleTitle: course.title,
-            completionHint:
-              lessonRuntime.completionHint,
+            completionHint: lessonRuntime.completionHint,
           }
         : phase.phase === 'disclaimer'
           ? {
@@ -182,14 +192,14 @@ export default function MotoViewer({
               moduleTitle: course.title,
             }
           : phase.phase === 'specifications'
-          ? {
-              sectionType: 'specification' as const,
-              onPrev: goPrev,
-              onNext: goNext,
-              onToggleNavMap: () => setShowNavMap((v) => !v),
-              moduleTitle: course.title,
-            }
-          : { onToggleNavMap: () => setShowNavMap((v) => !v), moduleTitle: course.title };
+            ? {
+                sectionType: 'specification' as const,
+                onPrev: goPrev,
+                onNext: goNext,
+                onToggleNavMap: () => setShowNavMap((v) => !v),
+                moduleTitle: course.title,
+              }
+            : { onToggleNavMap: () => setShowNavMap((v) => !v), moduleTitle: course.title };
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -207,7 +217,9 @@ export default function MotoViewer({
           <ErrorBoundary
             fallback={
               <div className="flex flex-col items-center justify-center p-8 text-center">
-                <h2 className="text-lg font-semibold text-red-600">Failed to load course content</h2>
+                <h2 className="text-lg font-semibold text-red-600">
+                  Failed to load course content
+                </h2>
                 <p className="mt-2 text-sm text-gray-600">
                   Please try refreshing the page or contact support if the issue persists.
                 </p>
@@ -238,6 +250,7 @@ export default function MotoViewer({
               dismissChapterIntro={nav.dismissChapterIntro}
               onDisclaimerCanProceedChange={setDisclaimerCanProceed}
               preview={preview}
+              aiIdentity={aiIdentity}
               imageSizes={imageSizes}
             />
           </ErrorBoundary>
@@ -255,7 +268,8 @@ export default function MotoViewer({
         showBurst={showBurst}
         progressError={progressError}
         persistSession={persistSession}
-        allowAssistant={!preview}
+        allowAssistant={Boolean(aiIdentity)}
+        aiIdentity={aiIdentity}
         onNavigate={navigateToSection}
         onCloseNavMap={() => setShowNavMap(false)}
       />

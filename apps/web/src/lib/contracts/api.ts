@@ -10,6 +10,9 @@ import { GenerateQuizRequestSchema } from '@moto-ai/contracts/quiz';
 const revisionIdField = z.string().min(1).max(100);
 const reviewTokenField = z.string().min(1).max(200);
 
+export type RevisionIdentity =
+  { revisionId: string; reviewToken?: never } | { reviewToken: string; revisionId?: never };
+
 const chatRequestBase = z.object({
   courseId: z.string().min(1).max(100),
   query: z.string().min(1).max(2000),

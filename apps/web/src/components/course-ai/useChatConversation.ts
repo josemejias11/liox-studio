@@ -12,6 +12,8 @@ export interface ChatMessage {
 
 export interface UseChatConversationOptions {
   courseId?: string;
+  revisionId?: string;
+  reviewToken?: string;
   onError?: (error: unknown) => void;
   onAssistantMessage?: (message: string) => void;
 }
@@ -40,6 +42,8 @@ const FALLBACK_ERROR =
  */
 export function useChatConversation({
   courseId,
+  revisionId,
+  reviewToken,
   onError,
   onAssistantMessage,
 }: UseChatConversationOptions = {}): UseChatConversationReturn {
@@ -56,6 +60,7 @@ export function useChatConversation({
   const send = useCallback(
     async (query: string, options: SendChatOptions = {}) => {
       if (!courseId || !query.trim()) return;
+      if (Boolean(revisionId) === Boolean(reviewToken)) return;
 
       const {
         displayUserMessage = true,
@@ -87,7 +92,9 @@ export function useChatConversation({
 
       try {
         const data = await askCourseChat(
-          { courseId, query: requestQuery },
+          revisionId
+            ? { courseId, query: requestQuery, revisionId }
+            : { courseId, query: requestQuery, reviewToken: reviewToken! },
           controller.signal,
         );
 
@@ -98,10 +105,7 @@ export function useChatConversation({
                   ? { ...message, content: data.answer, pending: false }
                   : message,
               )
-            : [
-                ...prev,
-                { id: nextMessageId(), role: 'assistant', content: data.answer },
-              ],
+            : [...prev, { id: nextMessageId(), role: 'assistant', content: data.answer }],
         );
         onAssistantMessage?.(data.answer);
         return data.answer;
@@ -115,10 +119,7 @@ export function useChatConversation({
                   ? { ...message, content: fallbackMessage, pending: false }
                   : message,
               )
-            : [
-                ...prev,
-                { id: nextMessageId(), role: 'assistant', content: fallbackMessage },
-              ],
+            : [...prev, { id: nextMessageId(), role: 'assistant', content: fallbackMessage }],
         );
         onError?.(error);
         return undefined;
@@ -129,7 +130,7 @@ export function useChatConversation({
         }
       }
     },
-    [courseId, nextMessageId, onAssistantMessage, onError],
+    [courseId, nextMessageId, onAssistantMessage, onError, reviewToken, revisionId],
   );
 
   const abort = useCallback(() => {

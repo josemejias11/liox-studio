@@ -220,3 +220,58 @@ Focused static evidence after the fixes:
 | Source scan of `/api/chat` and `/api/quiz` callers | Network bodies are built only from strict validated requests; the old course-only JSON payloads are absent. |
 | Source scan of chat/quiz route authorization | Both routes check `isCourseStudioAuthorized` on the `revisionId` branch before database source resolution; review-token branches still use `getReviewByToken`. |
 | Source scan of terminal indexing behavior | `markSourceFailed` runs for non-retryable errors and for retryable errors on the claimed job's final attempt; intermediate retryable attempts remain pending. |
+
+## Browser revision-identity propagation
+
+The second review prerequisite was to carry the already-enforced revision
+identity from its trusted browser origin through every Course AI request
+component:
+
+- Added a shared exclusive `RevisionIdentity` browser type. Chat surfaces now
+  require either a Studio `revisionId` or a review `reviewToken`; neither
+  `CourseChat` nor `CourseAIFab` accepts a course-only invocation.
+- The authenticated Studio page resolves the newest existing frozen revision
+  (revision lists are version-descending) and supplies its ID to both authoring
+  preview layouts. If the course has no frozen revision, no identity is
+  invented and the assistant remains unavailable.
+- The external review player supplies its existing URL review token. That token
+  remains the only browser credential sent by the review path and is resolved
+  server-side to its immutable revision.
+- `AuthoringPreview`, `MotoViewer`, `CoursePhaseScreen`, `LessonRenderer`, and
+  `QuizLesson` preserve the exclusive identity through assistant and
+  supplemental-quiz call sites.
+- `PlayerOverlays` renders the assistant only when an explicit revision
+  identity exists. The public course-only player receives no identity, does not
+  render the assistant, and does not fall back to mutable course-wide
+  retrieval.
+- `useChatConversation` rejects missing or ambiguous identity before invoking
+  `askCourseChat`; its network payload contains exactly the propagated
+  revision ID or review token.
+
+Additional files changed for this propagation:
+
+- `apps/web/src/app/studio/[courseId]/page.tsx`
+- `apps/web/src/components/CourseAIFab.tsx`
+- `apps/web/src/components/course-ai/CourseChat.tsx`
+- `apps/web/src/components/course-ai/useChatConversation.ts`
+- `apps/web/src/course-studio/AuthoringPreview.tsx`
+- `apps/web/src/course-studio/CourseStudioWorkspace.tsx`
+- `apps/web/src/player/CoursePhaseScreen.tsx`
+- `apps/web/src/player/LessonRenderer.tsx`
+- `apps/web/src/player/MotoViewer.tsx`
+- `apps/web/src/player/PlayerOverlays.tsx`
+- `apps/web/src/player/lesson-types/QuizLesson.tsx`
+- `apps/web/src/review/ReviewPlayer.tsx`
+
+Focused verification after browser propagation:
+
+| Command | Observed result |
+| --- | --- |
+| `npm run lint` | Exit 0 with only the same unrelated unused `CourseGraphChapter` warning; no Task 2 lint error. |
+| `npm run typecheck --workspace=@moto-ai/web` | Exit 2 only for the same downstream Task 5 missing public-catalog exports and resulting implicit `record` type; no browser propagation diagnostic. |
+| `npx prettier --check <browser propagation files>` | Exit 0; all matched files use Prettier style. |
+| `git diff --check` | Exit 0. |
+| Browser call-site scan | Studio authoring preview originates a revision ID, external review originates its review token, and the public course page supplies neither. Assistant rendering requires the propagated identity. |
+
+Runtime browser proof remains blocked by the same unavailable local PostgreSQL
+prerequisite. No authenticated preview or review request is claimed as executed.
