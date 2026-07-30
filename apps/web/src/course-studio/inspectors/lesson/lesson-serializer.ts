@@ -2,8 +2,8 @@ import type { LessonInput } from '@moto-ai/contracts/course-studio';
 import { imagePayload, mergeImage, mergeRow, numericValue, type LessonDraft } from '@/lib/contracts/lesson-studio';
 import { jsonObject } from '@/lib/contracts/course-studio';
 
-function editedText(value: { text: string; original?: unknown; touched: boolean }): unknown {
-  return value.touched ? value.text : value.original;
+function editedText(value: { text: string; original?: unknown; serialized?: unknown; touched: boolean }): unknown {
+  return value.touched ? value.serialized ?? value.text : value.original;
 }
 
 function optionalNumber(value: string): number | undefined {

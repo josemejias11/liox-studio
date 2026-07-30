@@ -12,6 +12,8 @@ export interface LessonImageDraft {
 export interface TextDraft {
   text: string;
   original?: unknown;
+  /** Portable Text emitted by the constrained Studio editor after an edit. */
+  serialized?: unknown;
   touched: boolean;
 }
 
@@ -276,6 +278,18 @@ export function validateLessonDraft(draft: LessonDraft): LessonValidation {
     if (numericValue(hotspot.x) === undefined) errors[`hotspots.${index}.x`] = 'Enter a valid horizontal position.';
     if (numericValue(hotspot.y) === undefined) errors[`hotspots.${index}.y`] = 'Enter a valid vertical position.';
   });
+  const cueTargets = new Set([
+    ...draft.hotspots.map((hotspot) => hotspot.label.trim()),
+    ...draft.coveredFeatures.map((feature) => feature.label.trim()),
+  ].filter(Boolean));
+  const validateCues = (value: TextDraft, path: string) => {
+    for (const target of layerLinkTargets(value.touched ? value.serialized : value.original)) {
+      if (!cueTargets.has(target)) errors[`${path}.layerLink`] = `The learning cue “${target}” no longer points to a hotspot or covered feature.`;
+    }
+  };
+  validateCues(draft.body, 'body');
+  draft.hotspots.forEach((hotspot, index) => validateCues(hotspot.body, `hotspots.${index}.body`));
+  draft.scrollChapters.forEach((chapter, index) => validateCues(chapter.body, `scrollChapters.${index}.body`));
   draft.quizQuestions.forEach((question, index) => {
     if (!question.questionText.trim()) errors[`quizQuestions.${index}.questionText`] = 'Question text is required.';
     question.answers.forEach((answer, answerIndex) => {
@@ -298,6 +312,19 @@ export function validateLessonDraft(draft: LessonDraft): LessonValidation {
     if (!chapter.heading.trim()) errors[`scrollChapters.${index}.heading`] = 'Chapter heading is required.';
   });
   return { valid: Object.keys(errors).length === 0, errors };
+}
+
+/** Returns persisted learning-cue labels without making assumptions about other Portable Text marks. */
+export function layerLinkTargets(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((block) => {
+    const markDefs = asObject(block).markDefs;
+    if (!Array.isArray(markDefs)) return [];
+    return markDefs.flatMap((definition) => {
+      const cue = asObject(definition);
+      return cue._type === 'layerLink' && typeof cue.linkedLayer === 'string' ? [cue.linkedLayer] : [];
+    });
+  });
 }
 
 export function mergeImage(original: unknown, image: LessonImageDraft | undefined): unknown {
