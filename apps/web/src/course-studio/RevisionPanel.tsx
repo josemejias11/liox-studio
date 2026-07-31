@@ -131,10 +131,10 @@ function RevisionPanelContent({
   }
 
   async function freeze() {
-    const notes = window.prompt('Revision notes (optional)', '') ?? undefined;
+    const notes = window.prompt('Master revision notes (optional)', '') ?? undefined;
     const generation = courseGeneration.current;
     setBusy(true);
-    setMessage('Freezing immutable revision…');
+    setMessage('Freezing master revision…');
     try {
       const response = await fetch(`/api/course-studio/courses/${encodeURIComponent(courseId)}/revisions`, {
         method: 'POST',
@@ -146,7 +146,7 @@ function RevisionPanelContent({
       if (!response.ok) throw new Error(result.error || 'Revision could not be created.');
       await load();
       if (!isCurrentCourse(generation)) return;
-      setMessage('Revision frozen. Future edits will not change it.');
+      setMessage('Master revision frozen. Future authoring changes will not change it.');
     } catch (error) {
       if (!isCurrentCourse(generation)) return;
       setMessage(error instanceof Error ? error.message : 'Revision could not be created.');
@@ -179,8 +179,8 @@ function RevisionPanelContent({
   return (
     <section className="studio-glass border-x-0 border-b-0 border-t border-border p-4">
       <div className="flex items-center justify-between gap-3">
-        <div><h2 className="text-sm font-semibold">Client review</h2><p className="text-[11px] text-muted-foreground">Freeze the current course before sharing.</p></div>
-        <button className="inline-flex items-center gap-1.5 rounded-lg bg-foreground px-3 py-2 text-xs font-semibold text-background disabled:opacity-50" disabled={disabled || busy} onClick={freeze} type="button"><Snowflake className="h-3.5 w-3.5" />Freeze</button>
+        <div><h2 className="text-sm font-semibold">Master review</h2><p className="text-[11px] text-muted-foreground">Freeze the current authoring graph as a master revision before creating a review link.</p></div>
+        <button className="inline-flex items-center gap-1.5 rounded-lg bg-foreground px-3 py-2 text-xs font-semibold text-background disabled:opacity-50" disabled={disabled || busy} onClick={freeze} type="button"><Snowflake className="h-3.5 w-3.5" />Freeze master</button>
       </div>
       {loading && <p className="mt-3 text-xs text-muted-foreground" role="status">Loading review history…</p>}
       {loadError && (
@@ -196,11 +196,11 @@ function RevisionPanelContent({
       <div className="mt-3 max-h-36 space-y-2 overflow-y-auto">
         {revisions.map((revision) => (
           <div className="studio-glass-panel flex items-center gap-2 rounded-lg border border-border p-2 text-xs" key={revision.id}>
-            <div className="min-w-0 flex-1"><p className="font-semibold">Version {revision.version}</p><p className="truncate text-muted-foreground">{revision.notes || new Date(revision.createdAt).toLocaleString()}</p></div>
-            <button className="studio-glass-control rounded-md border border-border px-2 py-1 hover:border-primary hover:text-primary" disabled={busy} onClick={() => createLink(revision.id)} type="button">{revision.hasReview ? 'Replace link' : 'Share'}</button>
+            <div className="min-w-0 flex-1"><p className="font-semibold">Master revision {revision.version}</p><p className="truncate text-muted-foreground">{revision.notes || new Date(revision.createdAt).toLocaleString()}</p></div>
+            <button className="studio-glass-control rounded-md border border-border px-2 py-1 hover:border-primary hover:text-primary" disabled={busy} onClick={() => createLink(revision.id)} type="button">{revision.hasReview ? 'Replace review link' : 'Create review link'}</button>
           </div>
         ))}
-        {revisions.length === 0 && <p className="text-xs text-muted-foreground">No frozen revisions yet.</p>}
+        {revisions.length === 0 && <p className="text-xs text-muted-foreground">No frozen master revisions yet.</p>}
       </div>
       {feedback.length > 0 && (
         <div className="mt-4 border-t border-border pt-3">

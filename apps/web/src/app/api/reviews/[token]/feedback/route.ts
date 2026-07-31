@@ -22,7 +22,7 @@ export async function POST(
     );
   } catch (error) {
     if (error instanceof Error && error.message === 'REVIEW_NOT_FOUND') {
-      return jsonError('This review link is invalid or expired', 404);
+      return jsonError('This frozen master review link is invalid or expired', 404);
     }
     return unexpectedApiError('reviews/feedback', error);
   }

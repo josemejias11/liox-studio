@@ -16,7 +16,7 @@ export default async function CourseStudioHome() {
     <main className="studio-workspace bg-background min-h-screen px-6 py-10 text-foreground">
       <div className="mx-auto max-w-5xl">
         <header className="studio-glass mb-10 flex items-start justify-between gap-6 rounded-2xl p-6">
-          <div><h1 className="text-3xl font-semibold">Course Studio</h1><p className="text-muted-foreground mt-2">Create, revise, preview, and submit learning experiences for review.</p></div>
+          <div><h1 className="text-3xl font-semibold">Course Studio</h1><p className="text-muted-foreground mt-2">Create and revise learning experiences, then use the author preview or share a frozen master revision for review.</p></div>
           <BookOpen className="text-primary h-8 w-8" aria-hidden="true" />
         </header>
         <section className="studio-glass mb-8 rounded-2xl p-6">

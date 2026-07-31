@@ -69,13 +69,13 @@ export function CourseLibrary({ courses }: CourseLibraryProps) {
               </div>
               <div className="p-5">
                 <h3 className="font-semibold">{course.title}</h3>
-                <p className="text-muted-foreground mt-1 text-sm">{course.description || 'Draft course'}</p>
+                <p className="text-muted-foreground mt-1 text-sm">{course.description || 'No description yet.'}</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Link
                     className="inline-flex items-center rounded-lg border border-border px-3 py-2 text-sm font-medium hover:border-primary hover:text-primary"
                     href={`/studio/${course.id}`}
                   >
-                    Open editor
+                    Open authoring
                   </Link>
                   <button
                     aria-controls="course-review-panel"
@@ -84,7 +84,7 @@ export function CourseLibrary({ courses }: CourseLibraryProps) {
                     onClick={() => setSelectedCourse(course)}
                     type="button"
                   >
-                    Prepare for review
+                    Review master
                   </button>
                 </div>
               </div>
@@ -102,10 +102,10 @@ export function CourseLibrary({ courses }: CourseLibraryProps) {
           <div className="flex flex-col gap-3 border-b border-border p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="font-semibold" id="course-review-heading">
-                Prepare {reviewCourse.title} for review
+                Prepare {reviewCourse.title} for master review
               </h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Freeze and share a revision without changing the course itself.
+                Freeze an immutable master revision, then create a review link. Future authoring changes stay separate.
               </p>
             </div>
             <button
