@@ -7,6 +7,8 @@ export type StudioLesson = CourseGraph['chapters'][number]['lessons'][number];
 export interface LessonImageDraft {
   url: string;
   originalFilename?: string;
+  /** Original nested asset payload, retained so editor-owned URL changes do not discard metadata. */
+  original?: Record<string, unknown>;
 }
 
 export interface TextDraft {
@@ -131,14 +133,24 @@ function asObject(value: unknown): Record<string, unknown> {
 }
 
 function draftImage(value: unknown): LessonImageDraft | undefined {
-  const asset = asObject(asObject(value).asset);
+  const original = asObject(value);
+  const asset = asObject(original.asset);
   return typeof asset.url === 'string' && asset.url.length > 0
-    ? { url: asset.url, ...(typeof asset.originalFilename === 'string' ? { originalFilename: asset.originalFilename } : {}) }
+    ? {
+      url: asset.url,
+      ...(typeof asset.originalFilename === 'string' ? { originalFilename: asset.originalFilename } : {}),
+      original,
+    }
     : undefined;
 }
 
 export function imagePayload(value: LessonImageDraft | undefined): Record<string, unknown> | undefined {
-  return value ? { asset: { url: value.url, ...(value.originalFilename ? { originalFilename: value.originalFilename } : {}) } } : undefined;
+  if (!value) return undefined;
+  const original = asObject(value.original);
+  const originalAsset = asObject(original.asset);
+  const asset: Record<string, unknown> = { ...originalAsset, url: value.url };
+  if (value.originalFilename !== undefined) asset.originalFilename = value.originalFilename;
+  return { ...original, asset };
 }
 
 function textDraft(value: unknown): TextDraft {
@@ -278,10 +290,7 @@ export function validateLessonDraft(draft: LessonDraft): LessonValidation {
     if (numericValue(hotspot.x) === undefined) errors[`hotspots.${index}.x`] = 'Enter a valid horizontal position.';
     if (numericValue(hotspot.y) === undefined) errors[`hotspots.${index}.y`] = 'Enter a valid vertical position.';
   });
-  const cueTargets = new Set([
-    ...draft.hotspots.map((hotspot) => hotspot.label.trim()),
-    ...draft.coveredFeatures.map((feature) => feature.label.trim()),
-  ].filter(Boolean));
+  const cueTargets = new Set(lessonCueTargets(draft));
   const validateCues = (value: TextDraft, path: string) => {
     for (const target of layerLinkTargets(value.touched ? value.serialized : value.original)) {
       if (!cueTargets.has(target)) errors[`${path}.layerLink`] = `The learning cue “${target}” no longer points to a hotspot or covered feature.`;
@@ -312,6 +321,25 @@ export function validateLessonDraft(draft: LessonDraft): LessonValidation {
     if (!chapter.heading.trim()) errors[`scrollChapters.${index}.heading`] = 'Chapter heading is required.';
   });
   return { valid: Object.keys(errors).length === 0, errors };
+}
+
+/** Targets are intentionally limited to the targets each learner renderer can activate. */
+export function lessonCueTargets(draft: LessonDraft): string[] {
+  const hotspots = draft.hotspots.map((hotspot) => hotspot.label.trim()).filter(Boolean);
+  const coveredFeatures = draft.coveredFeatures.map((feature) => feature.label.trim()).filter(Boolean);
+  switch (draft.lessonType) {
+    case 'content':
+    case 'interaction':
+      return [...new Set([...hotspots, ...coveredFeatures])];
+    case 'stage':
+    case 'canvas':
+      return [...new Set(hotspots)];
+    case 'splitScreen':
+    case 'scrollStory':
+      return [...new Set(coveredFeatures)];
+    default:
+      return [];
+  }
 }
 
 /** Returns persisted learning-cue labels without making assumptions about other Portable Text marks. */

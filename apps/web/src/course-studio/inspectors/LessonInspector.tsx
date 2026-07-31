@@ -2,7 +2,7 @@
 
 import type { CourseGraph, LessonInput } from '@moto-ai/contracts/course-studio';
 import { useEffect, useMemo, useState } from 'react';
-import { createLessonDraft, validateLessonDraft, type LessonDraft } from '@/lib/contracts/lesson-studio';
+import { createLessonDraft, lessonCueTargets, validateLessonDraft, type LessonDraft } from '@/lib/contracts/lesson-studio';
 import { serializeLessonDraft } from './lesson/lesson-serializer';
 import { AssetField } from './lesson/AssetField';
 import { CoveredFeaturesField } from './lesson/CoveredFeaturesField';
@@ -89,7 +89,7 @@ export function LessonInspector({ course, lesson, disabled = false, onDirtyChang
 
   const type = lesson.lessonType;
   const isContentFamily = type === 'content' || type === 'interaction';
-  const cueTargets = [...draft.hotspots.map((hotspot) => hotspot.label.trim()), ...draft.coveredFeatures.map((feature) => feature.label.trim())].filter(Boolean);
+  const cueTargets = lessonCueTargets(draft);
 
   return (
     <form className="studio-glass-panel flex h-full min-h-0 flex-col overflow-y-auto overscroll-contain" noValidate onSubmit={(event) => { event.preventDefault(); void submit(); }}>
@@ -102,7 +102,7 @@ export function LessonInspector({ course, lesson, disabled = false, onDirtyChang
           <legend className="px-1 text-sm font-semibold">Screen content</legend>
           <label className="block text-xs font-medium">Headline<input className={inputClass} disabled={locked} onChange={(event) => update((current) => ({ ...current, headline: event.target.value }))} value={draft.headline} /></label>
           <FieldError message={validation.errors.headline} />
-          <RichTextField cueTargets={cueTargets} disabled={locked} label="Body" onChange={(body) => update((current) => ({ ...current, body }))} value={draft.body} />
+          <RichTextField cueTargets={cueTargets} disabled={locked} error={validation.errors['body.layerLink']} label="Body" onChange={(body) => update((current) => ({ ...current, body }))} value={draft.body} />
         </fieldset>
 
         {isContentFamily && <>

@@ -26,3 +26,17 @@
 - Learning cues now resolve in stage, canvas, content, split-screen, scroll-story, and hotspot-panel Portable Text rendering paths, where they can mark targets visited and open the corresponding learning panel.
 - Static verification: scoped ESLint passed without findings. A fresh full `npm run typecheck` remains blocked only by the existing missing database exports in the two app pages previously noted.
 - Browser verification blocker: no local `next dev`/Studio process was running when checked, so no authenticated round trip was available to exercise without starting a new environment.
+
+## Review correction — round 2
+
+- `LessonImageDraft` now retains its complete original nested image payload. Serialization overlays the editor-owned URL and filename onto that payload, preserving nested asset metadata for retained and replacement-capable media rows.
+- Rich-text editor markup now records the original child index. When one child changes, untouched siblings are emitted verbatim with their existing keys and metadata; their `layerLink` definitions also remain in the enclosing block.
+- Invalid `layerLink` validation errors are rendered beside lesson, hotspot, and scroll-story rich-text controls with accessible error associations.
+- Cue targets and validation are lesson-type-aware: content/interaction can activate hotspots and covered features; stage/canvas only hotspots; split-screen/scroll-story only covered features. Other renderers expose no cue targets.
+- A Product Lens cue now clears its learning-loop target before opening the tutor panel, preventing simultaneous focus traps.
+
+## Verification
+
+- Scoped `npx eslint` over all changed Task 3 files: passed with no findings.
+- `git diff --check`: passed.
+- Fresh `npm run typecheck`: still blocked only by the pre-existing missing `@moto-ai/database` exports in `apps/web/src/app/course/[slug]/page.tsx` and `apps/web/src/app/page.tsx`; no Task 3 diagnostics were reported.

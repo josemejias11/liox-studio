@@ -112,7 +112,10 @@ export function ContentLesson({
       visited: visitedLabels.has(label),
       onActivate: () => {
         onVisit(label);
-        if (hotspot) setActiveTutorTarget(toActivePanel(hotspot));
+        if (hotspot) {
+          setActiveLearningTarget(null);
+          setActiveTutorTarget(toActivePanel(hotspot));
+        }
       },
     };
   };
