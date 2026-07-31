@@ -18,3 +18,11 @@
 ## Limitation
 
 - Authenticated Studio/browser verification was not run in this task session because the repository-wide typecheck prerequisite is already blocked by the unrelated database export regression.
+
+## Review correction — round 1
+
+- Rich-text serialization now returns untouched Portable Text blocks verbatim. Edited blocks retain their original `_key`, style, list level and ordered/bulleted list semantics, non-`layerLink` mark definitions, and other metadata; only their edited children and learning-cue definitions are rewritten.
+- Stage hotspot serialization now includes photo galleries, supporting video, and video aspect ratio. Clearing a content, canvas, or stage hotspot video removes the payload key instead of restoring the original value.
+- Learning cues now resolve in stage, canvas, content, split-screen, scroll-story, and hotspot-panel Portable Text rendering paths, where they can mark targets visited and open the corresponding learning panel.
+- Static verification: scoped ESLint passed without findings. A fresh full `npm run typecheck` remains blocked only by the existing missing database exports in the two app pages previously noted.
+- Browser verification blocker: no local `next dev`/Studio process was running when checked, so no authenticated round trip was available to exercise without starting a new environment.

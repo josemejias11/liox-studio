@@ -1,6 +1,5 @@
 import type { LessonInput } from '@moto-ai/contracts/course-studio';
-import { imagePayload, mergeImage, mergeRow, numericValue, type LessonDraft } from '@/lib/contracts/lesson-studio';
-import { jsonObject } from '@/lib/contracts/course-studio';
+import { imagePayload, mergeRow, numericValue, type LessonDraft } from '@/lib/contracts/lesson-studio';
 
 function editedText(value: { text: string; original?: unknown; serialized?: unknown; touched: boolean }): unknown {
   return value.touched ? value.serialized ?? value.text : value.original;
@@ -30,7 +29,7 @@ export function serializeLessonDraft(draft: LessonDraft): LessonInput {
       y: optionalNumber(hotspot.y),
       required: hotspot.required || undefined,
       photos: hotspot.photos.length > 0 ? hotspot.photos.map((photo) => imagePayload(photo)) : undefined,
-      videoFile: mergeImage(jsonObject(hotspot.original).videoFile, hotspot.videoFile),
+      videoFile: imagePayload(hotspot.videoFile),
       videoAspectRatio: hotspot.videoAspectRatio || undefined,
     }, ['_key', 'label', 'topic', 'body', 'x', 'y', 'required', 'photos', 'videoFile', 'videoAspectRatio'])) : undefined);
   }
@@ -42,7 +41,18 @@ export function serializeLessonDraft(draft: LessonDraft): LessonInput {
     set('stageBackground', imagePayload(draft.stageBackground));
     set('enableCompletionAnimation', draft.enableCompletionAnimation || undefined);
     set('completionTransition', draft.completionTransition);
-    set('hotspots', draft.hotspots.length > 0 ? draft.hotspots.map((hotspot) => mergeRow(hotspot.original, { _key: hotspot.persistedKey, label: hotspot.label, topic: hotspot.topic, body: editedText(hotspot.body), x: optionalNumber(hotspot.x), y: optionalNumber(hotspot.y), required: hotspot.required || undefined }, ['_key', 'label', 'topic', 'body', 'x', 'y', 'required'])) : undefined);
+    set('hotspots', draft.hotspots.length > 0 ? draft.hotspots.map((hotspot) => mergeRow(hotspot.original, {
+      _key: hotspot.persistedKey,
+      label: hotspot.label,
+      topic: hotspot.topic,
+      body: editedText(hotspot.body),
+      x: optionalNumber(hotspot.x),
+      y: optionalNumber(hotspot.y),
+      required: hotspot.required || undefined,
+      photos: hotspot.photos.length > 0 ? hotspot.photos.map((photo) => imagePayload(photo)) : undefined,
+      videoFile: imagePayload(hotspot.videoFile),
+      videoAspectRatio: hotspot.videoAspectRatio || undefined,
+    }, ['_key', 'label', 'topic', 'body', 'x', 'y', 'required', 'photos', 'videoFile', 'videoAspectRatio'])) : undefined);
   }
   if (draft.lessonType === 'video') {
     set('videoFile', imagePayload(draft.videoFile));

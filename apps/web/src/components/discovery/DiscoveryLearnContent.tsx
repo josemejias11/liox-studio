@@ -6,12 +6,14 @@ import type { RichText, CoursePhoto } from '@/lib/contracts/player-course';
 import { supMark } from '@/lib/portable-text-components';
 import { cssAspectRatio } from '@/lib/utils';
 import { PhotoCardStack } from '../PhotoCardStack';
+import { InlineDiscoveryCueMark, InlineDiscoveryCueProvider, type InlineDiscoveryCueResolver } from '@/player/lesson-types/InlineDiscoveryCue';
 
 interface DiscoveryLearnContentProps {
   body?: RichText;
   photos: CoursePhoto[];
   videoFile?: { asset?: { url?: string } };
   videoAspectRatio?: string;
+  resolveLinkedLayer?: InlineDiscoveryCueResolver;
 }
 
 export function DiscoveryLearnContent({
@@ -19,6 +21,7 @@ export function DiscoveryLearnContent({
   photos,
   videoFile,
   videoAspectRatio,
+  resolveLinkedLayer,
 }: DiscoveryLearnContentProps) {
   const videoUrl = videoFile?.asset?.url;
 
@@ -42,7 +45,7 @@ export function DiscoveryLearnContent({
           {typeof body === 'string' ? (
             body
           ) : (
-            <PortableText value={body} components={{ marks: supMark }} />
+            <InlineDiscoveryCueProvider resolveLinkedLayer={resolveLinkedLayer ?? (() => undefined)}><PortableText value={body} components={{ marks: { layerLink: InlineDiscoveryCueMark, ...supMark } }} /></InlineDiscoveryCueProvider>
           )}
         </div>
       )}

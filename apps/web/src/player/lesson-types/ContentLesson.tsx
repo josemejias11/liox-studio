@@ -281,6 +281,7 @@ export function ContentLesson({
             setActiveTutorTarget(tutorTarget);
           }}
           returnFocusRef={activeLearningHotspotRef}
+          resolveLinkedLayer={resolveLinkedLayer}
         />
       )}
 
@@ -298,6 +299,7 @@ export function ContentLesson({
         mode="popover"
         courseId={courseId}
         preview={preview}
+        resolveLinkedLayer={resolveLinkedLayer}
       />
     </div>
   );

@@ -5,6 +5,7 @@ import { Eye, Lightbulb, X } from 'lucide-react';
 import { DiscoveryLearnContent } from '@/components/discovery/DiscoveryLearnContent';
 import type { RichText, CoursePhoto } from '@/lib/contracts/player-course';
 import { useFocusTrap } from '@/lib/useFocusTrap';
+import type { InlineDiscoveryCueResolver } from './InlineDiscoveryCue';
 
 type LearningStep = 'notice' | 'insight' | 'demonstrate';
 
@@ -17,6 +18,7 @@ export interface FeatureLearningLoopProps {
   onAskTutor: () => void;
   onClose: () => void;
   returnFocusRef: React.RefObject<HTMLButtonElement | null>;
+  resolveLinkedLayer?: InlineDiscoveryCueResolver;
 }
 
 export function FeatureLearningLoop(props: FeatureLearningLoopProps) {
@@ -40,6 +42,7 @@ function FeatureLearningLoopCard({
   onAskTutor,
   onClose,
   returnFocusRef,
+  resolveLinkedLayer,
 }: FeatureLearningLoopProps) {
   const [step, setStep] = useState<LearningStep>('notice');
   const cardRef = useRef<HTMLElement>(null);
@@ -164,6 +167,7 @@ function FeatureLearningLoopCard({
                 photos={photos}
                 videoFile={videoFile}
                 videoAspectRatio={videoAspectRatio}
+                resolveLinkedLayer={resolveLinkedLayer}
               />
               <button
                 ref={primaryActionRef}

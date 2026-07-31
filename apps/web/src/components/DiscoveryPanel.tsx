@@ -7,6 +7,7 @@ import type { RichText, CoursePhoto } from '@/lib/contracts/player-course';
 import { useChatConversation } from './course-ai/useChatConversation';
 import { DiscoveryConversation } from './discovery/DiscoveryConversation';
 import { DiscoveryLearnContent } from './discovery/DiscoveryLearnContent';
+import type { InlineDiscoveryCueResolver } from '@/player/lesson-types/InlineDiscoveryCue';
 
 interface DiscoveryPanelProps {
   open: boolean;
@@ -25,6 +26,7 @@ interface DiscoveryPanelProps {
   courseId?: string;
   /** Render only authored material; do not start or expose Course AI. */
   preview?: boolean;
+  resolveLinkedLayer?: InlineDiscoveryCueResolver;
 }
 
 export function DiscoveryPanel({
@@ -43,6 +45,7 @@ export function DiscoveryPanel({
   dimBackdrop = true,
   courseId,
   preview = false,
+  resolveLinkedLayer,
 }: DiscoveryPanelProps) {
   const hasVideo = !!videoFile?.asset?.url;
   const hasLearnContent = !!(body || (photos?.length ?? 0) > 0 || hasVideo);
@@ -310,6 +313,7 @@ export function DiscoveryPanel({
                     photos={photos}
                     videoFile={videoFile}
                     videoAspectRatio={videoAspectRatio}
+                    resolveLinkedLayer={resolveLinkedLayer}
                   />
                 ) : (
                   <p className="px-5 py-8 text-sm text-muted-foreground">
@@ -333,6 +337,7 @@ export function DiscoveryPanel({
                       photos={photos}
                       videoFile={videoFile}
                       videoAspectRatio={videoAspectRatio}
+                      resolveLinkedLayer={resolveLinkedLayer}
                     />
                   ) : undefined
                 }

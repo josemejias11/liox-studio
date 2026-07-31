@@ -10,6 +10,7 @@ import { CompletionBurst } from '@/components/CompletionBurst';
 import { PortableText } from '@portabletext/react';
 import { supMark } from '@/lib/portable-text-components';
 import type { RichText, CourseHotspot, CoursePhoto } from '@/lib/contracts/player-course';
+import { InlineDiscoveryCueMark, InlineDiscoveryCueProvider, type InlineDiscoveryCueResolver } from './InlineDiscoveryCue';
 
 interface ProductStageProps {
   headline: string;
@@ -27,6 +28,8 @@ interface ProductStageProps {
   preview?: boolean;
   imageSizes?: string;
 }
+
+const STAGE_PORTABLE_TEXT_COMPONENTS = { marks: { layerLink: InlineDiscoveryCueMark, ...supMark } };
 
 export function ProductStage({
   headline,
@@ -52,6 +55,18 @@ export function ProductStage({
     x?: number;
     y?: number;
   } | null>(null);
+  const resolveLinkedLayer: InlineDiscoveryCueResolver = (linkedLayer) => {
+    const hotspot = hotspots.find((item) => item.label === linkedLayer);
+    if (!hotspot) return undefined;
+    return {
+      label: hotspot.label,
+      visited: visited.has(hotspot.label),
+      onActivate: () => {
+        onVisit(hotspot.label);
+        setActivePanel({ label: hotspot.label, topic: hotspot.topic, body: hotspot.body, photos: hotspot.photos, videoFile: hotspot.videoFile, videoAspectRatio: hotspot.videoAspectRatio, x: hotspot.x, y: hotspot.y });
+      },
+    };
+  };
 
   // Phase 4 — completion burst
   const [showBurst, setShowBurst] = useState(false);
@@ -504,7 +519,7 @@ export function ProductStage({
         </h2>
         {body && (
           <div className="prose prose-sm max-w-none font-light leading-relaxed text-white/70 md:prose-base prose-invert">
-            {typeof body === 'string' ? <p>{body}</p> : <PortableText value={body as import('@portabletext/types').PortableTextBlock[]} components={{ marks: supMark }} />}
+            {typeof body === 'string' ? <p>{body}</p> : <InlineDiscoveryCueProvider resolveLinkedLayer={resolveLinkedLayer}><PortableText value={body as import('@portabletext/types').PortableTextBlock[]} components={STAGE_PORTABLE_TEXT_COMPONENTS} /></InlineDiscoveryCueProvider>}
           </div>
         )}
       </div>
@@ -540,6 +555,7 @@ export function ProductStage({
         mode="popover"
         courseId={courseId}
         preview={preview}
+        resolveLinkedLayer={resolveLinkedLayer}
       />
     </div>
   );
