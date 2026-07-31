@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { NormalizedCourseContent } from '@/lib/course-content';
-import { AuthoringPreview } from '@/course-studio/AuthoringPreview';
+import { PlayerViewport } from '@/learning/PlayerViewport';
 import { ReviewFeedbackPanel } from './ReviewFeedbackPanel';
 
 export function ReviewPlayer({
@@ -38,7 +38,7 @@ export function ReviewPlayer({
         </header>
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
           <div className="border-border min-w-0 rounded-2xl border bg-zinc-950 p-3 shadow-xl">
-            <AuthoringPreview
+            <PlayerViewport
               aiIdentity={{ reviewToken: token }}
               content={content}
               selectedLessonId={selectedLessonId}

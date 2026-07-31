@@ -1,16 +1,8 @@
-import { createHash } from 'node:crypto';
-import {
-  beginCourseSourceRemoval,
-  completeCourseSourceRemoval,
-  createPendingSource,
-  listCourseSources,
-  prisma,
-} from '@moto-ai/database';
-import { enqueueDocumentIndexJob } from '@moto-ai/jobs';
+import { listCourseSources } from '@moto-ai/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { isCourseStudioAuthorized } from '@/lib/course-studio-auth';
-import { deleteCourseAsset, putCourseAsset } from '@/lib/r2';
 import { jsonError, unexpectedApiError } from '@/lib/server/http';
+import { uploadAuthoringSource } from '@/server/authoring/source-commands';
 
 export const runtime = 'nodejs';
 
@@ -65,55 +57,20 @@ export async function POST(
   }
 
   const { courseId } = await params;
-  const course = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true } });
-  if (!course) return jsonError('Course not found', 404);
-
   const bytes = Buffer.from(await file.arrayBuffer());
-  const sha256 = createHash('sha256').update(bytes).digest('hex');
   const contentType = file.type || 'application/octet-stream';
-  let uploaded: Awaited<ReturnType<typeof putCourseAsset>> | undefined;
-  let source: Awaited<ReturnType<typeof createPendingSource>> | undefined;
 
   try {
-    uploaded = await putCourseAsset({
-      courseId: `${courseId}/sources`,
-      filename,
-      contentType,
-      bytes,
-    });
-    source = await createPendingSource({
+    const result = await uploadAuthoringSource({
       courseId,
-      r2Key: uploaded.r2Key,
       filename,
       contentType,
-      byteSize: bytes.byteLength,
-      sha256,
-    });
-    const job = await enqueueDocumentIndexJob(
-      {
-        sourceId: source.id,
-        courseId,
-        sha256,
-        filename: source.filename,
-        contentType: source.contentType,
-      },
       bytes,
-    );
-    return NextResponse.json({ source, job }, { status: 202 });
+    });
+    return NextResponse.json(result, { status: 202 });
   } catch (error) {
-    if (source) {
-      const sourceId = source.id;
-      await beginCourseSourceRemoval(courseId, sourceId)
-        .then(() => (uploaded ? deleteCourseAsset(uploaded.r2Key) : undefined))
-        .then(() => completeCourseSourceRemoval(courseId, sourceId))
-        .catch((cleanupError) => {
-          console.error('[course-studio/sources] pending source cleanup failed:', cleanupError);
-        });
-    }
-    if (uploaded && !source) {
-      await deleteCourseAsset(uploaded.r2Key).catch((cleanupError) => {
-        console.error('[course-studio/sources] R2 cleanup failed:', cleanupError);
-      });
+    if (error instanceof Error && error.message === 'COURSE_NOT_FOUND') {
+      return jsonError('Course not found', 404);
     }
     console.error('[course-studio/sources] upload failed:', error);
     return jsonError('Source upload failed', 500);
