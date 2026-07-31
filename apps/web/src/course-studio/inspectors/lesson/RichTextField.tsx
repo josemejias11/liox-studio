@@ -76,14 +76,32 @@ function serializeEditor(root: HTMLElement, original: unknown, originalMarkup: M
           activeMarks = [...activeMarks, markKey];
         }
         if (originalChild !== undefined) {
-          const rebuilt: Array<Record<string, unknown>> = [];
-          const previousChildren = children.splice(0);
-          node.childNodes.forEach((child) => visit(child, activeMarks));
-          rebuilt.push(...children.splice(0));
-          children.push(...previousChildren);
-          const text = rebuilt.map((child) => typeof child.text === 'string' ? child.text : '').join('');
-          const rebuiltMarks = [...new Set(rebuilt.flatMap((child) => marks(child.marks)))];
-          children.push({ ...originalChild, _type: originalChild._type ?? 'span', _key: originalChild._key ?? key('span'), text, marks: rebuiltMarks });
+          const segments: Array<{ text: string; marks: string[] }> = [];
+          const collect = (current: Node, inherited: Mark[]) => {
+            if (current.nodeType === Node.TEXT_NODE) {
+              if (current.textContent) segments.push({ text: current.textContent, marks: [...new Set(inherited)] });
+              return;
+            }
+            if (!(current instanceof HTMLElement)) return;
+            let next = inherited;
+            const currentTag = current.tagName.toLowerCase();
+            if (currentTag === 'strong' || currentTag === 'b') next = [...next, 'strong'];
+            if (currentTag === 'em' || currentTag === 'i') next = [...next, 'em'];
+            if (currentTag === 'sup') next = [...next, 'sup'];
+            if (currentTag === 'a' && current.dataset.layerLink) {
+              const target = current.dataset.layerLink;
+              const markKey = current.dataset.studioMarkKey || markKeys.get(target) || key('cue');
+              markKeys.set(target, markKey);
+              if (!markDefs.some((definition) => definition._key === markKey)) markDefs.push({ _key: markKey, _type: 'layerLink', linkedLayer: target });
+              next = [...next, markKey];
+            }
+            current.childNodes.forEach((child) => collect(child, next));
+          };
+          collect(node, activeMarks);
+          const rebuilt = segments.length ? segments : [{ text: '', marks: [] }];
+          rebuilt.forEach((segment, index) => children.push(index === 0
+            ? { ...originalChild, _type: originalChild._type ?? 'span', _key: originalChild._key ?? key('span'), text: segment.text, marks: segment.marks }
+            : { _type: 'span', _key: key('span'), text: segment.text, marks: segment.marks }));
           return;
         }
         node.childNodes.forEach((child) => visit(child, activeMarks));
