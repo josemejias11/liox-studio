@@ -1,9 +1,13 @@
 'use client';
 
+import type { CourseGenerationSummary } from '@moto-ai/contracts/course-generation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { BookOpen, X } from 'lucide-react';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { BookOpen, Sparkles, X } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { CreateWithAiDialog, type GenerationSourceRevision } from './CreateWithAiDialog';
+import { GenerationStatusPanel } from './GenerationStatusPanel';
 import { RevisionPanel } from './RevisionPanel';
 
 export interface CourseLibraryItem {
@@ -11,10 +15,19 @@ export interface CourseLibraryItem {
   title: string;
   description: string | null;
   cover: unknown;
+  generatedBy: {
+    id: string;
+    sourceRevisionId: string;
+    sourceRevisionVersion: number;
+    modelIdentifier: string | null;
+    createdAt: string;
+  } | null;
 }
 
 interface CourseLibraryProps {
   courses: CourseLibraryItem[];
+  generations: CourseGenerationSummary[];
+  sourceRevisions: GenerationSourceRevision[];
 }
 
 function courseLibraryImageUrl(cover: unknown): string | undefined {
@@ -32,13 +45,68 @@ function courseLibraryImageUrl(cover: unknown): string | undefined {
   return undefined;
 }
 
-export function CourseLibrary({ courses }: CourseLibraryProps) {
+export function CourseLibrary({
+  courses,
+  generations: initialGenerations,
+  sourceRevisions,
+}: CourseLibraryProps) {
+  const router = useRouter();
   const [selectedCourse, setSelectedCourse] = useState<CourseLibraryItem | null>(null);
+  const [generations, setGenerations] = useState(initialGenerations);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [retryFrom, setRetryFrom] = useState<CourseGenerationSummary | undefined>();
   const firstImageIndex = courses.findIndex((course) => courseLibraryImageUrl(course.cover));
-  const reviewCourse = selectedCourse ? courses.find((course) => course.id === selectedCourse.id) ?? null : null;
+  const reviewCourse = selectedCourse
+    ? (courses.find((course) => course.id === selectedCourse.id) ?? null)
+    : null;
+  const refreshGenerations = useCallback(
+    (next: CourseGenerationSummary[]) => {
+      setGenerations((current) => {
+        const completed = next.some(
+          (generation) =>
+            generation.status === 'succeeded' &&
+            !current.some((old) => old.id === generation.id && old.status === 'succeeded'),
+        );
+        if (completed) router.refresh();
+        return next;
+      });
+    },
+    [router],
+  );
 
   return (
     <div className="space-y-4">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-muted-foreground text-sm">
+          AI drafts use only the source files captured by a frozen revision.
+        </p>
+        <button
+          className="border-primary text-primary hover:bg-primary/5 inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold disabled:opacity-50"
+          disabled={sourceRevisions.length === 0}
+          onClick={() => {
+            setRetryFrom(undefined);
+            setDialogOpen(true);
+          }}
+          type="button"
+        >
+          <Sparkles className="h-4 w-4" />
+          Create with AI
+        </button>
+      </div>
+      {sourceRevisions.length === 0 && (
+        <p className="border-border text-muted-foreground mb-6 rounded-lg border p-3 text-sm">
+          Freeze a course revision with at least one indexed source before generating a grounded
+          draft.
+        </p>
+      )}
+      <GenerationStatusPanel
+        generations={generations}
+        onRefresh={refreshGenerations}
+        onRetry={(generation) => {
+          setRetryFrom(generation);
+          setDialogOpen(true);
+        }}
+      />
       <div className="grid gap-3 sm:grid-cols-2">
         {courses.map((course, index) => {
           const imageUrl = courseLibraryImageUrl(course.cover);
@@ -69,10 +137,22 @@ export function CourseLibrary({ courses }: CourseLibraryProps) {
               </div>
               <div className="p-5">
                 <h3 className="font-semibold">{course.title}</h3>
-                <p className="text-muted-foreground mt-1 text-sm">{course.description || 'No description yet.'}</p>
+                <p className="text-muted-foreground mt-1 text-sm">
+                  {course.description || 'No description yet.'}
+                </p>
+                {course.generatedBy && (
+                  <div className="border-primary/20 bg-primary/5 text-muted-foreground mt-3 rounded-lg border p-2 text-xs">
+                    <p className="text-foreground font-semibold">
+                      AI-assisted draft · source revision {course.generatedBy.sourceRevisionVersion}
+                    </p>
+                    <p className="mt-1">
+                      Generation {course.generatedBy.id} · author review required
+                    </p>
+                  </div>
+                )}
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Link
-                    className="inline-flex items-center rounded-lg border border-border px-3 py-2 text-sm font-medium hover:border-primary hover:text-primary"
+                    className="border-border hover:border-primary hover:text-primary inline-flex items-center rounded-lg border px-3 py-2 text-sm font-medium"
                     href={`/studio/${course.id}`}
                   >
                     Open authoring
@@ -80,7 +160,7 @@ export function CourseLibrary({ courses }: CourseLibraryProps) {
                   <button
                     aria-controls="course-review-panel"
                     aria-pressed={isSelected}
-                    className="inline-flex items-center rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium"
                     onClick={() => setSelectedCourse(course)}
                     type="button"
                   >
@@ -99,17 +179,18 @@ export function CourseLibrary({ courses }: CourseLibraryProps) {
           className="studio-glass-panel overflow-hidden rounded-xl border"
           id="course-review-panel"
         >
-          <div className="flex flex-col gap-3 border-b border-border p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="border-border flex flex-col gap-3 border-b p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="font-semibold" id="course-review-heading">
                 Prepare {reviewCourse.title} for master review
               </h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Freeze an immutable master revision, then create a review link. Future authoring changes stay separate.
+              <p className="text-muted-foreground mt-1 text-sm">
+                Freeze an immutable master revision, then create a review link. Future authoring
+                changes stay separate.
               </p>
             </div>
             <button
-              className="studio-glass-control inline-flex w-fit items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium hover:border-primary hover:text-primary"
+              className="studio-glass-control border-border hover:border-primary hover:text-primary inline-flex w-fit items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium"
               onClick={() => setSelectedCourse(null)}
               type="button"
             >
@@ -125,6 +206,16 @@ export function CourseLibrary({ courses }: CourseLibraryProps) {
             initialRevisions={[]}
           />
         </section>
+      )}
+      {dialogOpen && (
+        <CreateWithAiDialog
+          key={retryFrom?.id ?? 'fresh'}
+          open
+          revisions={sourceRevisions}
+          retryFrom={retryFrom}
+          onClose={() => setDialogOpen(false)}
+          onCreated={(generation) => setGenerations((current) => [generation, ...current])}
+        />
       )}
     </div>
   );

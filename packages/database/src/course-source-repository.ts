@@ -22,7 +22,7 @@ type SourceRecord = {
   contentType: string;
   byteSize: number;
   sha256: string;
-  indexStatus: 'PENDING' | 'INDEXED' | 'FAILED';
+  indexStatus: 'PENDING' | 'INDEXED' | 'FAILED' | 'DELETING';
   chunksStored: number | null;
   indexError: string | null;
   createdAt: Date;
@@ -33,16 +33,22 @@ function toSourceIndexStatus(status: SourceRecord['indexStatus']): CourseSourceI
   return status.toLowerCase() as CourseSourceIndexStatus;
 }
 
-function toCourseSourceFile(source: SourceRecord): CourseSourceFile {
+function toCourseSourceFile(
+  source: SourceRecord,
+  ownership: CourseSourceFile['ownership'] = 'owned',
+  courseId = source.courseId,
+): CourseSourceFile {
   return {
     ...source,
+    courseId,
     indexStatus: toSourceIndexStatus(source.indexStatus),
+    ownership,
     createdAt: source.createdAt.toISOString(),
     updatedAt: source.updatedAt.toISOString(),
   };
 }
 
-async function requireCourseSource(courseId: string, sourceId: string): Promise<SourceRecord> {
+async function requireOwnedCourseSource(courseId: string, sourceId: string): Promise<SourceRecord> {
   const source = await prisma.courseSourceFile.findFirst({
     where: { id: sourceId, courseId },
   });
@@ -50,7 +56,9 @@ async function requireCourseSource(courseId: string, sourceId: string): Promise<
   return source;
 }
 
-export async function createPendingSource(input: CreatePendingSourceInput): Promise<CourseSourceFile> {
+export async function createPendingSource(
+  input: CreatePendingSourceInput,
+): Promise<CourseSourceFile> {
   const source = await prisma.courseSourceFile.create({
     data: {
       courseId: input.courseId,
@@ -64,8 +72,11 @@ export async function createPendingSource(input: CreatePendingSourceInput): Prom
   return toCourseSourceFile(source);
 }
 
-export async function getCourseSource(courseId: string, sourceId: string): Promise<CourseSourceFile> {
-  return toCourseSourceFile(await requireCourseSource(courseId, sourceId));
+export async function getCourseSource(
+  courseId: string,
+  sourceId: string,
+): Promise<CourseSourceFile> {
+  return toCourseSourceFile(await requireOwnedCourseSource(courseId, sourceId));
 }
 
 export async function markSourceIndexed(
@@ -73,7 +84,8 @@ export async function markSourceIndexed(
   sourceId: string,
   chunksStored: number,
 ): Promise<CourseSourceFile> {
-  await requireCourseSource(courseId, sourceId);
+  const existing = await requireOwnedCourseSource(courseId, sourceId);
+  if (existing.indexStatus === 'DELETING') throw new Error('COURSE_SOURCE_REMOVAL_IN_PROGRESS');
   const source = await prisma.courseSourceFile.update({
     where: { id: sourceId },
     data: { indexStatus: 'INDEXED', chunksStored, indexError: null },
@@ -86,7 +98,8 @@ export async function markSourceFailed(
   sourceId: string,
   indexError: string,
 ): Promise<CourseSourceFile> {
-  await requireCourseSource(courseId, sourceId);
+  const existing = await requireOwnedCourseSource(courseId, sourceId);
+  if (existing.indexStatus === 'DELETING') throw new Error('COURSE_SOURCE_REMOVAL_IN_PROGRESS');
   const source = await prisma.courseSourceFile.update({
     where: { id: sourceId },
     data: { indexStatus: 'FAILED', chunksStored: null, indexError },
@@ -95,11 +108,76 @@ export async function markSourceFailed(
 }
 
 export async function listCourseSources(courseId: string): Promise<CourseSourceFile[]> {
-  const sources = await prisma.courseSourceFile.findMany({
-    where: { courseId },
-    orderBy: { createdAt: 'desc' },
+  const [ownedSources, inheritedBindings] = await Promise.all([
+    prisma.courseSourceFile.findMany({
+      where: { courseId },
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.courseSourceBinding.findMany({
+      where: { courseId },
+      orderBy: { sourceFile: { createdAt: 'desc' } },
+      include: { sourceFile: true },
+    }),
+  ]);
+  return [
+    ...ownedSources.map((source) => toCourseSourceFile(source)),
+    ...inheritedBindings.map((binding) =>
+      toCourseSourceFile(binding.sourceFile, 'inherited', binding.courseId),
+    ),
+  ];
+}
+
+export async function retryCourseSourceIndex(
+  courseId: string,
+  sourceId: string,
+): Promise<CourseSourceFile> {
+  const source = await requireOwnedCourseSource(courseId, sourceId);
+  if (source.indexStatus === 'DELETING') throw new Error('COURSE_SOURCE_REMOVAL_IN_PROGRESS');
+  if (source.indexStatus !== 'FAILED') throw new Error('COURSE_SOURCE_RETRY_NOT_ALLOWED');
+  const retried = await prisma.courseSourceFile.update({
+    where: { id: source.id },
+    data: { indexStatus: 'PENDING', chunksStored: null, indexError: null },
   });
-  return sources.map(toCourseSourceFile);
+  return toCourseSourceFile(retried);
+}
+
+// Removal is deliberately two-phase. The retained DELETING row carries the
+// R2 key and source ID needed to retry cleanup after either external store is
+// unavailable. A source in this state cannot be frozen into a new revision.
+export async function beginCourseSourceRemoval(
+  courseId: string,
+  sourceId: string,
+): Promise<CourseSourceFile> {
+  const source = await prisma.$transaction(async (tx) => {
+    const existing = await tx.courseSourceFile.findFirst({
+      where: { id: sourceId, courseId },
+      include: { revisionLinks: { select: { revisionId: true }, take: 1 } },
+    });
+    if (!existing) throw new Error('COURSE_SOURCE_NOT_FOUND');
+    if (existing.revisionLinks.length > 0) throw new Error('COURSE_SOURCE_FROZEN');
+    if (existing.indexStatus === 'DELETING') return existing;
+    return tx.courseSourceFile.update({
+      where: { id: sourceId },
+      data: { indexStatus: 'DELETING', indexError: null },
+    });
+  });
+  return toCourseSourceFile(source);
+}
+
+export async function completeCourseSourceRemoval(
+  courseId: string,
+  sourceId: string,
+): Promise<CourseSourceFile> {
+  const source = await prisma.$transaction(async (tx) => {
+    const existing = await tx.courseSourceFile.findFirst({
+      where: { id: sourceId, courseId, indexStatus: 'DELETING' },
+      include: { revisionLinks: { select: { revisionId: true }, take: 1 } },
+    });
+    if (!existing) throw new Error('COURSE_SOURCE_NOT_FOUND');
+    if (existing.revisionLinks.length > 0) throw new Error('COURSE_SOURCE_FROZEN');
+    return tx.courseSourceFile.delete({ where: { id: sourceId } });
+  });
+  return toCourseSourceFile(source);
 }
 
 export async function listRevisionSources(
@@ -124,17 +202,4 @@ export async function listFrozenRevisionSourceIds(
   revisionId: string,
 ): Promise<string[]> {
   return (await listRevisionSources(courseId, revisionId)).map((source) => source.sourceFileId);
-}
-
-export async function removeCourseSource(courseId: string, sourceId: string): Promise<CourseSourceFile> {
-  const source = await prisma.$transaction(async (tx) => {
-    const existing = await tx.courseSourceFile.findFirst({
-      where: { id: sourceId, courseId },
-      include: { revisionLinks: { select: { revisionId: true }, take: 1 } },
-    });
-    if (!existing) throw new Error('COURSE_SOURCE_NOT_FOUND');
-    if (existing.revisionLinks.length > 0) throw new Error('COURSE_SOURCE_FROZEN');
-    return tx.courseSourceFile.delete({ where: { id: sourceId } });
-  });
-  return toCourseSourceFile(source);
 }

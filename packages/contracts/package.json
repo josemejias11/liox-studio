@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "exports": {
+    ".": "./src/index.ts",
     "./course-assets": "./src/course-assets.ts",
+    "./course-generation": "./src/course-generation.ts",
     "./course-studio": "./src/course-studio.ts",
     "./jobs": "./src/jobs.ts",
     "./quiz": "./src/quiz.ts"

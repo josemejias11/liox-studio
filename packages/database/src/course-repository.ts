@@ -2,7 +2,6 @@ import { Prisma } from '@prisma/client';
 import type {
   ChapterInput,
   CourseGraph,
-  CourseGraphChapter,
   CourseLessonType,
   LessonInput,
 } from '@moto-ai/contracts/course-studio';
@@ -29,12 +28,14 @@ export interface CourseDetailsInput {
 }
 
 function slugify(value: string): string {
-  return value
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 80) || 'untitled-course';
+  return (
+    value
+      .toLowerCase()
+      .normalize('NFKD')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 80) || 'untitled-course'
+  );
 }
 
 function newId(prefix: string): string {
@@ -87,7 +88,14 @@ export const courseGraphSelect = Prisma.validator<Prisma.CourseSelect>()({
       estimatedDuration: true,
       lessons: {
         orderBy: { position: 'asc' },
-        select: { id: true, position: true, lessonType: true, headline: true, body: true, payload: true },
+        select: {
+          id: true,
+          position: true,
+          lessonType: true,
+          headline: true,
+          body: true,
+          payload: true,
+        },
       },
       quickCheck: {
         select: { id: true, title: true, instructions: true, payload: true },
@@ -102,11 +110,54 @@ export function toCourseGraph(course: AuthoringCourseRecord): CourseGraph {
   return course;
 }
 
-export async function listAuthoringCourses(): Promise<Array<Pick<CourseGraph, 'id' | 'slug' | 'title' | 'description' | 'cover'>>> {
-  return prisma.course.findMany({
-    orderBy: { updatedAt: 'desc' },
-    select: { id: true, slug: true, title: true, description: true, cover: true },
-  });
+export interface AuthoringCourseSummary extends Pick<
+  CourseGraph,
+  'id' | 'slug' | 'title' | 'description' | 'cover'
+> {
+  generatedBy: {
+    id: string;
+    sourceRevisionId: string;
+    sourceRevisionVersion: number;
+    modelIdentifier: string | null;
+    createdAt: Date;
+  } | null;
+}
+
+export async function listAuthoringCourses(): Promise<AuthoringCourseSummary[]> {
+  return prisma.course
+    .findMany({
+      orderBy: { updatedAt: 'desc' },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        description: true,
+        cover: true,
+        generatedBy: {
+          select: {
+            id: true,
+            sourceRevisionId: true,
+            modelIdentifier: true,
+            createdAt: true,
+            sourceRevision: { select: { version: true } },
+          },
+        },
+      },
+    })
+    .then((courses) =>
+      courses.map((course) => ({
+        ...course,
+        generatedBy: course.generatedBy
+          ? {
+              id: course.generatedBy.id,
+              sourceRevisionId: course.generatedBy.sourceRevisionId,
+              sourceRevisionVersion: course.generatedBy.sourceRevision.version,
+              modelIdentifier: course.generatedBy.modelIdentifier,
+              createdAt: course.generatedBy.createdAt,
+            }
+          : null,
+      })),
+    );
 }
 
 export async function getAuthoringCourse(courseId: string): Promise<CourseGraph | null> {
@@ -202,10 +253,7 @@ export async function createChapter(
   return requireGraph(courseId);
 }
 
-export async function updateChapter(
-  chapterId: string,
-  input: ChapterInput,
-): Promise<CourseGraph> {
+export async function updateChapter(chapterId: string, input: ChapterInput): Promise<CourseGraph> {
   const courseId = await courseIdForChapter(chapterId);
   await prisma.courseChapter.update({ where: { id: chapterId }, data: input });
   return requireGraph(courseId);
@@ -250,10 +298,7 @@ export async function createLesson(
   return requireGraph(courseId);
 }
 
-export async function updateLesson(
-  lessonId: string,
-  input: LessonInput,
-): Promise<CourseGraph> {
+export async function updateLesson(lessonId: string, input: LessonInput): Promise<CourseGraph> {
   const { courseId } = await lessonLocation(lessonId);
   await prisma.courseLesson.update({
     where: { id: lessonId },
@@ -291,9 +336,8 @@ export async function duplicateLesson(lessonId: string): Promise<CourseGraph> {
         lessonType: source.lessonType,
         headline: `${source.headline} copy`,
         body: source.body ?? Prisma.JsonNull,
-        payload: source.payload === null
-          ? Prisma.JsonNull
-          : source.payload as Prisma.InputJsonValue,
+        payload:
+          source.payload === null ? Prisma.JsonNull : (source.payload as Prisma.InputJsonValue),
       },
     });
   });

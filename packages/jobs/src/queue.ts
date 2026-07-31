@@ -3,12 +3,15 @@ import { randomUUID } from 'node:crypto';
 import {
   BackgroundJobKind,
   BackgroundJobStatus,
+  createCourseGeneration,
+  getCourseGeneration,
   Prisma,
   type BackgroundJob,
 } from '@moto-ai/database';
 import { prisma } from '@moto-ai/database';
 import {
   type AiOperationPayload,
+  type CourseGenerationPayload,
   type DocumentIndexPayload,
   type JobAcceptedResponse,
   type JobKind,
@@ -25,14 +28,28 @@ const RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 const databaseKind: Record<JobKind, BackgroundJobKind> = {
   document_index: BackgroundJobKind.DOCUMENT_INDEX,
   quiz_generate: BackgroundJobKind.QUIZ_GENERATE,
+  course_generate: BackgroundJobKind.AI_OPERATION,
   ai_operation: BackgroundJobKind.AI_OPERATION,
 };
 
-const publicKind: Record<BackgroundJobKind, JobKind> = {
+const publicKind: Record<BackgroundJobKind, Exclude<JobKind, 'course_generate'>> = {
   DOCUMENT_INDEX: 'document_index',
   QUIZ_GENERATE: 'quiz_generate',
   AI_OPERATION: 'ai_operation',
 };
+
+function jobKind(job: Pick<BackgroundJob, 'kind' | 'payload'>): JobKind {
+  if (
+    job.kind === BackgroundJobKind.AI_OPERATION &&
+    job.payload &&
+    typeof job.payload === 'object' &&
+    !Array.isArray(job.payload) &&
+    typeof (job.payload as { generationId?: unknown }).generationId === 'string'
+  ) {
+    return 'course_generate';
+  }
+  return publicKind[job.kind];
+}
 
 const publicStatus: Record<BackgroundJobStatus, JobStatus> = {
   QUEUED: 'queued',
@@ -130,6 +147,30 @@ export async function enqueueQuizGenerationJob(
   );
 }
 
+export interface EnqueueCourseGenerationInput extends CourseGenerationPayload {
+  sourceRevisionId: string;
+  brief: string;
+  promptTemplateVersion: string;
+  requestedSources: Array<{ sourceId: string; sha256: string }>;
+}
+
+export async function enqueueCourseGenerationJob(
+  input: EnqueueCourseGenerationInput,
+): Promise<JobAcceptedResponse> {
+  const existing = await getCourseGeneration(input.generationId);
+  if (existing) return { jobId: existing.jobId, status: 'queued' };
+  try {
+    const generation = await createCourseGeneration(input);
+    return { jobId: generation.jobId, status: 'queued' };
+  } catch (error: unknown) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      const duplicate = await getCourseGeneration(input.generationId);
+      if (duplicate) return { jobId: duplicate.jobId, status: 'queued' };
+    }
+    throw error;
+  }
+}
+
 export async function enqueueAiOperationJob(
   payload: AiOperationPayload,
 ): Promise<JobAcceptedResponse> {
@@ -146,7 +187,7 @@ export async function getJobStatus(id: string): Promise<JobStatusResponse | null
 
   return {
     id: job.id,
-    kind: publicKind[job.kind],
+    kind: jobKind(job),
     status: publicStatus[job.status],
     progress: job.progress,
     result: job.result,

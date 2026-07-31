@@ -1,12 +1,28 @@
 import { createHash } from 'node:crypto';
 import { type ClientQuiz, type ServerAiQuiz } from '@moto-ai/contracts/quiz';
+import { GeneratedCourseGraphSchema } from '@moto-ai/contracts/course-generation';
 import {
+  CourseGenerationPayloadSchema,
   DocumentIndexPayloadSchema,
   QuizGenerationPayloadSchema,
   type JobKind,
 } from '@moto-ai/contracts/jobs';
-import { getCourseSource, markSourceFailed, markSourceIndexed, prisma } from '@moto-ai/database';
-import { generateCourseQuiz, RagServiceError, uploadCourseDocument } from '@moto-ai/parser-client';
+import {
+  getCourseGeneration,
+  getCourseSource,
+  markCourseGenerationFailed,
+  markCourseGenerationRunning,
+  markSourceFailed,
+  markSourceIndexed,
+  persistGeneratedCourse,
+  prisma,
+} from '@moto-ai/database';
+import {
+  generateCourseDraft,
+  generateCourseQuiz,
+  RagServiceError,
+  uploadCourseDocument,
+} from '@moto-ai/parser-client';
 import { NonRetryableJobError, type ClaimedJob } from '@moto-ai/jobs';
 
 async function persistAndStrip(quiz: ServerAiQuiz): Promise<ClientQuiz> {
@@ -116,6 +132,60 @@ async function generateQuiz(job: ClaimedJob): Promise<ClientQuiz> {
   return persistAndStrip(quiz);
 }
 
+async function generateCourse(job: ClaimedJob): Promise<unknown> {
+  const payload = CourseGenerationPayloadSchema.safeParse(job.payload);
+  if (!payload.success) {
+    throw new NonRetryableJobError(
+      'The queued course request is invalid. Create a fresh generation request to retry.',
+    );
+  }
+  const generation = await getCourseGeneration(payload.data.generationId);
+  if (!generation) {
+    throw new NonRetryableJobError(
+      'The course generation request no longer exists. Create a fresh request to retry.',
+    );
+  }
+  if (generation.status === 'succeeded' && generation.result) return generation.result;
+
+  const sourceRevision = await prisma.courseRevision.findUnique({
+    where: { id: generation.sourceRevisionId },
+    select: { courseId: true },
+  });
+  if (!sourceRevision) {
+    throw new NonRetryableJobError(
+      'The frozen source revision no longer exists. Create a fresh request to retry.',
+    );
+  }
+  await markCourseGenerationRunning(generation.id);
+  try {
+    const response = await generateCourseDraft(
+      sourceRevision.courseId,
+      generation.requestedSources.map((source) => source.sourceId),
+      generation.brief,
+      generation.promptTemplateVersion,
+    );
+    const graph = GeneratedCourseGraphSchema.safeParse(response.graph);
+    if (!graph.success || response.promptTemplateVersion !== generation.promptTemplateVersion) {
+      throw new NonRetryableJobError(
+        'The generated course was incomplete. Create a fresh request to retry.',
+      );
+    }
+    return persistGeneratedCourse(generation.id, {
+      graph: graph.data,
+      modelIdentifier: response.modelIdentifier,
+      promptTemplateVersion: response.promptTemplateVersion,
+    });
+  } catch (error: unknown) {
+    if (!isRetryableJobError(error) || job.attempts >= job.maxAttempts) {
+      await markCourseGenerationFailed(
+        generation.id,
+        'Course generation failed. Create a fresh request when you are ready to retry.',
+      );
+    }
+    throw error;
+  }
+}
+
 export async function executeJob(job: ClaimedJob): Promise<unknown> {
   const kind: JobKind =
     job.kind === 'DOCUMENT_INDEX'
@@ -126,6 +196,7 @@ export async function executeJob(job: ClaimedJob): Promise<unknown> {
 
   if (kind === 'document_index') return indexDocument(job);
   if (kind === 'quiz_generate') return generateQuiz(job);
+  if (CourseGenerationPayloadSchema.safeParse(job.payload).success) return generateCourse(job);
   throw new NonRetryableJobError('This AI operation is not registered with the worker.');
 }
 

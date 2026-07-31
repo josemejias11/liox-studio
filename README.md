@@ -2,7 +2,8 @@
 
 moto ai is an app-owned e-learning authoring and delivery platform. Course Studio creates and previews learning experiences with the same moto tutor used by learners. PostgreSQL owns course structure, authoring state, reviews, progress, and quiz records; Cloudflare R2 owns course media.
 
-The downstream localization package used by Motorola partners is intentionally not hardcoded yet. Approved, immutable course revisions are the future adapter boundary once the agency workflow and Articulate 360 handoff requirements are confirmed.
+Course Studio authors the English learning master. Approved, immutable course revisions are the
+future boundary for downstream delivery once the partner workflow is confirmed.
 
 ## Current product boundary
 
@@ -11,10 +12,9 @@ Motorola e-learning master. Authors control course structure, learner-facing
 copy, media, interactions, ordering, preview, immutable review versions, and
 client feedback.
 
-Course Studio does not replace Motorola Insiders or HaLight, provide agency
-accounts, translate content, geolocate assets, or generate an Articulate,
-SCORM, or xAPI package. Those downstream formats remain an adapter boundary
-until Motorola’s agency workflow is confirmed.
+Course Studio does not provide agency accounts, translate content, geolocate
+assets, or generate a downstream delivery package. Those delivery formats
+remain an adapter boundary until the partner workflow is confirmed.
 
 ## Architecture
 

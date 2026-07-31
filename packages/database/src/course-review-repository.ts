@@ -80,57 +80,73 @@ export async function freezeCourseRevision(
   courseId: string,
   notes?: string,
 ): Promise<CourseRevisionSummary> {
-  const revision = await prisma.$transaction(async (tx) => {
-    const course = await tx.course.findUnique({
-      where: { id: courseId },
-      select: courseGraphSelect,
-    });
-    if (!course) throw new Error('COURSE_NOT_FOUND');
+  const revision = await prisma.$transaction(
+    async (tx) => {
+      const course = await tx.course.findUnique({
+        where: { id: courseId },
+        select: courseGraphSelect,
+      });
+      if (!course) throw new Error('COURSE_NOT_FOUND');
 
-    const sources = await tx.courseSourceFile.findMany({
-      where: { courseId },
-      orderBy: { id: 'asc' },
-      select: { id: true, sha256: true, filename: true, indexStatus: true },
-    });
-    if (sources.some((source) => source.indexStatus !== 'INDEXED')) {
-      throw new Error('COURSE_SOURCES_NOT_INDEXED');
-    }
+      const [ownedSources, inheritedBindings] = await Promise.all([
+        tx.courseSourceFile.findMany({
+          where: { courseId },
+          orderBy: { id: 'asc' },
+          select: { id: true, sha256: true, filename: true, indexStatus: true },
+        }),
+        tx.courseSourceBinding.findMany({
+          where: { courseId },
+          orderBy: { sourceFileId: 'asc' },
+          select: {
+            sourceFile: { select: { id: true, sha256: true, filename: true, indexStatus: true } },
+          },
+        }),
+      ]);
+      const sources = [
+        ...ownedSources,
+        ...inheritedBindings.map((binding) => binding.sourceFile),
+      ].sort((left, right) => left.id.localeCompare(right.id));
+      if (sources.some((source) => source.indexStatus !== 'INDEXED')) {
+        throw new Error('COURSE_SOURCES_NOT_INDEXED');
+      }
 
-    const graph = toCourseGraph(course);
-    const frozenSources = sources.map(({ id, sha256: sourceSha256, filename }) => ({
-      sourceFileId: id,
-      sha256: sourceSha256,
-      filename,
-    }));
-    const sourceHash = await sha256(stableJson({ graph, sources: frozenSources }));
-    const existing = await tx.courseRevision.findUnique({
-      where: { courseId_sourceHash: { courseId, sourceHash } },
-      include: { review: { select: { id: true } } },
-    });
-    if (existing) return existing;
+      const graph = toCourseGraph(course);
+      const frozenSources = sources.map(({ id, sha256: sourceSha256, filename }) => ({
+        sourceFileId: id,
+        sha256: sourceSha256,
+        filename,
+      }));
+      const sourceHash = await sha256(stableJson({ graph, sources: frozenSources }));
+      const existing = await tx.courseRevision.findUnique({
+        where: { courseId_sourceHash: { courseId, sourceHash } },
+        include: { review: { select: { id: true } } },
+      });
+      if (existing) return existing;
 
-    const latest = await tx.courseRevision.findFirst({
-      where: { courseId },
-      orderBy: { version: 'desc' },
-      select: { version: true },
-    });
-    return tx.courseRevision.create({
-      data: {
-        courseId,
-        sourceHash,
-        sourceTitle: course.title,
-        version: (latest?.version ?? 0) + 1,
-        status: 'IN_REVIEW',
-        snapshot: graph as unknown as Prisma.InputJsonValue,
-        notes: notes?.trim() || null,
-        submittedAt: new Date(),
-        sources: {
-          create: frozenSources,
+      const latest = await tx.courseRevision.findFirst({
+        where: { courseId },
+        orderBy: { version: 'desc' },
+        select: { version: true },
+      });
+      return tx.courseRevision.create({
+        data: {
+          courseId,
+          sourceHash,
+          sourceTitle: course.title,
+          version: (latest?.version ?? 0) + 1,
+          status: 'IN_REVIEW',
+          snapshot: graph as unknown as Prisma.InputJsonValue,
+          notes: notes?.trim() || null,
+          submittedAt: new Date(),
+          sources: {
+            create: frozenSources,
+          },
         },
-      },
-      include: { review: { select: { id: true } } },
-    });
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+        include: { review: { select: { id: true } } },
+      });
+    },
+    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+  );
   return summary(revision);
 }
 
@@ -205,9 +221,7 @@ export async function createReviewFeedback(
   });
 }
 
-export async function listCourseReviewFeedback(
-  courseId: string,
-): Promise<CourseFeedbackSummary[]> {
+export async function listCourseReviewFeedback(courseId: string): Promise<CourseFeedbackSummary[]> {
   const feedback = await prisma.courseReviewFeedback.findMany({
     where: { review: { revision: { courseId } } },
     orderBy: { createdAt: 'desc' },

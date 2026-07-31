@@ -13,7 +13,7 @@ export const COURSE_LESSON_TYPES = [
 
 export type CourseLessonType = (typeof COURSE_LESSON_TYPES)[number];
 
-export const COURSE_SOURCE_INDEX_STATUSES = ['pending', 'indexed', 'failed'] as const;
+export const COURSE_SOURCE_INDEX_STATUSES = ['pending', 'indexed', 'failed', 'deleting'] as const;
 
 export type CourseSourceIndexStatus = (typeof COURSE_SOURCE_INDEX_STATUSES)[number];
 
@@ -28,6 +28,7 @@ export interface CourseSourceFile {
   indexStatus: CourseSourceIndexStatus;
   chunksStored: number | null;
   indexError: string | null;
+  ownership: 'owned' | 'inherited';
   createdAt: string;
   updatedAt: string;
 }

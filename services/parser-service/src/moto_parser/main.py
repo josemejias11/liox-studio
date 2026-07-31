@@ -11,6 +11,8 @@ from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadF
 from .contracts import (
     ChatRequest,
     ChatResponse,
+    CourseGenerationRequest,
+    CourseGenerationResponse,
     DeleteDocumentRequest,
     QuizRequest,
     QuizResponse,
@@ -26,6 +28,7 @@ from .documents import (
     remove_course_document,
     store_course_document,
 )
+from .generation import generate_course
 from .rag import answer_question, generate_quiz, lifespan, runtime
 from .settings import CHROMA_DIR, EMBEDDING_MODEL, LLM_MODEL, OLLAMA_BASE_URL
 
@@ -133,6 +136,33 @@ def generate_quiz_route(request: QuizRequest) -> QuizResponse:
         logger.exception("Error during quiz generation for course %s", request.course_id)
         raise HTTPException(
             status_code=500, detail="Internal server error generating quiz."
+        ) from error
+
+
+@app.post(
+    "/api/generate-course",
+    response_model=CourseGenerationResponse,
+    dependencies=[Depends(require_internal_token)],
+    tags=["generation"],
+)
+def generate_course_route(request: CourseGenerationRequest) -> CourseGenerationResponse:
+    try:
+        return generate_course(
+            request.course_id,
+            request.source_ids,
+            request.brief,
+            request.prompt_template_version,
+        )
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
+    except Exception as error:
+        logger.exception("Error generating course for source course %s", request.course_id)
+        raise HTTPException(
+            status_code=500, detail="Internal server error generating course."
         ) from error
 
 

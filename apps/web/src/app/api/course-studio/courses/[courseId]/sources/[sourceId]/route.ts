@@ -1,4 +1,4 @@
-import { removeCourseSource } from '@moto-ai/database';
+import { beginCourseSourceRemoval, completeCourseSourceRemoval } from '@moto-ai/database';
 import { deleteCourseDocument, RagServiceError } from '@moto-ai/parser-client';
 import { NextRequest, NextResponse } from 'next/server';
 import { isCourseStudioAuthorized } from '@/lib/course-studio-auth';
@@ -15,7 +15,7 @@ export async function DELETE(
 
   const { courseId, sourceId } = await params;
   try {
-    const source = await removeCourseSource(courseId, sourceId);
+    const source = await beginCourseSourceRemoval(courseId, sourceId);
     const cleanup = await Promise.allSettled([
       deleteCourseAsset(source.r2Key),
       deleteCourseDocument(courseId, sourceId),
@@ -27,9 +27,9 @@ export async function DELETE(
       for (const result of rejected) {
         console.error('[course-studio/sources] source cleanup failed:', result.reason);
       }
-      return jsonError('The source record was removed, but stored data cleanup failed', 502);
+      return jsonError('Stored source cleanup is incomplete. Retry removal to finish it.', 502);
     }
-    return NextResponse.json({ source });
+    return NextResponse.json({ source: await completeCourseSourceRemoval(courseId, sourceId) });
   } catch (error) {
     if (error instanceof Error && error.message === 'COURSE_SOURCE_NOT_FOUND') {
       return jsonError('Source not found', 404);

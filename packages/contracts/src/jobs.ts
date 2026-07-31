@@ -1,6 +1,11 @@
 import { z } from 'zod';
 
-export const JobKindSchema = z.enum(['document_index', 'quiz_generate', 'ai_operation']);
+export const JobKindSchema = z.enum([
+  'document_index',
+  'quiz_generate',
+  'course_generate',
+  'ai_operation',
+]);
 export type JobKind = z.infer<typeof JobKindSchema>;
 
 export const JobStatusSchema = z.enum(['queued', 'running', 'succeeded', 'failed']);
@@ -28,6 +33,11 @@ export const QuizGenerationPayloadSchema = z.object({
   weakTopics: z.array(z.string().min(1).max(200)).max(20),
 });
 export type QuizGenerationPayload = z.infer<typeof QuizGenerationPayloadSchema>;
+
+export const CourseGenerationPayloadSchema = z.object({
+  generationId: z.string().min(1).max(100),
+});
+export type CourseGenerationPayload = z.infer<typeof CourseGenerationPayloadSchema>;
 
 export const AiOperationPayloadSchema = z.object({
   operation: z.string().min(1).max(100),

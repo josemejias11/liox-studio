@@ -71,7 +71,10 @@ export type {
   CourseRevisionSummary,
 } from './course-review-repository';
 export type { CourseDetailsInput } from './course-repository';
+export type { AuthoringCourseSummary } from './course-repository';
 export {
+  beginCourseSourceRemoval,
+  completeCourseSourceRemoval,
   createPendingSource,
   getCourseSource,
   listCourseSources,
@@ -79,7 +82,7 @@ export {
   listRevisionSources,
   markSourceFailed,
   markSourceIndexed,
-  removeCourseSource,
+  retryCourseSourceIndex,
 } from './course-source-repository';
 export type { CreatePendingSourceInput } from './course-source-repository';
 export {
@@ -88,6 +91,7 @@ export {
   markCourseGenerationFailed,
   markCourseGenerationRunning,
   markCourseGenerationSucceeded,
+  persistGeneratedCourse,
 } from './course-generation-repository';
 export type {
   CourseGenerationRecord,

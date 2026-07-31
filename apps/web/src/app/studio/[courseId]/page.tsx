@@ -1,4 +1,9 @@
-import { getAuthoringCourse, listCourseTrash, listCourseRevisions } from '@moto-ai/database';
+import {
+  getAuthoringCourse,
+  listCourseSources,
+  listCourseTrash,
+  listCourseRevisions,
+} from '@moto-ai/database';
 import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { COURSE_STUDIO_COOKIE, courseStudioToken } from '@/lib/course-studio-auth';
@@ -13,8 +18,9 @@ export default async function CourseWorkspace({
   const token = (await cookies()).get(COURSE_STUDIO_COOKIE)?.value;
   if (!expected || token !== expected) redirect('/studio/login');
   const courseId = (await params).courseId;
-  const [course, trash, revisions] = await Promise.all([
+  const [course, sources, trash, revisions] = await Promise.all([
     getAuthoringCourse(courseId),
+    listCourseSources(courseId),
     listCourseTrash(courseId),
     listCourseRevisions(courseId),
   ]);
@@ -23,6 +29,7 @@ export default async function CourseWorkspace({
     <CourseStudioWorkspace
       initialCourse={course}
       initialRevisionId={revisions[0]?.id}
+      initialSources={sources}
       initialTrash={trash.map((item) => ({ ...item, deletedAt: item.deletedAt.toISOString() }))}
     />
   );

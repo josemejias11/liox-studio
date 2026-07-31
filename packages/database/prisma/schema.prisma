@@ -30,6 +30,7 @@ enum CourseSourceIndexStatus {
   PENDING
   INDEXED
   FAILED
+  DELETING
 }
 
 enum CourseGenerationStatus {
@@ -40,8 +41,8 @@ enum CourseGenerationStatus {
 }
 
 model Course {
-  id                 String              @id
-  slug               String              @unique
+  id                 String                @id
+  slug               String                @unique
   title              String
   description        String?
   learningObjectives Json?
@@ -53,9 +54,10 @@ model Course {
   trashItems         CourseLessonTrash[]
   revisions          CourseRevision[]
   sourceFiles        CourseSourceFile[]
-  generatedBy        CourseGeneration?   @relation("GeneratedCourse")
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  sourceBindings     CourseSourceBinding[]
+  generatedBy        CourseGeneration?     @relation("GeneratedCourse")
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
 }
 
 model CourseChapter {
@@ -142,23 +144,37 @@ model CourseAsset {
 // R2 owns source bytes. This table is the course-scoped inventory and indexing
 // lifecycle for those bytes; revisions copy the immutable file identity they use.
 model CourseSourceFile {
-  id            String                  @id @default(cuid())
-  courseId      String
-  r2Key         String                  @unique
-  filename      String
-  contentType   String
-  byteSize      Int
-  sha256        String
-  indexStatus   CourseSourceIndexStatus @default(PENDING)
-  chunksStored  Int?
-  indexError    String?
-  createdAt     DateTime                @default(now())
-  updatedAt     DateTime                @updatedAt
-  course        Course                  @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  revisionLinks CourseRevisionSource[]
+  id             String                  @id @default(cuid())
+  courseId       String
+  r2Key          String                  @unique
+  filename       String
+  contentType    String
+  byteSize       Int
+  sha256         String
+  indexStatus    CourseSourceIndexStatus @default(PENDING)
+  chunksStored   Int?
+  indexError     String?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  course         Course                  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  revisionLinks  CourseRevisionSource[]
+  courseBindings CourseSourceBinding[]
 
   @@index([courseId, indexStatus])
   @@index([courseId, createdAt])
+}
+
+// A course can inherit an immutable source identity without copying the R2
+// object. Generated drafts use this binding to retain the exact frozen source
+// set used to create them while the source file remains owned by its origin.
+model CourseSourceBinding {
+  courseId     String
+  sourceFileId String
+  course       Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  sourceFile   CourseSourceFile @relation(fields: [sourceFileId], references: [id], onDelete: Restrict)
+
+  @@id([courseId, sourceFileId])
+  @@index([sourceFileId])
 }
 
 // A revision is an immutable learner-ready snapshot used for client review and

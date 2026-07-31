@@ -92,6 +92,12 @@ const ParserDeleteResponseSchema = z.object({
   source_id: z.string(),
 });
 
+const ParserCourseGenerationResponseSchema = z.object({
+  graph: z.unknown(),
+  model_identifier: z.string().min(1),
+  prompt_template_version: z.string().min(1),
+});
+
 // ── Deep Interface ────────────────────────────────────────────────────────────
 
 export interface RagChatResponse {
@@ -119,6 +125,12 @@ export interface RagUploadResponse {
 export interface RagDeleteResponse {
   status: string;
   sourceId: string;
+}
+
+export interface RagCourseGenerationResponse {
+  graph: unknown;
+  modelIdentifier: string;
+  promptTemplateVersion: string;
 }
 
 export async function askCourseQuestion(
@@ -173,6 +185,40 @@ export async function generateCourseQuiz(
       options: q.options,
       correctAnswerIndex: q.correct_answer_index,
     })),
+  };
+}
+
+export async function generateCourseDraft(
+  courseId: string,
+  sourceIds: string[],
+  brief: string,
+  promptTemplateVersion: string,
+): Promise<RagCourseGenerationResponse> {
+  const userSafe = 'Course generation is temporarily unavailable. Please try again in a moment.';
+  const raw = await parserRequest(
+    'POST',
+    '/api/generate-course',
+    {
+      json: {
+        course_id: courseId,
+        source_ids: sourceIds,
+        brief,
+        prompt_template_version: promptTemplateVersion,
+      },
+      timeoutMs: 180_000,
+    },
+    'api/generate-course',
+    userSafe,
+  );
+  const parsed = ParserCourseGenerationResponseSchema.safeParse(raw);
+  if (!parsed.success) {
+    console.error('[api/generate-course] parser response failed validation:', parsed.error.issues);
+    throw new RagServiceError(userSafe);
+  }
+  return {
+    graph: parsed.data.graph,
+    modelIdentifier: parsed.data.model_identifier,
+    promptTemplateVersion: parsed.data.prompt_template_version,
   };
 }
 

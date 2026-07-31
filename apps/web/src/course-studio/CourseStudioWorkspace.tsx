@@ -4,6 +4,7 @@ import type {
   ChapterInput,
   CourseGraph,
   CourseLessonType,
+  CourseSourceFile,
   LessonInput,
 } from '@moto-ai/contracts/course-studio';
 import {
@@ -22,6 +23,7 @@ import { AuthoringPreview } from './AuthoringPreview';
 import { CourseOutline } from './CourseOutline';
 import { StudioInspector } from './StudioInspector';
 import { StudioToolbar } from './StudioToolbar';
+import { SourcePanel } from './SourcePanel';
 import { studioClient } from './studio-client';
 import type { StudioSelection, StudioTrashItem } from './studio-types';
 import type { CourseInspectorSaveState } from './inspectors/CourseInspector';
@@ -50,10 +52,12 @@ function getViewportToolsMaximum(): number {
 
 export function CourseStudioWorkspace({
   initialCourse,
+  initialSources,
   initialTrash,
   initialRevisionId,
 }: {
   initialCourse: CourseGraph;
+  initialSources: CourseSourceFile[];
   initialTrash: StudioTrashItem[];
   initialRevisionId?: string;
 }) {
@@ -567,6 +571,11 @@ export function CourseStudioWorkspace({
                 }
                 onSaveStateChange={setCourseSaveState}
                 selection={selection}
+                sourcePanel={
+                  selection.kind === 'course' ? (
+                    <SourcePanel courseId={course.id} initialSources={initialSources} />
+                  ) : undefined
+                }
               />
             </div>
           </div>

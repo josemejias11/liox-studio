@@ -1,9 +1,10 @@
 import { createHash } from 'node:crypto';
 import {
+  beginCourseSourceRemoval,
+  completeCourseSourceRemoval,
   createPendingSource,
   listCourseSources,
   prisma,
-  removeCourseSource,
 } from '@moto-ai/database';
 import { enqueueDocumentIndexJob } from '@moto-ai/jobs';
 import { NextRequest, NextResponse } from 'next/server';
@@ -101,11 +102,15 @@ export async function POST(
     return NextResponse.json({ source, job }, { status: 202 });
   } catch (error) {
     if (source) {
-      await removeCourseSource(courseId, source.id).catch((cleanupError) => {
-        console.error('[course-studio/sources] pending source cleanup failed:', cleanupError);
-      });
+      const sourceId = source.id;
+      await beginCourseSourceRemoval(courseId, sourceId)
+        .then(() => (uploaded ? deleteCourseAsset(uploaded.r2Key) : undefined))
+        .then(() => completeCourseSourceRemoval(courseId, sourceId))
+        .catch((cleanupError) => {
+          console.error('[course-studio/sources] pending source cleanup failed:', cleanupError);
+        });
     }
-    if (uploaded) {
+    if (uploaded && !source) {
       await deleteCourseAsset(uploaded.r2Key).catch((cleanupError) => {
         console.error('[course-studio/sources] R2 cleanup failed:', cleanupError);
       });
