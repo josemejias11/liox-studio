@@ -32,3 +32,23 @@ No automated tests were added or run, per task constraints.
 ## Concerns
 
 - Verification is static only. No authenticated save/reload or learner-preview browser session was run in this task; those flows retain their existing contracts and need end-to-end evidence separately.
+
+## Fix round 1
+
+### Implementation
+
+- Extracted course graph, saving/status, Trash, undo, and generic load/save lifecycle into `useStudioCoursePersistence`.
+- Extracted chapter, lesson, reorder, duplicate, Trash, restore, permanent-delete, empty, and course/chapter/lesson save orchestration into `useStudioCourseCommands`.
+- Kept the former command order unchanged: mutation state starts before the client call; successful graph replacement precedes selection reconciliation; structural mutations clear undo only after success; each original status and error message remains unchanged.
+- `CourseStudioWorkspace` now coordinates persistence, selection, panel layout, preview focus, and inspector rendering without direct `studioClient` calls or CRUD command definitions.
+
+### Commands and observed results
+
+| Command | Result |
+| --- | --- |
+| `rg -n 'async function (run|addChapter|addLesson|moveScreenToTrash|restoreTrashItem|permanentlyDeleteTrashItem|emptyTrash|action|saveCourse)|studioClient\\.' apps/web/src/authoring/CourseStudioWorkspace.tsx apps/web/src/authoring/useStudioCourseCommands.ts` | All persistence lifecycle and `studioClient` calls are in `useStudioCourseCommands.ts`; none remain in the workspace. |
+| `npm run typecheck` | Exit 0; TypeScript passed for job-worker, web, contracts, database, jobs, and parser-client. |
+| `npm run lint` | Exit 0; ESLint completed for `apps`, `packages`, and `scripts`. |
+| `git diff --check` | Exit 0; no whitespace errors. |
+
+No automated tests were added or run, per task constraints.

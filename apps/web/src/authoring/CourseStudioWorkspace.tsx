@@ -1,23 +1,16 @@
 'use client';
 
-import type {
-  ChapterInput,
-  CourseGraph,
-  CourseLessonType,
-  CourseSourceFile,
-  LessonInput,
-} from '@moto-ai/contracts/course-studio';
+import type { ChapterInput, CourseGraph, CourseSourceFile } from '@moto-ai/contracts/course-studio';
 import { useCallback, useMemo, useState } from 'react';
 import { toPlayerCourseContent } from '@/learning/course-player-adapter';
-import type { CourseSettingsInput } from '@/shared/contracts/course-studio';
 import { PlayerViewport } from '@/learning/PlayerViewport';
 import { CourseOutline } from './CourseOutline';
 import { StudioInspector } from './StudioInspector';
 import { StudioToolbar } from './StudioToolbar';
 import { SourcePanel } from './SourcePanel';
-import { studioClient } from './studio-client';
 import type { StudioTrashItem } from './studio-types';
 import type { CourseInspectorSaveState } from './inspectors/CourseInspector';
+import { useStudioCourseCommands, useStudioCoursePersistence } from './useStudioCourseCommands';
 import { useStudioPanelLayout } from './useStudioPanelLayout';
 import { useStudioSelection } from './useStudioSelection';
 
@@ -43,21 +36,18 @@ export function CourseStudioWorkspace({
   initialTrash: StudioTrashItem[];
   initialRevisionId?: string;
 }) {
-  const [course, setCourse] = useState(initialCourse);
-  const [saving, setSaving] = useState(false);
-  const [status, setStatus] = useState<string | null>(null);
-  const [trash, setTrash] = useState(initialTrash);
-  const [undoTrashId, setUndoTrashId] = useState<string | null>(null);
   const [focusPreview, setFocusPreview] = useState(false);
   const [courseSettingsDirty, setCourseSettingsDirty] = useState(false);
   const [courseSaveState, setCourseSaveState] =
     useState<CourseInspectorSaveState>(neutralCourseSaveState);
+  const persistence = useStudioCoursePersistence({ initialCourse, initialTrash });
+  const { course, saving, status, trash, undoTrashId } = persistence;
   const preview = useMemo(() => toPlayerCourseContent(course), [course]);
 
   const discardCourseSettings = useCallback((): void => {
     setCourseSettingsDirty(false);
-    setCourse((current) => ({ ...current }));
-  }, []);
+    persistence.refreshCourse();
+  }, [persistence]);
   const {
     confirmDiscard: confirmDiscardCourseSettings,
     reconcileSelection,
@@ -71,169 +61,24 @@ export function CourseStudioWorkspace({
     onDiscard: discardCourseSettings,
     onNonCourseSelection: () => setCourseSaveState(neutralCourseSaveState),
   });
+  const {
+    action,
+    addChapter,
+    addLesson,
+    emptyTrash,
+    permanentlyDeleteTrashItem,
+    restoreTrashItem,
+    saveChapter,
+    saveCourse,
+    saveLesson,
+  } = useStudioCourseCommands({
+    persistence,
+    confirmDiscard: confirmDiscardCourseSettings,
+    reconcileSelection,
+    setStudioSelection,
+  });
   const { desktopGridStyle, outline, tools, workspaceRef } = useStudioPanelLayout();
   const selectedLessonId = selection.kind === 'lesson' ? selection.id : undefined;
-
-  async function run(
-    label: string,
-    mutation: () => Promise<CourseGraph>,
-    options: { structural?: boolean; reconcileSelection?: boolean } = {},
-  ) {
-    setSaving(true);
-    setStatus(`Saving ${label}…`);
-    try {
-      const next = await mutation();
-      setCourse(next);
-      if (options.reconcileSelection) reconcileSelection(next);
-      if (options.structural) setUndoTrashId(null);
-      setStatus(`${label} saved`);
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : `${label} could not be saved`);
-      throw error;
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function addChapter() {
-    const title = window.prompt('Chapter title', 'New chapter');
-    if (!title?.trim()) return;
-    if (!confirmDiscardCourseSettings()) return;
-    await run(
-      'Chapter',
-      async () => {
-        const next = await studioClient.createChapter(course.id, title.trim());
-        const created = next.chapters[next.chapters.length - 1];
-        if (created) setStudioSelection({ kind: 'chapter', id: created.id });
-        return next;
-      },
-      { structural: true },
-    );
-  }
-
-  async function addLesson(chapterId: string, lessonType: CourseLessonType) {
-    if (!confirmDiscardCourseSettings()) return;
-    await run(
-      'Screen',
-      async () => {
-        const previousIds = new Set(
-          course.chapters.flatMap((chapter) => chapter.lessons.map((lesson) => lesson.id)),
-        );
-        const next = await studioClient.createLesson(course.id, chapterId, lessonType);
-        const created = next.chapters
-          .flatMap((chapter) => chapter.lessons)
-          .find((lesson) => !previousIds.has(lesson.id));
-        if (created) setStudioSelection({ kind: 'lesson', id: created.id });
-        return next;
-      },
-      { structural: true },
-    );
-  }
-
-  async function moveScreenToTrash(lessonId: string) {
-    if (!window.confirm('Move this screen to Trash? You can restore it later.')) return;
-    if (!confirmDiscardCourseSettings()) return;
-    setSaving(true);
-    setStatus('Moving screen to Trash…');
-    try {
-      const next = await studioClient.trashLesson(course.id, lessonId);
-      setCourse(next.course);
-      setTrash(next.trash);
-      reconcileSelection(next.course);
-      setUndoTrashId(next.trashItem?.id ?? null);
-      setStatus('Screen moved to Trash.');
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Screen could not be moved to Trash.');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function restoreTrashItem(trashId: string) {
-    if (!confirmDiscardCourseSettings()) return;
-    setSaving(true);
-    setStatus('Restoring screen…');
-    try {
-      const next = await studioClient.restoreTrashItem(course.id, trashId);
-      setCourse(next.course);
-      setTrash(next.trash);
-      if (next.restoredLessonId) setStudioSelection({ kind: 'lesson', id: next.restoredLessonId });
-      setUndoTrashId(null);
-      setStatus('Screen restored from Trash.');
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Screen could not be restored.');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function permanentlyDeleteTrashItem(trashId: string) {
-    setSaving(true);
-    setStatus('Permanently deleting screen…');
-    try {
-      setTrash(await studioClient.permanentlyDeleteTrashItem(course.id, trashId));
-      setUndoTrashId(null);
-      setStatus('Screen permanently deleted.');
-    } catch (error) {
-      setStatus(
-        error instanceof Error ? error.message : 'Screen could not be permanently deleted.',
-      );
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function emptyTrash() {
-    setSaving(true);
-    setStatus('Emptying Trash…');
-    try {
-      await studioClient.emptyTrash(course.id);
-      setTrash([]);
-      setUndoTrashId(null);
-      setStatus('Trash emptied.');
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Trash could not be emptied.');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function action(
-    actionName: 'up' | 'down' | 'duplicate' | 'delete',
-    kind: 'chapter' | 'lesson',
-    id: string,
-  ) {
-    if (actionName === 'delete' && kind === 'lesson') {
-      await moveScreenToTrash(id);
-      return;
-    }
-    if (
-      actionName === 'delete' &&
-      !window.confirm(
-        'Permanently delete this chapter and its active screens? Screens already in Trash are kept. This cannot be undone.',
-      )
-    )
-      return;
-    if (!confirmDiscardCourseSettings()) return;
-    await run(
-      kind === 'lesson' ? 'Screen' : 'Chapter',
-      async () => {
-        if (actionName === 'up' || actionName === 'down') {
-          return studioClient.reorder(course.id, { kind, id, direction: actionName });
-        }
-        if (kind === 'lesson' && actionName === 'duplicate') {
-          return studioClient.duplicateLesson(course.id, id);
-        }
-        const next = await studioClient.deleteChapter(course.id, id);
-        return next;
-      },
-      { structural: true, reconcileSelection: actionName === 'delete' && kind === 'chapter' },
-    );
-  }
-
-  async function saveCourse(input: CourseSettingsInput): Promise<void> {
-    await run('Course', () => studioClient.updateCourse(course.id, input));
-  }
 
   function toggleFocusPreview(): void {
     if (!focusPreview && !confirmDiscardCourseSettings()) return;
@@ -357,18 +202,10 @@ export function CourseStudioWorkspace({
                 courseSettingsFormId={courseSettingsFormId}
                 disabled={saving}
                 key={`${selection.kind}:${selection.id}`}
-                onSaveChapter={(chapterId, input) =>
-                  run('Chapter', () =>
-                    studioClient.updateChapter(course.id, chapterId, input as ChapterInput),
-                  )
-                }
+                onSaveChapter={(chapterId, input) => saveChapter(chapterId, input as ChapterInput)}
                 onDirtyChange={setCourseSettingsDirty}
                 onSaveCourse={saveCourse}
-                onSaveLesson={(lessonId, input) =>
-                  run('Screen', () =>
-                    studioClient.updateLesson(course.id, lessonId, input as LessonInput),
-                  )
-                }
+                onSaveLesson={saveLesson}
                 onSaveStateChange={setCourseSaveState}
                 selection={selection}
                 sourcePanel={
