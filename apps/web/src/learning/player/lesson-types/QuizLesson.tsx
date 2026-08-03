@@ -1,10 +1,10 @@
 'use client';
 
-import { CourseQuiz } from '@/components/course-ai/CourseQuiz';
+import { CourseQuiz } from './CourseQuiz';
 import type { AuthoredQuiz } from '@/shared/contracts/player-course';
 import type { RevisionIdentity } from '@/shared/contracts/api';
 
-import { CourseQuizPlayer } from '@/components/CourseQuizPlayer';
+import { CourseQuizPlayer } from './CourseQuizPlayer';
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 

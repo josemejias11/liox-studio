@@ -1,8 +1,8 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { CourseCover } from '@/components/CourseCover';
-import { CourseComplete } from '@/components/CourseComplete';
+import { CourseCover } from './CourseCover';
+import { CourseComplete } from './CourseComplete';
 import type { CourseStructure } from '@/learning/course-structure';
 import type { LessonSection, CourseContent } from '@/shared/contracts/player-course';
 import type { RevisionIdentity } from '@/shared/contracts/api';
@@ -12,16 +12,16 @@ import { ChapterIntro } from './ChapterIntro';
 import { LessonRenderer } from './LessonRenderer';
 
 const CourseQuizDynamic = dynamic(() =>
-  import('@/components/course-ai/CourseQuiz').then((m) => ({ default: m.CourseQuiz })),
+  import('./lesson-types/CourseQuiz').then((m) => ({ default: m.CourseQuiz })),
 );
 const QuizLessonDynamic = dynamic(() =>
   import('./lesson-types/QuizLesson').then((m) => ({ default: m.QuizLesson })),
 );
 const SpecificationPage = dynamic(() =>
-  import('@/components/SpecificationPage').then((m) => ({ default: m.SpecificationPage })),
+  import('./SpecificationPage').then((m) => ({ default: m.SpecificationPage })),
 );
 const DisclaimerPage = dynamic(() =>
-  import('@/components/DisclaimerPage').then((m) => ({ default: m.DisclaimerPage })),
+  import('./DisclaimerPage').then((m) => ({ default: m.DisclaimerPage })),
 );
 
 export interface CoursePhaseScreenProps {

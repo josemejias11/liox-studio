@@ -1,7 +1,7 @@
 'use client';
 
-import { CompletionBurst } from '@/components/CompletionBurst';
-import { CourseAIFab } from '@/components/CourseAIFab';
+import { CompletionBurst } from './CompletionBurst';
+import { CourseAIFab } from './CourseAIFab';
 import type { CourseFlow } from '@/learning/course-flow';
 import type { LessonSection } from '@/shared/contracts/player-course';
 import type { RevisionIdentity } from '@/shared/contracts/api';

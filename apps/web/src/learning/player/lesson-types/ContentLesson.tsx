@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { BookOpen, MousePointer2, PlayCircle } from 'lucide-react';
 import { PortableText } from '@portabletext/react';
 import { supMark } from '@/shared/portable-text-components';
-import { Hotspot } from '@/components/Hotspot';
+import { Hotspot } from './Hotspot';
 import { DiscoveryPanel } from '@/components/DiscoveryPanel';
 import { getSemanticWidthClass } from '@/shared/utils';
 import type { LessonSection, RichText, CourseHotspot, CoursePhoto } from '@/shared/contracts/player-course';

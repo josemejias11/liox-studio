@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Sparkles, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { RevisionIdentity } from '@/shared/contracts/api';
-import { useChatConversation } from './useChatConversation';
+import { useChatConversation } from '@/components/course-ai/useChatConversation';
 
 type CourseChatProps = { courseId: string } & RevisionIdentity;
 

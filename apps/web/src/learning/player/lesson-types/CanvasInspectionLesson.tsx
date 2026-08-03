@@ -4,7 +4,7 @@ import { useRef, useState } from 'react';
 import Image from 'next/image';
 import { Crosshair, RotateCcw, ScanSearch, ZoomIn, ZoomOut } from 'lucide-react';
 import { DiscoveryPanel } from '@/components/DiscoveryPanel';
-import { Hotspot } from '@/components/Hotspot';
+import { Hotspot } from './Hotspot';
 import { PortableText } from '@portabletext/react';
 import { clampCanvasZoom, MAX_CANVAS_ZOOM, MIN_CANVAS_ZOOM } from '@/learning/canvas';
 import { supMark } from '@/shared/portable-text-components';

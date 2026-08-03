@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X } from 'lucide-react';
 import type { RevisionIdentity } from '@/shared/contracts/api';
-import { CourseChat } from './course-ai/CourseChat';
+import { CourseChat } from './CourseChat';
 
 type CourseAIFabProps = { courseId: string } & RevisionIdentity;
 
