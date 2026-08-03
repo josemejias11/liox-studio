@@ -1,12 +1,11 @@
-import {
-  createCourseRevision,
-  listCourseRevisions,
-  listFrozenRevisionSourceIds,
-} from '@moto-ai/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
 import { jsonError, readJson, unexpectedApiError } from '@/shared/server/http';
+import {
+  createAuthoringRevision,
+  listAuthoringRevisions,
+} from '@/authoring/server/course-commands';
 
 const schema = z.object({ notes: z.string().trim().max(2000).optional() });
 
@@ -17,15 +16,7 @@ export async function GET(
   if (!(await isCourseStudioAuthorized(request))) return jsonError('Unauthorized', 401);
   try {
     const courseId = (await params).courseId;
-    const revisions = await listCourseRevisions(courseId);
-    return NextResponse.json({
-      revisions: await Promise.all(
-        revisions.map(async (revision) => ({
-          ...revision,
-          sourceIds: await listFrozenRevisionSourceIds(courseId, revision.id),
-        })),
-      ),
-    });
+    return NextResponse.json({ revisions: await listAuthoringRevisions(courseId) });
   } catch (error) {
     return unexpectedApiError('course-studio/revisions', error);
   }
@@ -40,13 +31,10 @@ export async function POST(
   if (!body.success) return body.response;
   try {
     const courseId = (await params).courseId;
-    const revision = await createCourseRevision(courseId, body.data.notes);
+    const revision = await createAuthoringRevision(courseId, body.data.notes);
     return NextResponse.json(
       {
-        revision: {
-          ...revision,
-          sourceIds: await listFrozenRevisionSourceIds(courseId, revision.id),
-        },
+        revision,
       },
       { status: 201 },
     );

@@ -1,8 +1,8 @@
-import { updateCourseDetails, type CourseDetailsInput } from '@moto-ai/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
 import { courseSettingsPatchSchema } from '@/shared/contracts/course-studio';
 import { jsonError, unexpectedApiError } from '@/shared/server/http';
+import { updateAuthoringCourse } from '@/authoring/server/course-commands';
 
 function invalidCourseSettings(issues: Array<{ path: PropertyKey[]; message: string }>): NextResponse {
   return NextResponse.json({
@@ -28,9 +28,9 @@ export async function PATCH(
   const body = courseSettingsPatchSchema.safeParse(payload);
   if (!body.success) return invalidCourseSettings(body.error.issues);
   try {
-    const course = await updateCourseDetails(
+    const course = await updateAuthoringCourse(
       (await params).courseId,
-      body.data as CourseDetailsInput,
+      body.data,
     );
     return NextResponse.json({ course });
   } catch (error) {

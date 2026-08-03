@@ -1,57 +1,16 @@
-import type { CourseGenerationSummary } from '@moto-ai/contracts/course-generation';
-import { getCourseGeneration, listAuthoringCourses, prisma } from '@moto-ai/database';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { BookOpen, Plus } from 'lucide-react';
 import { COURSE_STUDIO_COOKIE, courseStudioToken } from '@/server/auth/course-studio';
 import { CourseLibrary } from '@/authoring/CourseLibrary';
+import { loadAuthoringLibrary } from '@/authoring/server/studio-loaders';
 import { createCourseAction } from './actions';
 
 export default async function CourseStudioHome() {
   const expected = await courseStudioToken();
   const token = (await cookies()).get(COURSE_STUDIO_COOKIE)?.value;
   if (!expected || token !== expected) redirect('/studio/login');
-  const courses = await listAuthoringCourses();
-  const [revisionRecords, generationRecords] = await Promise.all([
-    prisma.courseRevision.findMany({
-      where: { sources: { some: {} } },
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        version: true,
-        course: { select: { title: true } },
-        _count: { select: { sources: true } },
-      },
-    }),
-    prisma.courseGeneration.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 20,
-      select: { id: true },
-    }),
-  ]);
-  const generationDetails = await Promise.all(
-    generationRecords.map(({ id }) => getCourseGeneration(id)),
-  );
-  const generations: CourseGenerationSummary[] = generationDetails.flatMap((generation) =>
-    generation
-      ? [
-          {
-            id: generation.id,
-            jobId: generation.jobId,
-            sourceRevisionId: generation.sourceRevisionId,
-            brief: generation.brief,
-            promptTemplateVersion: generation.promptTemplateVersion,
-            requestedSourceIds: generation.requestedSources.map((source) => source.sourceId),
-            modelIdentifier: generation.modelIdentifier,
-            status: generation.status,
-            error: generation.error,
-            createdCourseId: generation.createdCourseId,
-            createdAt: generation.createdAt.toISOString(),
-            updatedAt: generation.updatedAt.toISOString(),
-          },
-        ]
-      : [],
-  );
+  const { courses, generations, sourceRevisions } = await loadAuthoringLibrary();
 
   return (
     <main className="studio-workspace bg-background text-foreground min-h-screen px-6 py-10">
@@ -99,7 +58,7 @@ export default async function CourseStudioHome() {
                 : null,
             }))}
             generations={generations}
-            sourceRevisions={revisionRecords.map((revision) => ({
+            sourceRevisions={sourceRevisions.map((revision) => ({
               id: revision.id,
               courseTitle: revision.course.title,
               version: revision.version,

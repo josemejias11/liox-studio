@@ -1,6 +1,5 @@
-import { getReviewByToken } from '@moto-ai/database';
-import { toPlayerCourseContent } from '@/learning/course-player-adapter';
 import { ReviewPlayer } from '@/review/ReviewPlayer';
+import { loadReviewPlayer } from '@/review/server/review-loaders';
 
 export default async function CourseReviewPage({
   params,
@@ -8,10 +7,9 @@ export default async function CourseReviewPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const review = await getReviewByToken(token);
-  const content = review ? toPlayerCourseContent(review.course) : null;
+  const review = await loadReviewPlayer(token);
 
-  if (!review || !content) {
+  if (!review) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-muted/40 p-6 text-foreground">
         <div className="max-w-md rounded-2xl border border-border bg-card p-8 text-center">
@@ -22,11 +20,5 @@ export default async function CourseReviewPage({
     );
   }
 
-  const lessons = review.course.chapters.flatMap((chapter) =>
-    chapter.lessons.map((lesson) => ({
-      id: lesson.id,
-      label: `${chapter.title} — ${lesson.headline}`,
-    })),
-  );
-  return <ReviewPlayer content={content} lessons={lessons} title={review.title} token={token} version={review.version} />;
+  return <ReviewPlayer {...review} token={token} />;
 }

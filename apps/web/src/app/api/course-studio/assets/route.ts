@@ -1,7 +1,6 @@
-import { prisma } from '@moto-ai/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
-import { deleteCourseAsset, putCourseAsset } from '@/server/storage/course-assets';
+import { uploadAuthoringAsset } from '@/authoring/server/asset-commands';
 
 export const runtime = 'nodejs';
 
@@ -35,30 +34,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const course = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true } });
-  if (!course) return NextResponse.json({ error: 'Course not found' }, { status: 404 });
-
-  let uploaded: Awaited<ReturnType<typeof putCourseAsset>> | undefined;
   try {
-    uploaded = await putCourseAsset({
+    const asset = await uploadAuthoringAsset({
       courseId,
       filename: file.name,
       contentType: file.type || undefined,
       bytes: new Uint8Array(await file.arrayBuffer()),
     });
-    const asset = await prisma.courseAsset.create({
-      data: {
-        r2Key: uploaded.r2Key,
-        filename: uploaded.filename ?? file.name,
-        contentType: uploaded.contentType,
-        byteSize: file.size,
-        deliveryUrl: uploaded.url,
-      },
-    });
     return NextResponse.json({ asset }, { status: 201 });
   } catch (error) {
-    if (uploaded) {
-      await deleteCourseAsset(uploaded.r2Key).catch(() => undefined);
+    if (error instanceof Error && error.message === 'COURSE_NOT_FOUND') {
+      return NextResponse.json({ error: 'Course not found' }, { status: 404 });
     }
     console.error('[course-studio/assets] upload failed:', error);
     return NextResponse.json({ error: 'Asset upload failed' }, { status: 500 });

@@ -1,11 +1,7 @@
-import { emptyCourseTrash, listCourseTrash, type CourseTrashItem } from '@moto-ai/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
 import { jsonError, unexpectedApiError } from '@/shared/server/http';
-
-function serializeTrashItem(item: CourseTrashItem) {
-  return { ...item, deletedAt: item.deletedAt.toISOString() };
-}
+import { emptyAuthoringTrash, listAuthoringTrash } from '@/authoring/server/course-commands';
 
 export async function GET(
   request: NextRequest,
@@ -14,7 +10,7 @@ export async function GET(
   if (!(await isCourseStudioAuthorized(request))) return jsonError('Unauthorized', 401);
   try {
     return NextResponse.json({
-      trash: (await listCourseTrash((await params).courseId)).map(serializeTrashItem),
+      trash: await listAuthoringTrash((await params).courseId),
     });
   } catch (error) {
     return unexpectedApiError('course-studio/trash', error);
@@ -27,7 +23,7 @@ export async function DELETE(
 ): Promise<NextResponse> {
   if (!(await isCourseStudioAuthorized(request))) return jsonError('Unauthorized', 401);
   try {
-    await emptyCourseTrash((await params).courseId);
+    await emptyAuthoringTrash((await params).courseId);
     return NextResponse.json({ trash: [] });
   } catch (error) {
     return unexpectedApiError('course-studio/trash', error);

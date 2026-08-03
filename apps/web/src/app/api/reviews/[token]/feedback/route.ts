@@ -1,7 +1,7 @@
-import { createReviewFeedback } from '@moto-ai/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { jsonError, readJson, unexpectedApiError } from '@/shared/server/http';
+import { createCourseReviewFeedback } from '@/review/server/review-commands';
 
 const schema = z.object({
   authorName: z.string().trim().min(1).max(100),
@@ -17,7 +17,7 @@ export async function POST(
   if (!body.success) return body.response;
   try {
     return NextResponse.json(
-      { feedback: await createReviewFeedback((await params).token, body.data) },
+      { feedback: await createCourseReviewFeedback((await params).token, body.data) },
       { status: 201 },
     );
   } catch (error) {

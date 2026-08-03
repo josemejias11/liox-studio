@@ -8,21 +8,20 @@
 
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
+import { analyticsCookieValue, isAnalyticsPasswordValid } from '@/analytics/server/analytics-auth';
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const formData = await req.formData();
   const submitted = formData.get('password');
-  const expected = process.env.ANALYTICS_PASSWORD;
-
   // Fail closed: if the env var is not configured, deny access.
-  if (!expected || typeof submitted !== 'string' || submitted !== expected) {
+  if (!isAnalyticsPasswordValid(submitted)) {
     const loginUrl = new URL('/analytics/login?error=1', req.url);
     return NextResponse.redirect(loginUrl, { status: 303 });
   }
 
   // Set the auth cookie then redirect to the dashboard.
   const cookieStore = await cookies();
-  cookieStore.set('analytics_token', expected, {
+  cookieStore.set('analytics_token', analyticsCookieValue()!, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',

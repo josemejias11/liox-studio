@@ -1,8 +1,7 @@
-import { listCourseSources } from '@moto-ai/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
 import { jsonError, unexpectedApiError } from '@/shared/server/http';
-import { uploadAuthoringSource } from '@/authoring/server/source-commands';
+import { listAuthoringSources, uploadAuthoringSource } from '@/authoring/server/source-commands';
 
 export const runtime = 'nodejs';
 
@@ -22,7 +21,7 @@ export async function GET(
   if (!(await isCourseStudioAuthorized(request))) return jsonError('Unauthorized', 401);
   try {
     return NextResponse.json({
-      sources: await listCourseSources((await params).courseId),
+      sources: await listAuthoringSources((await params).courseId),
     });
   } catch (error) {
     return unexpectedApiError('course-studio/sources', error);

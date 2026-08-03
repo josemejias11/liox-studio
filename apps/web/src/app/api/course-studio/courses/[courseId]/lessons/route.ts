@@ -1,16 +1,13 @@
-import {
-  createLesson,
-  duplicateLesson,
-  getAuthoringCourse,
-  trashLesson,
-  updateLesson,
-  type CourseTrashItem,
-} from '@moto-ai/database';
-import { COURSE_LESSON_TYPES, type LessonInput } from '@moto-ai/contracts/course-studio';
+import { COURSE_LESSON_TYPES } from '@moto-ai/contracts/course-studio';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
 import { jsonError, readJson, unexpectedApiError } from '@/shared/server/http';
+import {
+  createAuthoringLesson,
+  deleteOrDuplicateAuthoringLesson,
+  updateAuthoringLesson,
+} from '@/authoring/server/course-commands';
 
 const createSchema = z.object({
   chapterId: z.string().min(1),
@@ -26,18 +23,6 @@ const actionSchema = z.object({
   lessonId: z.string().min(1),
   action: z.enum(['delete', 'duplicate']),
 });
-
-function serializeTrashItem(item: CourseTrashItem) {
-  return { ...item, deletedAt: item.deletedAt.toISOString() };
-}
-
-async function ensureLessonInCourse(courseId: string, lessonId: string): Promise<void> {
-  const course = await getAuthoringCourse(courseId);
-  const lessonExists = course?.chapters.some((chapter) =>
-    chapter.lessons.some((lesson) => lesson.id === lessonId),
-  );
-  if (!lessonExists) throw new Error('LESSON_NOT_FOUND');
-}
 
 function lessonError(error: unknown) {
   if (error instanceof Error && error.message === 'LESSON_NOT_FOUND') {
@@ -55,7 +40,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!body.success) return body.response;
   try {
     return NextResponse.json(
-      { course: await createLesson(body.data.chapterId, body.data.lessonType) },
+      { course: await createAuthoringLesson(body.data.chapterId, body.data.lessonType) },
       { status: 201 },
     );
   } catch (error) {
@@ -69,7 +54,7 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
   if (!body.success) return body.response;
   const { lessonId, ...input } = body.data;
   try {
-    return NextResponse.json({ course: await updateLesson(lessonId, input as LessonInput) });
+    return NextResponse.json({ course: await updateAuthoringLesson(lessonId, input) });
   } catch (error) {
     return lessonError(error);
   }
@@ -83,17 +68,11 @@ export async function DELETE(
   const body = await readJson(request, actionSchema);
   if (!body.success) return body.response;
   try {
-    if (body.data.action === 'duplicate') {
-      return NextResponse.json({ course: await duplicateLesson(body.data.lessonId) });
-    }
-
-    await ensureLessonInCourse((await params).courseId, body.data.lessonId);
-    const { course, trashItem, trash } = await trashLesson(body.data.lessonId);
-    return NextResponse.json({
-      course,
-      trashItem: serializeTrashItem(trashItem),
-      trash: trash.map(serializeTrashItem),
-    });
+    return NextResponse.json(await deleteOrDuplicateAuthoringLesson({
+      courseId: (await params).courseId,
+      lessonId: body.data.lessonId,
+      action: body.data.action,
+    }));
   } catch (error) {
     return lessonError(error);
   }

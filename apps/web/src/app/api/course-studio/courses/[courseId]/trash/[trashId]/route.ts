@@ -1,16 +1,10 @@
-import {
-  listCourseTrash,
-  permanentlyDeleteCourseTrashItem,
-  restoreCourseTrashItem,
-  type CourseTrashItem,
-} from '@moto-ai/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
 import { jsonError, unexpectedApiError } from '@/shared/server/http';
-
-function serializeTrashItem(item: CourseTrashItem) {
-  return { ...item, deletedAt: item.deletedAt.toISOString() };
-}
+import {
+  permanentlyDeleteAuthoringTrashItem,
+  restoreAuthoringTrashItem,
+} from '@/authoring/server/course-commands';
 
 function trashError(error: unknown) {
   if (error instanceof Error && error.message === 'TRASH_ITEM_NOT_FOUND') {
@@ -32,12 +26,7 @@ export async function POST(
   if (!(await isCourseStudioAuthorized(request))) return jsonError('Unauthorized', 401);
   try {
     const { courseId, trashId } = await params;
-    const { course, restoredLessonId, trash } = await restoreCourseTrashItem(courseId, trashId);
-    return NextResponse.json({
-      course,
-      restoredLessonId,
-      trash: trash.map(serializeTrashItem),
-    });
+    return NextResponse.json(await restoreAuthoringTrashItem(courseId, trashId));
   } catch (error) {
     return trashError(error);
   }
@@ -50,11 +39,7 @@ export async function DELETE(
   if (!(await isCourseStudioAuthorized(request))) return jsonError('Unauthorized', 401);
   try {
     const { courseId, trashId } = await params;
-    const exists = (await listCourseTrash(courseId)).some((item) => item.id === trashId);
-    if (!exists) throw new Error('TRASH_ITEM_NOT_FOUND');
-    return NextResponse.json({
-      trash: (await permanentlyDeleteCourseTrashItem(courseId, trashId)).map(serializeTrashItem),
-    });
+    return NextResponse.json({ trash: await permanentlyDeleteAuthoringTrashItem(courseId, trashId) });
   } catch (error) {
     return trashError(error);
   }

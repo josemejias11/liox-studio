@@ -1,23 +1,16 @@
 import { CourseGenerationRequestSchema } from '@moto-ai/contracts/course-generation';
-import { getCourseGeneration, prisma } from '@moto-ai/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
 import { jsonError, readJson, unexpectedApiError } from '@/shared/server/http';
 import {
   requestAuthoringGeneration,
-  toCourseGenerationSummary,
+  listAuthoringGenerations,
 } from '@/authoring/server/generation-commands';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   if (!(await isCourseStudioAuthorized(request))) return jsonError('Unauthorized', 401);
   try {
-    const records = await prisma.courseGeneration.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 20,
-      select: { id: true },
-    });
-    const generations = await Promise.all(records.map(({ id }) => getCourseGeneration(id)));
-    return NextResponse.json({ generations: generations.map(toCourseGenerationSummary) });
+    return NextResponse.json({ generations: await listAuthoringGenerations() });
   } catch (error) {
     return unexpectedApiError('course-studio/generations GET', error);
   }

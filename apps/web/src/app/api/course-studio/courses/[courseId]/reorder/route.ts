@@ -1,8 +1,8 @@
-import { reorderCourseItem } from '@moto-ai/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
 import { jsonError, readJson, unexpectedApiError } from '@/shared/server/http';
+import { reorderAuthoringCourseItem } from '@/authoring/server/course-commands';
 
 const schema = z.object({
   kind: z.enum(['chapter', 'lesson']),
@@ -19,7 +19,7 @@ export async function POST(
   if (!body.success) return body.response;
   try {
     return NextResponse.json({
-      course: await reorderCourseItem((await params).courseId, body.data),
+      course: await reorderAuthoringCourseItem((await params).courseId, body.data),
     });
   } catch (error) {
     return unexpectedApiError('course-studio/reorder', error);

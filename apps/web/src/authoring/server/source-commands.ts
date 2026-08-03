@@ -3,10 +3,15 @@ import {
   beginCourseSourceRemoval,
   completeCourseSourceRemoval,
   createPendingSource,
+  getCourseSource,
+  listCourseSources,
+  markSourceFailed,
   prisma,
+  retryCourseSourceIndex,
 } from '@moto-ai/database';
 import { enqueueDocumentIndexJob } from '@moto-ai/jobs';
-import { deleteCourseAsset, putCourseAsset } from '@/server/storage/course-assets';
+import { deleteCourseDocument, RagServiceError } from '@moto-ai/parser-client';
+import { deleteCourseAsset, getCourseAsset, putCourseAsset } from '@/server/storage/course-assets';
 
 export async function uploadAuthoringSource({
   courseId,
@@ -54,5 +59,77 @@ export async function uploadAuthoringSource({
       );
     }
     throw error;
+  }
+}
+
+export function listAuthoringSources(courseId: string) {
+  return listCourseSources(courseId);
+}
+
+export async function removeAuthoringSource(courseId: string, sourceId: string) {
+  const source = await beginCourseSourceRemoval(courseId, sourceId);
+  const cleanup = await Promise.allSettled([
+    deleteCourseAsset(source.r2Key),
+    deleteCourseDocument(courseId, sourceId),
+  ]);
+  const rejected = cleanup.filter(
+    (result): result is PromiseRejectedResult => result.status === 'rejected',
+  );
+  if (rejected.length > 0) {
+    for (const result of rejected) {
+      console.error('[course-studio/sources] source cleanup failed:', result.reason);
+    }
+    throw new SourceCleanupIncompleteError();
+  }
+  return completeCourseSourceRemoval(courseId, sourceId);
+}
+
+export class SourceCleanupIncompleteError extends Error {
+  constructor() {
+    super('SOURCE_CLEANUP_INCOMPLETE');
+    this.name = 'SourceCleanupIncompleteError';
+  }
+}
+
+export { RagServiceError };
+
+export async function retryAuthoringSourceIndex(courseId: string, sourceId: string) {
+  const source = await getCourseSource(courseId, sourceId);
+  if (source.indexStatus !== 'failed') throw new Error('COURSE_SOURCE_RETRY_NOT_ALLOWED');
+
+  const object = await getCourseAsset(source.r2Key);
+  if (!object.Body) throw new SourceAssetUnavailableError('SOURCE_ASSET_UNAVAILABLE');
+  const bytes = Buffer.from(await object.Body.transformToByteArray());
+  if (createHash('sha256').update(bytes).digest('hex') !== source.sha256) {
+    throw new SourceAssetUnavailableError('SOURCE_ASSET_MISMATCH');
+  }
+
+  const pending = await retryCourseSourceIndex(courseId, sourceId);
+  try {
+    const job = await enqueueDocumentIndexJob(
+      {
+        sourceId,
+        courseId,
+        sha256: pending.sha256,
+        filename: pending.filename,
+        contentType: pending.contentType,
+      },
+      bytes,
+    );
+    return { source: pending, job };
+  } catch (error) {
+    await markSourceFailed(
+      courseId,
+      sourceId,
+      'The retry could not be queued. Try again when the processing service is available.',
+    ).catch(() => undefined);
+    throw error;
+  }
+}
+
+export class SourceAssetUnavailableError extends Error {
+  constructor(readonly code: 'SOURCE_ASSET_UNAVAILABLE' | 'SOURCE_ASSET_MISMATCH') {
+    super(code);
+    this.name = 'SourceAssetUnavailableError';
   }
 }

@@ -59,3 +59,17 @@ export async function requestAuthoringGeneration({
 
   return { generation: toCourseGenerationSummary(await getCourseGeneration(generationId)), job };
 }
+
+export async function listAuthoringGenerations() {
+  const records = await prisma.courseGeneration.findMany({
+    orderBy: { createdAt: 'desc' },
+    take: 20,
+    select: { id: true },
+  });
+  const generations = await Promise.all(records.map(({ id }) => getCourseGeneration(id)));
+  return generations.map(toCourseGenerationSummary);
+}
+
+export async function getAuthoringGeneration(generationId: string) {
+  return toCourseGenerationSummary(await getCourseGeneration(generationId));
+}
