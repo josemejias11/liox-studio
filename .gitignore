@@ -1,72 +1,16 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
+# Local dependency installs
 **/node_modules/
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
 
-# next.js
+# Generated framework and Python cache state
 **/.next/
-/out/
+**/__pycache__/
+**/*.py[cod]
+**/*.egg-info/
+**/venv/
+**/.venv/
 
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# ai
-.claude
-.agents
-.superpowers/
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# env files (can opt-in for committing if needed)
+# Local environment files
 .env*
 !.env.example
 !.env.local.example
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
-# Prisma local SQLite database
-*.db
-*.db-journal
-*.db-shm
-*.db-wal
-
-# local temporary artifacts
-/tmp/
-
-
-# Python
-**/venv/
-/.venv
-**/__pycache__/
-**/*.egg-info/
-.ipynb_checkpoints/
-services/parser-service/chroma_db/
-*.pyc
-*.pyo
-
-# Parser service secrets
 services/parser-service/.env
-
-# IDE
-.idea/
-.vscode/
-
-# OS
-.playwright-mcp/
