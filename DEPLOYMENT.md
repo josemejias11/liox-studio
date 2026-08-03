@@ -67,4 +67,6 @@ database before application startup.
 - A draft preview does not write learner progress.
 - Frozen revisions remain unchanged when authors edit the live course.
 - A review link opens only its frozen revision and accepts feedback.
-- A published course loads through `/course/[slug]`.
+- Studio and review previews do not persist learner progress or request
+  weak-topic analytics; revision- or review-scoped optional AI remains
+  available when its identity is supplied.

@@ -1,9 +1,10 @@
 # Moto AI Course Studio
 
 Moto AI is an app-owned e-learning authoring and delivery platform. Course
-Studio creates the English learning master, and Moto Player delivers published
-courses. Authored content and assessments remain authoritative; grounded AI is
-optional learner support and never a required completion path.
+Studio creates the English learning master. The shared Moto Player currently
+renders in Studio preview and frozen review; the app has no public
+`/course/[slug]` page. Authored content and assessments remain authoritative;
+grounded AI is optional learner support and never a required completion path.
 
 See [architecture.md](docs/architecture.md) for retained routes, commands,
 ownership, and dependency direction. See [reset-database.md](docs/reset-database.md)

@@ -1,10 +1,11 @@
 # Moto AI architecture
 
 Moto AI is an app-owned learning platform. Course Studio authors the English
-learning master; Moto Player delivers published courses. PostgreSQL owns course
-structure, authoring state, immutable revisions, review feedback, learner
-progress, quizzes, source records, generation provenance, and durable jobs.
-Cloudflare R2 owns private course media and source-file bytes.
+learning master; the shared Moto Player renders Studio preview and frozen
+review. PostgreSQL owns course structure, authoring state, immutable revisions,
+review feedback, learner progress, quizzes, source records, generation
+provenance, and durable jobs. Cloudflare R2 owns private course media and
+source-file bytes.
 
 ## Ownership and direction
 
@@ -33,18 +34,23 @@ Authored lessons and assessments are authoritative. AI features remain
 optional, revision- and source-scoped support; they must not bypass author
 approval or become a learner-completion requirement. Frozen revisions are
 immutable snapshots. Review tokens are read-only, stored only as hashes, and
-identify one frozen revision. Studio and review previews do not write learner
-progress, weak-topic analytics, or AI requests.
+identify one frozen revision. Studio and review previews do not persist learner
+identity or progress and do not request weak-topic analytics. When a preview is
+given a revision or review identity, it can conditionally expose optional Course
+AI; any request is scoped to that identity.
 
 ## Retained web surfaces
 
 Pages:
 
-- `/` — published course library
+- `/` — redirects to `/studio`
 - `/analytics` and `/analytics/login` — analytics and sign-in
-- `/course/[slug]` — learner player
 - `/studio`, `/studio/login`, and `/studio/[courseId]` — Course Studio
 - `/review/[token]` — frozen client review
+
+`/course/[slug]` has a route layout but no `page.tsx`; it is not a current
+public learner-page surface. The shared learner runtime currently renders
+inside Studio preview and frozen review.
 
 API routes:
 
@@ -79,3 +85,6 @@ API routes:
 
 `npm run build` requires the configured PostgreSQL database because it runs
 `npm run db:migrate` first.
+
+`postinstall` is an npm lifecycle script rather than an operator command. It
+runs `npm run db:generate` after dependency installation.

@@ -21,7 +21,7 @@
 
 | Command | Result |
 | --- | --- |
-| `find apps/web/src/app -type f \\( -name page.tsx -o -name route.ts \\) \| sort` | Exit 0. Found 32 retained page and API route-handler files; their URLs are recorded in `docs/architecture.md`. |
+| `find apps/web/src/app -type f \\( -name page.tsx -o -name route.ts \\) \| sort` | Exit 0. Found 33 retained page and API route-handler files; their URLs are recorded in `docs/architecture.md`. |
 | `npm run --silent --if-present` | Exit 0 with no output. Root script inventory was read from `package.json` and recorded in `docs/architecture.md`. |
 | `rg -n --glob '!package-lock.json' --glob '!apps/web/.next/**' 'task-[235]-report|2026-07-30-course-studio-forward-authoring|20260728190000_add_course_lesson_trash' .` | Before edit, matches were historical documentation only: `README.md`, `DEPLOYMENT.md`, and the approved cleanup plan. After edit, only the approved 2026-08-03 cleanup plan retains historical names as task provenance. |
 | `git diff --check` | Exit 0; no whitespace errors. |
@@ -60,3 +60,34 @@ No automated tests were added or run, per the task constraints.
   They were preserved and excluded from this commit.
 - The database reset is documented only. No database was reset and no service
   was stopped or started for this task.
+
+## Fix round 1
+
+### Changes
+
+- Corrected the current product surface: `/` redirects to `/studio`; the
+  app has no `/course/[slug]/page.tsx`; the shared Moto Player currently serves
+  Studio preview and frozen review.
+- Corrected preview behavior: preview/review prevents learner identity,
+  progress persistence, and weak-topic analytics, while a supplied revision or
+  review identity conditionally enables optional, identity-scoped Course AI.
+- Replaced bare `dropdb` and `createdb` guidance with a `DIRECT_URL`-derived
+  local-only procedure that verifies both configured URLs, does not print
+  credentials, and refuses non-local or non-`moto_ai_dev` targets.
+- Split web and worker restart instructions into separate terminals.
+- Documented `postinstall` as a lifecycle script and corrected the route
+  inventory count from 32 to 33 (7 pages and 26 API route handlers).
+- Added narrow ignore rules for browser-inspection artifacts, generated Next
+  type metadata, TypeScript build info, and the parser-service Chroma database.
+
+### Commands and observed results
+
+| Command | Result |
+| --- | --- |
+| `find apps/web/src/app -type f \\( -name page.tsx -o -name route.ts \\) \| sort \| wc -l` | Exit 0; 33 files (7 pages and 26 route handlers). |
+| Focused `rg` across app/player/review and docs | Confirmed `/` redirects to `/studio`; no learner `page.tsx` exists; review passes `reviewToken`, Studio passes a `revisionId` when available, and previews suppress progress/weak-topic calls. |
+| `git check-ignore -v` for `.playwright-mcp/`, `apps/web/next-env.d.ts`, `apps/web/tsconfig.tsbuildinfo`, and parser Chroma data | Exit 0; each path is ignored by a narrow Task 1 rule. |
+| `git diff --check` | Exit 0; no whitespace errors. |
+| `git status --short` | Only the six scoped Task 1 files before staging; generated local artifacts no longer appear. |
+
+No database reset, service stop/start, or automated test command was run.

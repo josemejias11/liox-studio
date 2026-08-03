@@ -3,11 +3,17 @@
 
 # Generated framework and Python cache state
 **/.next/
+apps/web/next-env.d.ts
+*.tsbuildinfo
 **/__pycache__/
 **/*.py[cod]
 **/*.egg-info/
 **/venv/
 **/.venv/
+services/parser-service/chroma_db/
+
+# Local browser-inspection artifacts
+.playwright-mcp/
 
 # Local environment files
 .env*
