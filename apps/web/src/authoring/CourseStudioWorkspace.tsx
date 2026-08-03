@@ -7,16 +7,7 @@ import type {
   CourseSourceFile,
   LessonInput,
 } from '@moto-ai/contracts/course-studio';
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-  type KeyboardEvent,
-  type PointerEvent,
-} from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { toPlayerCourseContent } from '@/learning/course-player-adapter';
 import type { CourseSettingsInput } from '@/shared/contracts/course-studio';
 import { PlayerViewport } from '@/learning/PlayerViewport';
@@ -25,9 +16,10 @@ import { StudioInspector } from './StudioInspector';
 import { StudioToolbar } from './StudioToolbar';
 import { SourcePanel } from './SourcePanel';
 import { studioClient } from './studio-client';
-import type { StudioSelection, StudioTrashItem } from './studio-types';
+import type { StudioTrashItem } from './studio-types';
 import type { CourseInspectorSaveState } from './inspectors/CourseInspector';
-import { usePersistentPanelSize } from './usePersistentPanelSize';
+import { useStudioPanelLayout } from './useStudioPanelLayout';
+import { useStudioSelection } from './useStudioSelection';
 
 const courseSettingsFormId = 'course-settings-form';
 const neutralCourseSaveState: CourseInspectorSaveState = {
@@ -39,16 +31,6 @@ const neutralCourseSaveState: CourseInspectorSaveState = {
   saved: false,
   error: null,
 };
-
-const outlineMinimum = 240;
-const outlineMaximum = 420;
-const toolsMinimum = 240;
-const defaultToolsMaximum = 260;
-const desktopBreakpoint = 1280;
-
-function getViewportToolsMaximum(): number {
-  return Math.max(toolsMinimum, Math.floor(window.innerHeight * 0.6));
-}
 
 export function CourseStudioWorkspace({
   initialCourse,
@@ -62,10 +44,6 @@ export function CourseStudioWorkspace({
   initialRevisionId?: string;
 }) {
   const [course, setCourse] = useState(initialCourse);
-  const [selection, setSelection] = useState<StudioSelection>({
-    kind: 'course',
-    id: initialCourse.id,
-  });
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [trash, setTrash] = useState(initialTrash);
@@ -74,112 +52,27 @@ export function CourseStudioWorkspace({
   const [courseSettingsDirty, setCourseSettingsDirty] = useState(false);
   const [courseSaveState, setCourseSaveState] =
     useState<CourseInspectorSaveState>(neutralCourseSaveState);
-  const [toolsMaximum, setToolsMaximum] = useState(defaultToolsMaximum);
-  const [toolsMaximumReady, setToolsMaximumReady] = useState(false);
-  const workspaceRef = useRef<HTMLDivElement>(null);
-  const outlinePointerId = useRef<number | null>(null);
-  const toolsPointerId = useRef<number | null>(null);
-  const allowBrowserBack = useRef(false);
-  const [outlineWidth, setOutlineWidth] = usePersistentPanelSize({
-    key: 'moto-tutor:course-studio:outline-width',
-    defaultValue: 320,
-    minimum: outlineMinimum,
-    maximum: outlineMaximum,
-  });
-  const [toolsHeight, setToolsHeight] = usePersistentPanelSize({
-    key: 'moto-tutor:course-studio:tools-height',
-    defaultValue: 260,
-    minimum: toolsMinimum,
-    maximum: toolsMaximum,
-    restoreWhen: toolsMaximumReady,
-  });
   const preview = useMemo(() => toPlayerCourseContent(course), [course]);
-  const selectedLessonId = selection.kind === 'lesson' ? selection.id : undefined;
 
   const discardCourseSettings = useCallback((): void => {
     setCourseSettingsDirty(false);
-    // Give the Course Inspector the persisted graph again so a confirmed discard
-    // also resets its local form if a later structural mutation cannot complete.
     setCourse((current) => ({ ...current }));
   }, []);
-
-  const confirmDiscardCourseSettings = useCallback((): boolean => {
-    if (saving) return false;
-    if (selection.kind !== 'course' || !courseSettingsDirty) return true;
-    if (!window.confirm('Discard unsaved course changes?')) return false;
-    discardCourseSettings();
-    return true;
-  }, [courseSettingsDirty, discardCourseSettings, saving, selection.kind]);
-
-  useEffect(() => {
-    const updateToolsMaximum = () => {
-      setToolsMaximum(getViewportToolsMaximum());
-      setToolsMaximumReady(true);
-    };
-    const animationFrame = window.requestAnimationFrame(updateToolsMaximum);
-    window.addEventListener('resize', updateToolsMaximum);
-    return () => {
-      window.cancelAnimationFrame(animationFrame);
-      window.removeEventListener('resize', updateToolsMaximum);
-    };
-  }, []);
-
-  useEffect(() => {
-    function preventUnsavedSettingsLoss(event: BeforeUnloadEvent): void {
-      if (!courseSettingsDirty) return;
-      event.preventDefault();
-      event.returnValue = '';
-    }
-
-    window.addEventListener('beforeunload', preventUnsavedSettingsLoss);
-    return () => window.removeEventListener('beforeunload', preventUnsavedSettingsLoss);
-  }, [courseSettingsDirty]);
-
-  useEffect(() => {
-    if (!courseSettingsDirty) return;
-    const editorUrl = window.location.href;
-
-    function preventBrowserBack(): void {
-      if (allowBrowserBack.current) {
-        allowBrowserBack.current = false;
-        return;
-      }
-      window.history.pushState(window.history.state, '', editorUrl);
-      if (!confirmDiscardCourseSettings()) return;
-      allowBrowserBack.current = true;
-      window.history.back();
-    }
-
-    window.addEventListener('popstate', preventBrowserBack);
-    return () => window.removeEventListener('popstate', preventBrowserBack);
-  }, [confirmDiscardCourseSettings, courseSettingsDirty]);
-
-  function setStudioSelection(nextSelection: StudioSelection): void {
-    setSelection(nextSelection);
-    if (nextSelection.kind !== 'course') setCourseSaveState(neutralCourseSaveState);
-  }
-
-  function select(nextSelection: StudioSelection): void {
-    if (nextSelection.kind === selection.kind && nextSelection.id === selection.id) return;
-    if (!confirmDiscardCourseSettings()) return;
-    setStudioSelection(nextSelection);
-  }
-
-  function reconcileSelection(nextCourse: CourseGraph) {
-    setSelection((current) => {
-      if (current.kind === 'course') {
-        return current.id === nextCourse.id ? current : { kind: 'course', id: nextCourse.id };
-      }
-      const chapter = nextCourse.chapters.find((item) => item.id === current.id);
-      if (current.kind === 'chapter') {
-        return chapter ? current : { kind: 'course', id: nextCourse.id };
-      }
-      const lessonExists = nextCourse.chapters.some((item) =>
-        item.lessons.some((lesson) => lesson.id === current.id),
-      );
-      return lessonExists ? current : { kind: 'course', id: nextCourse.id };
-    });
-  }
+  const {
+    confirmDiscard: confirmDiscardCourseSettings,
+    reconcileSelection,
+    select,
+    selection,
+    setStudioSelection,
+  } = useStudioSelection({
+    courseId: initialCourse.id,
+    courseSettingsDirty,
+    saving,
+    onDiscard: discardCourseSettings,
+    onNonCourseSelection: () => setCourseSaveState(neutralCourseSaveState),
+  });
+  const { desktopGridStyle, outline, tools, workspaceRef } = useStudioPanelLayout();
+  const selectedLessonId = selection.kind === 'lesson' ? selection.id : undefined;
 
   async function run(
     label: string,
@@ -347,79 +240,6 @@ export function CourseStudioWorkspace({
     setFocusPreview((value) => !value);
   }
 
-  function isDesktopEditor(): boolean {
-    return typeof window !== 'undefined' && window.innerWidth >= desktopBreakpoint;
-  }
-
-  function updateOutlineWidth(clientX: number): void {
-    const bounds = workspaceRef.current?.getBoundingClientRect();
-    if (bounds) setOutlineWidth(clientX - bounds.left);
-  }
-
-  function updateToolsHeight(clientY: number): void {
-    const bounds = workspaceRef.current?.getBoundingClientRect();
-    if (bounds) setToolsHeight(bounds.bottom - clientY);
-  }
-
-  function beginPointerDrag(
-    event: PointerEvent<HTMLDivElement>,
-    pointerId: { current: number | null },
-    update: (position: number) => void,
-  ): void {
-    if (!isDesktopEditor()) return;
-    pointerId.current = event.pointerId;
-    event.currentTarget.setPointerCapture(event.pointerId);
-    update(event.currentTarget.dataset.axis === 'x' ? event.clientX : event.clientY);
-  }
-
-  function continuePointerDrag(
-    event: PointerEvent<HTMLDivElement>,
-    pointerId: { current: number | null },
-    update: (position: number) => void,
-  ): void {
-    if (pointerId.current !== event.pointerId) return;
-    update(event.currentTarget.dataset.axis === 'x' ? event.clientX : event.clientY);
-  }
-
-  function endPointerDrag(
-    event: PointerEvent<HTMLDivElement>,
-    pointerId: { current: number | null },
-  ): void {
-    if (pointerId.current !== event.pointerId) return;
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-    pointerId.current = null;
-  }
-
-  function adjustPanelWithKeyboard(
-    event: KeyboardEvent<HTMLDivElement>,
-    value: number,
-    setValue: (nextValue: number) => void,
-    minimum: number,
-    maximum: number,
-  ): void {
-    const increment = event.shiftKey ? 48 : 16;
-    if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-      event.preventDefault();
-      setValue(value - increment);
-    } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-      event.preventDefault();
-      setValue(value + increment);
-    } else if (event.key === 'Home') {
-      event.preventDefault();
-      setValue(minimum);
-    } else if (event.key === 'End') {
-      event.preventDefault();
-      setValue(maximum);
-    }
-  }
-
-  const desktopGridStyle = {
-    '--course-studio-outline-width': `${outlineWidth}px`,
-    '--course-studio-tools-height': `${toolsHeight}px`,
-  } as CSSProperties;
-
   return (
     <main className="studio-workspace text-foreground flex min-h-screen flex-col xl:h-screen xl:min-h-0 xl:overflow-hidden">
       <StudioToolbar
@@ -474,26 +294,15 @@ export function CourseStudioWorkspace({
           <div
             aria-label="Resize course outline"
             aria-orientation="vertical"
-            aria-valuemax={outlineMaximum}
-            aria-valuemin={outlineMinimum}
-            aria-valuenow={outlineWidth}
+            aria-valuemax={outline.maximum}
+            aria-valuemin={outline.minimum}
+            aria-valuenow={outline.value}
             className="bg-border/55 hover:bg-primary/70 focus-visible:bg-primary hidden cursor-col-resize touch-none shadow-[inset_1px_0_0_rgb(255_255_255_/_22%)] transition-colors outline-none xl:block"
-            data-axis="x"
-            onKeyDown={(event) =>
-              adjustPanelWithKeyboard(
-                event,
-                outlineWidth,
-                setOutlineWidth,
-                outlineMinimum,
-                outlineMaximum,
-              )
-            }
-            onPointerCancel={(event) => endPointerDrag(event, outlinePointerId)}
-            onPointerDown={(event) => beginPointerDrag(event, outlinePointerId, updateOutlineWidth)}
-            onPointerMove={(event) =>
-              continuePointerDrag(event, outlinePointerId, updateOutlineWidth)
-            }
-            onPointerUp={(event) => endPointerDrag(event, outlinePointerId)}
+            onKeyDown={outline.onKeyDown}
+            onPointerCancel={outline.onPointerCancel}
+            onPointerDown={outline.onPointerDown}
+            onPointerMove={outline.onPointerMove}
+            onPointerUp={outline.onPointerUp}
             role="separator"
             tabIndex={0}
           />
@@ -529,24 +338,15 @@ export function CourseStudioWorkspace({
           <div
             aria-label="Resize editor tools"
             aria-orientation="horizontal"
-            aria-valuemax={toolsMaximum}
-            aria-valuemin={toolsMinimum}
-            aria-valuenow={toolsHeight}
+            aria-valuemax={tools.maximum}
+            aria-valuemin={tools.minimum}
+            aria-valuenow={tools.value}
             className="bg-border/55 hover:bg-primary/70 focus-visible:bg-primary hidden cursor-row-resize touch-none shadow-[inset_0_1px_0_rgb(255_255_255_/_22%)] transition-colors outline-none xl:col-start-3 xl:row-start-2 xl:block"
-            data-axis="y"
-            onKeyDown={(event) =>
-              adjustPanelWithKeyboard(
-                event,
-                toolsHeight,
-                setToolsHeight,
-                toolsMinimum,
-                toolsMaximum,
-              )
-            }
-            onPointerCancel={(event) => endPointerDrag(event, toolsPointerId)}
-            onPointerDown={(event) => beginPointerDrag(event, toolsPointerId, updateToolsHeight)}
-            onPointerMove={(event) => continuePointerDrag(event, toolsPointerId, updateToolsHeight)}
-            onPointerUp={(event) => endPointerDrag(event, toolsPointerId)}
+            onKeyDown={tools.onKeyDown}
+            onPointerCancel={tools.onPointerCancel}
+            onPointerDown={tools.onPointerDown}
+            onPointerMove={tools.onPointerMove}
+            onPointerUp={tools.onPointerUp}
             role="separator"
             tabIndex={0}
           />

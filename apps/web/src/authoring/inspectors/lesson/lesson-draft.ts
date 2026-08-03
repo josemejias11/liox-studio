@@ -1,6 +1,14 @@
 import type { CourseLessonType, CourseGraph } from '@moto-ai/contracts/course-studio';
 import { toPlainText } from '@/shared/contracts/player-course';
-import { createStableCourseStudioKey, isJsonObject, jsonObject, mergeKnownFields, stringField, booleanField } from '@/shared/contracts/course-studio';
+import {
+  booleanField,
+  createCourseStudioKey,
+  createStableCourseStudioKey,
+  isJsonObject,
+  jsonObject,
+  mergeKnownFields,
+  stringField,
+} from '@/shared/contracts/course-studio';
 
 export type StudioLesson = CourseGraph['chapters'][number]['lessons'][number];
 
@@ -137,14 +145,18 @@ function draftImage(value: unknown): LessonImageDraft | undefined {
   const asset = asObject(original.asset);
   return typeof asset.url === 'string' && asset.url.length > 0
     ? {
-      url: asset.url,
-      ...(typeof asset.originalFilename === 'string' ? { originalFilename: asset.originalFilename } : {}),
-      original,
-    }
+        url: asset.url,
+        ...(typeof asset.originalFilename === 'string'
+          ? { originalFilename: asset.originalFilename }
+          : {}),
+        original,
+      }
     : undefined;
 }
 
-export function imagePayload(value: LessonImageDraft | undefined): Record<string, unknown> | undefined {
+export function imagePayload(
+  value: LessonImageDraft | undefined,
+): Record<string, unknown> | undefined {
   if (!value) return undefined;
   const original = asObject(value.original);
   const originalAsset = asObject(original.asset);
@@ -157,8 +169,13 @@ function textDraft(value: unknown): TextDraft {
   return { text: toPlainText(value), original: value, touched: false };
 }
 
-function rowKey(prefix: string, value: Record<string, unknown>, index: number): { clientKey: string; persistedKey?: string } {
-  const persistedKey = typeof value._key === 'string' && value._key.length > 0 ? value._key : undefined;
+function rowKey(
+  prefix: string,
+  value: Record<string, unknown>,
+  index: number,
+): { clientKey: string; persistedKey?: string } {
+  const persistedKey =
+    typeof value._key === 'string' && value._key.length > 0 ? value._key : undefined;
   return {
     clientKey: createStableCourseStudioKey(prefix, persistedKey ?? index),
     persistedKey,
@@ -167,6 +184,83 @@ function rowKey(prefix: string, value: Record<string, unknown>, index: number): 
 
 function numberText(value: unknown, fallback = ''): string {
   return typeof value === 'number' && Number.isFinite(value) ? String(value) : fallback;
+}
+
+export function createCoveredFeatureDraft(): CoveredFeatureDraft {
+  return {
+    clientKey: createCourseStudioKey('feature'),
+    persistedKey: createCourseStudioKey('feature-persisted'),
+    label: '',
+    summary: '',
+  };
+}
+
+export function createHotspotDraft(x = '50', y = '50'): HotspotDraft {
+  return {
+    clientKey: createCourseStudioKey('hotspot'),
+    persistedKey: createCourseStudioKey('hotspot-persisted'),
+    label: '',
+    topic: '',
+    body: { text: '', touched: true, serialized: [] },
+    x,
+    y,
+    required: false,
+    photos: [],
+    videoAspectRatio: '',
+  };
+}
+
+export function createQuizAnswerDraft(): QuizAnswerDraft {
+  return {
+    clientKey: createCourseStudioKey('answer'),
+    persistedKey: createCourseStudioKey('answer-persisted'),
+    text: '',
+  };
+}
+
+export function createQuizQuestionDraft(): QuizQuestionDraft {
+  return {
+    clientKey: createCourseStudioKey('question'),
+    persistedKey: createCourseStudioKey('question-persisted'),
+    questionText: '',
+    questionType: 'single',
+    answers: [],
+  };
+}
+
+export function createColorVariantDraft(): ColorVariantDraft {
+  return { clientKey: createCourseStudioKey('variant'), label: '', colorHex: '' };
+}
+
+export function createDragChipDraft(): DragChipDraft {
+  return {
+    clientKey: createCourseStudioKey('chip'),
+    id: createCourseStudioKey('chip-id'),
+    text: '',
+  };
+}
+
+export function createDropZoneDraft(): DropZoneDraft {
+  return {
+    clientKey: createCourseStudioKey('zone'),
+    id: createCourseStudioKey('zone-id'),
+    label: '',
+    correctChipId: '',
+    xPositionPct: '50',
+    yPositionPct: '50',
+  };
+}
+
+export function createScrollChapterDraft(): ScrollChapterDraft {
+  return {
+    clientKey: createCourseStudioKey('scroll-chapter'),
+    heading: '',
+    body: { text: '', touched: true, serialized: [] },
+    targetScale: '',
+    targetRotation: '',
+    targetX: '',
+    targetY: '',
+  };
 }
 
 export function createLessonDraft(lesson: StudioLesson): LessonDraft {
@@ -192,7 +286,12 @@ export function createLessonDraft(lesson: StudioLesson): LessonDraft {
     },
     coveredFeatures: rawFeatures.map((value, index) => {
       const item = asObject(value);
-      return { ...rowKey('feature', item, index), label: stringField(item.label), summary: stringField(item.summary), original: item };
+      return {
+        ...rowKey('feature', item, index),
+        label: stringField(item.label),
+        summary: stringField(item.summary),
+        original: item,
+      };
     }),
     hotspots: rawHotspots.map((value, index) => {
       const item = asObject(value);
@@ -204,7 +303,9 @@ export function createLessonDraft(lesson: StudioLesson): LessonDraft {
         x: numberText(item.x, '50'),
         y: numberText(item.y, '50'),
         required: booleanField(item.required),
-        photos: Array.isArray(item.photos) ? item.photos.flatMap((photo) => draftImage(photo) ? [draftImage(photo)!] : []) : [],
+        photos: Array.isArray(item.photos)
+          ? item.photos.flatMap((photo) => (draftImage(photo) ? [draftImage(photo)!] : []))
+          : [],
         videoFile: draftImage(item.videoFile),
         videoAspectRatio: stringField(item.videoAspectRatio),
         original: item,
@@ -212,7 +313,10 @@ export function createLessonDraft(lesson: StudioLesson): LessonDraft {
     }),
     stageBackground: draftImage(payload.stageBackground),
     enableCompletionAnimation: booleanField(payload.enableCompletionAnimation),
-    completionTransition: payload.completionTransition === 'rise' || payload.completionTransition === 'fade' ? payload.completionTransition : 'spin',
+    completionTransition:
+      payload.completionTransition === 'rise' || payload.completionTransition === 'fade'
+        ? payload.completionTransition
+        : 'spin',
     videoFile: draftImage(payload.videoFile),
     videoAspectRatio: stringField(payload.videoAspectRatio) || '16:9',
     quizTitle: stringField(payload.title),
@@ -227,7 +331,11 @@ export function createLessonDraft(lesson: StudioLesson): LessonDraft {
         image: draftImage(item.image),
         answers: answers.map((answer, answerIndex) => {
           const answerItem = asObject(answer);
-          return { ...rowKey(`answer-${index}`, answerItem, answerIndex), text: stringField(answerItem.text), original: answerItem };
+          return {
+            ...rowKey(`answer-${index}`, answerItem, answerIndex),
+            text: stringField(answerItem.text),
+            original: answerItem,
+          };
         }),
         original: item,
       };
@@ -237,12 +345,23 @@ export function createLessonDraft(lesson: StudioLesson): LessonDraft {
     showCorrectAnswers: booleanField(payload.showCorrectAnswers),
     colorVariants: rawVariants.map((value, index) => {
       const item = asObject(value);
-      return { ...rowKey('variant', item, index), label: stringField(item.label), colorHex: stringField(item.colorHex), image: draftImage(item.image), original: item };
+      return {
+        ...rowKey('variant', item, index),
+        label: stringField(item.label),
+        colorHex: stringField(item.colorHex),
+        image: draftImage(item.image),
+        original: item,
+      };
     }),
     splitReverseLayout: booleanField(payload.splitReverseLayout),
     chips: rawChips.map((value, index) => {
       const item = asObject(value);
-      return { clientKey: createStableCourseStudioKey('chip', index), id: stringField(item.id) || createStableCourseStudioKey('chip-id', index), text: stringField(item.text), original: item };
+      return {
+        clientKey: createStableCourseStudioKey('chip', index),
+        id: stringField(item.id) || createStableCourseStudioKey('chip-id', index),
+        text: stringField(item.text),
+        original: item,
+      };
     }),
     dropZones: rawZones.map((value, index) => {
       const item = asObject(value);
@@ -283,30 +402,40 @@ export function validateLessonDraft(draft: LessonDraft): LessonValidation {
   const errors: Record<string, string> = {};
   if (!draft.headline.trim()) errors.headline = 'Headline is required.';
   draft.coveredFeatures.forEach((feature, index) => {
-    if (!feature.label.trim()) errors[`coveredFeatures.${index}.label`] = 'Feature label is required.';
+    if (!feature.label.trim())
+      errors[`coveredFeatures.${index}.label`] = 'Feature label is required.';
   });
   draft.hotspots.forEach((hotspot, index) => {
     if (!hotspot.label.trim()) errors[`hotspots.${index}.label`] = 'Hotspot label is required.';
-    if (numericValue(hotspot.x) === undefined) errors[`hotspots.${index}.x`] = 'Enter a valid horizontal position.';
-    if (numericValue(hotspot.y) === undefined) errors[`hotspots.${index}.y`] = 'Enter a valid vertical position.';
+    if (numericValue(hotspot.x) === undefined)
+      errors[`hotspots.${index}.x`] = 'Enter a valid horizontal position.';
+    if (numericValue(hotspot.y) === undefined)
+      errors[`hotspots.${index}.y`] = 'Enter a valid vertical position.';
   });
   const cueTargets = new Set(lessonCueTargets(draft));
   const validateCues = (value: TextDraft, path: string) => {
     for (const target of layerLinkTargets(value.touched ? value.serialized : value.original)) {
-      if (!cueTargets.has(target)) errors[`${path}.layerLink`] = `The learning cue “${target}” no longer points to a hotspot or covered feature.`;
+      if (!cueTargets.has(target))
+        errors[`${path}.layerLink`] =
+          `The learning cue “${target}” no longer points to a hotspot or covered feature.`;
     }
   };
   validateCues(draft.body, 'body');
   draft.hotspots.forEach((hotspot, index) => validateCues(hotspot.body, `hotspots.${index}.body`));
-  draft.scrollChapters.forEach((chapter, index) => validateCues(chapter.body, `scrollChapters.${index}.body`));
+  draft.scrollChapters.forEach((chapter, index) =>
+    validateCues(chapter.body, `scrollChapters.${index}.body`),
+  );
   draft.quizQuestions.forEach((question, index) => {
-    if (!question.questionText.trim()) errors[`quizQuestions.${index}.questionText`] = 'Question text is required.';
+    if (!question.questionText.trim())
+      errors[`quizQuestions.${index}.questionText`] = 'Question text is required.';
     question.answers.forEach((answer, answerIndex) => {
-      if (!answer.text.trim()) errors[`quizQuestions.${index}.answers.${answerIndex}.text`] = 'Answer text is required.';
+      if (!answer.text.trim())
+        errors[`quizQuestions.${index}.answers.${answerIndex}.text`] = 'Answer text is required.';
     });
   });
   draft.colorVariants.forEach((variant, index) => {
-    if (!variant.label.trim()) errors[`colorVariants.${index}.label`] = 'Variant label is required.';
+    if (!variant.label.trim())
+      errors[`colorVariants.${index}.label`] = 'Variant label is required.';
   });
   draft.chips.forEach((chip, index) => {
     if (!chip.id.trim()) errors[`chips.${index}.id`] = 'Chip ID is required.';
@@ -314,11 +443,14 @@ export function validateLessonDraft(draft: LessonDraft): LessonValidation {
   });
   draft.dropZones.forEach((zone, index) => {
     if (!zone.label.trim()) errors[`dropZones.${index}.label`] = 'Drop-zone label is required.';
-    if (numericValue(zone.xPositionPct) === undefined) errors[`dropZones.${index}.xPositionPct`] = 'Enter a valid horizontal position.';
-    if (numericValue(zone.yPositionPct) === undefined) errors[`dropZones.${index}.yPositionPct`] = 'Enter a valid vertical position.';
+    if (numericValue(zone.xPositionPct) === undefined)
+      errors[`dropZones.${index}.xPositionPct`] = 'Enter a valid horizontal position.';
+    if (numericValue(zone.yPositionPct) === undefined)
+      errors[`dropZones.${index}.yPositionPct`] = 'Enter a valid vertical position.';
   });
   draft.scrollChapters.forEach((chapter, index) => {
-    if (!chapter.heading.trim()) errors[`scrollChapters.${index}.heading`] = 'Chapter heading is required.';
+    if (!chapter.heading.trim())
+      errors[`scrollChapters.${index}.heading`] = 'Chapter heading is required.';
   });
   return { valid: Object.keys(errors).length === 0, errors };
 }
@@ -326,7 +458,9 @@ export function validateLessonDraft(draft: LessonDraft): LessonValidation {
 /** Targets are intentionally limited to the targets each learner renderer can activate. */
 export function lessonCueTargets(draft: LessonDraft): string[] {
   const hotspots = draft.hotspots.map((hotspot) => hotspot.label.trim()).filter(Boolean);
-  const coveredFeatures = draft.coveredFeatures.map((feature) => feature.label.trim()).filter(Boolean);
+  const coveredFeatures = draft.coveredFeatures
+    .map((feature) => feature.label.trim())
+    .filter(Boolean);
   switch (draft.lessonType) {
     case 'content':
     case 'interaction':
@@ -350,7 +484,9 @@ export function layerLinkTargets(value: unknown): string[] {
     if (!Array.isArray(markDefs)) return [];
     return markDefs.flatMap((definition) => {
       const cue = asObject(definition);
-      return cue._type === 'layerLink' && typeof cue.linkedLayer === 'string' ? [cue.linkedLayer] : [];
+      return cue._type === 'layerLink' && typeof cue.linkedLayer === 'string'
+        ? [cue.linkedLayer]
+        : [];
     });
   });
 }
@@ -359,6 +495,10 @@ export function mergeImage(original: unknown, image: LessonImageDraft | undefine
   return imagePayload(image) ?? (original === undefined ? undefined : original);
 }
 
-export function mergeRow(original: unknown, known: Record<string, unknown>, keys: string[]): Record<string, unknown> {
+export function mergeRow(
+  original: unknown,
+  known: Record<string, unknown>,
+  keys: string[],
+): Record<string, unknown> {
   return mergeKnownFields(jsonObject(original), known, keys);
 }

@@ -60,7 +60,6 @@ export interface CourseInspectorProps {
   course: CourseGraph;
   disabled?: boolean;
   formId?: string;
-  /** The integration owner uses this to guard selection changes while dirty. */
   onDirtyChange?: (dirty: boolean) => void;
   onSaveStateChange?: (state: CourseInspectorSaveState) => void;
   onSave: (input: CourseSettingsInput) => Promise<void>;
@@ -198,7 +197,6 @@ function errorMap(issues: Array<{ path: PropertyKey[]; message: string }>): Reco
   return Object.fromEntries(issues.map((issue) => [issue.path.join('.'), issue.message]));
 }
 
-/** Structured Course Settings form. It does not mutate server state until Save. */
 export function CourseInspector({
   course,
   disabled = false,
