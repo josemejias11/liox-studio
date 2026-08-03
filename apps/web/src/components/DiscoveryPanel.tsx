@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { X, Sparkles } from 'lucide-react';
-import { useFocusTrap } from '@/lib/useFocusTrap';
-import type { RichText, CoursePhoto } from '@/lib/contracts/player-course';
+import { useFocusTrap } from '@/shared/useFocusTrap';
+import type { RichText, CoursePhoto } from '@/shared/contracts/player-course';
 import { useChatConversation } from './course-ai/useChatConversation';
 import { DiscoveryConversation } from './discovery/DiscoveryConversation';
 import { DiscoveryLearnContent } from './discovery/DiscoveryLearnContent';
-import type { InlineDiscoveryCueResolver } from '@/player/lesson-types/InlineDiscoveryCue';
+import type { InlineDiscoveryCueResolver } from '@/learning/player/lesson-types/InlineDiscoveryCue';
 
 interface DiscoveryPanelProps {
   open: boolean;

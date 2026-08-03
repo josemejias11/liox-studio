@@ -11,8 +11,8 @@ import {
   type ClientQuiz,
 } from '@moto-ai/contracts/quiz';
 import { JobAcceptedResponseSchema, JobStatusResponseSchema } from '@moto-ai/contracts/jobs';
-import { RevisionBoundQuizRequestSchema } from '@/lib/contracts/api';
-import { createQuizSessionState, quizSessionReducer } from '@/lib/quiz-session';
+import { RevisionBoundQuizRequestSchema } from '@/shared/contracts/api';
+import { createQuizSessionState, quizSessionReducer } from '@/learning/quiz-session';
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 

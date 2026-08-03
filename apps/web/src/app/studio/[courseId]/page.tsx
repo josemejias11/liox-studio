@@ -6,8 +6,8 @@ import {
 } from '@moto-ai/database';
 import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { COURSE_STUDIO_COOKIE, courseStudioToken } from '@/lib/course-studio-auth';
-import { CourseStudioWorkspace } from '@/course-studio/CourseStudioWorkspace';
+import { COURSE_STUDIO_COOKIE, courseStudioToken } from '@/server/auth/course-studio';
+import { CourseStudioWorkspace } from '@/authoring/CourseStudioWorkspace';
 
 export default async function CourseWorkspace({
   params,

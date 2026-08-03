@@ -1,8 +1,8 @@
 import { createCourseTemplate } from '@moto-ai/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { isCourseStudioAuthorized } from '@/lib/course-studio-auth';
-import { readJson } from '@/lib/server/http';
+import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
+import { readJson } from '@/shared/server/http';
 
 const createCourseSchema = z.object({ title: z.string().trim().min(1).max(120) });
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import type { CourseDisclaimer } from '@/lib/contracts/player-course';
+import type { CourseDisclaimer } from '@/shared/contracts/player-course';
 
 type DisclaimerCategory = NonNullable<CourseDisclaimer['category']>;
 

@@ -1,9 +1,9 @@
 import { beginCourseSourceRemoval, completeCourseSourceRemoval } from '@moto-ai/database';
 import { deleteCourseDocument, RagServiceError } from '@moto-ai/parser-client';
 import { NextRequest, NextResponse } from 'next/server';
-import { isCourseStudioAuthorized } from '@/lib/course-studio-auth';
-import { deleteCourseAsset } from '@/lib/r2';
-import { jsonError, unexpectedApiError } from '@/lib/server/http';
+import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
+import { deleteCourseAsset } from '@/server/storage/course-assets';
+import { jsonError, unexpectedApiError } from '@/shared/server/http';
 
 export const runtime = 'nodejs';
 

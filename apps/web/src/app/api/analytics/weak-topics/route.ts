@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { WeakTopicsRequestSchema } from '@/lib/contracts/api';
-import { getWeakTopicsForCourse } from '@/services/analytics.service';
-import { readJson, unexpectedApiError } from '@/lib/server/http';
+import { WeakTopicsRequestSchema } from '@/shared/contracts/api';
+import { getWeakTopicsForCourse } from '@/analytics/server/analytics.service';
+import { readJson, unexpectedApiError } from '@/shared/server/http';
 
 export async function POST(req: NextRequest) {
   const parsed = await readJson(req, WeakTopicsRequestSchema);

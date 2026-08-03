@@ -2,9 +2,9 @@ import { createHash } from 'node:crypto';
 import { getCourseSource, markSourceFailed, retryCourseSourceIndex } from '@moto-ai/database';
 import { enqueueDocumentIndexJob } from '@moto-ai/jobs';
 import { NextRequest, NextResponse } from 'next/server';
-import { isCourseStudioAuthorized } from '@/lib/course-studio-auth';
-import { getCourseAsset } from '@/lib/r2';
-import { jsonError, unexpectedApiError } from '@/lib/server/http';
+import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
+import { getCourseAsset } from '@/server/storage/course-assets';
+import { jsonError, unexpectedApiError } from '@/shared/server/http';
 
 export const runtime = 'nodejs';
 

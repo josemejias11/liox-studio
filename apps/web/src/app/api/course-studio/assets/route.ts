@@ -1,7 +1,7 @@
 import { prisma } from '@moto-ai/database';
 import { NextRequest, NextResponse } from 'next/server';
-import { isCourseStudioAuthorized } from '@/lib/course-studio-auth';
-import { deleteCourseAsset, putCourseAsset } from '@/lib/r2';
+import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
+import { deleteCourseAsset, putCourseAsset } from '@/server/storage/course-assets';
 
 export const runtime = 'nodejs';
 

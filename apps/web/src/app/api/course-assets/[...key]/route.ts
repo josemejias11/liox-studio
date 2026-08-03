@@ -1,4 +1,4 @@
-import { getCourseAsset } from '@/lib/r2';
+import { getCourseAsset } from '@/server/storage/course-assets';
 
 export const dynamic = 'force-dynamic';
 

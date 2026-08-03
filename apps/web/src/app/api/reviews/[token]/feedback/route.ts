@@ -1,7 +1,7 @@
 import { createReviewFeedback } from '@moto-ai/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { jsonError, readJson, unexpectedApiError } from '@/lib/server/http';
+import { jsonError, readJson, unexpectedApiError } from '@/shared/server/http';
 
 const schema = z.object({
   authorName: z.string().trim().min(1).max(100),

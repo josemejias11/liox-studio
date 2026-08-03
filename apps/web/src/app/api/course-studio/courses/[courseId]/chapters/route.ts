@@ -1,8 +1,8 @@
 import { createChapter, deleteChapter, updateChapter } from '@moto-ai/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { isCourseStudioAuthorized } from '@/lib/course-studio-auth';
-import { jsonError, readJson, unexpectedApiError } from '@/lib/server/http';
+import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
+import { jsonError, readJson, unexpectedApiError } from '@/shared/server/http';
 
 const createSchema = z.object({ title: z.string().trim().min(1).max(120) });
 const updateSchema = z.object({

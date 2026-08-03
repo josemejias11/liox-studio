@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { NormalizedCourseContent } from '@/lib/course-content';
+import type { NormalizedCourseContent } from '@/learning/course-content';
 import { PlayerViewport } from '@/learning/PlayerViewport';
 import { ReviewFeedbackPanel } from './ReviewFeedbackPanel';
 

@@ -3,8 +3,8 @@ import { getCourseGeneration, listAuthoringCourses, prisma } from '@moto-ai/data
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { BookOpen, Plus } from 'lucide-react';
-import { COURSE_STUDIO_COOKIE, courseStudioToken } from '@/lib/course-studio-auth';
-import { CourseLibrary } from '@/course-studio/CourseLibrary';
+import { COURSE_STUDIO_COOKIE, courseStudioToken } from '@/server/auth/course-studio';
+import { CourseLibrary } from '@/authoring/CourseLibrary';
 import { createCourseAction } from './actions';
 
 export default async function CourseStudioHome() {

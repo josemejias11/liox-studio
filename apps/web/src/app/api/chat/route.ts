@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ChatRequestSchema } from '@/lib/contracts/api';
+import { ChatRequestSchema } from '@/shared/contracts/api';
 import { askCourseQuestion, RagServiceError } from '@moto-ai/parser-client';
 import { getReviewByToken, listFrozenRevisionSourceIds } from '@moto-ai/database';
 import { z } from 'zod';
-import { isCourseStudioAuthorized } from '@/lib/course-studio-auth';
-import { jsonError, readJson, unexpectedApiError } from '@/lib/server/http';
+import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
+import { jsonError, readJson, unexpectedApiError } from '@/shared/server/http';
 
 // Server-to-server proxy in front of the self-hosted parser/RAG service.
 // The browser never calls the parser directly — this route delegates authentication,

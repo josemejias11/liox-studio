@@ -11,8 +11,8 @@ import {
   SubmitQuizResponseSchema,
   type ClientQuiz,
 } from '@moto-ai/contracts/quiz';
-import { createQuizSessionState, quizSessionReducer } from '@/lib/quiz-session';
-import type { AuthoredQuiz } from '@/lib/contracts/player-course';
+import { createQuizSessionState, quizSessionReducer } from '@/learning/quiz-session';
+import type { AuthoredQuiz } from '@/shared/contracts/player-course';
 
 // ── Authored course quiz player ──────────────────────────────────────────────
 

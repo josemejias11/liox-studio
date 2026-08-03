@@ -3,8 +3,8 @@
 import { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { titleFromFilename } from '@/lib/utils';
-import type { CoursePhoto } from '@/lib/contracts/player-course';
+import { titleFromFilename } from '@/shared/utils';
+import type { CoursePhoto } from '@/shared/contracts/player-course';
 
 export function FullWidthCarousel({
   photos,

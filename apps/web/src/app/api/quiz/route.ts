@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getReviewByToken, listFrozenRevisionSourceIds } from '@moto-ai/database';
 import { enqueueQuizGenerationJob } from '@moto-ai/jobs';
-import { RevisionBoundQuizRequestSchema, type RevisionBoundQuizRequest } from '@/lib/contracts/api';
-import { isCourseStudioAuthorized } from '@/lib/course-studio-auth';
-import { jsonError, readJson, unexpectedApiError } from '@/lib/server/http';
+import { RevisionBoundQuizRequestSchema, type RevisionBoundQuizRequest } from '@/shared/contracts/api';
+import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
+import { jsonError, readJson, unexpectedApiError } from '@/shared/server/http';
 
 // Creates a durable AI quiz job. The worker persists the full answer key and
 // exposes only the existing client-safe quiz projection through job status.

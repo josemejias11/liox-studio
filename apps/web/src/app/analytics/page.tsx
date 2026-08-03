@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { Bot, Users, Zap, Trophy, BookOpen, ArrowLeft } from 'lucide-react';
-import { getAnalyticsData } from '@/services/analytics.service';
+import { getAnalyticsData } from '@/analytics/server/analytics.service';
 import React from 'react';
 
 export const dynamic = 'force-dynamic';

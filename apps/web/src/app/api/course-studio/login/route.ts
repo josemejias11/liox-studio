@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { COURSE_STUDIO_COOKIE, courseStudioToken } from '@/lib/course-studio-auth';
+import { COURSE_STUDIO_COOKIE, courseStudioToken } from '@/server/auth/course-studio';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const formData = await request.formData();

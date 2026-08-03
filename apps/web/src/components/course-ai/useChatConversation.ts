@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { askCourseChat } from '@/lib/chat-client';
+import { askCourseChat } from '@/learning/course-ai/chat-client';
 
 export interface ChatMessage {
   id: string;

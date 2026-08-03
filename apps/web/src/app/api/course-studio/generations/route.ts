@@ -1,12 +1,12 @@
 import { CourseGenerationRequestSchema } from '@moto-ai/contracts/course-generation';
 import { getCourseGeneration, prisma } from '@moto-ai/database';
 import { NextRequest, NextResponse } from 'next/server';
-import { isCourseStudioAuthorized } from '@/lib/course-studio-auth';
-import { jsonError, readJson, unexpectedApiError } from '@/lib/server/http';
+import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
+import { jsonError, readJson, unexpectedApiError } from '@/shared/server/http';
 import {
   requestAuthoringGeneration,
   toCourseGenerationSummary,
-} from '@/server/authoring/generation-commands';
+} from '@/authoring/server/generation-commands';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   if (!(await isCourseStudioAuthorized(request))) return jsonError('Unauthorized', 401);

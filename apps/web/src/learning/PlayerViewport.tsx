@@ -1,9 +1,9 @@
 'use client';
 
 import { useLayoutEffect, useRef, useState } from 'react';
-import MotoViewer from '@/player/MotoViewer';
-import type { NormalizedCourseContent } from '@/lib/course-content';
-import type { RevisionIdentity } from '@/lib/contracts/api';
+import MotoViewer from '@/learning/player/MotoViewer';
+import type { NormalizedCourseContent } from '@/learning/course-content';
+import type { RevisionIdentity } from '@/shared/contracts/api';
 
 const PLAYER_WIDTH = 1440;
 const PLAYER_HEIGHT = 810;

@@ -1,5 +1,5 @@
 import { getReviewByToken } from '@moto-ai/database';
-import { toPlayerCourseContent } from '@/lib/course-player-adapter';
+import { toPlayerCourseContent } from '@/learning/course-player-adapter';
 import { ReviewPlayer } from '@/review/ReviewPlayer';
 
 export default async function CourseReviewPage({

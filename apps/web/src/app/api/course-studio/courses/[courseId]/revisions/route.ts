@@ -5,8 +5,8 @@ import {
 } from '@moto-ai/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { isCourseStudioAuthorized } from '@/lib/course-studio-auth';
-import { jsonError, readJson, unexpectedApiError } from '@/lib/server/http';
+import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
+import { jsonError, readJson, unexpectedApiError } from '@/shared/server/http';
 
 const schema = z.object({ notes: z.string().trim().max(2000).optional() });
 

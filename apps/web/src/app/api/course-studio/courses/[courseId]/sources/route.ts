@@ -1,8 +1,8 @@
 import { listCourseSources } from '@moto-ai/database';
 import { NextRequest, NextResponse } from 'next/server';
-import { isCourseStudioAuthorized } from '@/lib/course-studio-auth';
-import { jsonError, unexpectedApiError } from '@/lib/server/http';
-import { uploadAuthoringSource } from '@/server/authoring/source-commands';
+import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
+import { jsonError, unexpectedApiError } from '@/shared/server/http';
+import { uploadAuthoringSource } from '@/authoring/server/source-commands';
 
 export const runtime = 'nodejs';
 

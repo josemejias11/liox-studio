@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Sparkles, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { RevisionIdentity } from '@/lib/contracts/api';
+import type { RevisionIdentity } from '@/shared/contracts/api';
 import { useChatConversation } from './useChatConversation';
 
 type CourseChatProps = { courseId: string } & RevisionIdentity;

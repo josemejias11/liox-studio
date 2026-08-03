@@ -1,8 +1,8 @@
 import type { CourseGenerationSummary } from '@moto-ai/contracts/course-generation';
 import { getCourseGeneration } from '@moto-ai/database';
 import { NextRequest, NextResponse } from 'next/server';
-import { isCourseStudioAuthorized } from '@/lib/course-studio-auth';
-import { jsonError, unexpectedApiError } from '@/lib/server/http';
+import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
+import { jsonError, unexpectedApiError } from '@/shared/server/http';
 
 export async function GET(
   request: NextRequest,

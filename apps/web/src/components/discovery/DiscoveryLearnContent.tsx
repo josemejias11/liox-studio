@@ -2,11 +2,11 @@
 
 import { PortableText } from '@portabletext/react';
 import { Sparkles } from 'lucide-react';
-import type { RichText, CoursePhoto } from '@/lib/contracts/player-course';
-import { supMark } from '@/lib/portable-text-components';
-import { cssAspectRatio } from '@/lib/utils';
+import type { RichText, CoursePhoto } from '@/shared/contracts/player-course';
+import { supMark } from '@/shared/portable-text-components';
+import { cssAspectRatio } from '@/shared/utils';
 import { PhotoCardStack } from '../PhotoCardStack';
-import { InlineDiscoveryCueMark, InlineDiscoveryCueProvider, type InlineDiscoveryCueResolver } from '@/player/lesson-types/InlineDiscoveryCue';
+import { InlineDiscoveryCueMark, InlineDiscoveryCueProvider, type InlineDiscoveryCueResolver } from '@/learning/player/lesson-types/InlineDiscoveryCue';
 
 interface DiscoveryLearnContentProps {
   body?: RichText;

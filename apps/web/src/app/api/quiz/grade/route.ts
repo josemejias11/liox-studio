@@ -7,8 +7,8 @@ import {
   gradeQuestion,
   gradeSubmission,
   type GradableQuestion,
-} from '@/lib/quiz-grading';
-import { jsonError, readJson, unexpectedApiError } from '@/lib/server/http';
+} from '@/learning/server/quiz-grading';
+import { jsonError, readJson, unexpectedApiError } from '@/shared/server/http';
 
 class CourseConfigurationError extends Error {
   constructor(message: string) {

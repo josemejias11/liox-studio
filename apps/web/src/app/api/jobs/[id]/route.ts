@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { JobStatusResponseSchema } from '@moto-ai/contracts/jobs';
 import { getJobStatus } from '@moto-ai/jobs';
-import { jsonError, unexpectedApiError } from '@/lib/server/http';
+import { jsonError, unexpectedApiError } from '@/shared/server/http';
 
 export const runtime = 'nodejs';
 

@@ -3,7 +3,7 @@
 import { createCourseTemplate } from '@moto-ai/database';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { COURSE_STUDIO_COOKIE, courseStudioToken } from '@/lib/course-studio-auth';
+import { COURSE_STUDIO_COOKIE, courseStudioToken } from '@/server/auth/course-studio';
 
 export async function createCourseAction(formData: FormData): Promise<void> {
   const expected = await courseStudioToken();
