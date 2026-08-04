@@ -68,14 +68,10 @@ export function ProductStage({
     };
   };
 
-  // Phase 4 — completion burst
   const [showBurst, setShowBurst] = useState(false);
   const prevAllDiscovered = useRef(false);
 
-  // Phase 6 — entrance + shared parallax state (mouse OR gyroscope).
-  // Motion values write straight to styles — pointer/orientation events cause
-  // zero React re-renders. Per-layer springs replicate the easing the old CSS
-  // transitions applied (bg 0.3s / glow 0.45s / product 0.15s, all ease-out).
+  // Motion values avoid React renders for pointer and orientation updates.
   const [entered, setEntered] = useState(false);
   const [imageRect, setImageRect] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -91,17 +87,12 @@ export function ProductStage({
   const prodX = useSpring(parallaxX, { stiffness: 380, damping: 36, mass: 1 });
   const prodY = useSpring(parallaxY, { stiffness: 380, damping: 36, mass: 1 });
 
-  // Background counter-drifts against the cursor.
   const bgTranslateX = useTransform(bgX, (v) => v * -6);
   const bgTranslateY = useTransform(bgY, (v) => v * -4);
 
-  // Cursor-reactive ambient glow position — uses transform (GPU-composited) not background.
   const glowTranslateX = useTransform(glowX, (v) => `${v * 10}%`);
   const glowTranslateY = useTransform(glowY, (v) => `${v * 7}%`);
 
-  // Product parallax is disabled once all hotspots are discovered (the
-  // completion spin/rise/breathe layer then animates from a neutral origin).
-  // A motion-value factor keeps that gating out of the render path.
   const prodFactor = useMotionValue(1);
   const prodTranslateX = useTransform(
     [prodX, prodFactor],
@@ -112,14 +103,10 @@ export function ProductStage({
     (latest: number[]) => (latest[0] ?? 0) * 9 * (latest[1] ?? 0),
   );
 
-  // Phase 7 — keyboard navigation (roving tabindex)
-  // Arrow keys move REAL DOM focus between hotspot buttons: only the active
-  // hotspot is tabbable, screen readers follow focus, and the visible ring is
-  // the button's own focus-visible style. Enter/Space activate natively.
+  // Roving tabindex moves DOM focus so assistive technology follows hotspot navigation.
   const [focusedHotspotIndex, setFocusedHotspotIndex] = useState<number | null>(null);
   const hotspotRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  // Ref bundle for event handlers to avoid stale closures
   const stateRef = useRef({ activePanel, focusedHotspotIndex, hotspots });
   useEffect(() => {
     stateRef.current = { activePanel, focusedHotspotIndex, hotspots };
@@ -138,21 +125,16 @@ export function ProductStage({
     prodFactor.set(allDiscovered ? 0 : 1);
   }, [allDiscovered, prodFactor]);
 
-  // ── Mount ─────────────────────────────────────────────────────────────────
-
   useEffect(() => {
     const t = setTimeout(() => setEntered(true), 60);
     return () => clearTimeout(t);
   }, []);
-
-  // ── Layout calculations ───────────────────────────────────────────────────
 
   useLayoutEffect(() => {
     const wrapper = imageWrapperRef.current;
     const container = containerRef.current;
     if (!wrapper || !container) return;
 
-    // Reset scrollTop just in case focus stealing or browser quirks scroll the container
     container.scrollTop = 0;
 
     function measure() {
@@ -164,7 +146,7 @@ export function ProductStage({
         width: wRect.width,
         height: wRect.height,
       });
-      container!.scrollTop = 0; // ensure it stays at 0 on resize
+      container!.scrollTop = 0;
     }
 
     measure();
@@ -172,8 +154,6 @@ export function ProductStage({
     ro.observe(wrapper);
     return () => ro.disconnect();
   }, [productImage]);
-
-  // ── Completion burst ───────────────────────────────────────────────────────
 
   useEffect(() => {
     if (shouldAnimateCompletion && !prevAllDiscovered.current) {
@@ -185,11 +165,8 @@ export function ProductStage({
     if (!shouldAnimateCompletion) prevAllDiscovered.current = false;
   }, [shouldAnimateCompletion]);
 
-  // ── Phase 7: Keyboard navigation ──────────────────────────────────────────
-
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      // Never intercept while focus is inside a text field
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       const { activePanel: ap, focusedHotspotIndex: fi, hotspots: hs } = stateRef.current;
@@ -199,8 +176,6 @@ export function ProductStage({
         return;
       }
 
-      // Hotspot cycling — only when panel is closed. Moves real DOM focus so
-      // assistive tech follows; Enter/Space then activate the button natively.
       if (!ap && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
         if (hs.length === 0) return;
         e.preventDefault();
@@ -214,21 +189,15 @@ export function ProductStage({
 
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, []); // runs once — stateRef provides live values
-
-  // ── Phase 7: Device-orientation (gyroscope) parallax ──────────────────────
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.DeviceOrientationEvent) return;
 
     function onOrientation(e: DeviceOrientationEvent) {
-      // gamma: left/right tilt (–90…90°) → –1…1
-      // beta:  front/back tilt (–180…180°), normalized around 30° reading angle
       const rawX = Math.max(-1, Math.min(1, (e.gamma ?? 0) / 45));
       const rawY = Math.max(-1, Math.min(1, ((e.beta ?? 30) - 30) / 45));
 
-      // Low-pass filter for smooth, floating motion — straight into the motion
-      // values; the layer springs handle the rest.
       parallaxX.set(parallaxX.get() * 0.82 + rawX * 0.18);
       parallaxY.set(parallaxY.get() * 0.82 + rawY * 0.18);
     }
@@ -236,8 +205,6 @@ export function ProductStage({
     window.addEventListener('deviceorientation', onOrientation, true);
     return () => window.removeEventListener('deviceorientation', onOrientation, true);
   }, [parallaxX, parallaxY]);
-
-  // ── Mouse handlers (desktop) — motion-value writes, no re-renders ─────────
 
   function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
     if (!containerRef.current) return;
@@ -251,8 +218,6 @@ export function ProductStage({
     parallaxY.set(0);
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
-
   return (
     <div
       ref={containerRef}
@@ -264,7 +229,6 @@ export function ProductStage({
       }}
     >
 
-      {/* ── Background — fades in, counter-drifts ── */}
       {stageBackground ? (
         <motion.div
           className="stage-enter-bg absolute inset-0"
@@ -283,7 +247,6 @@ export function ProductStage({
         <div className="stage-enter-bg absolute inset-0 bg-[radial-gradient(ellipse_70%_65%_at_50%_42%,#1b1d38_0%,#0b0c16_56%,#05060b_100%)]" />
       )}
 
-      {/* ── Cursor-reactive ambient glow — static gradient moved via transform (GPU-composited) ── */}
       <motion.div
         className="pointer-events-none absolute inset-[-50%]"
         style={{
@@ -294,18 +257,15 @@ export function ProductStage({
       />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_40%_40%_at_50%_82%,rgba(15,23,42,0.65),transparent)]" />
 
-      {/* ── Product image — 3-layer: entrance / parallax / breathe+spin ── */}
       {productImage && (
         <div
           className={`stage-enter-product absolute top-0 bottom-0 left-0 flex items-center justify-center transition-[right,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${shouldAnimateCompletion && completionTransition === 'fade' ? 'opacity-80' : ''} `}
           style={{ right: '0%', willChange: 'transform, opacity, filter' }}
         >
-          {/* Parallax layer */}
           <motion.div
             className="flex h-full items-center justify-center"
             style={{ x: prodTranslateX, y: prodTranslateY }}
           >
-            {/* Breathe / spin layer */}
             <div
               ref={imageWrapperRef}
               className={
@@ -316,7 +276,6 @@ export function ProductStage({
                     : 'stage-product-breathe'
               }
             >
-              {/* Glow overlay — composited opacity animation, replaces filter: brightness/drop-shadow */}
               {shouldAnimateCompletion && (
                 <div
                   aria-hidden="true"
@@ -341,7 +300,6 @@ export function ProductStage({
         </div>
       )}
 
-      {/* ── Hotspots — staggered entrance, keyboard-focus ring ── */}
       {imageRect
         ? hotspots.map((h, i) => (
             <div
@@ -438,7 +396,6 @@ export function ProductStage({
             </div>
           ))}
 
-      {/* ── Progress arc — top right ── */}
       <div className="stage-enter-top absolute top-3 right-3 z-20 flex flex-col items-end gap-2">
         <div className="flex items-center gap-1.5">
           <span
@@ -483,7 +440,6 @@ export function ProductStage({
           </div>
         </div>
 
-        {/* ── Completion badge ── */}
         {allDiscovered && (
           <div className="completion-badge bg-accent/15 border-accent/35 flex items-center gap-1.5 rounded-full border px-3 py-1.5">
             <CheckCircle2 className="text-accent h-3.5 w-3.5 shrink-0" />
@@ -494,7 +450,6 @@ export function ProductStage({
         )}
       </div>
 
-      {/* ── Keyboard hint — bottom left of arc ── */}
       {!activePanel && !allDiscovered && hotspots.length > 1 && (
         <div
           className="stage-enter-top pointer-events-none absolute top-13 right-3 z-20"
@@ -506,7 +461,6 @@ export function ProductStage({
         </div>
       )}
 
-      {/* ── Lesson label — top left ── */}
       <div
         className="stage-enter-top pointer-events-none absolute top-6 left-6 z-20 max-w-md md:max-w-xl pr-6"
         style={{ animationDelay: '380ms' }}
@@ -526,7 +480,6 @@ export function ProductStage({
 
 
 
-      {/* ── Discover hint ── */}
       {discoveredCount === 0 && total > 0 && (
         <div
           className="stage-enter-bottom pointer-events-none absolute bottom-10 left-1/2 z-20 -translate-x-1/2"
@@ -538,7 +491,6 @@ export function ProductStage({
         </div>
       )}
 
-      {/* ── Completion burst ── */}
       <CompletionBurst active={showBurst} />
 
       <DiscoveryPanel

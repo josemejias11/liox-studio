@@ -16,8 +16,6 @@ import { ThemeToggle } from '@/shared/theme';
 import type { LessonSection } from '@/shared/contracts/player-course';
 import { getNavItems, type CourseFlow } from '@/learning/course-flow';
 
-// ── Icon/color metadata per sectionType / lessonType ─────────────────────────
-
 const LESSON_TYPE_META: Record<string, { icon: React.ElementType; color: string; label: string }> =
   {
     content: { icon: FileText, color: 'text-foreground/35', label: 'Content' },
@@ -36,8 +34,6 @@ const SECTION_TYPE_META: Record<
   disclaimer: { icon: ShieldAlert, color: 'text-muted-foreground', label: 'Disclaimer' },
 };
 
-// ── Completion state for a lesson section ─────────────────────────────────────
-
 function lessonCompletion(
   lesson: LessonSection,
   visited: Record<string, Set<string>>,
@@ -50,10 +46,7 @@ function lessonCompletion(
   return 'partial';
 }
 
-// ── Section row — shared by lesson / spec / quiz / disclaimer entries ─────────
-
 interface SectionRowProps {
-  /** Index glyph in the left gutter: a 1-based number, "✓", or "!". */
   indexGlyph: string | number;
   /**
    * Screen-reader replacement for a symbolic glyph ("✓" / "!"). When set, the
@@ -66,7 +59,6 @@ interface SectionRowProps {
   title: string;
   isCurrent: boolean;
   onClick: () => void;
-  /** Lesson completion state; non-lesson sections use the default "auto" dot. */
   completion?: 'auto' | 'full' | 'partial' | 'none';
 }
 
@@ -87,7 +79,6 @@ function SectionRow({
         isCurrent ? 'bg-accent/14 ring-accent/35 ring-1 ring-inset' : 'hover:bg-background/[0.045]'
       } `}
     >
-      {/* Index glyph */}
       <span
         aria-hidden={glyphSrText ? true : undefined}
         className={`w-4 shrink-0 text-right text-xs font-bold tabular-nums ${isCurrent ? 'text-accent' : 'text-foreground/25'}`}
@@ -96,17 +87,14 @@ function SectionRow({
       </span>
       {glyphSrText && <span className="sr-only">{glyphSrText}</span>}
 
-      {/* Section type icon */}
       <Icon className={`h-3.5 w-3.5 shrink-0 ${iconColor}`} />
 
-      {/* Title */}
       <span
         className={`flex-1 truncate text-sm leading-tight font-medium ${isCurrent ? 'text-foreground' : 'text-foreground/50'}`}
       >
         {title}
       </span>
 
-      {/* Completion dot */}
       <span
         className={`h-2 w-2 shrink-0 rounded-full ${
           completion === 'full'
@@ -122,18 +110,13 @@ function SectionRow({
   );
 }
 
-// ── Props ─────────────────────────────────────────────────────────────────────
-
 interface NavMapProps {
   flow: CourseFlow;
-  /** Flow index in the ordered course navigation list; -1 for cover, flow.items.length for complete */
   currentSectionIndex: number;
   visited: Record<string, Set<string>>;
   onNavigate: (flowIndex: number) => void;
   onClose: () => void;
 }
-
-// ── Component ─────────────────────────────────────────────────────────────────
 
 export function NavMap({
   flow,
@@ -158,7 +141,6 @@ export function NavMap({
     return () => document.removeEventListener('keydown', onKey);
   }, []);
 
-  // ── Section groups / offsets — single source of truth (course-structure) ──
   const { structure } = flow;
   const {
     lessonSections,
@@ -174,23 +156,19 @@ export function NavMap({
 
   const hasNonLessonSections = nonLessonItems.length > 0;
 
-  // Explored count (lessons only, for footer)
   const exploredCount = lessonSections.filter((ls) => {
     const st = lessonCompletion(ls, visited);
     return st === 'auto' || st === 'full';
   }).length;
 
-  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="absolute inset-0 z-[60] flex">
-      {/* Side panel */}
       <nav
         ref={panelRef as React.RefObject<HTMLElement>}
         aria-label="Course navigation"
         className="nav-map-in bg-background/96 border-border/[0.07] relative flex h-full w-[260px] flex-col border-r shadow-2xl backdrop-blur-2xl"
       >
-        {/* Header */}
         <div className="border-border/[0.07] flex shrink-0 items-center justify-between border-b px-4 pt-3.5 pb-3">
           <p className="text-foreground/35 text-[11px] font-bold tracking-[0.2em] uppercase">
             Course Map
@@ -207,22 +185,18 @@ export function NavMap({
           </div>
         </div>
 
-        {/* Scrollable section list */}
         <div
           className="flex flex-1 flex-col gap-0 overflow-y-auto px-2 py-2"
           style={{ scrollbarWidth: 'none' }}
         >
-          {/* ── Chapter groups ── */}
           {chapterGroups.map((group) => (
             <div key={group.chapterIndex}>
-              {/* Chapter label — non-interactive header row */}
               <div className="px-3 pt-3 pb-1">
                 <p className="text-foreground/30 truncate text-[9px] font-bold tracking-[0.18em] uppercase">
                   {group.chapterTitle}
                 </p>
               </div>
 
-              {/* Lessons in this chapter */}
               {group.lessons.map(({ section, absoluteIndex }, posInChapter) => {
                 const meta = LESSON_TYPE_META[section.lessonType] ?? LESSON_TYPE_META.content;
                 const flowIndex = lessonIndices.get(section._key) ?? absoluteIndex;
@@ -243,7 +217,6 @@ export function NavMap({
             </div>
           ))}
 
-          {/* ── Divider before non-lesson sections ── */}
           {hasNonLessonSections && (
             <div className="border-border/20 mx-3 my-2 border-t" aria-hidden="true" />
           )}
@@ -274,7 +247,6 @@ export function NavMap({
           })}
         </div>
 
-        {/* Footer */}
         <div className="border-border/[0.07] shrink-0 border-t px-4 py-2.5">
           <p className="text-foreground/30 text-xs">
             <span className="text-foreground/55 font-semibold">{exploredCount}</span> of{' '}
@@ -283,7 +255,6 @@ export function NavMap({
         </div>
       </nav>
 
-      {/* Backdrop — click to close */}
       <div
         className="bg-background/35 flex-1 cursor-pointer backdrop-blur-[2px]"
         onClick={onClose}

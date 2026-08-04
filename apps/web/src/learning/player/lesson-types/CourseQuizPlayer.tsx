@@ -14,12 +14,8 @@ import {
 import { createQuizSessionState, quizSessionReducer } from '@/learning/quiz-session';
 import type { AuthoredQuiz } from '@/shared/contracts/player-course';
 
-// ── Authored course quiz player ──────────────────────────────────────────────
-
 const OPTION_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
-// Transform the client-safe authored quiz into the shared wire shape.
-// (No correctness data exists here — grading happens in /api/quiz/grade.)
 function toClientQuiz(courseQuiz: AuthoredQuiz): ClientQuiz {
   return {
     quizId: courseQuiz._key,
@@ -41,7 +37,6 @@ export interface CourseQuizPlayerProps {
 
   sessionId?: string;
   courseId?: string;
-  /** Preview authored quiz material without grading or recording attempts. */
   preview?: boolean;
 }
 
@@ -61,7 +56,6 @@ export function CourseQuizPlayer({
   const [started, setStarted] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  // Clear any pending shake timers on unmount
   useEffect(() => {
     const pendingTimers = timers.current;
     return () => pendingTimers.forEach(clearTimeout);
@@ -108,7 +102,6 @@ export function CourseQuizPlayer({
     );
   }
 
-  // ── Answer selection — graded server-side per question ────────────────────
   async function handleSelect(optionIndex: number) {
     if (session.selectedIndex !== null || grading) return;
     dispatch({ type: 'answer.selected', selectedIndex: optionIndex });
@@ -150,7 +143,6 @@ export function CourseQuizPlayer({
     }
   }
 
-  // ── Final submission — server computes score / passed and records it ──────
   async function submitQuiz(answers: number[]) {
     dispatch({ type: 'submission.started' });
 
@@ -163,7 +155,6 @@ export function CourseQuizPlayer({
           source: quiz.source,
           quizId: quiz.quizId,
           answers,
-          // Identity is only attached for learner sessions, never previews.
           ...(sessionId && courseId ? { sessionId, courseId } : {}),
         }),
       });
@@ -196,7 +187,6 @@ export function CourseQuizPlayer({
 
   const total = quiz.questions.length;
 
-  // ── Intro screen ──────────────────────────────────────────────────────────
   if (!started && quiz.instructions) {
     return (
       <div className="quiz-enter absolute inset-0 flex flex-col items-center justify-center overflow-hidden bg-[#111225] px-8 text-center text-white">
@@ -221,7 +211,6 @@ export function CourseQuizPlayer({
     );
   }
 
-  // ── Scoring state — waiting for (or retrying) the server grade ────────────
   if (session.phase === 'submitting' && !session.summary) {
     return (
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#111225] text-white">
@@ -249,7 +238,6 @@ export function CourseQuizPlayer({
     );
   }
 
-  // ── Question view ─────────────────────────────────────────────────────────
   const q = quiz.questions[session.currentQuestionIndex];
   const result = session.results[session.currentQuestionIndex];
   const revealed = session.selectedIndex !== null && result !== undefined;
@@ -258,7 +246,6 @@ export function CourseQuizPlayer({
     <div className="absolute inset-0 flex flex-col bg-[#111225] text-white select-none">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_65%_55%_at_50%_18%,rgba(104,91,199,0.48),transparent_72%)]" />
 
-      {/* Header — progress bar + counter */}
       <div className="relative shrink-0 px-6 pt-5 pb-2 md:px-10 md:pt-7">
         <div className="mb-3 flex w-full items-center gap-1.5">
           {Array.from({ length: total }).map((_, i) => {
@@ -292,12 +279,10 @@ export function CourseQuizPlayer({
         key={session.currentQuestionIndex}
         className="relative mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col gap-4 overflow-y-auto px-6 pb-24 md:px-10"
       >
-        {/* Question text */}
         <p className="quiz-enter shrink-0 pt-3 text-xl leading-tight font-bold text-white md:text-3xl">
           {q.question}
         </p>
 
-        {/* Optional Image */}
         {q.image_url && (
           <div className="quiz-enter border-border/10 mx-auto w-full max-w-lg shrink-0 overflow-hidden rounded-xl border shadow-lg">
             <Image
@@ -311,7 +296,6 @@ export function CourseQuizPlayer({
           </div>
         )}
 
-        {/* Answer options */}
         <motion.div
           className="grid flex-1 grid-cols-1 content-start gap-3 md:grid-cols-2"
           role="radiogroup"
@@ -359,7 +343,6 @@ export function CourseQuizPlayer({
                 className={`${baseClass} ${stateClass} quiz-enter`}
                 style={{ animationDelay: `${60 + i * 45}ms` }}
               >
-                {/* Letter badge */}
                 <span
                   className={`mt-px flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold ${
                     showGreen
@@ -372,7 +355,6 @@ export function CourseQuizPlayer({
                   {OPTION_LABELS[i] ?? i + 1}
                 </span>
 
-                {/* Option text */}
                 <span
                   className={`mt-px text-base leading-snug font-semibold ${
                     showGreen ? 'text-[#242051]' : showRed ? 'text-[#5d5a62]' : 'text-[#27272c]'
@@ -381,14 +363,12 @@ export function CourseQuizPlayer({
                   {option}
                 </span>
 
-                {/* Pending grade spinner on the picked option */}
                 {grading && isSelected && (
                   <span className="absolute top-3 right-3">
                     <Loader2 className="h-3.5 w-3.5 animate-spin text-[#685bc7]" />
                   </span>
                 )}
 
-                {/* Result icon (after answer is revealed) */}
                 {revealed && isSelected && (
                   <span className="absolute top-3 right-3">
                     {isCorrect ? (
@@ -403,14 +383,12 @@ export function CourseQuizPlayer({
           })}
         </motion.div>
 
-        {/* Grading error — selection re-enabled so the learner can retry */}
         {session.error && (
           <p role="alert" className="shrink-0 text-sm font-medium text-[#ffb5b5]">
             {session.error}
           </p>
         )}
 
-        {/* Explanation — appears after the server grades the answer */}
         {revealed && result && (
           <>
             <div className="quiz-enter mt-2 shrink-0 rounded-2xl border border-white/14 bg-white/95 px-5 py-4 text-[#27272c] shadow-lg">

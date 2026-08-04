@@ -8,26 +8,15 @@ type SectionType = 'lesson' | 'specification' | 'quiz' | 'disclaimer';
 interface LessonFrameProps {
   children: ReactNode;
   contained?: boolean;
-  // Nav — omit all three to hide the nav bar entirely (e.g. cover / stage / quiz lessons)
   currentLesson?: number;
   totalLessons?: number;
   onPrev?: () => void;
   onNext?: () => void;
-  /**
-   * Sole switch for disabling "Next" (hotspot gate / end of flow). LessonFrame
-   * deliberately does NOT infer the last lesson from currentLesson ===
-   * totalLessons — the navigation reducer owns flow boundaries, and inferring
-   * here forced callers to inflate totals (breaking counter + progress bar).
-   */
   nextDisabled?: boolean;
-  // Completion hint shown above nav when nextDisabled
   completionHint?: string;
   className?: string;
-  // Navigation map toggle
   onToggleNavMap?: () => void;
-  // Device banner — shown as a fixed bottom bar below the fullscreen frame
   moduleTitle?: string;
-  // Section type controls the banner sub-label and hides the numeric nav counter for non-lesson types
   sectionType?: SectionType;
 }
 
@@ -60,22 +49,18 @@ export function LessonFrame({
   const isLessonType = sectionType === 'lesson';
 
   return (
-    // Outer shell — flex-col so the device banner stacks below the frame.
     <div
       className={`font-product bg-glass-gradient flex w-full flex-col items-center justify-start overflow-hidden ${
         contained ? 'h-full' : 'h-dvh'
       }`}
     >
-      {/* Fullscreen frame — fills all remaining vertical space after the banner */}
       <div
         className={`relative w-full flex-1 overflow-clip rounded-none ${className}`}
       >
         {children}
 
-        {/* ── Bottom vignette — blends lesson content into the black banner below ── */}
         <div className="from-background pointer-events-none absolute right-0 bottom-0 left-0 z-10 h-40 bg-linear-to-t to-transparent" />
 
-        {/* ── Floating utility buttons (lessons without nav bar) ── */}
         {!showNav && onToggleNavMap && (
           <button
             onClick={onToggleNavMap}
@@ -87,10 +72,8 @@ export function LessonFrame({
           </button>
         )}
 
-        {/* ── Nav bar — lives INSIDE the 16:9 frame at the bottom ── */}
         {showNav && (
           <>
-            {/* Completion hint */}
             {nextDisabled && completionHint && (
               <div className="pointer-events-none absolute right-0 bottom-24 left-0 z-10 flex justify-center">
                 <span className="glass-panel text-foreground rounded-full px-5 py-2 text-sm font-medium shadow-xl">
@@ -100,7 +83,6 @@ export function LessonFrame({
             )}
 
             <div className="pointer-events-none absolute right-4 bottom-6 left-4 z-20 flex items-end justify-between">
-              {/* Left cluster — map + notes */}
               {onToggleNavMap ? (
                 <button
                   onClick={onToggleNavMap}
@@ -114,7 +96,6 @@ export function LessonFrame({
                 <div />
               )}
 
-              {/* Right cluster — prev / counter / next */}
               <div className="pointer-events-auto glass-panel flex h-14 items-center gap-2 rounded-full px-2 shadow-lg">
                 {onPrev !== undefined && (
                   <button
@@ -127,7 +108,6 @@ export function LessonFrame({
                   </button>
                 )}
 
-                {/* Counter — visible only for lesson sections */}
                 {isLessonType && (
                   <>
                     <span
@@ -142,7 +122,6 @@ export function LessonFrame({
                   </>
                 )}
 
-                {/* Next Button */}
                 <button
                   onClick={onNext}
                   disabled={nextDisabled}
@@ -158,7 +137,6 @@ export function LessonFrame({
               </div>
             </div>
 
-            {/* Progress bar — 1px stripe along the very bottom edge */}
             {currentLesson !== undefined && totalLessons !== undefined && (
               <div
                 role="progressbar"
@@ -178,26 +156,21 @@ export function LessonFrame({
         )}
       </div>
 
-      {/* ── Device banner — fixed bottom bar below the frame ── */}
       {moduleTitle && (
         <div
           aria-hidden="true"
           className="glass-panel rounded-t-3xl border-b-0 flex w-full shrink-0 flex-col items-center justify-center gap-1 py-3"
         >
-          {/* "You are learning about" label */}
           <p className="text-muted-foreground text-[11px] leading-none font-medium tracking-[0.22em] uppercase">
             You are learning about
           </p>
 
-          {/* Device / module name — the hero text */}
           <p className="text-foreground text-center text-3xl leading-none font-bold">
             {moduleTitle}
           </p>
 
-          {/* Indigo underline accent */}
           <span className="bg-accent mt-1 block h-0.5 w-10 rounded-full" />
 
-          {/* Progress / section label — always rendered to keep banner height constant */}
           {sectionLabel ? (
             <p className="text-accent mt-1 text-xs leading-none font-semibold tracking-[0.18em] uppercase">
               {sectionLabel}

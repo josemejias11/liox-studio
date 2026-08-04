@@ -21,7 +21,7 @@ interface LessonTypeRegistryEntry {
   render: (input: LessonRenderInput) => React.ReactNode;
 }
 
-export interface LessonRenderInput {
+interface LessonRenderInput {
   lesson: LessonSection;
   lessonKey: string;
   hotspots: CourseHotspot[];
@@ -40,7 +40,7 @@ export interface LessonRenderInput {
   aiIdentity?: RevisionIdentity;
 }
 
-export const lessonTypeRegistry: Record<LessonType, LessonTypeRegistryEntry> = {
+const lessonTypeRegistry: Record<LessonType, LessonTypeRegistryEntry> = {
   content: {
     completionMode: LessonCompletionMode.HOTSPOT,
     requiresManualCompletion: false,
@@ -200,40 +200,39 @@ export function getLessonCompletionMode(
   return lessonTypeRegistry[lesson.lessonType ?? 'content']?.completionMode ?? LessonCompletionMode.HOTSPOT;
 }
 
-/** The registry is the only lesson-type-to-renderer mapping in the learner runtime. */
 export function renderLesson(input: LessonRenderInput): React.ReactNode {
   const lessonType = input.lesson.lessonType;
   const entry = lessonTypeRegistry[lessonType] ?? lessonTypeRegistry.content;
   return entry.render(input);
 }
 
-export const ContentLessonDynamic = dynamic(
+const ContentLessonDynamic = dynamic(
   () => import('./ContentLesson').then((m) => ({ default: m.ContentLesson })),
   { loading: LoadingSkeleton },
 );
-export const ProductStageDynamic = dynamic(
+const ProductStageDynamic = dynamic(
   () => import('./ProductStage').then((m) => ({ default: m.ProductStage })),
   { loading: LoadingSkeleton },
 );
-export const VideoLessonDynamic = dynamic(
+const VideoLessonDynamic = dynamic(
   () => import('./VideoLesson').then((m) => ({ default: m.VideoLesson })),
   { loading: LoadingSkeleton },
 );
-export const ColorSwitcherLessonDynamic = dynamic(
+const ColorSwitcherLessonDynamic = dynamic(
   () => import('./ColorSwitcherLesson').then((m) => ({ default: m.ColorSwitcherLesson })),
   { loading: LoadingSkeleton },
 );
-export const SplitScreenLessonDynamic = dynamic(
+const SplitScreenLessonDynamic = dynamic(
   () => import('./SplitScreenLesson').then((m) => ({ default: m.SplitScreenLesson })),
   { loading: LoadingSkeleton },
 );
-export const DragDropLessonDynamic = dynamic(() => import('./DragDropLesson'), {
+const DragDropLessonDynamic = dynamic(() => import('./DragDropLesson'), {
   loading: LoadingSkeleton,
 });
-export const ScrollStoryLessonDynamic = dynamic(() => import('./ScrollStoryLesson'), {
+const ScrollStoryLessonDynamic = dynamic(() => import('./ScrollStoryLesson'), {
   loading: LoadingSkeleton,
 });
-export const CanvasInspectionLessonDynamic = dynamic(
+const CanvasInspectionLessonDynamic = dynamic(
   () => import('./CanvasInspectionLesson').then((m) => ({ default: m.CanvasInspectionLesson })),
   { loading: LoadingSkeleton },
 );

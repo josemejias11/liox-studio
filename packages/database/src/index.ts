@@ -65,11 +65,6 @@ export {
   freezeCourseRevision,
   resolveCourseReviewFeedback,
 } from './course-review-repository';
-export type {
-  CourseFeedbackSummary,
-  CourseReviewSnapshot,
-  CourseRevisionSummary,
-} from './course-review-repository';
 export type { CourseDetailsInput } from './course-repository';
 export type { AuthoringCourseSummary } from './course-repository';
 export {
@@ -95,7 +90,6 @@ export {
 } from './course-generation-repository';
 export type {
   CourseGenerationRecord,
-  CourseGenerationStatus as CourseGenerationRecordStatus,
   CreateCourseGenerationInput,
   RequestedGenerationSource,
 } from './course-generation-repository';
@@ -114,8 +108,4 @@ export type {
   CourseSourceIndexStatus as CourseSourceIndexStatusContract,
   LessonInput,
 } from '@moto-ai/contracts/course-studio';
-export type {
-  CourseTrashItem,
-  RestoreTrashItemResult,
-  TrashLessonResult,
-} from './course-trash-repository';
+export type { CourseTrashItem } from './course-trash-repository';

@@ -1,11 +1,7 @@
 import { z } from 'zod';
 import { GenerateQuizRequestSchema } from '@moto-ai/contracts/quiz';
 
-// ── Chat wire contract (browser ⇄ /api/chat) ──────────────────────────────────
-// /api/chat is a server-to-server proxy in front of the self-hosted parser/RAG
-// service; the browser never talks to the parser directly. Both the route
-// handler and every client (CourseChat, DiscoveryPanel) validate against these
-// schemas so the two sides cannot drift.
+// The browser communicates with the parser only through validated app routes.
 
 const revisionIdField = z.string().min(1).max(100);
 const reviewTokenField = z.string().min(1).max(200);
@@ -66,20 +62,10 @@ const LessonProgressSchema = z.object({
   completed: z.boolean().optional(),
 });
 
-// Quiz results are NOT part of this contract: attempts are recorded
-// server-side by /api/quiz/grade so a client can never supply its own
-// `passed` / `score` (see contracts/quiz.ts).
-
-// Kept as a discriminated union so future progress types slot in without
-// changing the route's parse logic.
+// Quiz attempts are server-graded so clients cannot supply score or pass state.
 export const ProgressRequestSchema = z.discriminatedUnion('type', [LessonProgressSchema]);
 
 export type ProgressRequestBody = z.infer<typeof ProgressRequestSchema>;
-
-// ── Weak-topics contract (browser ⇄ /api/analytics/weak-topics) ───────────────
-// Called by MotoViewer before quiz generation to fetch cross-session engagement
-// signals. The client sends lesson metadata so the server can map lessonIds to
-// human-readable topics without an additional content-store round trip.
 
 export const WeakTopicsRequestSchema = z.object({
   courseId: z.string().min(1).max(100),

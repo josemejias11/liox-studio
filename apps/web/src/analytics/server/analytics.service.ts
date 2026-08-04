@@ -1,7 +1,5 @@
 import { prisma } from '@moto-ai/database';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
 export type LessonEngagementRow = { lessonId: string; viewCount: number };
 
 type SessionData = {
@@ -15,8 +13,6 @@ type SessionData = {
 type ScoreBucket = { label: string; count: number; color: string };
 
 type QuizRow = { score: number; total: number };
-
-// ── Pure helpers ──────────────────────────────────────────────────────────────
 
 function toSessionData(
   sessions: Awaited<ReturnType<typeof fetchRecentSessions>>,
@@ -62,8 +58,6 @@ function buildScoreBuckets(quizzes: QuizRow[]): ScoreBucket[] {
   ];
 }
 
-// ── DB fetchers (grouped for single Promise.all) ──────────────────────────────
-
 function fetchRecentSessions() {
   return prisma.session.findMany({
     orderBy: { updatedAt: 'desc' },
@@ -75,15 +69,6 @@ function fetchRecentSessions() {
   });
 }
 
-// ── Public API ────────────────────────────────────────────────────────────────
-
-/**
- * Return lesson engagement aggregated by lesson, ordered ascending by view
- * count (least-viewed first — used for weak-topic detection).
- *
- * @param courseId - Required. Pass an explicit course ID; use
- *   `getAllLessonEngagement` when you need cross-course data.
- */
 export async function getLessonEngagement(courseId: string): Promise<LessonEngagementRow[]> {
   if (!courseId) {
     throw new Error('getLessonEngagement requires a non-empty courseId');
@@ -97,10 +82,6 @@ export async function getLessonEngagement(courseId: string): Promise<LessonEngag
   return rows.map((r) => ({ lessonId: r.lessonId, viewCount: r._sum.viewCount ?? 0 }));
 }
 
-/**
- * Return lesson engagement across ALL courses.
- * Prefer `getLessonEngagement(courseId)` when a specific course is known.
- */
 export async function getAllLessonEngagement(): Promise<LessonEngagementRow[]> {
   const rows = await prisma.lessonProgress.groupBy({
     by: ['lessonId'],
@@ -154,9 +135,6 @@ export type WeakTopicsResult = {
   engagement: LessonEngagementRow[];
 };
 
-/**
- * Compute weak topics purely from lesson engagement and metadata list.
- */
 export function computeWeakTopics(
   engagement: LessonEngagementRow[],
   lessons: LessonTopicMeta[],
@@ -171,21 +149,17 @@ export function computeWeakTopics(
     return Array.from(topicSet).slice(0, 15);
   }
 
-  // Median viewCount across all seen lessons
   const counts = engagement.map((e) => e.viewCount).sort((a, b) => a - b);
   const mid = Math.floor(counts.length / 2);
   const median = counts.length % 2 === 0 ? (counts[mid - 1] + counts[mid]) / 2 : counts[mid];
 
-  // Lessons with at or below median engagement are "weak"
   const weakIds = new Set(engagement.filter((e) => e.viewCount <= median).map((e) => e.lessonId));
 
-  // Lessons present in the request but with zero views are also weak
   const seenIds = new Set(engagement.map((e) => e.lessonId));
   for (const l of lessons) {
     if (!seenIds.has(l.id)) weakIds.add(l.id);
   }
 
-  // Collect topics from weak lessons
   const lessonMap = new Map(lessons.map((l) => [l.id, l]));
   const topicSet = new Set<string>();
   for (const id of weakIds) {
@@ -199,9 +173,6 @@ export function computeWeakTopics(
   return Array.from(topicSet).slice(0, 15);
 }
 
-/**
- * Return computed weak topics and engagement records for a course.
- */
 export async function getWeakTopicsForCourse(
   courseId: string,
   lessons: LessonTopicMeta[],

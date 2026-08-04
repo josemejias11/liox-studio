@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from './index';
 import { courseGraphSelect, toCourseGraph, type CourseGraph } from './course-repository';
 
-export interface CourseRevisionSummary {
+interface CourseRevisionSummary {
   id: string;
   version: number;
   status: string;
@@ -12,7 +12,7 @@ export interface CourseRevisionSummary {
   hasReview: boolean;
 }
 
-export interface CourseReviewSnapshot {
+interface CourseReviewSnapshot {
   reviewId: string;
   revisionId: string;
   version: number;
@@ -21,7 +21,7 @@ export interface CourseReviewSnapshot {
   expiresAt: Date | null;
 }
 
-export interface CourseFeedbackSummary {
+interface CourseFeedbackSummary {
   id: string;
   revisionVersion: number;
   lessonId: string | null;

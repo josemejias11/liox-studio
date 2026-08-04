@@ -13,13 +13,13 @@ export interface CourseTrashItem {
   deletedAt: Date;
 }
 
-export interface TrashLessonResult {
+interface TrashLessonResult {
   course: CourseGraph;
   trashItem: CourseTrashItem;
   trash: CourseTrashItem[];
 }
 
-export interface RestoreTrashItemResult {
+interface RestoreTrashItemResult {
   course: CourseGraph;
   restoredLessonId: string;
   trash: CourseTrashItem[];

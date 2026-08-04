@@ -4,22 +4,17 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Check } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 
-// ── Variants ──────────────────────────────────────────────────────────────────
-// Single hotspot implementation; the former PulseHotspot is the "pulse" variant.
-
 export type HotspotVariant = 'moto-indigo-black' | 'white-black' | 'pulse';
 export type HotspotPresentation = 'classic' | 'callout' | 'reticle';
 
 interface VariantStyles {
   ariaPrefix: string;
-  /** Default ring color class; "" lets .stage-ring fall back to currentColor. */
   ring: string;
   dotVisited: string;
   dotUnvisited: string;
   check: string;
   tooltip: string;
   arrow: string;
-  /** Glow halo behind the dot once visited (pulse only). */
   visitedHalo: boolean;
 }
 
@@ -58,8 +53,6 @@ const VARIANT_STYLES: Record<HotspotVariant, VariantStyles> = {
   },
 };
 
-// ── Props ─────────────────────────────────────────────────────────────────────
-
 export interface HotspotProps {
   x: number;
   y: number;
@@ -68,7 +61,6 @@ export interface HotspotProps {
   onOpen: () => void;
   onVisit?: () => void;
 
-  // ── Design knobs ──────────────────────────────────────────────────────────
   variant?: HotspotVariant;
   presentation?: HotspotPresentation;
   calloutSide?: 'left' | 'right';
@@ -77,8 +69,6 @@ export interface HotspotProps {
   labelClassName?: string;
   icon?: React.ReactNode;
 
-  // ── Roving-tabindex support (ProductStage keyboard navigation) ────────────
-  /** React 19 ref-as-prop — lets a parent move real DOM focus to this hotspot. */
   ref?: React.Ref<HTMLButtonElement>;
   tabIndex?: number;
   onFocus?: React.FocusEventHandler<HTMLButtonElement>;
@@ -106,7 +96,6 @@ export function Hotspot({
   const [justVisited, setJustVisited] = useState(false);
   const shouldReduceMotion = useReducedMotion();
 
-  // Clean up pending burst/check timeouts on unmount.
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   useEffect(() => {
     const timeouts = timeoutsRef.current;
@@ -147,7 +136,6 @@ export function Hotspot({
         shouldReduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 400, damping: 25 }
       }
     >
-      {/* Wave rings — 2 staggered continuous waves, hidden once visited */}
       {!visited && (
         <>
           <span
@@ -159,10 +147,8 @@ export function Hotspot({
         </>
       )}
 
-      {/* Burst ring — one-shot on click */}
       {bursting && <span className={`stage-burst ${ringClass}`} />}
 
-      {/* Visited glow halo */}
       {styles.visitedHalo && visited && (
         <motion.span
           initial={{ opacity: 0, scale: 0.8 }}
@@ -172,7 +158,6 @@ export function Hotspot({
         />
       )}
 
-      {/* The physical dot */}
       <motion.span
         layout={!shouldReduceMotion}
         className={`relative flex h-6 w-6 items-center justify-center rounded-full transition-colors duration-300 ${visited ? styles.dotVisited : styles.dotUnvisited} `}
@@ -186,7 +171,6 @@ export function Hotspot({
           : icon}
       </motion.span>
 
-      {/* Persistent Stage callout for desktop presentations. */}
       {isCallout && (
         <span
           className={`pointer-events-none absolute top-1/2 hidden -translate-y-1/2 items-center motion-reduce:animate-none motion-reduce:transition-none md:flex ${
@@ -204,7 +188,6 @@ export function Hotspot({
         </span>
       )}
 
-      {/* Canvas reticle around the shared physical dot. */}
       {isReticle && (
         <span className="pointer-events-none absolute h-16 w-16 rounded-full border border-[#9eb0ff]/75 shadow-[0_0_0_10px_rgba(158,176,255,0.08)] motion-reduce:animate-none motion-reduce:transition-none">
           <span className="absolute top-1/2 left-[-14px] h-px w-[90px] -translate-y-1/2 bg-[#9eb0ff]/65" />
@@ -212,12 +195,10 @@ export function Hotspot({
         </span>
       )}
 
-      {/* Label tooltip — shows on hover AND keyboard focus above the dot */}
       <span
         className={`pointer-events-none absolute bottom-full left-1/2 mb-3 -translate-x-1/2 translate-y-2 rounded-xl px-4 py-2 text-sm font-semibold tracking-wide opacity-0 transition-all duration-300 ease-out group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100 ${compactTooltipClass} ${labelClassName || styles.tooltip}`}
       >
         {label}
-        {/* Arrow */}
         <span
           className={`absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent ${styles.arrow}`}
         />
