@@ -1,7 +1,5 @@
 import type { NextConfig } from 'next';
 
-// ─── Security header helpers ────────────────────────────────────────────────
-
 const isDev = process.env.NODE_ENV !== 'production';
 
 const SHARED_IMG_SRC = [
@@ -51,8 +49,6 @@ const COMMON_HEADERS = [
     value: 'camera=(), microphone=(), geolocation=()',
   },
 ];
-
-// ─── Next.js config ──────────────────────────────────────────────────────────
 
 const nextConfig: NextConfig = {
   transpilePackages: [
