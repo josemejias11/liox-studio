@@ -21,28 +21,19 @@ export function CourseComplete({
 
   return (
     <div className="bg-background absolute inset-0 flex items-center justify-center overflow-hidden">
-      {/* Ambient glows */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_55%_at_50%_45%,rgba(104,91,199,0.08),transparent)]" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_40%_35%_at_55%_75%,rgba(104,91,199,0.06),transparent)]" />
-
-      {/* Decorative rings */}
       <div className="cc-spin border-border/4 absolute h-130 w-130 rounded-full border" />
       <div className="cc-spin-rev border-accent/8 absolute h-90 w-90 rounded-full border" />
       <div className="cc-spin border-border/6 absolute h-55 w-55 rounded-full border" />
-
-      {/* Content card */}
       <div className="relative z-10 flex w-full max-w-75 flex-col items-center gap-5 px-6 text-center">
-        {/* Badge */}
         <div className="cc-badge-in bg-accent flex h-17 w-17 items-center justify-center rounded-full shadow-[0_0_48px_rgba(104,91,199,0.32),0_0_80px_rgba(104,91,199,0.18)]">
           <GraduationCap className="text-accent-foreground h-8.5 w-8.5 stroke-[1.5]" />
         </div>
-
-        {/* Eyebrow + title */}
         <div
           className="cc-rise flex flex-col items-center gap-1.5"
           style={{ animationDelay: '160ms' }}
         >
-          {/* Prominent "Course Complete" banner chip */}
           <span className="bg-accent/15 border-accent/25 text-accent inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[9px] font-bold tracking-[0.22em] uppercase">
             Course Complete
           </span>
@@ -51,8 +42,6 @@ export function CourseComplete({
           </p>
           <h2 className="text-foreground text-[20px] leading-tight font-bold">{moduleTitle}</h2>
         </div>
-
-        {/* Stats row */}
         <div className="cc-rise w-full" style={{ animationDelay: '260ms' }}>
           <div className="bg-background/4 border-border/[0.07] flex items-stretch overflow-hidden rounded-2xl border">
             <div className="flex flex-1 flex-col items-center justify-center gap-0.5 py-3">
@@ -87,8 +76,6 @@ export function CourseComplete({
             </div>
           </div>
         </div>
-
-        {/* Return to Library */}
         <div className="cc-rise" style={{ animationDelay: '360ms' }}>
           <Link
             href="/"

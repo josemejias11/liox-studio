@@ -39,14 +39,10 @@ export function ColorSwitcherLesson({ lesson, imageSizes = '100vw' }: ColorSwitc
           <CircleGauge className="h-4 w-4 text-[#685bc7]" /> Learning comparison
         </div>
       </header>
-
-      {/* Images Container */}
       <div className="relative flex flex-1 items-center justify-center overflow-hidden px-6 pt-28 pb-40 md:px-10 md:pt-32 md:pb-44">
         {variants.map((variant, i) => {
           const imageUrl = variant.image?.asset?.url;
           if (!imageUrl) return null;
-          
-          // Calculate opacity based on distance from current slider value
           const distance = Math.abs(sliderValue - i);
           const opacity = Math.max(0, 1 - distance);
 
@@ -68,8 +64,6 @@ export function ColorSwitcherLesson({ lesson, imageSizes = '100vw' }: ColorSwitc
           );
         })}
       </div>
-
-      {/* Control Area */}
       <div className="absolute right-0 bottom-8 left-0 z-10 flex flex-col items-center justify-center px-6 md:bottom-10">
         <div className="flex w-full max-w-3xl flex-col gap-4 rounded-[1.75rem] border border-white/80 bg-white/78 p-5 shadow-[0_18px_45px_rgba(24,25,29,0.14)] backdrop-blur-xl md:p-6">
           <div className="flex items-center justify-between px-1">
@@ -104,7 +98,7 @@ export function ColorSwitcherLesson({ lesson, imageSizes = '100vw' }: ColorSwitc
               </button>
             ))}
           </div>
-          
+
           <input
             type="range"
             min={0}

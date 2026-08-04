@@ -140,10 +140,6 @@ export async function retryCourseSourceIndex(
   });
   return toCourseSourceFile(retried);
 }
-
-// Removal is deliberately two-phase. The retained DELETING row carries the
-// R2 key and source ID needed to retry cleanup after either external store is
-// unavailable. A source in this state cannot be frozen into a new revision.
 export async function beginCourseSourceRemoval(
   courseId: string,
   sourceId: string,

@@ -8,7 +8,7 @@ import type { RevisionIdentity } from '@/shared/contracts/api';
 const PLAYER_WIDTH = 1440;
 const PLAYER_HEIGHT = 810;
 
-/** Shared scaled learner viewport used by author preview and external review. */
+
 export function PlayerViewport({
   content,
   selectedLessonId,

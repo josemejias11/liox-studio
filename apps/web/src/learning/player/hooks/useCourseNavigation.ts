@@ -7,8 +7,6 @@ import { getLessonCompletionMode, LessonCompletionMode } from '../lesson-types/r
 import { isCanvasComplete } from '@/learning/canvas';
 import { getCoveredFeatureLabels, isRefresherComplete } from '@/learning/refresher';
 
-// ── Course phase state machine ────────────────────────────────────────────────
-
 export type CoursePhase =
   | { phase: 'cover' }
   | { phase: 'chapter'; chapterIndex: number; lessonIndex: number }
@@ -38,8 +36,6 @@ const INITIAL_STATE: CourseNavState = {
   navDirection: 1,
   showChapterIntro: false,
 };
-
-// ── Flow index (progress bar / NavMap highlight) ──────────────────────────────
 
 function findFlowIndex(flow: CourseFlow, kind: 'quiz' | 'disclaimer'): number {
   return flow.items.find((item) => item.kind === kind)?.index ?? flow.items.length;
@@ -80,15 +76,13 @@ export function getSectionIndex(flow: CourseFlow, phase: CoursePhase): number {
   }
 }
 
-// ── Pure phase helpers ────────────────────────────────────────────────────────
 
-/** Phase that follows the last chapter: specs → quiz → disclaimer → complete. */
 function postChapterPhase(s: CourseStructure): CoursePhase {
   if (s.specSections.length > 0) return { phase: 'specifications', specIndex: 0 };
   return { phase: 'quiz' };
 }
 
-/** Last lesson of the last chapter, or the cover when there are no chapters. */
+
 function lastChapterOrCover(s: CourseStructure): CoursePhase {
   const lastChapter = s.chapters[s.chapters.length - 1];
   if (!lastChapter) return { phase: 'cover' };
@@ -99,7 +93,7 @@ function lastChapterOrCover(s: CourseStructure): CoursePhase {
   };
 }
 
-/** Phase that precedes the quiz when navigating backwards. */
+
 function phaseBeforeQuiz(s: CourseStructure): CoursePhase {
   if (s.specSections.length > 0) {
     return { phase: 'specifications', specIndex: s.specSections.length - 1 };
@@ -107,12 +101,10 @@ function phaseBeforeQuiz(s: CourseStructure): CoursePhase {
   return lastChapterOrCover(s);
 }
 
-/** Phase that precedes the disclaimer when navigating backwards. */
+
 function phaseBeforeDisclaimer(_s: CourseStructure): CoursePhase {
   return { phase: 'quiz' };
 }
-
-// ── Reducer ───────────────────────────────────────────────────────────────────
 
 export function isLessonLocked(
   structure: CourseStructure,
@@ -177,14 +169,12 @@ function reduceNext(
           lessonIndex: phase.lessonIndex + 1,
         });
       }
-      // Last lesson of this chapter — inject quick check if present.
       const currentChapterGroup = structure.chapters.find(
         (c) => c.chapterIndex === phase.chapterIndex,
       );
       if (currentChapterGroup?.quickCheck) {
         return forward({ phase: 'chapter-quiz', chapterIndex: phase.chapterIndex });
       }
-      // No quick check — cross into the next chapter if it exists.
       const nextChapterIndex = phase.chapterIndex + 1;
       if (getChapterLessons(structure, nextChapterIndex).length > 0) {
         return forward({ phase: 'chapter', chapterIndex: nextChapterIndex, lessonIndex: 0 }, true);
@@ -203,8 +193,6 @@ function reduceNext(
 
     case 'disclaimer':
       return forward({ phase: 'complete' });
-
-    // "quiz" advances via QUIZ_DONE; "complete" stays put.
     default:
       return state;
   }
@@ -282,7 +270,7 @@ function reduceGoToSection(
   const currentIdx = getSectionIndex(flow, state.phase);
   const isForward = index > currentIdx;
   if (isForward && isLessonLocked(structure, state.phase, visited)) {
-     return state; // Jump is blocked because current lesson is locked
+     return state;
   }
 
   const navDirection: 1 | -1 = isForward ? 1 : -1;
@@ -304,7 +292,7 @@ function reduceGoToSection(
           chapterIndex: group?.chapterIndex ?? 0,
           lessonIndex: lessonIdx >= 0 ? lessonIdx : 0,
         },
-        lessonIdx <= 0, // first lesson of a chapter (or not found) shows the intro
+        lessonIdx <= 0,
       );
     }
     case 'specification': {
@@ -323,7 +311,7 @@ function reduceGoToSection(
   }
 }
 
-/** Pure, testable navigation reducer over the derived course structure. */
+
 export function courseNavigationReducer(
   flow: CourseFlow,
   state: CourseNavState,
@@ -338,7 +326,6 @@ export function courseNavigationReducer(
     case 'GO_TO_SECTION':
       return reduceGoToSection(flow, state, action.index, action.visited);
     case 'QUIZ_DONE':
-      // Pass and fail-without-retry both advance past the quiz gate.
       return {
         phase: structure.disclaimerSection ? { phase: 'disclaimer' } : { phase: 'complete' },
         navDirection: 1,
@@ -366,8 +353,6 @@ export function courseNavigationReducer(
   }
 }
 
-// ── Hook ──────────────────────────────────────────────────────────────────────
-
 export function useCourseNavigation(
   flow: CourseFlow,
   visited?: Record<string, Set<string>>,
@@ -377,8 +362,6 @@ export function useCourseNavigation(
     (s: CourseNavState, a: CourseNavAction) => courseNavigationReducer(flow, s, a),
     INITIAL_STATE,
   );
-
-  // Completion burst — fires whenever the course transitions into "complete".
   const [showBurst, setShowBurst] = useState(false);
   const prevPhaseRef = useRef(state.phase.phase);
   useEffect(() => {

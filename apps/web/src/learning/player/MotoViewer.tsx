@@ -16,8 +16,6 @@ import { ErrorBoundary } from '@/shared/ErrorBoundary';
 import { useLessonRuntime } from './hooks/useLessonRuntime';
 import { PlayerOverlays } from './PlayerOverlays';
 
-// ── Framer Motion slide variants ─────────────────────────────────────────────
-
 const slideVariants = {
   enter: (direction: number) => ({
     x: direction > 0 ? 24 : -24,
@@ -37,8 +35,6 @@ const slideVariants = {
     transition: { duration: 0.18, ease: [0.32, 0.72, 0, 1] as [number, number, number, number] },
   }),
 };
-
-// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function MotoViewer({
   course,
@@ -62,8 +58,6 @@ export default function MotoViewer({
   const structure = flow.structure;
 
   const [showNavMap, setShowNavMap] = useState(false);
-
-  // ── Session ───────────────────────────────────────────────────────────────
   const { sessionId, persistSession: userPersistSession } = useCourseSession(preview);
   const persistSession = userPersistSession && !preview;
 
@@ -100,8 +94,6 @@ export default function MotoViewer({
     navigateToPreviewSection,
     preview,
   ]);
-
-  // ── Current lesson (chapter phase only) ───────────────────────────────────
   const currentLesson =
     phase.phase === 'chapter'
       ? getChapterLessons(structure, phase.chapterIndex)[phase.lessonIndex]
@@ -113,8 +105,6 @@ export default function MotoViewer({
     nextLocked,
   });
   const { lessonKey } = lessonRuntime;
-
-  // ── Navigation wrappers ───────────────────────────────────────────────────
   const goNext = nav.goNext;
   const goPrev = nav.goPrev;
 
@@ -122,8 +112,6 @@ export default function MotoViewer({
     setShowNavMap(false);
     nav.navigateToSection(i);
   }
-
-  // ── Completion stats ──────────────────────────────────────────────────────
   const { totalHotspots, totalHotspotsVisited } = useMemo(
     () =>
       structure.lessonSections.reduce(
@@ -142,14 +130,10 @@ export default function MotoViewer({
       ),
     [structure.lessonSections, visited],
   );
-
-  // ── Lesson view tracking ──────────────────────────────────────────────────
   useEffect(() => {
     if (preview || !lessonKey || phase.phase !== 'chapter' || showChapterIntro) return;
     markLessonViewed(lessonKey, course._id);
   }, [course._id, lessonKey, markLessonViewed, phase.phase, preview, showChapterIntro]);
-
-  // ── Weak topics for AI quiz generation ───────────────────────────────────
   const [disclaimerCanProceed, setDisclaimerCanProceed] = useState(true);
   const { topics: weakTopics } = useWeakTopics({
     enabled: !preview,
@@ -161,8 +145,6 @@ export default function MotoViewer({
   });
 
   const slideKey = getCoursePhaseSlideKey({ phase, currentLesson, showChapterIntro });
-
-  // ── LessonFrame props vary by phase ───────────────────────────────────────
   const isContentLesson =
     phase.phase === 'chapter' &&
     !showChapterIntro &&
@@ -200,8 +182,6 @@ export default function MotoViewer({
                 moduleTitle: course.title,
               }
             : { onToggleNavMap: () => setShowNavMap((v) => !v), moduleTitle: course.title };
-
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <LessonFrame {...frameProps} contained={preview}>
       <AnimatePresence mode="wait" custom={navDirection}>

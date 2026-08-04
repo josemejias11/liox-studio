@@ -18,8 +18,6 @@ export function VideoLesson({
 }: VideoLessonProps) {
   const src = videoFileUrl;
   const aspectRatio = cssAspectRatio(videoAspectRatio);
-
-  // ── No source configured ─────────────────────────────────────────────────
   if (!src) {
     return (
       <div className="bg-background absolute inset-0 flex flex-col items-center justify-center gap-3">
@@ -56,8 +54,6 @@ export function VideoLesson({
           Complete the video to continue
         </div>
       </header>
-
-      {/* ── Video area ── */}
       <div className="relative z-10 flex min-h-0 flex-1 items-center justify-center px-5 pt-5 pb-24 md:px-10 md:pt-7">
         <div className="relative flex h-full w-full max-w-6xl items-center justify-center overflow-hidden rounded-[1.75rem] border border-white/10 bg-black shadow-[0_30px_90px_rgba(0,0,0,0.72)]">
           <div className="pointer-events-none absolute top-0 right-0 left-0 z-10 h-px bg-linear-to-r from-transparent via-white/25 to-transparent" />

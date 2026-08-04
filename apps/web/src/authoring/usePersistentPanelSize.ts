@@ -27,7 +27,6 @@ function readStoredSize(key: string, defaultValue: number, minimum: number, maxi
       }
     }
   } catch {
-    // Local storage may be unavailable or contain malformed legacy values.
   }
 
   return clamp(defaultValue, minimum, maximum);
@@ -68,7 +67,6 @@ export function usePersistentPanelSize({
     try {
       window.localStorage.setItem(key, JSON.stringify(clampedSize));
     } catch {
-      // Persistence is a convenience; resizing must still work when storage fails.
     }
   }, [clampedSize, key, restoredKey]);
 

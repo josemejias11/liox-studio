@@ -6,31 +6,21 @@ import type { RevisionIdentity } from '@/shared/contracts/api';
 
 import { CourseQuizPlayer } from './CourseQuizPlayer';
 
-// ── Props ─────────────────────────────────────────────────────────────────────
-
 export interface QuizLessonProps {
-  /** Topics the learner has not explored yet — steers AI quiz generation when courseQuiz is absent. */
+
   weakTopics?: string[];
-  /** When provided, renders the authored questions instead of an AI quiz. */
+
   courseQuiz?: AuthoredQuiz;
-  /** Called with the server-graded score 0–100 (percentage) on pass. */
+
   onPass: (score: number) => void;
-  /** Called when the learner fails and retry is not allowed (or chooses to move on). */
+
   onFail: () => void;
-  /**
-   * Session identity for recording the attempt server-side. Omit in previews;
-   * the quiz still grades, but nothing is persisted there.
-   */
+
   sessionId?: string;
   courseId?: string;
   preview?: boolean;
   aiIdentity?: RevisionIdentity;
 }
-
-// ── Lesson entry point ────────────────────────────────────────────────────────
-// Authored quizzes render directly; otherwise an adaptive AI quiz
-// is generated from the uploaded course materials via /api/quiz. Both sources
-// are graded exclusively server-side by /api/quiz/grade.
 
 export function QuizLesson({
   weakTopics,

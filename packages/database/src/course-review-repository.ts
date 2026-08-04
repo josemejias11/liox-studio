@@ -149,12 +149,6 @@ export async function freezeCourseRevision(
   );
   return summary(revision);
 }
-
-// Compatibility for the current Studio revision endpoint. The source-aware
-// operation is the only implementation and will be called directly by the
-// next source-bound endpoint update.
-export const createCourseRevision = freezeCourseRevision;
-
 export async function createCourseReview(
   revisionId: string,
 ): Promise<{ reviewId: string; token: string }> {

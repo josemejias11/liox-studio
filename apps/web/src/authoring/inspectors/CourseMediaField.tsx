@@ -15,7 +15,7 @@ interface CourseMediaFieldProps {
 
 const buttonClass = 'studio-glass-control inline-flex min-h-11 items-center justify-center rounded-lg border border-input px-3 text-xs font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
-/** Uploads an image to the authenticated Studio endpoint without persisting it. */
+
 export function CourseMediaField({
   courseId,
   disabled = false,

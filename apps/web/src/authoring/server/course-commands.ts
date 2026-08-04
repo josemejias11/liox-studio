@@ -1,12 +1,12 @@
 import {
   createChapter,
   createCourseReview,
-  createCourseRevision,
   createCourseTemplate,
   createLesson,
   deleteChapter,
   duplicateLesson,
   emptyCourseTrash,
+  freezeCourseRevision,
   getAuthoringCourse,
   listCourseRevisions,
   listCourseReviewFeedback,
@@ -103,7 +103,7 @@ export async function listAuthoringRevisions(courseId: string) {
 }
 
 export async function createAuthoringRevision(courseId: string, notes?: string) {
-  const revision = await createCourseRevision(courseId, notes);
+  const revision = await freezeCourseRevision(courseId, notes);
   return { ...revision, sourceIds: await listFrozenRevisionSourceIds(courseId, revision.id) };
 }
 

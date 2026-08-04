@@ -21,7 +21,7 @@ interface ContentLessonProps {
   hotspots: CourseHotspot[];
   visitedLabels: Set<string>;
   onVisit: (label: string) => void;
-  /** Forwarded to DiscoveryPanel for its AI chat calls. */
+
   courseId?: string;
   preview?: boolean;
   imageSizes?: string;
@@ -130,7 +130,6 @@ export function ContentLesson({
         isInteraction ? 'bg-[#090a18]' : 'bg-[#f4f0e8]'
       }`}
     >
-      {/* Background image or solid color — the lesson's LCP element */}
       {imageUrl ? (
         <Image
           src={imageUrl}
@@ -181,8 +180,6 @@ export function ContentLesson({
           </div>
         )}
       </div>
-
-      {/* Text content */}
       {(!imageUrl || lesson.body) && (
         <div
           className={`pointer-events-none absolute z-10 flex flex-col ${
@@ -246,8 +243,6 @@ export function ContentLesson({
           </div>
         </div>
       )}
-
-      {/* Hotspots */}
       {visibleHotspots.map((h, i) => (
           <Hotspot
             key={i}

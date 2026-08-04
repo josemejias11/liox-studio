@@ -76,17 +76,11 @@ export default function ScrollStoryLesson({
 
   return (
     <div ref={scrollContainerRef} className="font-product relative h-full w-full overflow-y-scroll bg-[#f0ede9] text-[#18191d]">
-
-      {/* Sticky navigation layer — zero document height, content overflows visibly */}
       <div className="sticky top-0 h-0 z-50 overflow-visible pointer-events-none">
-
-        {/* Gold progress bar */}
         <motion.div
           className="absolute top-0 left-0 right-0 h-1 bg-[#685bc7] origin-left"
           style={{ scaleX: scrollYProgress }}
         />
-
-        {/* Chapter progress dots */}
         {scrollChapters.length > 1 && (
           <div
             className="absolute right-4 flex flex-col gap-3 pointer-events-auto"
@@ -111,8 +105,6 @@ export default function ScrollStoryLesson({
             ))}
           </div>
         )}
-
-        {/* Completion overlay */}
         <AnimatePresence>
           {showCompletionOverlay && (
             <motion.div
@@ -129,8 +121,6 @@ export default function ScrollStoryLesson({
           )}
         </AnimatePresence>
       </div>
-
-      {/* Hero fallback image — only shown when no chapter has its own image */}
       {!hasChapterImages && media?.asset?.url && (
         <div className="px-4 md:px-8 pt-8">
           <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-8">
@@ -143,8 +133,6 @@ export default function ScrollStoryLesson({
           </div>
         </div>
       )}
-
-      {/* Stacking cards */}
       <div className="px-4 pb-8 md:px-8">
         <div className="mx-auto max-w-6xl px-2 pt-8 md:px-6 md:pt-12">
           <p className="mb-3 text-xs font-semibold tracking-[0.24em] text-[#685bc7] uppercase">Story mode</p>
@@ -166,7 +154,6 @@ export default function ScrollStoryLesson({
               marginBottom: i < lastIndex ? '50vh' : 0,
             }}
           >
-            {/* Per-card image */}
             {chapter.image?.asset?.url && (
               <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-6">
                 <Image
@@ -177,14 +164,10 @@ export default function ScrollStoryLesson({
                 />
               </div>
             )}
-
-            {/* Heading */}
             <p className="mb-3 text-xs font-semibold tracking-[0.2em] text-[#b48a3a] uppercase">Moment {String(i + 1).padStart(2, '0')}</p>
             <h3 className="font-product mb-6 text-4xl leading-[0.98] tracking-[-0.035em] text-[#18191d] md:text-5xl">
               {chapter.heading}
             </h3>
-
-            {/* Body */}
             {chapter.body && (
               <div className="font-product prose prose-lg max-w-none font-light leading-relaxed text-[#595b66]">
                 {typeof chapter.body === 'string' ? (

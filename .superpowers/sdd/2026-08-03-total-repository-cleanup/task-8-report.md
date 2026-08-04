@@ -13,7 +13,7 @@ interaction, or grounded-AI contract changes.
 | --- | --- | --- |
 | `apps/web/src/components/FullWidthCarousel.tsx` | Repository-wide exact-name scan found only its declaration; it is not a Next.js route/entrypoint, package export, or config/runtime reference. | Deleted as a genuine orphan. |
 | `apps/web/src/learning/player/lesson-types/registry.ts` loaders, registry, and render-input type | The loader constants, registry, and input type are consumed only inside the registry; only `LessonCompletionMode`, `getLessonCompletionMode`, and `renderLesson` have feature callers. | Made internal-only; retained the public feature API. |
-| Database review/trash return types and generation-status alias | Repository-wide import scan found no consumer of the named barrel exports. Repository functions still own their internal return types; `CourseTrashItem` remains imported by authoring commands. | Removed unowned named barrel exports and made internal-only types private. |
+| Database review/trash return types, generation-status alias, and revision alias | Repository-wide import scan found no consumer of the named barrel exports. `createCourseRevision` only aliased `freezeCourseRevision`, while the authoring command was its sole caller. Repository functions still own their internal return types; `CourseTrashItem` remains imported by authoring commands. | Removed unowned named barrel exports, made internal-only types private, and standardized the authoring command on `freezeCourseRevision`. |
 | Web routes, pages, layouts, route handlers, package roots, Prisma schema, parser modules, and script runner | Next route inventory, package `exports`, root/workspace scripts, Next config, `pyproject.toml` (`moto-parser = moto_parser.main:run`), and Python import/entrypoint scans each showed an active owner. | Retained. |
 
 The empty-directory scan reported only `services/parser-service/venv/include`,
@@ -22,24 +22,24 @@ directory; it was intentionally left untouched.
 
 ## Comment review
 
-Removed narrative section banners, implementation restatements, stale
-`PulseHotspot` history, and JSX layout labels from the learner player,
-analytics, and quiz contract surfaces. Retained comments express one of the
-allowed categories:
+Removed narration, restatements, stale `PulseHotspot` history, JSX layout
+labels, and compatibility/future-endpoint explanations across the runtime
+TypeScript/TSX surfaces, including analytics, learner player, authoring, shared
+contracts, parser client, and quiz contracts. The remaining runtime comments
+are limited to required ESLint directives.
 
-- security boundaries: browser-to-parser routing and server-only quiz answer
-  keys/grades;
-- non-obvious invariants: preview identity isolation and roving focus behavior;
-- platform constraints/tradeoffs: CSP/Next hydration requirements;
-- lint/tooling directives required by the configured linter.
+- The retained Next CSP comment describes a platform constraint and deliberate
+  nonce tradeoff; generated declarations and required lint/tooling directives
+  remain untouched.
 
 ## Changed paths
 
 - Deleted `apps/web/src/components/FullWidthCarousel.tsx`.
 - Updated the learner registry and database barrel/repository visibility to
-  remove internal-only exports.
-- Removed narrative/stale comments from analytics, learner player components,
-  shared API contracts, and quiz contracts.
+  remove internal-only exports and the `createCourseRevision` compatibility
+  alias; authoring now calls the canonical `freezeCourseRevision` operation.
+- Removed narration/restatement comments repository-wide from runtime
+  TypeScript/TSX sources.
 - Created this report.
 
 ## Verification
@@ -52,6 +52,12 @@ allowed categories:
 | `npm run typecheck` | Passed: all six workspaces completed `tsc --noEmit`. |
 | `npm run lint` | Passed: ESLint completed for `apps`, `packages`, and `scripts`. |
 | `git diff --check` | Passed with no whitespace errors. |
+
+### Fix round 1 verification
+
+- `rg -n "createCourseRevision|future endpoint|Compatibility" apps packages services scripts --glob '*.{ts,tsx,js,mjs,py}'` returned no matches.
+- Re-ran `npm run typecheck` and `npm run lint`; both passed after removing the
+  alias and comment narration.
 
 ## Scope boundary and residual risk
 

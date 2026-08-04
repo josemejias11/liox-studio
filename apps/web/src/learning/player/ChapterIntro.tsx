@@ -4,14 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, type Variants } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
 
-// ── Types ──────────────────────────────────────────────────────────────────
-
 interface ChapterIntroProps {
   chapterTitle: string;
   onContinue: () => void;
 }
-
-// ── Animation variants ─────────────────────────────────────────────────────
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -31,8 +27,6 @@ const itemVariants: Variants = {
   },
 };
 
-// ── Component ──────────────────────────────────────────────────────────────
-
 export function ChapterIntro({ chapterTitle, onContinue }: ChapterIntroProps) {
   const [barWidth, setBarWidth] = useState(0);
   const pausedRef = useRef(false);
@@ -42,8 +36,6 @@ export function ChapterIntro({ chapterTitle, onContinue }: ChapterIntroProps) {
   useEffect(() => {
     onContinueRef.current = onContinue;
   }, [onContinue]);
-
-  // Pauseable progress bar: 8-second auto-advance, paused on hover/focus
   useEffect(() => {
     const DURATION = 8000;
     let raf: number;
@@ -84,7 +76,6 @@ export function ChapterIntro({ chapterTitle, onContinue }: ChapterIntroProps) {
         pausedRef.current = false;
       }}
     >
-      {/* Ambient radial glow — Moto Indigo on the black surface */}
       <div
         className="pointer-events-none absolute inset-0"
         aria-hidden="true"
@@ -93,8 +84,6 @@ export function ChapterIntro({ chapterTitle, onContinue }: ChapterIntroProps) {
             'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(104,91,199,0.12) 0%, transparent 70%)',
         }}
       />
-
-      {/* Decorative ring — reduced-motion collapses this via globals.css */}
       <div
         className="cc-spin border-accent/6 absolute h-85 w-85 rounded-full border"
         aria-hidden="true"
@@ -103,38 +92,29 @@ export function ChapterIntro({ chapterTitle, onContinue }: ChapterIntroProps) {
         className="cc-spin-rev border-accent/10 absolute h-55 w-55 rounded-full border"
         aria-hidden="true"
       />
-
-      {/* Content stack */}
       <motion.div
         className="relative z-10 flex w-full max-w-75 flex-col items-center gap-5 px-8 text-center"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        {/* Course eyebrow */}
         <motion.p
           variants={itemVariants}
           className="text-primary-foreground/40 text-[10px] font-bold tracking-[0.26em] uppercase"
         >
           Course
         </motion.p>
-
-        {/* Chapter title */}
         <motion.h2
           variants={itemVariants}
           className="text-primary-foreground text-[26px] leading-tight font-bold"
         >
           {chapterTitle}
         </motion.h2>
-
-        {/* Accent rule */}
         <motion.span
           variants={itemVariants}
           className="bg-accent block h-0.5 w-10 rounded-full"
           aria-hidden="true"
         />
-
-        {/* Begin button */}
         <motion.button
           variants={itemVariants}
           onClick={onContinue}
@@ -154,8 +134,6 @@ export function ChapterIntro({ chapterTitle, onContinue }: ChapterIntroProps) {
           <ChevronRight className="h-4 w-4 transition-transform duration-300 ease-out group-hover:translate-x-0.5" />
         </motion.button>
       </motion.div>
-
-      {/* Pauseable progress bar — pauses while the card is hovered or focused */}
       <div
         className="bg-accent/60 absolute bottom-0 left-0 h-0.5 transition-none"
         style={{ width: `${barWidth}%` }}

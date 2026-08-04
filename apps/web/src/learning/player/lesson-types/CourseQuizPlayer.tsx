@@ -249,7 +249,7 @@ export function CourseQuizPlayer({
       <div className="relative shrink-0 px-6 pt-5 pb-2 md:px-10 md:pt-7">
         <div className="mb-3 flex w-full items-center gap-1.5">
           {Array.from({ length: total }).map((_, i) => {
-            let bgColor = 'bg-white/14'; // Unanswered
+            let bgColor = 'bg-white/14';
             const r = session.results[i];
             if (r && i !== session.currentQuestionIndex) {
               bgColor = r.correct ? 'bg-accent' : 'bg-destructive/80';
@@ -273,8 +273,6 @@ export function CourseQuizPlayer({
           </p>
         </div>
       </div>
-
-      {/* Body — keyed by question index so entry animations replay per question */}
       <div
         key={session.currentQuestionIndex}
         className="relative mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col gap-4 overflow-y-auto px-6 pb-24 md:px-10"

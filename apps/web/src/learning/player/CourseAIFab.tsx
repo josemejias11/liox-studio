@@ -36,7 +36,6 @@ export function CourseAIFab({ courseId, revisionId, reviewToken }: CourseAIFabPr
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className="fixed right-4 bottom-24 z-50 w-[calc(100vw-2rem)] max-w-sm origin-bottom-right rounded-2xl shadow-2xl md:right-8"
           >
-            {/* The CourseChat itself has a fixed height, so it fits perfectly here */}
             <CourseChat
               courseId={courseId}
               {...(revisionId ? { revisionId } : { reviewToken: reviewToken! })}

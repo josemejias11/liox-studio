@@ -9,7 +9,6 @@ export function useCourseSession(preview = false): { sessionId: string; persistS
   const [previewSessionId] = useState(() => crypto.randomUUID());
 
   useEffect(() => {
-    // Studio and review previews must not observe or mutate learner identity.
     if (preview) return;
 
     let sid = localStorage.getItem(SESSION_KEY);

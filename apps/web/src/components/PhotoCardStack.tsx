@@ -14,15 +14,11 @@ interface PhotoCardStackProps {
 export function PhotoCardStack({ photos = [], autoScrollInterval = 3500 }: PhotoCardStackProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-  
-  // Touch swipe state
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
   const validPhotos = (photos || []).filter((p) => p.asset?.url);
   const isSingle = validPhotos.length <= 1;
-
-  // Auto-scroll logic
   useEffect(() => {
     if (isSingle || isHovered) return;
     const timer = setInterval(() => {
@@ -55,19 +51,16 @@ export function PhotoCardStack({ photos = [], autoScrollInterval = 3500 }: Photo
     } else if (isRightSwipe && activeIndex > 0) {
       setActiveIndex((prev) => prev - 1);
     }
-    
-    // Reset after swipe
     setTouchStart(null);
     setTouchEnd(null);
   };
 
   return (
-    <div 
+    <div
       className="group/stack relative w-full select-none"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Carousel Track */}
       <div className="overflow-hidden w-full relative rounded-2xl">
         <div
           className="flex transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]"
@@ -105,8 +98,6 @@ export function PhotoCardStack({ photos = [], autoScrollInterval = 3500 }: Photo
           })}
         </div>
       </div>
-
-      {/* Navigation Arrows */}
       {!isSingle && (
         <>
           <button
@@ -127,8 +118,6 @@ export function PhotoCardStack({ photos = [], autoScrollInterval = 3500 }: Photo
           </button>
         </>
       )}
-
-      {/* Pagination Dots */}
       {!isSingle && (
         <div className="mt-3 flex justify-center gap-2 z-10">
           {validPhotos.map((_, i) => (

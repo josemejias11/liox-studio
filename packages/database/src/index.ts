@@ -57,7 +57,6 @@ export {
 } from './course-trash-repository';
 export {
   createCourseReview,
-  createCourseRevision,
   createReviewFeedback,
   getReviewByToken,
   listCourseReviewFeedback,

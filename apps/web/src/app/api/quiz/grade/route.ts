@@ -9,8 +9,6 @@ import {
 } from '@/learning/server/quiz-grading';
 import { jsonError, readJson, unexpectedApiError } from '@/shared/server/http';
 
-// ── Route ─────────────────────────────────────────────────────────────────────
-
 export async function POST(req: NextRequest) {
   const parsed = await readJson(req, QuizGradeRequestSchema);
   if (!parsed.success) return parsed.response;
@@ -29,17 +27,11 @@ export async function POST(req: NextRequest) {
       }
       return NextResponse.json(gradeQuestion(question, body.selectedIndex));
     }
-
-    // action === "submit"
     if (body.answers.length !== key.questions.length) {
       return jsonError('Answer count does not match question count', 400);
     }
 
     const result = gradeSubmission(key.questions, body.answers, key.passingScore);
-
-    // Record the attempt server-side — `passed` is server-derived, never
-    // client-supplied. sessionId/courseId are absent in preview mode; in that
-    // case nothing is persisted.
     if (body.sessionId && body.courseId) {
       await recordQuizAttempt({
         sessionId: body.sessionId,

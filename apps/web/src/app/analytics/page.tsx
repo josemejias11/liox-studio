@@ -7,10 +7,6 @@ import React from 'react';
 
 export const dynamic = 'force-dynamic';
 
-// ── Auth gate ──────────────────────────────────────────────────────────────
-// Checks the httpOnly analytics_token cookie set by POST /api/analytics/login.
-// Redirects to login if the cookie is missing or wrong.
-
 async function requireAuth(): Promise<void> {
   const cookieStore = await cookies();
   const token = cookieStore.get('analytics_token')?.value;
@@ -19,8 +15,6 @@ async function requireAuth(): Promise<void> {
     redirect('/analytics/login');
   }
 }
-
-// ── Helpers ────────────────────────────────────────────────────────────────
 
 function relativeTime(date: Date): string {
   const diff = Date.now() - date.getTime();
@@ -54,8 +48,6 @@ function StatCard({
   );
 }
 
-// ── Page ───────────────────────────────────────────────────────────────────
-
 export default async function AnalyticsPage() {
   await requireAuth();
 
@@ -71,11 +63,8 @@ export default async function AnalyticsPage() {
   } = await getAnalyticsData();
 
   const maxCount = topHotspots[0]?.count ?? 1;
-
-  // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="bg-background text-foreground min-h-screen">
-      {/* Header */}
       <header className="border-border bg-background/95 sticky top-0 z-10 flex h-16 items-center gap-3 border-b px-6 backdrop-blur-sm">
         <div className="text-primary flex items-center gap-2 text-lg font-semibold">
           <Bot className="h-6 w-6" aria-hidden="true" />
@@ -97,7 +86,7 @@ export default async function AnalyticsPage() {
 
       <main className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-8">
         {totalSessions === 0 ? (
-          /* ── Empty state ── */
+
           <div className="flex flex-col items-center justify-center gap-4 py-32 text-center">
             <Users className="text-muted-foreground h-10 w-10" aria-hidden="true" />
             <p className="text-muted-foreground text-base font-medium">No learner activity yet.</p>
@@ -110,7 +99,6 @@ export default async function AnalyticsPage() {
           </div>
         ) : (
           <>
-            {/* ── Stat cards ── */}
             <section aria-label="Summary statistics">
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 <StatCard
@@ -139,10 +127,7 @@ export default async function AnalyticsPage() {
                 />
               </div>
             </section>
-
-            {/* ── Charts row ── */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
-              {/* Top features bar chart */}
               <section
                 aria-label="Top features explored"
                 className="bg-card border-border flex flex-col gap-5 rounded-2xl border p-6"
@@ -180,8 +165,6 @@ export default async function AnalyticsPage() {
                   </ul>
                 )}
               </section>
-
-              {/* Quiz breakdown */}
               <section
                 aria-label="Quiz statistics"
                 className="bg-card border-border flex flex-col gap-5 rounded-2xl border p-6"
@@ -221,8 +204,6 @@ export default async function AnalyticsPage() {
                 )}
               </section>
             </div>
-
-            {/* ── Lesson engagement panel ── */}
             <section
               aria-label="Lesson engagement"
               className="bg-card border-border flex flex-col gap-5 rounded-2xl border p-6"
@@ -268,8 +249,6 @@ export default async function AnalyticsPage() {
                 </ul>
               )}
             </section>
-
-            {/* ── Recent sessions table ── */}
             <section aria-label="Recent learner sessions">
               <div className="bg-card border-border overflow-hidden rounded-2xl border">
                 <div className="border-border border-b px-6 py-4">

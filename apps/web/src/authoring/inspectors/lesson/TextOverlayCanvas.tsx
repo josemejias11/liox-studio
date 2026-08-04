@@ -13,7 +13,7 @@ interface TextOverlayCanvasProps {
 const widths = ['small', 'medium', 'large', 'full'] as const;
 const clamp = (value: number) => Math.min(100, Math.max(0, value));
 
-/** Drag-first text-overlay placement with explicit semantic width and numeric fallback controls. */
+
 export function TextOverlayCanvas({ image, value, disabled, onChange }: TextOverlayCanvasProps) {
   const canvasRef = useRef<HTMLDivElement | null>(null);
   function move(event: PointerEvent<HTMLElement>) {

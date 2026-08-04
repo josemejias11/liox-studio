@@ -4,10 +4,7 @@ const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), ' +
   'textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-/**
- * Traps keyboard focus inside `containerRef` while `active` is true.
- * Restores focus to the previously focused element when deactivated.
- */
+
 export function useFocusTrap(containerRef: { current: HTMLElement | null }, active: boolean) {
   const prevFocusRef = useRef<HTMLElement | null>(null);
 
@@ -16,11 +13,7 @@ export function useFocusTrap(containerRef: { current: HTMLElement | null }, acti
 
     const el = containerRef.current;
     if (!el) return;
-
-    // Remember what was focused before the trap opens
     prevFocusRef.current = document.activeElement as HTMLElement | null;
-
-    // Move focus into the trapped region immediately
     const first = el.querySelector<HTMLElement>(FOCUSABLE);
     first?.focus({ preventScroll: true });
 
@@ -53,7 +46,6 @@ export function useFocusTrap(containerRef: { current: HTMLElement | null }, acti
     document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      // Return focus to wherever the user was before
       prevFocusRef.current?.focus({ preventScroll: true });
     };
   }, [active, containerRef]);

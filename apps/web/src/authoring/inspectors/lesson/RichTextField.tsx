@@ -113,7 +113,7 @@ function serializeEditor(root: HTMLElement, original: unknown, originalMarkup: M
   return blocks;
 }
 
-/** Small Portable Text editor that preserves untouched blocks verbatim and only serializes changed blocks. */
+
 export function RichTextField({ label, value, cueTargets, disabled, error, onChange }: RichTextFieldProps) {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const initialized = useRef(false);

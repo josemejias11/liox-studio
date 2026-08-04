@@ -28,7 +28,7 @@ function move<T>(items: T[], from: number, to: number): T[] {
   return next;
 }
 
-/** Keyboard-accessible ordered string repeater used by objectives and notes. */
+
 export function StringListField({
   addLabel,
   disabled = false,

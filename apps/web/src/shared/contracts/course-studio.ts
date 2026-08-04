@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-/** JSON objects are kept intact while the Studio edits their known keys. */
+
 export type JsonObject = Record<string, unknown>;
 
 export const coverButtonColorSchema = z.enum(['moto-indigo', 'moto-frost', 'moto-pearl']);
@@ -12,10 +12,7 @@ export const disclaimerCategorySchema = z.enum([
   'general',
 ]);
 
-/**
- * The player consumes this nested asset reference. Both levels deliberately
- * pass through legacy delivery metadata when an author changes another field.
- */
+
 export const imageReferenceSchema = z.object({
   asset: z.object({
     url: z.string().url(),
@@ -59,7 +56,7 @@ export const courseDisclaimerSchema = z.object({
   acknowledgementLabel: z.string().optional(),
 }).passthrough();
 
-/** Complete, explicit Course Settings save payload. */
+
 export const courseSettingsInputSchema = z.object({
   title: z.string().trim().min(1, 'Title is required.').max(120),
   slug: z.string().trim().min(1, 'Slug is required.').max(100),
@@ -70,7 +67,7 @@ export const courseSettingsInputSchema = z.object({
   disclaimer: courseDisclaimerSchema.nullable(),
 }).passthrough();
 
-/** PATCH accepts a partial update, while every supplied known field is strict. */
+
 export const courseSettingsPatchSchema = courseSettingsInputSchema.partial();
 
 export type ImageReference = z.output<typeof imageReferenceSchema>;
@@ -90,21 +87,18 @@ export function jsonObject(value: unknown): JsonObject {
   return isJsonObject(value) ? value : {};
 }
 
-/** A client-only key. It is never merged into the persisted JSON payload. */
+
 export function createCourseStudioKey(prefix: string): string {
   return `${prefix}-${crypto.randomUUID()}`;
 }
 
-/** A deterministic client-only key for server-rendered draft collections. */
+
 export function createStableCourseStudioKey(prefix: string, seed: string | number): string {
   const normalizedSeed = String(seed).replace(/[^a-zA-Z0-9_-]/g, '-');
   return `${prefix}-${normalizedSeed}`;
 }
 
-/**
- * Merge editable known fields over their original persisted object. Omitting a
- * known optional field removes only that key; all unknown metadata survives.
- */
+
 export function mergeKnownFields<T extends JsonObject>(
   original: unknown,
   known: T,

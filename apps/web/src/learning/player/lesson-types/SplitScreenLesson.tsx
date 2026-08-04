@@ -44,7 +44,6 @@ export function SplitScreenLesson({ lesson, visitedLabels, onVisit }: SplitScree
       <div
         className={`relative z-10 flex w-full max-w-6xl flex-col ${imageUrl ? 'md:grid md:grid-cols-2' : ''} items-center gap-8 md:gap-14`}
       >
-        {/* Media Side */}
         {imageUrl && (
           <div
             className={`relative aspect-[4/3] w-full overflow-hidden rounded-[2rem] border border-white/80 bg-white/50 p-2 shadow-[0_28px_70px_rgba(35,36,48,0.2)] ${
@@ -66,8 +65,6 @@ export function SplitScreenLesson({ lesson, visitedLabels, onVisit }: SplitScree
             </div>
           </div>
         )}
-
-        {/* Text Side */}
         <div className={`flex flex-col justify-center ${isReversed ? 'md:order-2' : 'md:order-1'}`}>
           <p className="flex items-center gap-2 text-[11px] font-semibold tracking-[0.22em] text-[#685bc7] uppercase">
             <ArrowLeftRight className="h-4 w-4" /> Concept connection

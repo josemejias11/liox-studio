@@ -1,15 +1,10 @@
-/**
- * Next.js proxy — protects the /analytics instructor dashboard.
- */
+
 
 import { NextRequest, NextResponse } from 'next/server';
 
 export function proxy(req: NextRequest): NextResponse {
   const token = req.cookies.get('analytics_token')?.value;
   const expected = process.env.ANALYTICS_PASSWORD;
-
-  // If ANALYTICS_PASSWORD is not set in this environment, deny access rather
-  // than allowing everyone through — fail closed.
   if (!expected || token !== expected) {
     const loginUrl = new URL('/analytics/login', req.url);
     return NextResponse.redirect(loginUrl);
@@ -20,15 +15,7 @@ export function proxy(req: NextRequest): NextResponse {
 
 export const config = {
   matcher: [
-    /*
-     * Match /analytics and any sub-path EXCEPT /analytics/login.
-     * Pattern breakdown:
-     *   /analytics         — the dashboard root
-     *   /analytics/(?!login).*  — any sub-path that does not start with "login"
-     *
-     * Next.js internal routes (_next/static, _next/image, favicon.ico) are
-     * excluded by the negative lookahead on the leading segment.
-     */
+
     '/analytics',
     '/analytics/((?!login).*)',
   ],

@@ -4,9 +4,6 @@ import { jsonError, unexpectedApiError } from '@/shared/server/http';
 import { getClientSafeJobStatus } from '@/server/jobs/job-status';
 
 export const runtime = 'nodejs';
-
-// Every result is already a client-safe projection. Job IDs are unguessable
-// CUIDs, which lets the learner quiz poll without requiring an auth session.
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   try {

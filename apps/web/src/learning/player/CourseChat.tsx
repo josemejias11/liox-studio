@@ -35,7 +35,6 @@ export function CourseChat({ courseId, revisionId, reviewToken }: CourseChatProp
 
   return (
     <div className="mx-auto flex h-[600px] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200/50 bg-white/70 shadow-xl backdrop-blur-xl dark:border-slate-800/50 dark:bg-slate-900/70">
-      {/* Header */}
       <div className="flex items-center border-b border-slate-200/50 bg-white/50 px-6 py-4 dark:border-slate-800/50 dark:bg-slate-900/50">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-md">
           <Sparkles className="h-5 w-5" />
@@ -49,8 +48,6 @@ export function CourseChat({ courseId, revisionId, reviewToken }: CourseChatProp
           </p>
         </div>
       </div>
-
-      {/* Messages Area */}
       <div className="flex-1 space-y-6 overflow-y-auto p-6">
         <AnimatePresence initial={false}>
           {messages.map((msg) => (
@@ -117,8 +114,6 @@ export function CourseChat({ courseId, revisionId, reviewToken }: CourseChatProp
         </AnimatePresence>
         <div ref={messagesEndRef} />
       </div>
-
-      {/* Input Area */}
       <div className="border-t border-slate-200/50 bg-slate-50/50 p-4 dark:border-slate-800/50 dark:bg-slate-900/80">
         <form
           onSubmit={handleSubmit}

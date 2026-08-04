@@ -8,8 +8,6 @@ interface SpecificationPageProps {
   spec: CourseSpecification;
 }
 
-// ── Component ──────────────────────────────────────────────────────────────
-
 export function SpecificationPage({ spec }: SpecificationPageProps) {
   const heroUrl = spec.heroImage?.asset?.url;
 
@@ -28,9 +26,7 @@ export function SpecificationPage({ spec }: SpecificationPageProps) {
 
   return (
     <div className="bg-background absolute inset-0 flex flex-col overflow-hidden">
-      {/* ── Scrollable content area ── */}
       <div className="flex-1 overflow-y-auto overscroll-contain">
-        {/* Hero image — full-bleed within the content area */}
         {heroUrl && (
           <motion.div
             initial={{ opacity: 0, scale: 1.05 }}
@@ -54,7 +50,6 @@ export function SpecificationPage({ spec }: SpecificationPageProps) {
           initial="hidden"
           animate="visible"
         >
-          {/* Header */}
           <motion.div variants={itemVariants} className="pt-6 pb-4">
             <p className="text-accent mb-2 text-xs font-semibold tracking-[0.2em] uppercase">
               Specifications
@@ -68,17 +63,12 @@ export function SpecificationPage({ spec }: SpecificationPageProps) {
               </p>
             )}
           </motion.div>
-
-          {/* Spec groups */}
           <div className="mt-4 flex flex-col gap-8">
             {(spec.specGroups ?? []).map((group, groupIndex) => (
               <motion.section variants={itemVariants} key={groupIndex} aria-label={group.groupName}>
-                {/* Group header */}
                 <h2 className="text-muted-foreground border-border/40 mb-4 border-b pb-2 text-xs font-semibold tracking-[0.15em] uppercase">
                   {group.groupName}
                 </h2>
-
-                {/* Spec rows */}
                 <dl className="flex flex-col">
                   {(group.specs ?? []).map((item, specIndex) => (
                     <div
@@ -106,8 +96,6 @@ export function SpecificationPage({ spec }: SpecificationPageProps) {
                 </dl>
               </motion.section>
             ))}
-
-            {/* Footnotes */}
             {spec.footnotes && spec.footnotes.length > 0 && (
               <motion.footer
                 variants={itemVariants}
@@ -123,8 +111,6 @@ export function SpecificationPage({ spec }: SpecificationPageProps) {
                 ))}
               </motion.footer>
             )}
-
-            {/* Bottom scroll padding so last content clears the nav bar */}
             <div className="h-24" aria-hidden="true" />
           </div>
         </motion.div>

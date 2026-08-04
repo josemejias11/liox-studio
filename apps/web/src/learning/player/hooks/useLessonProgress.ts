@@ -17,12 +17,7 @@ interface ProgressData {
   lessons?: Record<string, LessonData>;
 }
 
-/**
- * @param sessionId Browser session id persisted in local storage for learners
- *                  and ephemeral for previews.
- * @param persist   When false, progress is kept only in the local SWR cache;
- *                  previews use this mode so they cannot write learner data.
- */
+
 export function useLessonProgress(
   sessionId: string,
   persist: boolean = true,
@@ -91,10 +86,6 @@ export function useLessonProgress(
         },
       },
     };
-
-    // Optimistically update the SWR cache; previews keep progress solely in
-    // this tab's memory and never POST learner data.
-    // Throwing on non-2xx is what makes rollbackOnError actually roll back.
     await mutate(
       persist
         ? async () => {
@@ -114,8 +105,6 @@ export function useLessonProgress(
         revalidate: false,
       },
     ).catch((err: unknown) => {
-      // The optimistic update has been rolled back; callers fire-and-forget,
-      // so swallow here and let the SWR `error` state surface read failures.
       console.error('Failed to persist progress:', err);
     });
   };

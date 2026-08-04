@@ -1,10 +1,4 @@
-/**
- * /analytics/login — instructor dashboard login page.
- *
- * Minimal, brand-consistent form using Motorola design tokens (bg-background,
- * text-foreground, accent colours). Submits a POST to /analytics/login (the
- * route handler in route.ts) which sets the auth cookie.
- */
+
 
 import { Bot } from 'lucide-react';
 
@@ -19,7 +13,6 @@ export default async function AnalyticsLoginPage({ searchParams }: LoginPageProp
   return (
     <div className="bg-background text-foreground flex min-h-screen flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        {/* Brand mark */}
         <div className="mb-8 flex flex-col items-center gap-3">
           <div className="bg-primary text-primary-foreground flex h-12 w-12 items-center justify-center rounded-2xl">
             <Bot className="h-6 w-6" aria-hidden="true" />
@@ -29,8 +22,6 @@ export default async function AnalyticsLoginPage({ searchParams }: LoginPageProp
             <p className="text-muted-foreground mt-0.5 text-sm">Instructor Dashboard</p>
           </div>
         </div>
-
-        {/* Card */}
         <div className="bg-card border-border rounded-2xl border px-6 py-7 shadow-sm">
           <h2 className="text-foreground mb-5 text-base font-semibold">Sign in to continue</h2>
 

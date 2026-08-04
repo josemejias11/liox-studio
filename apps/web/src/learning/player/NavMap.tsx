@@ -48,11 +48,7 @@ function lessonCompletion(
 
 interface SectionRowProps {
   indexGlyph: string | number;
-  /**
-   * Screen-reader replacement for a symbolic glyph ("✓" / "!"). When set, the
-   * glyph is aria-hidden and this text is rendered visually hidden instead, so
-   * assistive tech never reads raw symbols. Numeric indices stay readable.
-   */
+
   glyphSrText?: string;
   icon: React.ElementType;
   iconColor: string;

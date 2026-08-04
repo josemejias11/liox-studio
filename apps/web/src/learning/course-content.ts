@@ -5,10 +5,7 @@ export interface NormalizedCourseContent {
   sections: CourseSection[];
 }
 
-/**
- * Validate the persisted course graph and normalize it into a flat sections array.
- * Returns `null` when the payload fails contract validation.
- */
+
 export function normalizeCourseContent(raw: unknown): NormalizedCourseContent | null {
   const parsed = courseSchema.safeParse(raw);
   if (!parsed.success) return null;

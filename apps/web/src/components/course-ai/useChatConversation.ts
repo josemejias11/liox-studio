@@ -36,10 +36,7 @@ export interface UseChatConversationReturn {
 const FALLBACK_ERROR =
   "Sorry — I couldn't reach the assistant just now. Please try again in a moment.";
 
-/**
- * Manages chat message lifecycle: message history, loading state,
- * multi-turn conversation context, and abort-on-unmount.
- */
+
 export function useChatConversation({
   courseId,
   revisionId,

@@ -6,16 +6,11 @@ import type {
   CourseSpecification,
 } from '@/shared/contracts/player-course';
 
-// ── Derived course structure ──────────────────────────────────────────────────
-// One source of truth for grouping raw course sections into chapter-aware lesson
-// collections plus the trailing non-lesson sections. Navigation-specific flow
-// ordering lives in `course-flow.ts`.
-
 export interface ChapterGroup {
   chapterIndex: number;
   chapterTitle: string;
   quickCheck?: AuthoredQuiz;
-  /** Lessons in this chapter, each carrying its absolute section index. */
+
   lessons: Array<{ section: LessonSection; absoluteIndex: number }>;
 }
 
@@ -24,7 +19,7 @@ export interface CourseStructure {
   lessonSections: LessonSection[];
   specSections: CourseSpecification[];
   disclaimerSection: CourseDisclaimer | undefined;
-  /** Unique chapters in course order, with their lessons grouped. */
+
   chapters: ChapterGroup[];
   totalSections: number;
 }
@@ -40,8 +35,6 @@ export function deriveCourseStructure(
   const disclaimerSection = sections.find(
     (s): s is CourseDisclaimer => s.sectionType === 'disclaimer',
   );
-
-  // Group lessons by chapterIndex while preserving absolute section indices.
   const chapters: ChapterGroup[] = [];
   const groupByChapter = new Map<number, ChapterGroup>();
   lessonSections.forEach((section, absoluteIndex) => {
@@ -69,7 +62,7 @@ export function deriveCourseStructure(
   };
 }
 
-/** Lessons belonging to a chapter, in order. */
+
 export function getChapterLessons(
   structure: CourseStructure,
   chapterIndex: number,

@@ -1,8 +1,6 @@
 import { z } from 'zod';
 import { GenerateQuizRequestSchema } from '@moto-ai/contracts/quiz';
 
-// The browser communicates with the parser only through validated app routes.
-
 const revisionIdField = z.string().min(1).max(100);
 const reviewTokenField = z.string().min(1).max(200);
 
@@ -51,8 +49,6 @@ export const RevisionBoundQuizRequestSchema = z.union([
 
 export type RevisionBoundQuizRequest = z.infer<typeof RevisionBoundQuizRequestSchema>;
 
-// ── Progress wire contract (browser ⇄ /api/progress) ─────────────────────────
-
 const LessonProgressSchema = z.object({
   type: z.literal('lesson'),
   sessionId: z.string().uuid('Invalid session ID format'),
@@ -61,8 +57,6 @@ const LessonProgressSchema = z.object({
   visitedHotspots: z.array(z.string().max(200)).max(50).optional(),
   completed: z.boolean().optional(),
 });
-
-// Quiz attempts are server-graded so clients cannot supply score or pass state.
 export const ProgressRequestSchema = z.discriminatedUnion('type', [LessonProgressSchema]);
 
 export type ProgressRequestBody = z.infer<typeof ProgressRequestSchema>;

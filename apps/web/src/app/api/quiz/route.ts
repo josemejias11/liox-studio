@@ -4,9 +4,6 @@ import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
 import { jsonError, readJson, unexpectedApiError } from '@/shared/server/http';
 import { requestRevisionBoundQuiz } from '@/learning/server/quiz-commands';
 
-// Creates a durable AI quiz job. The worker persists the full answer key and
-// exposes only the existing client-safe quiz projection through job status.
-
 export async function POST(req: NextRequest) {
   const parsed = await readJson(req, RevisionBoundQuizRequestSchema, {
     invalidJsonMessage: 'Invalid request payload',

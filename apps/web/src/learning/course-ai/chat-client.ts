@@ -7,10 +7,7 @@ export interface ChatInput {
   reviewToken?: string;
 }
 
-/**
- * Send a chat request to `/api/chat` and return the validated response.
- * Throws on network or validation errors.
- */
+
 export async function askCourseChat(input: ChatInput, signal?: AbortSignal): Promise<ChatResponse> {
   const request = ChatRequestSchema.safeParse(input);
   if (!request.success) throw new Error('Chat request requires one revision identity');

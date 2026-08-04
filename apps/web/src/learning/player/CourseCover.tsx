@@ -26,8 +26,6 @@ export function CourseCover({
   onStart,
 }: CourseCoverProps) {
   const finalHeadline = coverHeadline || title;
-
-  // Map button colors — Motorola 2026 brand palette only
   let btnClass = 'bg-white text-black hover:bg-white/90';
   if (buttonColor === 'moto-indigo') btnClass = 'bg-accent text-foreground hover:bg-accent/90';
   else if (buttonColor === 'moto-frost')
@@ -36,7 +34,6 @@ export function CourseCover({
 
   return (
     <div className="dark absolute inset-0 h-full w-full overflow-hidden bg-black">
-      {/* Background Media */}
       {coverImage ? (
         <motion.div
           initial={{ scale: 1.05, opacity: 0 }}
@@ -56,15 +53,9 @@ export function CourseCover({
       ) : (
         <div className="absolute inset-0 bg-neutral-950" />
       )}
-
-      {/* Sophisticated Gradients */}
       <div className="pointer-events-none absolute inset-0 bg-linear-to-b from-black/20 via-black/40 to-black/90" />
       <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black via-transparent to-transparent opacity-80" />
-
-      {/* Subtle ambient glow behind text */}
       <div className="bg-accent/20 pointer-events-none absolute top-1/2 left-1/2 h-100 w-200 -translate-x-1/2 -translate-y-1/2 rounded-[100%] opacity-50 mix-blend-screen blur-[120px]" />
-
-      {/* Content */}
       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-8">
         <motion.div
           initial={{ y: 20, opacity: 0, filter: 'blur(10px)' }}
@@ -105,8 +96,6 @@ export function CourseCover({
           )}
         </motion.div>
       </div>
-
-      {/* Call to Action Button */}
       <motion.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -117,7 +106,6 @@ export function CourseCover({
           onClick={onStart}
           className={`group completion-button-glow relative flex items-center gap-3 overflow-hidden rounded-full border border-white/10 px-8 py-4 text-lg font-semibold shadow-2xl transition-all duration-300 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:outline-none active:scale-95 ${btnClass}`}
         >
-          {/* Button inner glow effect */}
           <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-white/0 via-white/20 to-white/0 transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
 
           <span className="relative z-10">{buttonText}</span>

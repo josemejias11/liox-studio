@@ -2,14 +2,7 @@ import { z } from 'zod';
 import type { PortableTextBlock } from '@portabletext/types';
 import { ALL_LESSON_TYPES } from '@/shared/contracts/lesson-types';
 
-// ── Course content contract ──────────────────────────────────────────────────
-// Single source of truth for the app-owned course graph loaded from Postgres.
-// The course page validates the assembled graph once at the boundary; everything
-// downstream consumes the inferred types.
 
-// ── Plain-text helper ─────────────────────────────────────────────────────────
-
-/** Coerce a string or PortableText block array to plain text. */
 export function toPlainText(value: unknown): string {
   if (typeof value === 'string') return value;
   if (Array.isArray(value)) {
@@ -23,26 +16,22 @@ export function toPlainText(value: unknown): string {
   return value == null ? '' : String(value);
 }
 
-// ── Shared fragments ──────────────────────────────────────────────────────────
 
-/** Normalize nullable persisted fields to `undefined` for player components. */
 const opt = <T extends z.ZodType>(schema: T) =>
   schema.nullish().transform((v) => (v ?? undefined) as z.output<T> | undefined);
-
-// Persisted arrays may contain null entries; ignore them at the boundary.
 const resolvedArray = <T extends z.ZodType>(schema: T) =>
   z.array(schema.nullable()).transform((values) =>
     values.filter((value): value is z.output<T> => value !== null),
   );
 
-/** PortableText block content — structurally validated as an array only. */
+
 export const portableTextSchema = z.custom<PortableTextBlock[]>((v) => Array.isArray(v));
 
-/** Rich text fields tolerate both plain strings and PortableText arrays. */
+
 export type RichText = string | PortableTextBlock[];
 const richTextSchema = z.union([z.string(), portableTextSchema]);
 
-/** Headline/label fields: tolerate persisted Portable Text values, emit a string. */
+
 const plainStringSchema = z
   .union([z.string(), portableTextSchema])
   .catch('')
@@ -63,13 +52,10 @@ const textOverlaySchema = z.object({
   width: opt(z.string()),
 });
 
-// ── Lesson hotspots ───────────────────────────────────────────────────────────
-
 export const hotspotSchema = z.object({
   _key: z.string(),
   label: plainStringSchema,
   topic: z.string().catch(''),
-  // Coordinates default to 0 when un-placed/malformed rather than failing the course.
   x: z.number().catch(0),
   y: z.number().catch(0),
   body: opt(richTextSchema),
@@ -79,8 +65,6 @@ export const hotspotSchema = z.object({
   videoAspectRatio: opt(z.string()),
 });
 export type CourseHotspot = z.output<typeof hotspotSchema>;
-
-// ── Lesson ────────────────────────────────────────────────────────────────────
 
 export const lessonSchema = z.object({
   sectionType: z.literal('lesson'),
@@ -131,13 +115,11 @@ export const lessonSchema = z.object({
 });
 export type CourseLesson = z.output<typeof lessonSchema>;
 
-/** A lesson enriched with chapter metadata — what the sections array contains. */
+
 export type LessonSection = CourseLesson & {
   chapterTitle: string;
   chapterIndex: number;
 };
-
-// ── Specification ─────────────────────────────────────────────────────────────
 
 export const specificationSchema = z.object({
   sectionType: z.literal('specification'),
@@ -165,10 +147,6 @@ export const specificationSchema = z.object({
 });
 export type CourseSpecification = z.output<typeof specificationSchema>;
 
-// ── Quiz ──────────────────────────────────────────────────────────────────────
-// Client-safe projection: `isCorrect` / `feedback` are deliberately absent —
-// grading happens server-side via /api/quiz/grade (see contracts/quiz.ts).
-
 export const quizDocSchema = z.object({
   sectionType: z.literal('quiz'),
   _key: z.string(),
@@ -179,7 +157,6 @@ export const quizDocSchema = z.object({
       z.object({
         _key: z.string(),
         questionText: z.string().catch(''),
-        // Authored values: "single" | "multi" | "truefalse"
         questionType: opt(z.string()),
         image: opt(imageSchema),
         answers: z
@@ -199,8 +176,6 @@ export const quizDocSchema = z.object({
 });
 export type AuthoredQuiz = z.output<typeof quizDocSchema>;
 
-// ── Disclaimer ────────────────────────────────────────────────────────────────
-
 export const disclaimerSchema = z.object({
   sectionType: z.literal('disclaimer'),
   _key: opt(z.string()),
@@ -212,8 +187,6 @@ export const disclaimerSchema = z.object({
   acknowledgementLabel: opt(z.string()),
 });
 export type CourseDisclaimer = z.output<typeof disclaimerSchema>;
-
-// ── Course ────────────────────────────────────────────────────────────────────
 
 const chapterSchema = z.object({
   _id: opt(z.string()),
@@ -239,10 +212,8 @@ export const courseSchema = z.object({
 });
 export type CourseContent = z.output<typeof courseSchema>;
 
-/** Flat discriminated union of every section type in the course flow. */
-export type CourseSection = LessonSection | CourseSpecification | AuthoredQuiz | CourseDisclaimer;
 
-// ── Published course library summary ──────────────────────────────────────────
+export type CourseSection = LessonSection | CourseSpecification | AuthoredQuiz | CourseDisclaimer;
 
 export const courseSummarySchema = z.object({
   _id: z.string(),

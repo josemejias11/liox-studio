@@ -98,7 +98,7 @@ export function specificationDrafts(value: unknown): SpecificationDraft[] {
   }));
 }
 
-/** Converts draft UI entities back to player-shaped JSON while retaining metadata. */
+
 export function specificationsPayload(value: SpecificationDraft[]): JsonObject[] {
   return value.map((specification) => mergeKnownFields(specification.original, {
     title: specification.title,

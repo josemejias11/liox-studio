@@ -23,7 +23,6 @@ function accepts(file: File, accept: string) {
   });
 }
 
-/** Uploads one or more existing nested asset references; it never creates a new media payload type. */
 export function AssetCollectionField({ courseId, accept, value, onChange, disabled = false, label = 'Assets', maxItems }: AssetCollectionFieldProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);

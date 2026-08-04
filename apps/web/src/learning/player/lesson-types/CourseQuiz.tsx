@@ -14,23 +14,21 @@ import { JobAcceptedResponseSchema, JobStatusResponseSchema } from '@moto-ai/con
 import { RevisionBoundQuizRequestSchema } from '@/shared/contracts/api';
 import { createQuizSessionState, quizSessionReducer } from '@/learning/quiz-session';
 
-// ── Props ─────────────────────────────────────────────────────────────────────
-
 export interface CourseQuizProps {
   courseId?: string;
-  /** Frozen revision identity for authenticated Course Studio generation. */
+
   revisionId?: string;
-  /** Hashed, non-expired review access token for external review generation. */
+
   reviewToken?: string;
-  /** Topics the learner has not explored yet — steers quiz generation. */
+
   weakTopics?: string[];
-  /** Session identity for recording the attempt server-side; omitted in previews. */
+
   sessionId?: string;
-  /** Called with the server-graded score 0–100 (percentage) — only on a passing score. */
+
   onPass?: (score: number) => void;
-  /** Called when the learner fails and chooses to move on / retry. */
+
   onFail?: () => void;
-  /** Previews must not create quiz jobs or submit answers for grading. */
+
   preview?: boolean;
 }
 
@@ -59,10 +57,6 @@ async function waitForQuizJob(jobId: string, onProgress: (progress: string | nul
   }
   throw new Error('Quiz generation timed out');
 }
-
-// Grading is server-side: the browser only ever holds the client-safe quiz
-// (no correct_answer fields) and renders the per-question results returned by
-// /api/quiz/grade.
 
 export function CourseQuiz({
   courseId,
@@ -173,8 +167,6 @@ export function CourseQuiz({
       setGrading(false);
     }
   };
-
-  // Final submission — the server computes score/passed and records the attempt.
   const submitQuiz = async (finalAnswers: number[]) => {
     if (!quiz) return;
     dispatch({ type: 'submission.started' });
@@ -188,7 +180,6 @@ export function CourseQuiz({
           source: quiz.source,
           quizId: quiz.quizId,
           answers: finalAnswers,
-          // Identity is only attached for learner sessions, never previews.
           ...(sessionId && courseId ? { sessionId, courseId } : {}),
         }),
       });
@@ -360,7 +351,6 @@ export function CourseQuiz({
                 <div className="space-y-3">
                   {currentQuestion.options.map((option, idx) => {
                     const isSelected = session.selectedIndex === idx;
-                    // Correctness comes exclusively from the server grade.
                     const revealed = currentResult !== undefined;
                     const showCorrect = revealed && currentResult.correctIndex === idx;
                     const showWrong = revealed && isSelected && !currentResult.correct;

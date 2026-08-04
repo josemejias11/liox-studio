@@ -7,10 +7,6 @@ import {
   RagServiceError,
 } from '@/learning/server/course-ai-commands';
 
-// Server-to-server proxy in front of the self-hosted parser/RAG service.
-// The browser never calls the parser directly — this route delegates authentication,
-// validation, and error translation to the deep RAG client interface.
-
 export async function POST(req: NextRequest) {
   const parsed = await readJson(req, ChatRequestSchema, {
     invalidJsonMessage: 'Invalid request payload',

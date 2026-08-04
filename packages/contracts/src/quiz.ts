@@ -6,8 +6,6 @@ export const GenerateQuizRequestSchema = z.object({
 });
 
 export type GenerateQuizRequest = z.infer<typeof GenerateQuizRequestSchema>;
-
-// The server-only schema retains answer keys; browser responses use ClientQuizSchema.
 export const ServerAiQuizSchema = z.object({
   title: z.string().max(200),
   instructions: z.string().max(2000).optional(),

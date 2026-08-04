@@ -61,8 +61,6 @@ async function parserRequest(
   }
 }
 
-// ── Parser wire contracts (Zod schemas kept internal to the module) ─────────────
-
 const ParserChatResponseSchema = z.object({
   answer: z.string(),
   sources: z.array(z.string()),
@@ -97,8 +95,6 @@ const ParserCourseGenerationResponseSchema = z.object({
   model_identifier: z.string().min(1),
   prompt_template_version: z.string().min(1),
 });
-
-// ── Deep Interface ────────────────────────────────────────────────────────────
 
 export interface RagChatResponse {
   answer: string;

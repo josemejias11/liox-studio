@@ -70,8 +70,6 @@ export function ProductStage({
 
   const [showBurst, setShowBurst] = useState(false);
   const prevAllDiscovered = useRef(false);
-
-  // Motion values avoid React renders for pointer and orientation updates.
   const [entered, setEntered] = useState(false);
   const [imageRect, setImageRect] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -102,8 +100,6 @@ export function ProductStage({
     [prodY, prodFactor],
     (latest: number[]) => (latest[0] ?? 0) * 9 * (latest[1] ?? 0),
   );
-
-  // Roving tabindex moves DOM focus so assistive technology follows hotspot navigation.
   const [focusedHotspotIndex, setFocusedHotspotIndex] = useState<number | null>(null);
   const hotspotRefs = useRef<(HTMLButtonElement | null)[]>([]);
 

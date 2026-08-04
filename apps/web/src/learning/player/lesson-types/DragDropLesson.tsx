@@ -30,23 +30,14 @@ const DROP_ANIMATION_DURATION_MS = 180;
 
 export default function DragDropLesson({ lesson, isCompleted, onComplete }: DragDropLessonProps) {
   const { headline, body, dropZones = [], chips = [], media } = lesson;
-  
-  // Track correctly snapped chips: map of dropZone id -> chip id
   const [snapped, setSnapped] = useState<Record<string, string>>({});
-  
-  // Track incorrect drops to trigger shake
   const [shakeZone, setShakeZone] = useState<string | null>(null);
   const [shakeChip, setShakeChip] = useState<string | null>(null);
-
-  // Keyboard navigation
-  // const [focusedChip, setFocusedChip] = useState<string | null>(null);
   const [focusedZone, setFocusedZone] = useState<string | null>(null);
   const [pickedUpChip, setPickedUpChip] = useState<string | null>(null);
   const [usesTouchInteraction, setUsesTouchInteraction] = useState(false);
   const [desktopDrag, setDesktopDrag] = useState<DesktopDragState | null>(null);
   const [announcement, setAnnouncement] = useState('');
-
-  // Refs for drop zones to calculate intersection
   const containerRef = useRef<HTMLDivElement>(null);
   const zonesRef = useRef<Record<string, HTMLButtonElement | null>>({});
   const finishDesktopDragRef = useRef<(chipId: string, x: number, y: number) => void>(() => {});
@@ -67,8 +58,6 @@ export default function DragDropLesson({ lesson, isCompleted, onComplete }: Drag
     mediaQuery.addEventListener('change', updateInteraction);
     return () => mediaQuery.removeEventListener('change', updateInteraction);
   }, []);
-
-  // ARIA polite live announcer helper
   const announce = (msg: string) => setAnnouncement(msg);
 
   const placeChip = useCallback((chipId: string, zoneId: string) => {
@@ -195,8 +184,6 @@ export default function DragDropLesson({ lesson, isCompleted, onComplete }: Drag
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       selectChip(chipId);
-      
-      // Auto-focus first empty zone
       const firstEmpty = dropZones.find(z => !snapped[z.id]);
       if (firstEmpty) {
         setFocusedZone(firstEmpty.id);
@@ -211,7 +198,7 @@ export default function DragDropLesson({ lesson, isCompleted, onComplete }: Drag
 
   const handleKeyDownZone = (e: React.KeyboardEvent, zoneId: string) => {
     if (!pickedUpChip) return;
-    
+
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       placeChip(pickedUpChip, zoneId);
@@ -235,26 +222,17 @@ export default function DragDropLesson({ lesson, isCompleted, onComplete }: Drag
       }
     }
   };
-
-  // Focus management effect
   useEffect(() => {
     if (focusedZone && zonesRef.current[focusedZone]) {
       zonesRef.current[focusedZone]?.focus();
     }
   }, [focusedZone]);
 
-  // const remainingChips = chips.filter(c => !Object.values(snapped).includes(c.id));
-
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-[radial-gradient(ellipse_95%_90%_at_72%_38%,#24215d_0%,#11122c_47%,#080914_100%)] text-white md:flex-row" ref={containerRef}>
-      {/* Invisible aria-live region */}
       <div className="sr-only" aria-live="polite" aria-atomic="true">
         {announcement}
       </div>
-
-      {/* Mobile: Image on top, Chips bottom tray / Desktop: Left Pane text+chips, Right Pane image */}
-      
-      {/* Left Pane (Desktop) / Top Content (Mobile) */}
       <div className="relative z-10 flex w-full flex-col overflow-y-auto border-white/10 bg-[#090a18]/65 p-6 backdrop-blur-sm md:w-[40%] md:border-r md:p-12">
         <p className="mb-3 text-[11px] font-semibold tracking-[0.24em] text-[#a9a0ff] uppercase">Practice challenge</p>
         <h2 className="mb-4 text-3xl font-bold">{headline}</h2>
@@ -263,15 +241,11 @@ export default function DragDropLesson({ lesson, isCompleted, onComplete }: Drag
             {typeof body === 'string' ? <p>{body}</p> : <PortableText value={body as import('@portabletext/types').PortableTextBlock[]} components={{ marks: supMark }} />}
           </div>
         )}
-
-        {/* Chips Tray */}
         <div className="mt-auto flex w-full flex-row gap-3 overflow-x-auto border-t border-white/10 pt-4 pb-4 snap-x snap-mandatory hide-scrollbar md:mt-0 md:flex-col md:border-t-0 md:pt-0">
           {chips.map(chip => {
             const isSnapped = Object.values(snapped).includes(chip.id);
             const isPickedUp = pickedUpChip === chip.id;
             const isShake = shakeChip === chip.id;
-            
-            // If snapped, don't show in the tray (or show disabled)
             if (isSnapped) return null;
 
             return (
@@ -281,7 +255,7 @@ export default function DragDropLesson({ lesson, isCompleted, onComplete }: Drag
                 onClick={usesTouchInteraction ? () => selectChip(chip.id) : undefined}
                 whileHover={{ scale: 1.02 }}
                 className={`
-                  snap-start shrink-0 relative flex min-h-[44px] min-w-[44px] items-center justify-center 
+                  snap-start shrink-0 relative flex min-h-[44px] min-w-[44px] items-center justify-center
                   rounded-lg border px-4 py-2 font-medium shadow-sm transition-colors cursor-grab
                   active:cursor-grabbing focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2
                   ${isPickedUp ? 'border-[#a9a0ff] bg-[#685bc7]/25 ring-2 ring-[#a9a0ff]' : 'border-white/15 bg-white/[0.08] text-white hover:bg-white/[0.14] hover:shadow-[0_0_24px_rgba(137,124,255,0.28)]'}
@@ -300,19 +274,16 @@ export default function DragDropLesson({ lesson, isCompleted, onComplete }: Drag
           })}
         </div>
       </div>
-
-      {/* Right Pane (Desktop) / Background/Middle (Mobile) */}
       <div className="relative flex min-h-[50vh] w-full flex-1 items-center justify-center overflow-hidden bg-[#12142c]/55 md:w-[60%]">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(129,111,255,0.2),transparent_52%)]" />
         {media?.asset?.url ? (
           <div className="relative w-full h-[80vh]">
-            <Image 
-              src={media.asset.url} 
+            <Image
+              src={media.asset.url}
               alt="Product Image"
               fill
               className="pointer-events-none select-none object-contain drop-shadow-[0_28px_46px_rgba(0,0,0,0.45)]"
             />
-            {/* Drop Zones */}
             {dropZones.map(zone => {
               const filledWith = snapped[zone.id];
               const chip = filledWith ? chips.find(c => c.id === filledWith) : null;

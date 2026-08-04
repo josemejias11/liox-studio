@@ -15,14 +15,14 @@ export type StudioLesson = CourseGraph['chapters'][number]['lessons'][number];
 export interface LessonImageDraft {
   url: string;
   originalFilename?: string;
-  /** Original nested asset payload, retained so editor-owned URL changes do not discard metadata. */
+
   original?: Record<string, unknown>;
 }
 
 export interface TextDraft {
   text: string;
   original?: unknown;
-  /** Portable Text emitted by the constrained Studio editor after an edit. */
+
   serialized?: unknown;
   touched: boolean;
 }
@@ -455,7 +455,7 @@ export function validateLessonDraft(draft: LessonDraft): LessonValidation {
   return { valid: Object.keys(errors).length === 0, errors };
 }
 
-/** Targets are intentionally limited to the targets each learner renderer can activate. */
+
 export function lessonCueTargets(draft: LessonDraft): string[] {
   const hotspots = draft.hotspots.map((hotspot) => hotspot.label.trim()).filter(Boolean);
   const coveredFeatures = draft.coveredFeatures
@@ -476,7 +476,7 @@ export function lessonCueTargets(draft: LessonDraft): string[] {
   }
 }
 
-/** Returns persisted learning-cue labels without making assumptions about other Portable Text marks. */
+
 export function layerLinkTargets(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((block) => {
