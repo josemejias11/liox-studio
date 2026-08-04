@@ -6,8 +6,8 @@ import logging
 from pydantic import ValidationError
 
 from .contracts import CourseGenerationResponse, GeneratedCourseGraph
-from .rag import format_context, retrieve_course_documents, runtime
-from .settings import LLM_MODEL
+from .rag import format_context, response_text, retrieve_course_documents, runtime
+from .settings import OPENAI_CHAT_MODEL
 
 logger = logging.getLogger(__name__)
 PROMPT_TEMPLATE_VERSION = "course-generation.v1"
@@ -53,11 +53,11 @@ JSON SCHEMA:
         try:
             if runtime.quiz_llm is None:
                 raise RuntimeError("The course-generation model is not initialized.")
-            raw = runtime.quiz_llm.invoke(prompt)
+            raw = response_text(runtime.quiz_llm.invoke(prompt))
             graph = GeneratedCourseGraph.model_validate(json.loads(raw))
             return CourseGenerationResponse(
                 graph=graph,
-                model_identifier=LLM_MODEL,
+                model_identifier=OPENAI_CHAT_MODEL,
                 prompt_template_version=PROMPT_TEMPLATE_VERSION,
             )
         except (json.JSONDecodeError, ValidationError, TypeError) as error:

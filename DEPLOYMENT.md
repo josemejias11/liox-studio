@@ -8,7 +8,7 @@ source files.
 Browser -> Next.js web app -> PostgreSQL
                 |              ^
                 +-> R2         |
-                +-> job worker -> parser service -> local Ollama and ChromaDB
+                +-> job worker -> parser service -> OpenAI and ChromaDB
 ```
 
 The browser never connects directly to PostgreSQL, R2, or the parser service.
@@ -26,7 +26,7 @@ environment files.
 
 `COURSE_STUDIO_PASSWORD`, `ANALYTICS_PASSWORD`, and
 `PARSER_SERVICE_TOKEN` must be separate random values. The parser service reads
-its matching token from `services/parser-service/.env`.
+its matching token and `OPENAI_API_KEY` from `services/parser-service/.env`.
 
 ## Deploy and operate
 

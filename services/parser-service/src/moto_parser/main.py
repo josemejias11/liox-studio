@@ -5,7 +5,6 @@ import os
 import secrets
 from typing import cast
 
-import httpx
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 
 from .contracts import (
@@ -30,14 +29,14 @@ from .documents import (
 )
 from .generation import generate_course
 from .rag import answer_question, generate_quiz, lifespan, runtime
-from .settings import CHROMA_DIR, EMBEDDING_MODEL, LLM_MODEL, OLLAMA_BASE_URL
+from .settings import CHROMA_DIR, OPENAI_API_KEY, OPENAI_CHAT_MODEL, OPENAI_EMBEDDING_MODEL
 
 logger = logging.getLogger(__name__)
 app = FastAPI(
     title="Moto AI Parser Service",
     description=(
         "Internal development service that indexes immutable Course Studio sources and "
-        "retrieves only the source IDs attached to a frozen revision using local Ollama."
+        "retrieves only the source IDs attached to a frozen revision using OpenAI."
     ),
     version="1.2.0",
     lifespan=lifespan,
@@ -179,10 +178,7 @@ def delete_document(request: DeleteDocumentRequest) -> dict[str, str]:
 
 @app.get("/health", tags=["ops"])
 def health_check() -> dict[str, str | bool]:
-    try:
-        ollama_reachable = httpx.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=3.0).status_code == 200
-    except httpx.HTTPError:
-        ollama_reachable = False
+    openai_configured = bool(OPENAI_API_KEY)
     try:
         os.makedirs(CHROMA_DIR, exist_ok=True)
         probe = os.path.join(CHROMA_DIR, f".probe-{secrets.token_hex(16)}")
@@ -193,12 +189,12 @@ def health_check() -> dict[str, str | bool]:
     except OSError:
         chroma_writable = False
     return {
-        "status": "ok" if ollama_reachable and chroma_writable else "degraded",
+        "status": "ok" if openai_configured and chroma_writable else "degraded",
         "service": "moto-ai-parser",
-        "ollama_reachable": ollama_reachable,
+        "openai_configured": openai_configured,
         "chroma_dir_writable": chroma_writable,
-        "llm_model": LLM_MODEL,
-        "embedding_model": EMBEDDING_MODEL,
+        "llm_model": OPENAI_CHAT_MODEL,
+        "embedding_model": OPENAI_EMBEDDING_MODEL,
     }
 
 

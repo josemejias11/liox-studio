@@ -10,17 +10,16 @@ from dotenv import load_dotenv
 SERVICE_ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(SERVICE_ROOT / ".env", override=False)
 
-OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+OPENAI_CHAT_MODEL = os.environ.get("OPENAI_CHAT_MODEL", "gpt-5.4-mini")
+OPENAI_EMBEDDING_MODEL = os.environ.get("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
+OPENAI_TIMEOUT_SECONDS = float(os.environ.get("OPENAI_TIMEOUT_SECONDS", "120"))
 _configured_chroma_dir = Path(os.environ.get("CHROMA_DIR", "chroma_db"))
 CHROMA_DIR = str(
     _configured_chroma_dir
     if _configured_chroma_dir.is_absolute()
     else SERVICE_ROOT / _configured_chroma_dir
 )
-LLM_MODEL = os.environ.get("LLM_MODEL", "llama3")
-EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "nomic-embed-text")
-OLLAMA_TIMEOUT_SECONDS = float(os.environ.get("OLLAMA_TIMEOUT_SECONDS", "120"))
-
 MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50MB hard cap
 UPLOAD_CHUNK_BYTES = 1024 * 1024
 ALLOWED_EXTENSIONS = {".pdf", ".pptx", ".docx", ".xlsx"}

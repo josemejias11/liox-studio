@@ -13,8 +13,8 @@ before resetting a local Moto AI database.
 
 ## Local development
 
-Requirements: Node.js 20+, PostgreSQL, and Python 3.11+. Ollama is needed only
-for local grounded-AI features.
+Requirements: Node.js 20+, PostgreSQL, Python 3.11+, and an OpenAI API project
+for grounded-AI features.
 
 ```bash
 cp .env.example .env

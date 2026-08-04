@@ -27,7 +27,7 @@ browser -> Next.js pages and APIs -> feature use cases -> server adapters
                                               |              |
                                               |              +-> PostgreSQL / R2 / jobs / parser client
                                               +-> shared contracts
-job worker -> parser client -> private parser service -> local Ollama / ChromaDB
+job worker -> parser client -> private parser service -> OpenAI / ChromaDB
 ```
 
 Authored lessons and assessments are authoritative. AI features remain

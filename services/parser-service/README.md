@@ -3,13 +3,12 @@
 The parser service is Moto AI's internal FastAPI service for source parsing,
 embedding, revision-grounded chat, and supplemental quiz generation. It is
 called by the Next.js backend and background worker; browsers never call it
-directly. Ollama is a local-development runtime behind this service boundary,
-not a browser or production integration.
+directly. OpenAI is the language-model and embedding provider behind this
+service boundary; browsers never receive the API key.
 
 ## Quick start
 
-Requirements: Python 3.11+, Ollama, and the `llama3` and `nomic-embed-text`
-models.
+Requirements: Python 3.11+ and an OpenAI API project with billing enabled.
 
 ```bash
 cd services/parser-service
@@ -17,8 +16,7 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -e '.[dev]'
 cp .env.example .env
-ollama pull llama3
-ollama pull nomic-embed-text
+# Set OPENAI_API_KEY and match PARSER_SERVICE_TOKEN to the root .env.local.
 moto-parser
 ```
 
@@ -37,7 +35,7 @@ readiness with `curl http://127.0.0.1:8000/health`; when enabled, Swagger is at
 | `POST`   | `/api/generate-quiz`   | Generate a supplemental quiz from explicit revision sources.      |
 | `POST`   | `/api/generate-course` | Generate an editable course draft from explicit revision sources. |
 | `DELETE` | `/api/document`        | Delete chunks for one source ID.                                  |
-| `GET`    | `/health`              | Report local Ollama and Chroma readiness.                         |
+| `GET`    | `/health`              | Report OpenAI configuration and Chroma readiness.                 |
 
 All endpoints except `/health` require `X-Internal-Token`.
 

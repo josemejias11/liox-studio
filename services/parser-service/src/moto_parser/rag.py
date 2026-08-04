@@ -1,4 +1,4 @@
-"""Local Ollama and Chroma runtime, retrieval, chat, and quiz behavior."""
+"""OpenAI and Chroma runtime, retrieval, chat, and quiz behavior."""
 
 import hashlib
 import json
@@ -8,13 +8,12 @@ from collections import OrderedDict
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from threading import Lock
-from typing import cast
 
 import chromadb
 from fastapi import FastAPI
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
-from langchain_ollama import OllamaEmbeddings, OllamaLLM
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from pydantic import ValidationError
 
@@ -23,12 +22,12 @@ from .settings import (
     CHROMA_DIR,
     CHUNK_OVERLAP,
     CHUNK_SIZE,
-    EMBEDDING_MODEL,
-    LLM_MODEL,
     NO_CONTEXT_ANSWER,
     NO_MATERIALS_ANSWER,
-    OLLAMA_BASE_URL,
-    OLLAMA_TIMEOUT_SECONDS,
+    OPENAI_API_KEY,
+    OPENAI_CHAT_MODEL,
+    OPENAI_EMBEDDING_MODEL,
+    OPENAI_TIMEOUT_SECONDS,
     QUIZ_MAX_CONTEXT_DOCS,
     RELEVANCE_THRESHOLD,
     RETRIEVAL_K_CHAT,
@@ -38,25 +37,11 @@ from .settings import (
 logger = logging.getLogger(__name__)
 
 
-class TaskPrefixedOllamaEmbeddings(OllamaEmbeddings):
-    """Adds nomic-style task prefixes when the model expects them."""
-
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        if self.model.startswith("nomic-embed"):
-            texts = [f"search_document: {text}" for text in texts]
-        return cast(list[list[float]], super().embed_documents(texts))
-
-    def embed_query(self, text: str) -> list[float]:
-        if self.model.startswith("nomic-embed"):
-            text = f"search_query: {text}"
-        return cast(list[float], super().embed_query(text))
-
-
 class Runtime:
     token: str = ""
-    embeddings: TaskPrefixedOllamaEmbeddings | None = None
-    llm: OllamaLLM | None = None
-    quiz_llm: OllamaLLM | None = None
+    embeddings: OpenAIEmbeddings | None = None
+    llm: ChatOpenAI | None = None
+    quiz_llm: ChatOpenAI | None = None
     chroma_client: chromadb.ClientAPI | None = None
 
 
@@ -98,28 +83,30 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     token = os.environ.get("PARSER_SERVICE_TOKEN")
     if not token:
         raise RuntimeError("PARSER_SERVICE_TOKEN environment variable is not set.")
+    if not OPENAI_API_KEY:
+        raise RuntimeError("OPENAI_API_KEY environment variable is not set.")
     runtime.token = token
     try:
-        runtime.embeddings = TaskPrefixedOllamaEmbeddings(
-            model=EMBEDDING_MODEL,
-            base_url=OLLAMA_BASE_URL,
-            client_kwargs={"timeout": OLLAMA_TIMEOUT_SECONDS},
+        runtime.embeddings = OpenAIEmbeddings(
+            model=OPENAI_EMBEDDING_MODEL,
+            api_key=OPENAI_API_KEY,
+            request_timeout=OPENAI_TIMEOUT_SECONDS,
         )
-        runtime.llm = OllamaLLM(
-            model=LLM_MODEL,
-            base_url=OLLAMA_BASE_URL,
-            client_kwargs={"timeout": OLLAMA_TIMEOUT_SECONDS},
+        runtime.llm = ChatOpenAI(
+            model=OPENAI_CHAT_MODEL,
+            api_key=OPENAI_API_KEY,
+            timeout=OPENAI_TIMEOUT_SECONDS,
         )
-        runtime.quiz_llm = OllamaLLM(
-            model=LLM_MODEL,
-            base_url=OLLAMA_BASE_URL,
-            format="json",
-            client_kwargs={"timeout": OLLAMA_TIMEOUT_SECONDS},
+        runtime.quiz_llm = ChatOpenAI(
+            model=OPENAI_CHAT_MODEL,
+            api_key=OPENAI_API_KEY,
+            timeout=OPENAI_TIMEOUT_SECONDS,
+            model_kwargs={"response_format": {"type": "json_object"}},
         )
         os.makedirs(CHROMA_DIR, exist_ok=True)
         runtime.chroma_client = chromadb.PersistentClient(path=CHROMA_DIR)
     except Exception:
-        logger.exception("Failed to initialize Ollama clients or ChromaDB at %s.", CHROMA_DIR)
+        logger.exception("Failed to initialize OpenAI clients or ChromaDB at %s.", CHROMA_DIR)
         raise
     yield
 
@@ -236,6 +223,19 @@ def format_context(documents: list[Document]) -> str:
     )
 
 
+def response_text(response: object) -> str:
+    """Return text content from a LangChain chat-model response."""
+    content = getattr(response, "content", response)
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        return "".join(
+            item if isinstance(item, str) else str(item.get("text", ""))
+            for item in content
+        )
+    return str(content)
+
+
 def answer_question(course_id: str, source_ids: list[str], query: str) -> tuple[str, list[str]]:
     logger.info("Revision-bound chat query for course: %s", course_id)
     if not source_ids:
@@ -263,9 +263,9 @@ Question:
 {query}
 
 Answer:"""
-    logger.info("Generating response with local LLM...")
+    logger.info("Generating response with OpenAI...")
     assert runtime.llm is not None
-    answer = runtime.llm.invoke(prompt).strip()
+    answer = response_text(runtime.llm.invoke(prompt)).strip()
     if NO_CONTEXT_ANSWER in answer:
         return NO_CONTEXT_ANSWER, []
     return answer, sorted({document.metadata.get("source", "Unknown") for document in documents})
@@ -317,10 +317,10 @@ Context:
 Output the JSON object now:"""
     last_error: Exception | None = None
     for attempt in range(2):
-        logger.info("Generating quiz with local LLM (attempt %d)...", attempt + 1)
+        logger.info("Generating quiz with OpenAI (attempt %d)...", attempt + 1)
         assert runtime.quiz_llm is not None
         try:
-            parsed = json.loads(runtime.quiz_llm.invoke(prompt))
+            parsed = json.loads(response_text(runtime.quiz_llm.invoke(prompt)))
             questions = parsed.get("questions") if isinstance(parsed, dict) else None
             if isinstance(questions, list) and len(questions) > 5:
                 questions = questions[:5]
