@@ -1,15 +1,38 @@
+import { createHash } from 'node:crypto';
 import { access, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { loadEnvConfig } from '@next/env';
-import { Prisma, prisma } from '@moto-ai/database';
+import {
+  beginCourseSourceRemoval,
+  completeCourseSourceRemoval,
+  createPendingSource,
+  Prisma,
+  prisma,
+} from '@moto-ai/database';
 import type { CourseLessonType } from '@moto-ai/contracts/course-studio';
+import { enqueueDocumentIndexJob } from '@moto-ai/jobs';
 
 import { deleteCourseAsset, putCourseAsset } from '../apps/web/src/server/storage/course-assets';
 
 const COURSE_SLUG = 'moto-g87-always-social-ready';
 const COURSE_TITLE = 'moto g87: Always Social Ready';
 const SOURCE_DIRECTORY = '/Users/josemejias/Downloads/Venice Content';
+
+const veniceSourceDocuments = [
+  {
+    filename: 'Venice Copy Guide_FINAL.docx',
+    contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  },
+  {
+    filename: 'Venice Product Marketing Brief (PMB)_V3.pptx',
+    contentType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  },
+  {
+    filename: 'Venice _ Marketing Specs _FINAL.xlsx',
+    contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  },
+] as const;
 
 const REQUIRED_ENVIRONMENT_VARIABLES = [
   'DATABASE_URL',
@@ -171,6 +194,129 @@ async function assertPreflight(): Promise<void> {
   if (missingFiles.length > 0) {
     throw new Error(`Missing required source files: ${missingFiles.join(', ')}`);
   }
+}
+
+async function assertSourcePreflight(): Promise<void> {
+  loadEnvConfig(process.cwd());
+
+  const missingEnvironment = REQUIRED_ENVIRONMENT_VARIABLES.filter(
+    (name) => !process.env[name]?.trim(),
+  );
+  if (missingEnvironment.length > 0) {
+    throw new Error(`Missing required environment variables: ${missingEnvironment.join(', ')}`);
+  }
+
+  const missingFiles: string[] = [];
+  for (const source of veniceSourceDocuments) {
+    try {
+      await access(path.join(SOURCE_DIRECTORY, source.filename));
+    } catch {
+      missingFiles.push(source.filename);
+    }
+  }
+  if (missingFiles.length > 0) {
+    throw new Error(`Missing required Venice source files: ${missingFiles.join(', ')}`);
+  }
+}
+
+async function uploadCourseSource({
+  courseId,
+  filename,
+  contentType,
+  bytes,
+  sha256,
+}: {
+  courseId: string;
+  filename: string;
+  contentType: string;
+  bytes: Buffer;
+  sha256: string;
+}) {
+  let uploaded: Awaited<ReturnType<typeof putCourseAsset>> | undefined;
+  let source: Awaited<ReturnType<typeof createPendingSource>> | undefined;
+
+  try {
+    uploaded = await putCourseAsset({
+      courseId: `${courseId}/sources`,
+      filename,
+      contentType,
+      bytes,
+    });
+    source = await createPendingSource({
+      courseId,
+      r2Key: uploaded.r2Key,
+      filename,
+      contentType,
+      byteSize: bytes.byteLength,
+      sha256,
+    });
+    const job = await enqueueDocumentIndexJob(
+      {
+        sourceId: source.id,
+        courseId,
+        sha256,
+        filename: source.filename,
+        contentType: source.contentType,
+      },
+      bytes,
+    );
+    return { source, job };
+  } catch (error) {
+    if (source) {
+      const sourceId = source.id;
+      await beginCourseSourceRemoval(courseId, sourceId)
+        .then(() => (uploaded ? deleteCourseAsset(uploaded.r2Key) : undefined))
+        .then(() => completeCourseSourceRemoval(courseId, sourceId))
+        .catch((cleanupError) =>
+          console.error('[moto-g87-source-upload] cleanup failed:', cleanupError),
+        );
+    } else if (uploaded) {
+      await deleteCourseAsset(uploaded.r2Key).catch((cleanupError) =>
+        console.error('[moto-g87-source-upload] R2 cleanup failed:', cleanupError),
+      );
+    }
+    throw error;
+  }
+}
+
+async function uploadVeniceSources(): Promise<void> {
+  await assertSourcePreflight();
+
+  const course = await prisma.course.findUnique({
+    where: { slug: COURSE_SLUG },
+    select: { id: true },
+  });
+  if (!course) {
+    throw new Error(`Course ${COURSE_SLUG} must be seeded before uploading Venice sources.`);
+  }
+
+  for (const document of veniceSourceDocuments) {
+    const bytes = await readFile(path.join(SOURCE_DIRECTORY, document.filename));
+    const sha256 = createHash('sha256').update(bytes).digest('hex');
+    const existing = await prisma.courseSourceFile.findFirst({
+      where: { courseId: course.id, filename: document.filename, sha256 },
+      select: { id: true, indexStatus: true },
+    });
+    if (existing) {
+      console.log(
+        `source:skipped filename=${document.filename} sourceId=${existing.id} status=${existing.indexStatus}`,
+      );
+      continue;
+    }
+
+    const result = await uploadCourseSource({
+      courseId: course.id,
+      filename: document.filename,
+      contentType: document.contentType,
+      bytes,
+      sha256,
+    });
+    console.log(
+      `source:uploaded filename=${document.filename} sourceId=${result.source.id} status=${result.source.indexStatus} jobId=${result.job.jobId}`,
+    );
+  }
+
+  console.log(`/studio/${course.id}`);
 }
 
 async function uploadAssets(courseId: string): Promise<Record<AssetName, StoredAsset>> {
@@ -612,6 +758,15 @@ async function createCourse(courseId: string, assets: Record<AssetName, StoredAs
 }
 
 async function main(): Promise<void> {
+  const arguments_ = process.argv.slice(2);
+  if (arguments_.some((argument) => argument !== '--sources')) {
+    throw new Error('Usage: tsx scripts/seed-moto-g87-course.ts [--sources]');
+  }
+  if (arguments_.includes('--sources')) {
+    await uploadVeniceSources();
+    return;
+  }
+
   await assertPreflight();
 
   const existing = await prisma.course.findUnique({
