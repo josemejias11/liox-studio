@@ -79,6 +79,7 @@ export function getSectionIndex(flow: CourseFlow, phase: CoursePhase): number {
 
 function postChapterPhase(s: CourseStructure): CoursePhase {
   if (s.specSections.length > 0) return { phase: 'specifications', specIndex: 0 };
+  if (s.disclaimerSection) return { phase: 'disclaimer' };
   return { phase: 'quiz' };
 }
 
@@ -95,6 +96,7 @@ function lastChapterOrCover(s: CourseStructure): CoursePhase {
 
 
 function phaseBeforeQuiz(s: CourseStructure): CoursePhase {
+  if (s.disclaimerSection) return { phase: 'disclaimer' };
   if (s.specSections.length > 0) {
     return { phase: 'specifications', specIndex: s.specSections.length - 1 };
   }
@@ -102,8 +104,11 @@ function phaseBeforeQuiz(s: CourseStructure): CoursePhase {
 }
 
 
-function phaseBeforeDisclaimer(_s: CourseStructure): CoursePhase {
-  return { phase: 'quiz' };
+function phaseBeforeDisclaimer(s: CourseStructure): CoursePhase {
+  if (s.specSections.length > 0) {
+    return { phase: 'specifications', specIndex: s.specSections.length - 1 };
+  }
+  return lastChapterOrCover(s);
 }
 
 export function isLessonLocked(
@@ -189,10 +194,10 @@ function reduceNext(
           specIndex: phase.specIndex + 1,
         });
       }
-      return forward({ phase: 'quiz' });
+      return forward(structure.disclaimerSection ? { phase: 'disclaimer' } : { phase: 'quiz' });
 
     case 'disclaimer':
-      return forward({ phase: 'complete' });
+      return forward({ phase: 'quiz' });
     default:
       return state;
   }
@@ -249,8 +254,7 @@ function reducePrev(structure: CourseStructure, state: CourseNavState): CourseNa
       return back(phaseBeforeDisclaimer(structure));
 
     case 'complete':
-      if (structure.disclaimerSection) return back({ phase: 'disclaimer' });
-      return back(phaseBeforeDisclaimer(structure));
+      return back({ phase: 'quiz' });
 
     default:
       return state;
@@ -327,7 +331,7 @@ export function courseNavigationReducer(
       return reduceGoToSection(flow, state, action.index, action.visited);
     case 'QUIZ_DONE':
       return {
-        phase: structure.disclaimerSection ? { phase: 'disclaimer' } : { phase: 'complete' },
+        phase: { phase: 'complete' },
         navDirection: 1,
         showChapterIntro: false,
       };

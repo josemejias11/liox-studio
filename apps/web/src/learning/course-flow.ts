@@ -37,8 +37,6 @@ export function deriveCourseFlow(
     });
   }
 
-  items.push({ kind: 'quiz', key: 'quiz', index: items.length, title: 'Knowledge Check' });
-
   if (structure.disclaimerSection) {
     items.push({
       kind: 'disclaimer',
@@ -47,6 +45,8 @@ export function deriveCourseFlow(
       title: structure.disclaimerSection.title ?? 'Disclaimer',
     });
   }
+
+  items.push({ kind: 'quiz', key: 'quiz', index: items.length, title: 'Knowledge Check' });
 
   return { structure, items };
 }
