@@ -42,7 +42,7 @@ export function CourseStudioWorkspace({
     useState<CourseInspectorSaveState>(neutralCourseSaveState);
   const persistence = useStudioCoursePersistence({ initialCourse, initialTrash });
   const { course, saving, status, trash, undoTrashId } = persistence;
-  const preview = useMemo(() => toPlayerCourseContent(course), [course]);
+  const preview = useMemo(() => toPlayerCourseContent(course, { includeAnswerKey: true }), [course]);
 
   const discardCourseSettings = useCallback((): void => {
     setCourseSettingsDirty(false);

@@ -8,7 +8,10 @@ function objectPayload(value: unknown): Record<string, unknown> {
     : {};
 }
 
-function clientSafeQuiz(quiz: NonNullable<CourseGraph['chapters'][number]['quickCheck']>) {
+function clientSafeQuiz(
+  quiz: NonNullable<CourseGraph['chapters'][number]['quickCheck']>,
+  includeAnswerKey: boolean,
+) {
   const payload = objectPayload(quiz.payload);
   const questions = Array.isArray(payload.questions)
     ? payload.questions.map((question) => {
@@ -16,7 +19,13 @@ function clientSafeQuiz(quiz: NonNullable<CourseGraph['chapters'][number]['quick
         const answers = Array.isArray(source.answers)
           ? source.answers.map((answer) => {
               const item = objectPayload(answer);
-              return { _key: item._key, text: item.text };
+              return {
+                _key: item._key,
+                text: item.text,
+                ...(includeAnswerKey && typeof item.isCorrect === 'boolean'
+                  ? { isCorrect: item.isCorrect }
+                  : {}),
+              };
             })
           : [];
         return {
@@ -54,7 +63,7 @@ function courseSections(value: unknown, sectionType: 'specification' | 'disclaim
   });
 }
 
-function rawCourse(course: CourseGraph) {
+function rawCourse(course: CourseGraph, includeAnswerKey: boolean) {
   const cover = objectPayload(course.cover);
   return {
     _id: course.id,
@@ -78,15 +87,20 @@ function rawCourse(course: CourseGraph) {
         ...(lesson.body ? { body: lesson.body } : {}),
         ...objectPayload(lesson.payload),
       })),
-      quickCheck: chapter.quickCheck ? clientSafeQuiz(chapter.quickCheck) : undefined,
+      quickCheck: chapter.quickCheck
+        ? clientSafeQuiz(chapter.quickCheck, includeAnswerKey)
+        : undefined,
     })),
     specifications: courseSections(course.specifications, 'specification'),
     disclaimer: courseSections(course.disclaimer, 'disclaimer')[0],
   };
 }
 
-export function toPlayerCourseContent(course: CourseGraph): NormalizedCourseContent | null {
-  return normalizeCourseContent(rawCourse(course));
+export function toPlayerCourseContent(
+  course: CourseGraph,
+  { includeAnswerKey = false }: { includeAnswerKey?: boolean } = {},
+): NormalizedCourseContent | null {
+  return normalizeCourseContent(rawCourse(course, includeAnswerKey));
 }
 
 export function toPlayerCourseSummary(input: {

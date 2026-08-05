@@ -164,6 +164,7 @@ export const quizDocSchema = z.object({
             z.object({
               _key: z.string(),
               text: z.string().catch(''),
+              isCorrect: opt(z.boolean()),
             }),
           )
           .catch([]),

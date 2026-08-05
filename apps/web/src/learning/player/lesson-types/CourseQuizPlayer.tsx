@@ -85,18 +85,35 @@ export function CourseQuizPlayer({
                   {question.answers.map((answer, answerIndex) => (
                     <li
                       key={`${answer._key}-${answerIndex}`}
-                      className="rounded-xl border border-white/12 bg-white/6 px-4 py-3 text-white/82"
+                      className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-white/82 ${
+                        answer.isCorrect
+                          ? 'border-[#a9a0ff] bg-[#685bc7]/30 text-white'
+                          : 'border-white/12 bg-white/6'
+                      }`}
                     >
                       <span className="mr-2 font-bold text-[#c4beff]">
                         {OPTION_LABELS[answerIndex] ?? answerIndex + 1}.
                       </span>
-                      {answer.text}
+                      <span>{answer.text}</span>
+                      {answer.isCorrect && (
+                        <span className="ml-auto inline-flex items-center gap-1 text-sm font-bold text-[#e4e1ff]">
+                          <CheckCircle2 aria-hidden="true" className="h-4 w-4" />
+                          Correct answer
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ul>
               </li>
             ))}
           </ol>
+          <button
+            onClick={() => onPass(100)}
+            className="mt-8 flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-base font-black text-[#242051] shadow-[0_0_24px_rgba(0,0,0,0.22)] transition-transform hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            Continue
+            <ChevronRight aria-hidden="true" className="h-5 w-5" />
+          </button>
         </div>
       </div>
     );
