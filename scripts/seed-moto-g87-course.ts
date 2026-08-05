@@ -674,12 +674,14 @@ async function main(): Promise<void> {
   if (arguments_.some((argument) => argument !== '--sources')) {
     throw new Error('Usage: tsx scripts/seed-moto-g87-course.ts [--sources]');
   }
+
+  assertMotoG87SeedStructure();
+
   if (arguments_.includes('--sources')) {
     await uploadVeniceSources();
     return;
   }
 
-  assertMotoG87SeedStructure();
   await assertPreflight();
 
   const existing = await prisma.course.findUnique({
