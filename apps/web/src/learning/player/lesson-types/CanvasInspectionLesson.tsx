@@ -144,8 +144,8 @@ export function CanvasInspectionLesson({
           isInspecting ? 'right-[min(27rem,33vw)]' : 'right-0'
         }`}
       >
-        <div className="absolute top-6 right-6 left-6 z-20 flex items-start justify-between gap-4">
-          <div className="max-w-md rounded-[1.25rem] border border-[#91a3c4]/18 bg-[#101725]/88 p-4 text-white shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+        <div className="pointer-events-none absolute top-6 right-6 left-6 z-20 flex items-start justify-between gap-4">
+          <div className="pointer-events-none max-w-md rounded-[1.25rem] border border-[#91a3c4]/18 bg-[#101725]/88 p-4 text-white shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
             <p className="flex items-center gap-2 text-xs font-semibold tracking-[0.18em] text-[#9eb0ff] uppercase">
               <ScanSearch className="h-4 w-4" /> Inspection canvas
             </p>
@@ -158,7 +158,7 @@ export function CanvasInspectionLesson({
               </div>
             )}
           </div>
-          <div className="flex items-center gap-1 rounded-xl border border-[#91a3c4]/18 bg-[#101725]/88 p-1.5 text-white shadow-xl backdrop-blur-xl">
+          <div className="pointer-events-auto flex items-center gap-1 rounded-xl border border-[#91a3c4]/18 bg-[#101725]/88 p-1.5 text-white shadow-xl backdrop-blur-xl">
             <button
               aria-label="Zoom out"
               className="flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 hover:bg-white/10 disabled:opacity-35"

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import useSWR from 'swr';
 import { ProgressRequestBody } from '@/shared/contracts/api';
 
@@ -23,6 +23,7 @@ export function useLessonProgress(
   persist: boolean = true,
   courseId?: string,
 ) {
+  const [previewData, setPreviewData] = useState<ProgressData>({});
   const markLessonViewed = async (lessonId: string, courseId: string) => {
     if (!sessionId || !persist) return;
     const payload: ProgressRequestBody = { type: 'lesson', sessionId, lessonId, courseId };
@@ -40,15 +41,19 @@ export function useLessonProgress(
     },
   );
 
+  const progressData = useMemo<ProgressData>(
+    () => (persist ? (data ?? {}) : previewData),
+    [data, persist, previewData],
+  );
   const visited = useMemo(() => {
     const restored: Record<string, Set<string>> = {};
-    if (data?.lessons) {
-      for (const [sid, prog] of Object.entries(data.lessons)) {
+    if (progressData.lessons) {
+      for (const [sid, prog] of Object.entries(progressData.lessons)) {
         restored[sid] = new Set(prog.visitedHotspots ?? []);
       }
     }
     return restored;
-  }, [data]);
+  }, [progressData]);
 
   const markVisited = async (
     lessonKey: string,
@@ -77,27 +82,31 @@ export function useLessonProgress(
     };
 
     const optimisticData: ProgressData = {
-      ...data,
+      ...progressData,
       lessons: {
-        ...data?.lessons,
+        ...progressData.lessons,
         [lessonKey]: {
           visitedHotspots,
           completed: isCompleted,
         },
       },
     };
+
+    if (!persist) {
+      setPreviewData(optimisticData);
+      return;
+    }
+
     await mutate(
-      persist
-        ? async () => {
-            const res = await fetch('/api/progress', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload),
-            });
-            if (!res.ok) throw new Error(`Progress save failed (${res.status})`);
-            return optimisticData;
-          }
-        : optimisticData,
+      async () => {
+        const res = await fetch('/api/progress', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error(`Progress save failed (${res.status})`);
+        return optimisticData;
+      },
       {
         optimisticData,
         rollbackOnError: true,
