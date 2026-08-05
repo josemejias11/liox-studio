@@ -86,6 +86,14 @@ export function CourseQuiz({
           This quiz is generated for each learner from their course activity. It is unavailable in
           preview, so no quiz is generated or graded here.
         </p>
+        {onFail && (
+          <button
+            onClick={onFail}
+            className="border-accent text-accent hover:bg-accent/8 mt-8 inline-flex items-center justify-center rounded-full border-2 bg-transparent px-8 py-3 text-sm font-medium transition-all"
+          >
+            Continue in preview
+          </button>
+        )}
       </div>
     );
   }
