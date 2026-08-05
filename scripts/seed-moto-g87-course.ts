@@ -42,6 +42,8 @@ const REQUIRED_ENVIRONMENT_VARIABLES = [
   'R2_BUCKET',
 ] as const;
 
+const DATABASE_ENVIRONMENT_VARIABLE = 'DATABASE_URL';
+
 const assetSources = {
   hero: '2026_MOTOROLA_VENICE_ROW_CMF HERO_H_V1.png',
   stargazer: '2026_VENICE_BASIC PACK_STARGAZER_PDP HERO.png',
@@ -198,6 +200,13 @@ async function assertPreflight(): Promise<void> {
   }
 }
 
+function loadDatabaseEnvironment(): void {
+  loadEnvConfig(process.cwd());
+  if (!process.env[DATABASE_ENVIRONMENT_VARIABLE]?.trim()) {
+    throw new Error(`Missing required environment variable: ${DATABASE_ENVIRONMENT_VARIABLE}`);
+  }
+}
+
 async function assertSourcePreflight(): Promise<void> {
   loadEnvConfig(process.cwd());
 
@@ -326,7 +335,9 @@ async function uploadAssets(courseId: string): Promise<Record<AssetName, StoredA
   const assets = {} as Record<AssetName, StoredAsset>;
 
   try {
-    for (const [assetName, relativePath] of Object.entries(assetSources) as Array<[AssetName, string]>) {
+    for (const [assetName, relativePath] of Object.entries(assetSources) as Array<
+      [AssetName, string]
+    >) {
       const sourcePath = path.join(SOURCE_DIRECTORY, relativePath);
       const bytes = new Uint8Array(await readFile(sourcePath));
       const filename = path.basename(relativePath);
@@ -344,38 +355,82 @@ async function uploadAssets(courseId: string): Promise<Record<AssetName, StoredA
     }
     return assets;
   } catch (error) {
-    await Promise.all(uploaded.map((asset) => deleteCourseAsset(asset.r2Key).catch(() => undefined)));
+    await Promise.all(
+      uploaded.map((asset) => deleteCourseAsset(asset.r2Key).catch(() => undefined)),
+    );
     throw error;
   }
 }
 
 function chapterDefinitions(assets: Record<AssetName, StoredAsset>): ChapterDefinition[] {
   const cameraFeatures = [
-    feature('camera-main', '50MP Sony LYTIA 600', 'Quad Pixel technology combines four pixels for 12.5MP effective photos.'),
-    feature('camera-ultrawide', '8MP ultra-wide', 'A true 119.5° field of view helps include more of the scene.'),
-    feature('camera-selfie', '32MP selfie camera', 'Quad Pixel technology supports 1.4μm pixels for social-ready selfies.'),
+    feature(
+      'camera-main',
+      '50MP Sony LYTIA 600',
+      'Quad Pixel technology combines four pixels for 12.5MP effective photos.',
+    ),
+    feature(
+      'camera-ultrawide',
+      '8MP ultra-wide',
+      'A true 119.5° field of view helps include more of the scene.',
+    ),
+    feature(
+      'camera-selfie',
+      '32MP selfie camera',
+      'Quad Pixel technology supports 1.4μm pixels for social-ready selfies.',
+    ),
   ];
 
   const everydayFeatures = [
-    feature('battery', '7000mAh battery', 'Typical capacity; LATAM battery life is up to 56 hours under the stated mixed-use test conditions.'),
-    feature('display', '6.72-inch FHD+ 120Hz display', 'LCD display with up to 1050 nits high brightness mode and Water Touch.'),
-    feature('performance', 'Snapdragon 6s Gen 4', '4nm mobile platform with UFS 3.1 storage options; memory availability varies by market.'),
+    feature(
+      'battery',
+      '7000mAh battery',
+      'Typical capacity; LATAM battery life is up to 56 hours under the stated mixed-use test conditions.',
+    ),
+    feature(
+      'display',
+      '6.72-inch FHD+ 120Hz display',
+      'LCD display with up to 1050 nits high brightness mode and Water Touch.',
+    ),
+    feature(
+      'performance',
+      'Snapdragon 6s Gen 4',
+      '4nm mobile platform with UFS 3.1 storage options; memory availability varies by market.',
+    ),
   ];
 
   const cameraQuiz = quickCheck(
     'Capture and create check',
     'Choose the shopper-ready camera answer based on the moto g87 LATAM specification.',
     [
-      authoredQuestion('capture-q1', 'Which rear camera combination is correct for moto g87?', [
-        { text: '50MP Sony LYTIA 600 main camera plus 8MP 119.5° ultra-wide', isCorrect: true, feedback: 'Correct: this is the specified rear-camera pairing.' },
-        { text: '50MP main camera plus 2MP monochrome camera', isCorrect: false },
-        { text: '108MP main camera plus 5MP macro camera', isCorrect: false },
-      ], assets.ultraWideSample),
-      authoredQuestion('capture-q2', 'Which front-camera claim is accurate?', [
-        { text: '32MP with Quad Pixel technology for 1.4μm pixels', isCorrect: true, feedback: 'Correct: this is the supplied specification.' },
-        { text: '16MP with optical image stabilization', isCorrect: false },
-        { text: '50MP with autofocus', isCorrect: false },
-      ], assets.photoBoothSample),
+      authoredQuestion(
+        'capture-q1',
+        'Which rear camera combination is correct for moto g87?',
+        [
+          {
+            text: '50MP Sony LYTIA 600 main camera plus 8MP 119.5° ultra-wide',
+            isCorrect: true,
+            feedback: 'Correct: this is the specified rear-camera pairing.',
+          },
+          { text: '50MP main camera plus 2MP monochrome camera', isCorrect: false },
+          { text: '108MP main camera plus 5MP macro camera', isCorrect: false },
+        ],
+        assets.ultraWideSample,
+      ),
+      authoredQuestion(
+        'capture-q2',
+        'Which front-camera claim is accurate?',
+        [
+          {
+            text: '32MP with Quad Pixel technology for 1.4μm pixels',
+            isCorrect: true,
+            feedback: 'Correct: this is the supplied specification.',
+          },
+          { text: '16MP with optical image stabilization', isCorrect: false },
+          { text: '50MP with autofocus', isCorrect: false },
+        ],
+        assets.photoBoothSample,
+      ),
     ],
   );
 
@@ -385,7 +440,8 @@ function chapterDefinitions(assets: Record<AssetName, StoredAsset>): ChapterDefi
       estimatedDuration: 12,
       quickCheck: {
         title: 'Capture and create check',
-        instructions: 'Choose the shopper-ready camera answer based on the moto g87 LATAM specification.',
+        instructions:
+          'Choose the shopper-ready camera answer based on the moto g87 LATAM specification.',
         payload: cameraQuiz,
       },
       lessons: [
@@ -405,9 +461,33 @@ function chapterDefinitions(assets: Record<AssetName, StoredAsset>): ChapterDefi
             enableCompletionAnimation: true,
             completionTransition: 'rise',
             hotspots: [
-              hotspot('stage-main', '50MP Sony LYTIA 600', 'Main camera', 'The 50MP sensor uses Quad Pixel technology for 12.5MP effective photos and PDAF.', 47, 45, assets.portraitSample),
-              hotspot('stage-ultrawide', '8MP ultra-wide', 'More in frame', 'The true 8MP ultra-wide camera has a 119.5° field of view.', 25, 58, assets.ultraWideSample),
-              hotspot('stage-selfie', '32MP selfie camera', 'Social-ready selfies', 'The 32MP front camera uses Quad Pixel technology for 1.4μm pixels.', 70, 30, assets.photoBoothSample),
+              hotspot(
+                'stage-main',
+                '50MP Sony LYTIA 600',
+                'Main camera',
+                'The 50MP sensor uses Quad Pixel technology for 12.5MP effective photos and PDAF.',
+                47,
+                45,
+                assets.portraitSample,
+              ),
+              hotspot(
+                'stage-ultrawide',
+                '8MP ultra-wide',
+                'More in frame',
+                'The true 8MP ultra-wide camera has a 119.5° field of view.',
+                25,
+                58,
+                assets.ultraWideSample,
+              ),
+              hotspot(
+                'stage-selfie',
+                '32MP selfie camera',
+                'Social-ready selfies',
+                'The 32MP front camera uses Quad Pixel technology for 1.4μm pixels.',
+                70,
+                30,
+                assets.photoBoothSample,
+              ),
             ],
           },
         },
@@ -418,12 +498,32 @@ function chapterDefinitions(assets: Record<AssetName, StoredAsset>): ChapterDefi
           payload: {
             media: assetRef(assets.portraitSample),
             coveredFeatures: [
-              feature('portrait', 'Portrait', 'Use portrait mode when a subject should stand out with a more deliberate look.'),
-              feature('night-vision', 'Night Vision', 'Night Vision is a supplied shooting mode; availability is specified for the 8GB RAM build only.'),
-              feature('ultrawide', 'Ultra-wide', 'Use the 119.5° ultra-wide lens when the story needs more of the scene.'),
+              feature(
+                'portrait',
+                'Portrait',
+                'Use portrait mode when a subject should stand out with a more deliberate look.',
+              ),
+              feature(
+                'night-vision',
+                'Night Vision',
+                'Night Vision is a supplied shooting mode; availability is specified for the 8GB RAM build only.',
+              ),
+              feature(
+                'ultrawide',
+                'Ultra-wide',
+                'Use the 119.5° ultra-wide lens when the story needs more of the scene.',
+              ),
             ],
             hotspots: [
-              hotspot('interaction-night', 'Night Vision sample', 'Low light', 'Frame Night Vision as a mode for challenging light, not a promise that every scene looks identical.', 66, 42, assets.nightVisionSample),
+              hotspot(
+                'interaction-night',
+                'Night Vision sample',
+                'Low light',
+                'Frame Night Vision as a mode for challenging light, not a promise that every scene looks identical.',
+                66,
+                42,
+                assets.nightVisionSample,
+              ),
             ],
           },
         },
@@ -435,8 +535,16 @@ function chapterDefinitions(assets: Record<AssetName, StoredAsset>): ChapterDefi
             media: assetRef(assets.portraitSample),
             splitReverseLayout: true,
             coveredFeatures: [
-              feature('magic-eraser', 'Magic Eraser', 'Google Photos editing includes Magic Eraser among the listed tools.'),
-              feature('photo-unblur', 'Photo Unblur', 'Google Photos editing lists Photo Unblur; outcomes depend on the image and software experience.'),
+              feature(
+                'magic-eraser',
+                'Magic Eraser',
+                'Google Photos editing includes Magic Eraser among the listed tools.',
+              ),
+              feature(
+                'photo-unblur',
+                'Photo Unblur',
+                'Google Photos editing lists Photo Unblur; outcomes depend on the image and software experience.',
+              ),
             ],
           },
         },
@@ -454,9 +562,33 @@ function chapterDefinitions(assets: Record<AssetName, StoredAsset>): ChapterDefi
             media: assetRef(assets.performance),
             coveredFeatures: everydayFeatures,
             scrollChapters: [
-              { heading: 'Power through the plan', body: 'The typical battery capacity is 7000mAh. In LATAM, the battery-life claim is up to 56 hours under the specified mixed-use test conditions; actual results vary.', image: assetRef(assets.hero), targetScale: 1, targetRotation: 0, targetX: 0, targetY: 0 },
-              { heading: 'See more clearly outdoors', body: 'The 6.72-inch FHD+ LCD display supports up to a 120Hz refresh rate, Water Touch, and up to 1050 nits high brightness mode.', image: assetRef(assets.performance), targetScale: 1.08, targetRotation: -2, targetX: 4, targetY: -3 },
-              { heading: 'Stay in the flow', body: 'The Qualcomm Snapdragon 6s Gen 4 mobile platform is built on 4nm. Storage, memory, and RAM Boost options vary by market and configuration.', image: assetRef(assets.gestureMenu), targetScale: 1.12, targetRotation: 2, targetX: -3, targetY: 2 },
+              {
+                heading: 'Power through the plan',
+                body: 'The typical battery capacity is 7000mAh. In LATAM, the battery-life claim is up to 56 hours under the specified mixed-use test conditions; actual results vary.',
+                image: assetRef(assets.hero),
+                targetScale: 1,
+                targetRotation: 0,
+                targetX: 0,
+                targetY: 0,
+              },
+              {
+                heading: 'See more clearly outdoors',
+                body: 'The 6.72-inch FHD+ LCD display supports up to a 120Hz refresh rate, Water Touch, and up to 1050 nits high brightness mode.',
+                image: assetRef(assets.performance),
+                targetScale: 1.08,
+                targetRotation: -2,
+                targetX: 4,
+                targetY: -3,
+              },
+              {
+                heading: 'Stay in the flow',
+                body: 'The Qualcomm Snapdragon 6s Gen 4 mobile platform is built on 4nm. Storage, memory, and RAM Boost options vary by market and configuration.',
+                image: assetRef(assets.gestureMenu),
+                targetScale: 1.12,
+                targetRotation: 2,
+                targetX: -3,
+                targetY: 2,
+              },
             ],
           },
         },
@@ -467,9 +599,33 @@ function chapterDefinitions(assets: Record<AssetName, StoredAsset>): ChapterDefi
           payload: {
             media: assetRef(assets.alaskanBlue),
             hotspots: [
-              hotspot('canvas-display', '120Hz display', 'Smooth viewing', 'Actual refresh rate may be less and varies by app, content, device mode settings, and requirements.', 50, 24, assets.performance),
-              hotspot('canvas-battery', '7000mAh battery', 'Longer between charges', 'The 7000mAh figure is typical capacity; the rated capacity is 6790mAh.', 47, 68, assets.hero),
-              hotspot('canvas-water-touch', 'Water Touch', 'Everyday usability', 'Water Touch is part of the listed display experience; do not confuse it with waterproofing.', 72, 43, assets.resistance),
+              hotspot(
+                'canvas-display',
+                '120Hz display',
+                'Smooth viewing',
+                'Actual refresh rate may be less and varies by app, content, device mode settings, and requirements.',
+                50,
+                24,
+                assets.performance,
+              ),
+              hotspot(
+                'canvas-battery',
+                '7000mAh battery',
+                'Longer between charges',
+                'The 7000mAh figure is typical capacity; the rated capacity is 6790mAh.',
+                47,
+                68,
+                assets.hero,
+              ),
+              hotspot(
+                'canvas-water-touch',
+                'Water Touch',
+                'Everyday usability',
+                'Water Touch is part of the listed display experience; do not confuse it with waterproofing.',
+                72,
+                43,
+                assets.resistance,
+              ),
             ],
           },
         },
@@ -485,9 +641,27 @@ function chapterDefinitions(assets: Record<AssetName, StoredAsset>): ChapterDefi
               { id: 'chip-performance', text: 'Snapdragon 6s Gen 4 on 4nm' },
             ],
             dropZones: [
-              { id: 'zone-battery', label: 'Battery confidence', correctChipId: 'chip-battery', xPositionPct: 27, yPositionPct: 30 },
-              { id: 'zone-display', label: 'Smooth display story', correctChipId: 'chip-display', xPositionPct: 64, yPositionPct: 46 },
-              { id: 'zone-performance', label: 'Everyday responsiveness', correctChipId: 'chip-performance', xPositionPct: 42, yPositionPct: 74 },
+              {
+                id: 'zone-battery',
+                label: 'Battery confidence',
+                correctChipId: 'chip-battery',
+                xPositionPct: 27,
+                yPositionPct: 30,
+              },
+              {
+                id: 'zone-display',
+                label: 'Smooth display story',
+                correctChipId: 'chip-display',
+                xPositionPct: 64,
+                yPositionPct: 46,
+              },
+              {
+                id: 'zone-performance',
+                label: 'Everyday responsiveness',
+                correctChipId: 'chip-performance',
+                xPositionPct: 42,
+                yPositionPct: 74,
+              },
             ],
           },
         },
@@ -564,8 +738,7 @@ function assertMotoG87SeedStructure(): void {
   assertMotoG87Structure(chapterDefinitions(placeholderAssets));
 }
 
-async function createCourse(courseId: string, assets: Record<AssetName, StoredAsset>): Promise<void> {
-  const chapters = chapterDefinitions(assets);
+function courseSettings(assets: Record<AssetName, StoredAsset>) {
   const specifications: Prisma.InputJsonObject[] = [
     {
       _key: 'spec-moto-g87',
@@ -573,12 +746,59 @@ async function createCourse(courseId: string, assets: Record<AssetName, StoredAs
       subtitle: 'Camera, everyday performance, and connected confidence for LATAM',
       heroImage: assetRef(assets.portraitSample),
       specGroups: [
-        { groupName: 'Camera', specs: [{ label: 'Main', value: '50MP Sony LYTIA 600, f/1.8, Quad Pixel, PDAF', highlight: true }, { label: 'Ultra-wide', value: '8MP, 119.5° FOV, f/2.2', highlight: true }, { label: 'Selfie', value: '32MP, f/2.2, Quad Pixel', highlight: true }] },
-        { groupName: 'Battery and charging', specs: [{ label: 'Battery', value: '7000mAh typical; 6790mAh rated', highlight: true }, { label: 'LATAM battery life', value: 'Up to 56 hours*', highlight: true }, { label: 'Charging', value: '30W TurboPower™' }] },
-        { groupName: 'Display and platform', specs: [{ label: 'Display', value: '6.72-inch FHD+ LCD, up to 120Hz, up to 1050 nits HBM', highlight: true }, { label: 'Platform', value: 'Qualcomm Snapdragon 6s Gen 4 (4nm)' }] },
-        { groupName: 'Protection and connectivity', specs: [{ label: 'Protection', value: 'IP64 water-resistant design and Corning® Gorilla® Glass 7i' }, { label: 'NFC', value: 'Available in LATAM where compatible terminals, apps, and local conditions are present' }, { label: 'Connected experience', value: 'Smart Connect and Android 16 availability varies by market and configuration' }] },
+        {
+          groupName: 'Camera',
+          specs: [
+            {
+              label: 'Main',
+              value: '50MP Sony LYTIA 600, f/1.8, Quad Pixel, PDAF',
+              highlight: true,
+            },
+            { label: 'Ultra-wide', value: '8MP, 119.5° FOV, f/2.2', highlight: true },
+            { label: 'Selfie', value: '32MP, f/2.2, Quad Pixel', highlight: true },
+          ],
+        },
+        {
+          groupName: 'Battery and charging',
+          specs: [
+            { label: 'Battery', value: '7000mAh typical; 6790mAh rated', highlight: true },
+            { label: 'LATAM battery life', value: 'Up to 56 hours*', highlight: true },
+            { label: 'Charging', value: '30W TurboPower™' },
+          ],
+        },
+        {
+          groupName: 'Display and platform',
+          specs: [
+            {
+              label: 'Display',
+              value: '6.72-inch FHD+ LCD, up to 120Hz, up to 1050 nits HBM',
+              highlight: true,
+            },
+            { label: 'Platform', value: 'Qualcomm Snapdragon 6s Gen 4 (4nm)' },
+          ],
+        },
+        {
+          groupName: 'Protection and connectivity',
+          specs: [
+            {
+              label: 'Protection',
+              value: 'IP64 water-resistant design and Corning® Gorilla® Glass 7i',
+            },
+            {
+              label: 'NFC',
+              value:
+                'Available in LATAM where compatible terminals, apps, and local conditions are present',
+            },
+            {
+              label: 'Connected experience',
+              value: 'Smart Connect and Android 16 availability varies by market and configuration',
+            },
+          ],
+        },
       ],
-      footnotes: ['Some camera modes and features vary by RAM configuration, software, and market. *Battery life is approximate and varies with network, settings, temperature, condition, and use. Refresh rate varies by app, content, mode, and settings.'],
+      footnotes: [
+        'Some camera modes and features vary by RAM configuration, software, and market. *Battery life is approximate and varies with network, settings, temperature, condition, and use. Refresh rate varies by app, content, mode, and settings.',
+      ],
     },
   ];
 
@@ -596,27 +816,115 @@ async function createCourse(courseId: string, assets: Record<AssetName, StoredAs
     acknowledgementLabel: 'I understand the LATAM availability and claim limitations.',
   };
 
+  return {
+    title: COURSE_TITLE,
+    description:
+      'A retail-learning course for making accurate, shopper-led moto g87 recommendations in LATAM—from social creation through all-day value and legal-safe close.',
+    learningObjectives: [
+      'Match shopper needs to the moto g87 camera and social-creation features.',
+      'Explain the LATAM battery, performance, display, and connected-experience value accurately.',
+      'Deliver a concise, legal-safe moto g87 retail recommendation.',
+    ],
+    cover: {
+      thumbnail: assetRef(assets.hero),
+      coverImage: assetRef(assets.hero),
+      coverHeadline: 'Create, connect, and recommend with confidence.',
+      coverButtonText: 'Start learning',
+      coverButtonColor: '#685bc7',
+    },
+    specifications,
+    disclaimer,
+  };
+}
+
+async function createCourseChapters(
+  tx: Prisma.TransactionClient,
+  courseId: string,
+  chapters: ChapterDefinition[],
+): Promise<void> {
+  for (const [chapterPosition, chapter] of chapters.entries()) {
+    const quickCheckId = chapter.quickCheck ? newId('quiz') : undefined;
+    if (chapter.quickCheck && quickCheckId) {
+      await tx.courseQuiz.create({
+        data: {
+          id: quickCheckId,
+          courseId,
+          title: chapter.quickCheck.title,
+          instructions: chapter.quickCheck.instructions,
+          payload: chapter.quickCheck.payload,
+        },
+      });
+    }
+    await tx.courseChapter.create({
+      data: {
+        id: newId('chapter'),
+        courseId,
+        title: chapter.title,
+        position: chapterPosition,
+        estimatedDuration: chapter.estimatedDuration,
+        ...(quickCheckId ? { quickCheckId } : {}),
+        lessons: {
+          create: chapter.lessons.map((lesson, lessonPosition) => ({
+            id: newId('lesson'),
+            position: lessonPosition,
+            lessonType: lesson.lessonType,
+            headline: lesson.headline,
+            body: lesson.body,
+            payload: lesson.payload,
+          })),
+        },
+      },
+    });
+  }
+}
+
+async function loadExistingAssets(): Promise<Record<AssetName, StoredAsset>> {
+  const filenames = Object.values(assetSources).map((source) => path.basename(source));
+  const records = await prisma.courseAsset.findMany({
+    where: { filename: { in: filenames } },
+    select: {
+      r2Key: true,
+      filename: true,
+      contentType: true,
+      byteSize: true,
+      deliveryUrl: true,
+    },
+  });
+  if (records.length !== filenames.length) {
+    throw new Error('Cannot replace course without its existing asset inventory');
+  }
+
+  const recordsByFilename = new Map(records.map((record) => [record.filename, record]));
+  const assets = {} as Record<AssetName, StoredAsset>;
+  for (const [assetName, source] of Object.entries(assetSources) as Array<[AssetName, string]>) {
+    const record = recordsByFilename.get(path.basename(source));
+    if (!record) {
+      throw new Error('Cannot replace course without its existing asset inventory');
+    }
+    assets[assetName] = {
+      r2Key: record.r2Key,
+      filename: record.filename,
+      contentType: record.contentType ?? contentTypeFor(record.filename),
+      byteSize: record.byteSize ?? 0,
+      deliveryUrl: record.deliveryUrl,
+    };
+  }
+  return assets;
+}
+
+async function createCourse(
+  courseId: string,
+  assets: Record<AssetName, StoredAsset>,
+): Promise<void> {
+  const chapters = chapterDefinitions(assets);
+  const settings = courseSettings(assets);
+
   await prisma.$transaction(async (tx) => {
     await tx.course.create({
       data: {
         id: courseId,
         slug: COURSE_SLUG,
-        title: COURSE_TITLE,
-        description: 'A retail-learning course for making accurate, shopper-led moto g87 recommendations in LATAM—from social creation through all-day value and legal-safe close.',
-        learningObjectives: [
-          'Match shopper needs to the moto g87 camera and social-creation features.',
-          'Explain the LATAM battery, performance, display, and connected-experience value accurately.',
-          'Deliver a concise, legal-safe moto g87 retail recommendation.',
-        ],
-        cover: {
-          thumbnail: assetRef(assets.hero),
-          coverImage: assetRef(assets.hero),
-          coverHeadline: 'Create, connect, and recommend with confidence.',
-          coverButtonText: 'Start learning',
-          coverButtonColor: '#685bc7',
-        },
-        specifications,
-        disclaimer,
+        ...settings,
       },
     });
 
@@ -632,47 +940,43 @@ async function createCourse(courseId: string, assets: Record<AssetName, StoredAs
       });
     }
 
-    for (const [chapterPosition, chapter] of chapters.entries()) {
-      const quickCheckId = chapter.quickCheck ? newId('quiz') : undefined;
-      if (chapter.quickCheck && quickCheckId) {
-        await tx.courseQuiz.create({
-          data: {
-            id: quickCheckId,
-            courseId,
-            title: chapter.quickCheck.title,
-            instructions: chapter.quickCheck.instructions,
-            payload: chapter.quickCheck.payload,
-          },
-        });
-      }
-      await tx.courseChapter.create({
-        data: {
-          id: newId('chapter'),
-          courseId,
-          title: chapter.title,
-          position: chapterPosition,
-          estimatedDuration: chapter.estimatedDuration,
-          ...(quickCheckId ? { quickCheckId } : {}),
-          lessons: {
-            create: chapter.lessons.map((lesson, lessonPosition) => ({
-              id: newId('lesson'),
-              position: lessonPosition,
-              lessonType: lesson.lessonType,
-              headline: lesson.headline,
-              body: lesson.body,
-              payload: lesson.payload,
-            })),
-          },
-        },
-      });
-    }
+    await createCourseChapters(tx, courseId, chapters);
   });
+}
+
+async function replaceCourse(): Promise<void> {
+  loadDatabaseEnvironment();
+
+  const course = await prisma.course.findUnique({
+    where: { slug: COURSE_SLUG },
+    select: { id: true },
+  });
+  if (!course) {
+    throw new Error(`Course ${COURSE_SLUG} must be seeded before it can be replaced.`);
+  }
+
+  const assets = await loadExistingAssets();
+  const chapters = chapterDefinitions(assets);
+  const settings = courseSettings(assets);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.courseLessonTrash.deleteMany({ where: { courseId: course.id } });
+    await tx.courseChapter.deleteMany({ where: { courseId: course.id } });
+    await tx.courseQuiz.deleteMany({ where: { courseId: course.id } });
+    await tx.course.update({ where: { id: course.id }, data: settings });
+    await createCourseChapters(tx, course.id, chapters);
+  });
+
+  console.log(`/studio/${course.id}`);
 }
 
 async function main(): Promise<void> {
   const arguments_ = process.argv.slice(2);
-  if (arguments_.some((argument) => argument !== '--sources')) {
-    throw new Error('Usage: tsx scripts/seed-moto-g87-course.ts [--sources]');
+  if (
+    arguments_.length > 1 ||
+    (arguments_.length === 1 && arguments_[0] !== '--sources' && arguments_[0] !== '--replace')
+  ) {
+    throw new Error('Usage: tsx scripts/seed-moto-g87-course.ts [--sources|--replace]');
   }
 
   assertMotoG87SeedStructure();
@@ -682,7 +986,12 @@ async function main(): Promise<void> {
     return;
   }
 
-  await assertPreflight();
+  if (arguments_.includes('--replace')) {
+    await replaceCourse();
+    return;
+  }
+
+  loadDatabaseEnvironment();
 
   const existing = await prisma.course.findUnique({
     where: { slug: COURSE_SLUG },
@@ -693,6 +1002,8 @@ async function main(): Promise<void> {
     return;
   }
 
+  await assertPreflight();
+
   const courseId = newId('course');
   let uploadedAssets: Record<AssetName, StoredAsset> | undefined;
   try {
@@ -701,7 +1012,9 @@ async function main(): Promise<void> {
   } catch (error) {
     if (uploadedAssets) {
       await Promise.all(
-        Object.values(uploadedAssets).map((asset) => deleteCourseAsset(asset.r2Key).catch(() => undefined)),
+        Object.values(uploadedAssets).map((asset) =>
+          deleteCourseAsset(asset.r2Key).catch(() => undefined),
+        ),
       );
     }
     throw error;
