@@ -81,9 +81,11 @@ interface ChapterDefinition {
   title: string;
   estimatedDuration: number;
   lessons: LessonDefinition[];
-  quickCheck: Prisma.InputJsonObject;
-  quickCheckTitle: string;
-  quickCheckInstructions: string;
+  quickCheck?: {
+    title: string;
+    instructions: string;
+    payload: Prisma.InputJsonObject;
+  };
 }
 
 function newId(prefix: string) {
@@ -360,12 +362,6 @@ function chapterDefinitions(assets: Record<AssetName, StoredAsset>): ChapterDefi
     feature('performance', 'Snapdragon 6s Gen 4', '4nm mobile platform with UFS 3.1 storage options; memory availability varies by market.'),
   ];
 
-  const recommendationFeatures = [
-    feature('nfc', 'NFC in LATAM', 'Tap to pay and share where a supported terminal, app, and market are available.'),
-    feature('durability', 'IP64 and Gorilla Glass 7i', 'Water-resistant design for accidental spills, splashes, or light rain; it is not waterproof or submersible.'),
-    feature('connected', 'Smart Connect and Android 16', 'Connected features and software availability vary by market, app, and future update timing.'),
-  ];
-
   const cameraQuiz = quickCheck(
     'Capture and create check',
     'Choose the shopper-ready camera answer based on the moto g87 LATAM specification.',
@@ -383,47 +379,15 @@ function chapterDefinitions(assets: Record<AssetName, StoredAsset>): ChapterDefi
     ],
   );
 
-  const everydayQuiz = quickCheck(
-    'Everyday value check',
-    'Match each specification to the LATAM moto g87 story without overstating availability or performance.',
-    [
-      authoredQuestion('everyday-q1', 'What is the LATAM battery-life claim?', [
-        { text: 'Up to 56 hours of battery life', isCorrect: true, feedback: 'Correct: this is the LATAM claim, subject to the stated mixed-use test conditions.' },
-        { text: 'Up to 63 hours of battery life', isCorrect: false },
-        { text: 'Exactly 56 hours for every user', isCorrect: false },
-      ]),
-      authoredQuestion('everyday-q2', 'Which display description is accurate?', [
-        { text: '6.72-inch FHD+ LCD with up to 120Hz refresh rate and up to 1050 nits HBM', isCorrect: true, feedback: 'Correct: actual refresh rate varies by app, content, mode, and settings.' },
-        { text: '6.72-inch AMOLED with 144Hz refresh rate', isCorrect: false },
-        { text: '6.1-inch HD+ LCD with 60Hz refresh rate', isCorrect: false },
-      ], assets.performance),
-    ],
-  );
-
-  const recommendationQuiz = quickCheck(
-    'Retail recommendation check',
-    'Practice a concise, legal-safe answer that keeps LATAM market limitations visible.',
-    [
-      authoredQuestion('recommend-q1', 'Which NFC explanation is legal-safe for a LATAM shopper?', [
-        { text: 'NFC supports tap to pay where a compatible terminal and app are available, with PIN authorization required for purchase.', isCorrect: true, feedback: 'Correct: it includes the required availability and authorization limits.' },
-        { text: 'NFC payments work in every country and with every retailer.', isCorrect: false },
-        { text: 'NFC removes the need for a payment app or authorization.', isCorrect: false },
-      ], assets.smartConnect),
-      authoredQuestion('recommend-q2', 'Which durability statement is accurate?', [
-        { text: 'IP64 helps with spills, splashes, and light rain; the phone is not waterproof or designed for submersion.', isCorrect: true, feedback: 'Correct: water resistance decreases with normal wear and is not a waterproof rating.' },
-        { text: 'IP64 means the phone can be used underwater.', isCorrect: false },
-        { text: 'Military testing guarantees protection against all damage.', isCorrect: false },
-      ], assets.resistance),
-    ],
-  );
-
-  return [
+  const chapters: ChapterDefinition[] = [
     {
       title: 'Capture and create',
       estimatedDuration: 12,
-      quickCheckTitle: 'Capture and create check',
-      quickCheckInstructions: 'Choose the shopper-ready camera answer based on the moto g87 LATAM specification.',
-      quickCheck: cameraQuiz,
+      quickCheck: {
+        title: 'Capture and create check',
+        instructions: 'Choose the shopper-ready camera answer based on the moto g87 LATAM specification.',
+        payload: cameraQuiz,
+      },
       lessons: [
         {
           lessonType: 'content',
@@ -476,26 +440,11 @@ function chapterDefinitions(assets: Record<AssetName, StoredAsset>): ChapterDefi
             ],
           },
         },
-        {
-          lessonType: 'video',
-          headline: 'Show motion in the moment',
-          body: 'Use the supplied slow-motion sample to introduce HD slow motion at 120fps as one of the listed video capabilities.',
-          payload: { videoFile: assetRef(assets.slowMotion), videoAspectRatio: '16:9' },
-        },
-        {
-          lessonType: 'quiz',
-          headline: 'Check the camera recommendation',
-          body: 'Use the authored chapter knowledge check to reinforce the camera claims before moving on.',
-          payload: cameraQuiz,
-        },
       ],
     },
     {
       title: 'Keep up with every day',
       estimatedDuration: 11,
-      quickCheckTitle: 'Everyday value check',
-      quickCheckInstructions: 'Match each specification to the LATAM moto g87 story without overstating availability or performance.',
-      quickCheck: everydayQuiz,
       lessons: [
         {
           lessonType: 'scrollStory',
@@ -542,33 +491,11 @@ function chapterDefinitions(assets: Record<AssetName, StoredAsset>): ChapterDefi
             ],
           },
         },
-        {
-          lessonType: 'interaction',
-          headline: 'Keep useful tools close',
-          body: 'Use moto Unplugged to discuss intentional access: shoppers choose which apps stay visible while distracting apps are hidden.',
-          payload: {
-            media: assetRef(assets.gestureMenu),
-            coveredFeatures: [
-              feature('moto-unplugged', 'moto Unplugged', 'Choose which apps and interruptions to take a break from while retaining selected essentials.'),
-              feature('circle-search', 'Circle to Search', 'Use the supplied marketing screen to demonstrate the feature without implying it is universal across all markets or apps.'),
-              feature('android16', 'Android 16', 'The supplied material lists Android 16, two OS upgrades, and three years of security updates.'),
-            ],
-          },
-        },
-        {
-          lessonType: 'quiz',
-          headline: 'Check the everyday value story',
-          body: 'Use the authored chapter knowledge check to practice clear battery and display language.',
-          payload: everydayQuiz,
-        },
       ],
     },
     {
       title: 'Recommend with confidence',
       estimatedDuration: 12,
-      quickCheckTitle: 'Retail recommendation check',
-      quickCheckInstructions: 'Practice a concise, legal-safe answer that keeps LATAM market limitations visible.',
-      quickCheck: recommendationQuiz,
       lessons: [
         {
           lessonType: 'colorSwitcher',
@@ -583,92 +510,75 @@ function chapterDefinitions(assets: Record<AssetName, StoredAsset>): ChapterDefi
           },
         },
         {
-          lessonType: 'stage',
-          headline: 'Build a legal-safe recommendation',
-          body: 'Use the product as the center of the conversation, then make market, availability, and use-case conditions explicit.',
-          payload: {
-            media: assetRef(assets.malaga),
-            stageBackground: assetRef(assets.hero),
-            enableCompletionAnimation: true,
-            completionTransition: 'fade',
-            hotspots: [
-              hotspot('recommend-nfc', 'NFC in LATAM', 'Tap to pay and share', 'NFC requires a supported payment terminal and app. PIN authorization is required for purchases.', 38, 50, assets.smartConnect),
-              hotspot('recommend-ip64', 'IP64 water-resistant design', 'Everyday durability', 'Designed for moderate exposure to fresh water such as spills, splashes, or light rain. It is not waterproof or submersible.', 63, 65, assets.resistance),
-              hotspot('recommend-smart-connect', 'Smart Connect', 'Connected experience', 'Show the supplied marketing screen, then confirm local feature, app, accessory, and market availability.', 69, 28, assets.smartConnect),
-            ],
-          },
-        },
-        {
-          lessonType: 'content',
-          headline: 'Say the limitation with the benefit',
-          body: 'A confident recommendation pairs a useful benefit with its real condition. That keeps the conversation credible and makes the shopper’s decision easier.',
-          payload: { media: assetRef(assets.resistance), coveredFeatures: recommendationFeatures },
-        },
-        {
-          lessonType: 'dragDrop',
-          headline: 'Place the right qualifier',
-          body: 'Match each feature to the condition that keeps the claim accurate for LATAM retail conversations.',
-          payload: {
-            media: assetRef(assets.smartConnect),
-            chips: [
-              { id: 'chip-nfc', text: 'Supported terminal, app, and PIN authorization required' },
-              { id: 'chip-water', text: 'Not waterproof or designed for submersion' },
-              { id: 'chip-availability', text: 'Availability varies by market, carrier, app, and configuration' },
-            ],
-            dropZones: [
-              { id: 'zone-nfc', label: 'NFC tap to pay', correctChipId: 'chip-nfc', xPositionPct: 24, yPositionPct: 34 },
-              { id: 'zone-water', label: 'IP64 water resistance', correctChipId: 'chip-water', xPositionPct: 70, yPositionPct: 47 },
-              { id: 'zone-availability', label: 'Connected and software features', correctChipId: 'chip-availability', xPositionPct: 45, yPositionPct: 75 },
-            ],
-          },
-        },
-        {
-          lessonType: 'splitScreen',
-          headline: 'Connect across the devices that matter',
-          body: 'Smart Connect can support a connected experience. Present the supplied screen as an invitation to discuss needs, then verify local availability.',
-          payload: {
-            media: assetRef(assets.smartConnect),
-            coveredFeatures: [
-              feature('smart-connect', 'Smart Connect', 'Use the supplied marketing screen to introduce a connected experience and verify compatible setup locally.'),
-              feature('nfc-latam', 'NFC support in LATAM', 'Frame payment and sharing as available only where compatible terminals, apps, and local conditions are present.'),
-            ],
-          },
-        },
-        {
-          lessonType: 'quiz',
-          headline: 'Check the retail recommendation',
-          body: 'Use the authored chapter knowledge check to finish with accurate, legal-safe retail language.',
-          payload: recommendationQuiz,
+          lessonType: 'video',
+          headline: 'Show motion in the moment',
+          body: 'Use the supplied slow-motion sample to introduce HD slow motion at 120fps as one of the listed video capabilities.',
+          payload: { videoFile: assetRef(assets.slowMotion), videoAspectRatio: '16:9' },
         },
       ],
     },
   ];
+
+  assertMotoG87Structure(chapters);
+  return chapters;
+}
+
+function assertMotoG87Structure(chapters: ChapterDefinition[]) {
+  const types = chapters.flatMap((chapter) => chapter.lessons.map((lesson) => lesson.lessonType));
+  const expectedTypes: CourseLessonType[] = [
+    'content',
+    'stage',
+    'interaction',
+    'splitScreen',
+    'scrollStory',
+    'canvas',
+    'dragDrop',
+    'colorSwitcher',
+    'video',
+  ];
+
+  if (chapters.length !== 3 || types.length !== 9 || new Set(types).size !== 9) {
+    throw new Error('Expected three chapters and each non-quiz type exactly once');
+  }
+  if (!chapters[0]?.quickCheck || chapters.slice(1).some((chapter) => chapter.quickCheck)) {
+    throw new Error('Expected only Chapter 1 to have an authored checkpoint');
+  }
+  if (types.some((type, index) => type !== expectedTypes[index])) {
+    throw new Error('Expected the approved moto g87 learner flow order');
+  }
+}
+
+function assertMotoG87SeedStructure(): void {
+  const placeholderAsset: StoredAsset = {
+    r2Key: 'structure-validation',
+    filename: 'structure-validation',
+    contentType: 'application/octet-stream',
+    byteSize: 0,
+    deliveryUrl: 'https://validation.invalid/structure-validation',
+  };
+  const placeholderAssets = {} as Record<AssetName, StoredAsset>;
+  for (const assetName of Object.keys(assetSources) as AssetName[]) {
+    placeholderAssets[assetName] = placeholderAsset;
+  }
+
+  assertMotoG87Structure(chapterDefinitions(placeholderAssets));
 }
 
 async function createCourse(courseId: string, assets: Record<AssetName, StoredAsset>): Promise<void> {
   const chapters = chapterDefinitions(assets);
   const specifications: Prisma.InputJsonObject[] = [
     {
-      _key: 'spec-camera',
-      title: 'Camera and creation',
-      subtitle: 'A balanced social-creation system',
+      _key: 'spec-moto-g87',
+      title: 'moto g87 specifications',
+      subtitle: 'Camera, everyday performance, and connected confidence for LATAM',
       heroImage: assetRef(assets.portraitSample),
       specGroups: [
-        { groupName: 'Rear cameras', specs: [{ label: 'Main', value: '50MP Sony LYTIA 600, f/1.8, Quad Pixel, PDAF', highlight: true }, { label: 'Ultra-wide', value: '8MP, 119.5° FOV, f/2.2', highlight: true }] },
-        { groupName: 'Front camera', specs: [{ label: 'Selfie', value: '32MP, f/2.2, Quad Pixel', highlight: true }] },
-      ],
-      footnotes: ['Some camera modes and features vary by RAM configuration, software, and market.'],
-    },
-    {
-      _key: 'spec-everyday',
-      title: 'Everyday experience',
-      subtitle: 'Power, display, and performance for LATAM',
-      heroImage: assetRef(assets.performance),
-      specGroups: [
+        { groupName: 'Camera', specs: [{ label: 'Main', value: '50MP Sony LYTIA 600, f/1.8, Quad Pixel, PDAF', highlight: true }, { label: 'Ultra-wide', value: '8MP, 119.5° FOV, f/2.2', highlight: true }, { label: 'Selfie', value: '32MP, f/2.2, Quad Pixel', highlight: true }] },
         { groupName: 'Battery and charging', specs: [{ label: 'Battery', value: '7000mAh typical; 6790mAh rated', highlight: true }, { label: 'LATAM battery life', value: 'Up to 56 hours*', highlight: true }, { label: 'Charging', value: '30W TurboPower™' }] },
         { groupName: 'Display and platform', specs: [{ label: 'Display', value: '6.72-inch FHD+ LCD, up to 120Hz, up to 1050 nits HBM', highlight: true }, { label: 'Platform', value: 'Qualcomm Snapdragon 6s Gen 4 (4nm)' }] },
+        { groupName: 'Protection and connectivity', specs: [{ label: 'Protection', value: 'IP64 water-resistant design and Corning® Gorilla® Glass 7i' }, { label: 'NFC', value: 'Available in LATAM where compatible terminals, apps, and local conditions are present' }, { label: 'Connected experience', value: 'Smart Connect and Android 16 availability varies by market and configuration' }] },
       ],
-      footnotes: ['*Battery life is approximate and varies with network, settings, temperature, condition, and use. Refresh rate varies by app, content, mode, and settings.'],
+      footnotes: ['Some camera modes and features vary by RAM configuration, software, and market. *Battery life is approximate and varies with network, settings, temperature, condition, and use. Refresh rate varies by app, content, mode, and settings.'],
     },
   ];
 
@@ -723,16 +633,18 @@ async function createCourse(courseId: string, assets: Record<AssetName, StoredAs
     }
 
     for (const [chapterPosition, chapter] of chapters.entries()) {
-      const quickCheckId = newId('quiz');
-      await tx.courseQuiz.create({
-        data: {
-          id: quickCheckId,
-          courseId,
-          title: chapter.quickCheckTitle,
-          instructions: chapter.quickCheckInstructions,
-          payload: chapter.quickCheck,
-        },
-      });
+      const quickCheckId = chapter.quickCheck ? newId('quiz') : undefined;
+      if (chapter.quickCheck && quickCheckId) {
+        await tx.courseQuiz.create({
+          data: {
+            id: quickCheckId,
+            courseId,
+            title: chapter.quickCheck.title,
+            instructions: chapter.quickCheck.instructions,
+            payload: chapter.quickCheck.payload,
+          },
+        });
+      }
       await tx.courseChapter.create({
         data: {
           id: newId('chapter'),
@@ -740,7 +652,7 @@ async function createCourse(courseId: string, assets: Record<AssetName, StoredAs
           title: chapter.title,
           position: chapterPosition,
           estimatedDuration: chapter.estimatedDuration,
-          quickCheckId,
+          ...(quickCheckId ? { quickCheckId } : {}),
           lessons: {
             create: chapter.lessons.map((lesson, lessonPosition) => ({
               id: newId('lesson'),
@@ -767,6 +679,7 @@ async function main(): Promise<void> {
     return;
   }
 
+  assertMotoG87SeedStructure();
   await assertPreflight();
 
   const existing = await prisma.course.findUnique({
