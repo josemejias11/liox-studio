@@ -878,10 +878,13 @@ async function createCourseChapters(
   }
 }
 
-async function loadExistingAssets(): Promise<Record<AssetName, StoredAsset>> {
+async function loadExistingAssets(courseId: string): Promise<Record<AssetName, StoredAsset>> {
   const filenames = Object.values(assetSources).map((source) => path.basename(source));
   const records = await prisma.courseAsset.findMany({
-    where: { filename: { in: filenames } },
+    where: {
+      filename: { in: filenames },
+      r2Key: { startsWith: `courses/${courseId}/` },
+    },
     select: {
       r2Key: true,
       filename: true,
@@ -955,7 +958,7 @@ async function replaceCourse(): Promise<void> {
     throw new Error(`Course ${COURSE_SLUG} must be seeded before it can be replaced.`);
   }
 
-  const assets = await loadExistingAssets();
+  const assets = await loadExistingAssets(course.id);
   const chapters = chapterDefinitions(assets);
   const settings = courseSettings(assets);
 
