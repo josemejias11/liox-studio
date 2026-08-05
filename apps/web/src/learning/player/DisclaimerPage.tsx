@@ -22,10 +22,13 @@ const CATEGORY_LABELS: Record<DisclaimerCategory, string> = {
 
 export function DisclaimerPage({ disclaimer, onCanProceedChange }: DisclaimerPageProps) {
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
+  const [hasAcknowledged, setHasAcknowledged] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const requiresAck = disclaimer.acknowledgementRequired === true;
+  const acknowledgementLabel =
+    disclaimer.acknowledgementLabel || 'I acknowledge and understand this notice.';
   const categoryLabel = disclaimer.category
     ? CATEGORY_LABELS[disclaimer.category]
     : CATEGORY_LABELS.general;
@@ -51,7 +54,7 @@ export function DisclaimerPage({ disclaimer, onCanProceedChange }: DisclaimerPag
     return () => observer.disconnect();
   }, [requiresAck]);
 
-  const canProceed = !requiresAck || hasScrolledToBottom;
+  const canProceed = !requiresAck || (hasScrolledToBottom && hasAcknowledged);
 
   useEffect(() => {
     onCanProceedChange?.(canProceed);
@@ -106,6 +109,19 @@ export function DisclaimerPage({ disclaimer, onCanProceedChange }: DisclaimerPag
             </motion.div>
           )}
           <div ref={sentinelRef} aria-hidden="true" className="mt-2 h-px w-full" />
+          {requiresAck && (
+            <motion.label
+              variants={itemVariants}
+              className="mt-6 flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground"
+            >
+              <input
+                checked={hasAcknowledged}
+                onChange={(event) => setHasAcknowledged(event.target.checked)}
+                type="checkbox"
+              />
+              {acknowledgementLabel}
+            </motion.label>
+          )}
           <div className="h-28" aria-hidden="true" />
         </div>
       </div>
