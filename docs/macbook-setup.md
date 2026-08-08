@@ -123,23 +123,10 @@ files.
 
 ## 7. Codex configuration
 
-After installing Codex, add the repository to `~/.codex/config.toml`. Replace
-the path with your MacBook checkout path.
-
-```toml
-model = "gpt-5.6-terra"
-model_reasoning_effort = "medium"
-approvals_reviewer = "auto_review"
-
-[projects."/absolute/path/to/moto-ai"]
-trust_level = "trusted"
-```
-
-The model settings above match the working development-machine baseline but
-are preferences, not a repository requirement. MCP integrations such as
-Context7, Playwright, and GitHub are optional productivity tooling; configure
-them only through your own Codex account and local credential store. Never put
-API keys, tokens, or R2 credentials in `config.toml` or committed files.
+Use the complete [Codex MacBook configuration](codex-macbook-configuration.md)
+guide to recreate the base configuration, custom agents, plugins, skills, MCP
+servers, credentials, and validation. Never put Moto AI secrets in Codex
+configuration or committed files.
 
 ## 8. Shutdown
 

@@ -50,5 +50,6 @@ the Codex project configuration, and verification—see
 
 - [Architecture and retained product surface](docs/architecture.md)
 - [MacBook setup](docs/macbook-setup.md)
+- [Complete Codex MacBook configuration](docs/codex-macbook-configuration.md)
 - [Named local database reset procedure](docs/reset-database.md)
 - [Deployment guide](DEPLOYMENT.md)
