@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import MotoViewer from '@/learning/player/MotoViewer';
 import type { NormalizedCourseContent } from '@/learning/course-content';
 import type { RevisionIdentity } from '@/shared/contracts/api';
+import type { OfflineAssistantPayload } from '@moto-ai/contracts';
 
 const PLAYER_WIDTH = 1440;
 const PLAYER_HEIGHT = 810;
@@ -14,11 +15,15 @@ export function PlayerViewport({
   selectedLessonId,
   fill = false,
   aiIdentity,
+  assistant,
+  onAssistantAnswer,
 }: {
   content: NormalizedCourseContent;
   selectedLessonId?: string;
   fill?: boolean;
   aiIdentity?: RevisionIdentity;
+  assistant?: OfflineAssistantPayload;
+  onAssistantAnswer?: (context: { question: string; matchedQaId: string | null; answer: string }) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0);
@@ -69,6 +74,8 @@ export function PlayerViewport({
             sections={content.sections}
             preview
             aiIdentity={aiIdentity}
+            assistant={assistant}
+            onAssistantAnswer={onAssistantAnswer}
             imageSizes={imageSizes}
           />
         </div>

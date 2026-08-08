@@ -40,6 +40,11 @@ enum CourseGenerationStatus {
   FAILED
 }
 
+enum CourseAssistantQaStatus {
+  DRAFT
+  APPROVED
+}
+
 model Course {
   id                 String                @id
   slug               String                @unique
@@ -55,6 +60,7 @@ model Course {
   revisions          CourseRevision[]
   sourceFiles        CourseSourceFile[]
   sourceBindings     CourseSourceBinding[]
+  assistantQa        CourseAssistantQa[]
   generatedBy        CourseGeneration?     @relation("GeneratedCourse")
   createdAt          DateTime              @default(now())
   updatedAt          DateTime              @updatedAt
@@ -196,10 +202,40 @@ model CourseRevision {
   review      CourseReview?
   sources     CourseRevisionSource[]
   generations CourseGeneration[]
+  assistantSnapshot CourseRevisionAssistantQa[]
 
   @@unique([courseId, version])
   @@unique([courseId, sourceHash])
   @@index([courseId, createdAt])
+}
+
+model CourseAssistantQa {
+  id               String                  @id @default(cuid())
+  courseId         String
+  questionVariants Json
+  matchingKeywords Json
+  approvedAnswer   String
+  citations        Json
+  status           CourseAssistantQaStatus @default(DRAFT)
+  sourceIds        Json
+  sourceHashes     Json
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  course           Course                  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId, status, updatedAt])
+}
+
+model CourseRevisionAssistantQa {
+  revisionId       String
+  assistantQaId    String
+  questionVariants Json
+  matchingKeywords Json
+  approvedAnswer   String
+  citations        Json
+  revision         CourseRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+
+  @@id([revisionId, assistantQaId])
 }
 
 // This is the immutable source binding for a frozen revision. The copied hash

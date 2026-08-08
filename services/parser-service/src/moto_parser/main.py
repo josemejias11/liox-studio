@@ -8,8 +8,8 @@ from typing import cast
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 
 from .contracts import (
-    ChatRequest,
-    ChatResponse,
+    AssistantQaRequest,
+    AssistantQaResponse,
     CourseGenerationRequest,
     CourseGenerationResponse,
     DeleteDocumentRequest,
@@ -28,7 +28,7 @@ from .documents import (
     store_course_document,
 )
 from .generation import generate_course
-from .rag import answer_question, generate_quiz, lifespan, runtime
+from .rag import generate_assistant_qa, generate_quiz, lifespan, runtime
 from .settings import CHROMA_DIR, OPENAI_API_KEY, OPENAI_CHAT_MODEL, OPENAI_EMBEDDING_MODEL
 
 logger = logging.getLogger(__name__)
@@ -52,6 +52,22 @@ def require_internal_token(
         x_internal_token.encode(), runtime.token.encode()
     ):
         raise HTTPException(status_code=401, detail="Invalid or missing X-Internal-Token.")
+
+
+@app.post(
+    "/api/generate-assistant-qa",
+    response_model=AssistantQaResponse,
+    dependencies=[Depends(require_internal_token)],
+    tags=["authoring"],
+)
+def generate_assistant_qa_route(request: AssistantQaRequest) -> AssistantQaResponse:
+    try:
+        return AssistantQaResponse(drafts=generate_assistant_qa(request.course_id, request.source_ids))
+    except LookupError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    except Exception as error:
+        logger.exception("Error generating assistant Q&A for course %s", request.course_id)
+        raise HTTPException(status_code=500, detail="Internal server error generating assistant Q&A.") from error
 
 
 @app.post(
@@ -88,23 +104,6 @@ def upload_file(  # noqa: B008
         raise HTTPException(status_code=400, detail=str(error)) from error
     except DocumentProcessingError as error:
         raise HTTPException(status_code=500, detail=str(error)) from error
-
-
-@app.post(
-    "/api/chat",
-    response_model=ChatResponse,
-    dependencies=[Depends(require_internal_token)],
-    tags=["chat"],
-)
-def chat(request: ChatRequest) -> ChatResponse:
-    try:
-        answer, sources = answer_question(request.course_id, request.source_ids, request.query)
-        return ChatResponse(answer=answer, sources=sources)
-    except Exception as error:
-        logger.exception("Error during chat generation for course %s", request.course_id)
-        raise HTTPException(
-            status_code=500, detail="Internal server error generating response."
-        ) from error
 
 
 @app.post(

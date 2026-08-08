@@ -12,7 +12,6 @@ export type CoursePhase =
   | { phase: 'chapter'; chapterIndex: number; lessonIndex: number }
   | { phase: 'chapter-quiz'; chapterIndex: number }
   | { phase: 'specifications'; specIndex: number }
-  | { phase: 'quiz' }
   | { phase: 'disclaimer' }
   | { phase: 'complete' };
 
@@ -37,7 +36,7 @@ const INITIAL_STATE: CourseNavState = {
   showChapterIntro: false,
 };
 
-function findFlowIndex(flow: CourseFlow, kind: 'quiz' | 'disclaimer'): number {
+function findFlowIndex(flow: CourseFlow, kind: 'disclaimer'): number {
   return flow.items.find((item) => item.kind === kind)?.index ?? flow.items.length;
 }
 
@@ -67,8 +66,6 @@ export function getSectionIndex(flow: CourseFlow, phase: CoursePhase): number {
               item.key === (structure.specSections[phase.specIndex]?._key ?? `spec-${phase.specIndex}`),
           )?.index ?? -1
         : -1;
-    case 'quiz':
-      return findFlowIndex(flow, 'quiz');
     case 'disclaimer':
       return findFlowIndex(flow, 'disclaimer');
     case 'complete':
@@ -80,7 +77,7 @@ export function getSectionIndex(flow: CourseFlow, phase: CoursePhase): number {
 function postChapterPhase(s: CourseStructure): CoursePhase {
   if (s.specSections.length > 0) return { phase: 'specifications', specIndex: 0 };
   if (s.disclaimerSection) return { phase: 'disclaimer' };
-  return { phase: 'quiz' };
+  return { phase: 'complete' };
 }
 
 
@@ -194,10 +191,10 @@ function reduceNext(
           specIndex: phase.specIndex + 1,
         });
       }
-      return forward(structure.disclaimerSection ? { phase: 'disclaimer' } : { phase: 'quiz' });
+      return forward(structure.disclaimerSection ? { phase: 'disclaimer' } : { phase: 'complete' });
 
     case 'disclaimer':
-      return forward({ phase: 'quiz' });
+      return forward({ phase: 'complete' });
     default:
       return state;
   }
@@ -247,14 +244,11 @@ function reducePrev(structure: CourseStructure, state: CourseNavState): CourseNa
       });
     }
 
-    case 'quiz':
-      return back(phaseBeforeQuiz(structure));
-
     case 'disclaimer':
       return back(phaseBeforeDisclaimer(structure));
 
     case 'complete':
-      return back({ phase: 'quiz' });
+      return back(phaseBeforeQuiz(structure));
 
     default:
       return state;
@@ -308,8 +302,6 @@ function reduceGoToSection(
         specIndex: specIdx >= 0 ? specIdx : 0,
       });
     }
-    case 'quiz':
-      return jump({ phase: 'quiz' });
     case 'disclaimer':
       return jump({ phase: 'disclaimer' });
   }

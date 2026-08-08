@@ -31,7 +31,7 @@ readiness with `curl http://127.0.0.1:8000/health`; when enabled, Swagger is at
 | Method   | Path                   | Purpose                                                           |
 | -------- | ---------------------- | ----------------------------------------------------------------- |
 | `POST`   | `/api/upload`          | Index one immutable source ID and its SHA-256.                    |
-| `POST`   | `/api/chat`            | Answer from explicit frozen-revision source IDs.                  |
+| `POST`   | `/api/generate-assistant-qa` | Draft source-cited Course Assistant Q&A for author approval. |
 | `POST`   | `/api/generate-quiz`   | Generate a supplemental quiz from explicit revision sources.      |
 | `POST`   | `/api/generate-course` | Generate an editable course draft from explicit revision sources. |
 | `DELETE` | `/api/document`        | Delete chunks for one source ID.                                  |

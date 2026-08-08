@@ -1,6 +1,7 @@
 'use client';
 
 import type { ChapterInput, CourseGraph, CourseSourceFile } from '@moto-ai/contracts/course-studio';
+import type { OfflineAssistantPayload } from '@moto-ai/contracts';
 import { useCallback, useMemo, useState } from 'react';
 import { toPlayerCourseContent } from '@/learning/course-player-adapter';
 import { PlayerViewport } from '@/learning/PlayerViewport';
@@ -8,6 +9,7 @@ import { CourseOutline } from './CourseOutline';
 import { StudioInspector } from './StudioInspector';
 import { StudioToolbar } from './StudioToolbar';
 import { SourcePanel } from './SourcePanel';
+import { AssistantQaPanel } from './AssistantQaPanel';
 import type { StudioTrashItem } from './studio-types';
 import type { CourseInspectorSaveState } from './inspectors/CourseInspector';
 import { useStudioCourseCommands, useStudioCoursePersistence } from './useStudioCourseCommands';
@@ -30,11 +32,13 @@ export function CourseStudioWorkspace({
   initialSources,
   initialTrash,
   initialRevisionId,
+  initialAssistant,
 }: {
   initialCourse: CourseGraph;
   initialSources: CourseSourceFile[];
   initialTrash: StudioTrashItem[];
   initialRevisionId?: string;
+  initialAssistant: OfflineAssistantPayload;
 }) {
   const [focusPreview, setFocusPreview] = useState(false);
   const [courseSettingsDirty, setCourseSettingsDirty] = useState(false);
@@ -101,6 +105,7 @@ export function CourseStudioWorkspace({
           {preview ? (
             <PlayerViewport
               aiIdentity={initialRevisionId ? { revisionId: initialRevisionId } : undefined}
+              assistant={initialAssistant}
               content={preview}
               fill
               selectedLessonId={selectedLessonId}
@@ -169,6 +174,7 @@ export function CourseStudioWorkspace({
               {preview ? (
                 <PlayerViewport
                   aiIdentity={initialRevisionId ? { revisionId: initialRevisionId } : undefined}
+                  assistant={initialAssistant}
                   content={preview}
                   selectedLessonId={selectedLessonId}
                 />
@@ -210,7 +216,7 @@ export function CourseStudioWorkspace({
                 selection={selection}
                 sourcePanel={
                   selection.kind === 'course' ? (
-                    <SourcePanel courseId={course.id} initialSources={initialSources} />
+                    <><SourcePanel courseId={course.id} initialSources={initialSources} /><AssistantQaPanel courseId={course.id} sources={initialSources} /></>
                   ) : undefined
                 }
               />

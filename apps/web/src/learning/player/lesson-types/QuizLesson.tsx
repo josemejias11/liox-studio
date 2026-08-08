@@ -1,14 +1,10 @@
 'use client';
 
-import { CourseQuiz } from './CourseQuiz';
 import type { AuthoredQuiz } from '@/shared/contracts/player-course';
-import type { RevisionIdentity } from '@/shared/contracts/api';
 
 import { CourseQuizPlayer } from './CourseQuizPlayer';
 
 export interface QuizLessonProps {
-
-  weakTopics?: string[];
 
   courseQuiz?: AuthoredQuiz;
 
@@ -19,18 +15,15 @@ export interface QuizLessonProps {
   sessionId?: string;
   courseId?: string;
   preview?: boolean;
-  aiIdentity?: RevisionIdentity;
 }
 
 export function QuizLesson({
-  weakTopics,
   courseQuiz,
   onPass,
   onFail,
   sessionId,
   courseId,
   preview = false,
-  aiIdentity,
 }: QuizLessonProps) {
   if (courseQuiz) {
     return (
@@ -55,19 +48,11 @@ export function QuizLesson({
           </p>
           <h1 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">Knowledge Check</h1>
           <p className="mt-2 text-lg text-white/65">
-            Test your knowledge with a quiz generated from this course.
+            This course does not include an authored knowledge check for this section.
           </p>
         </div>
         <div className="flex justify-center">
-          <CourseQuiz
-            {...aiIdentity}
-            courseId={courseId}
-            weakTopics={weakTopics}
-            sessionId={sessionId}
-            onPass={onPass}
-            onFail={onFail}
-            preview={preview}
-          />
+          <button className="rounded-lg bg-primary px-4 py-2 text-primary-foreground" onClick={onFail} type="button">Continue</button>
         </div>
       </div>
     </div>

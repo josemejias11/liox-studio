@@ -1,6 +1,7 @@
 import type { CourseGenerationSummary } from '@moto-ai/contracts/course-generation';
 import {
   getAuthoringCourse,
+  buildOfflineAssistantPayload,
   getCourseGeneration,
   listAuthoringCourses,
   listCourseRevisions,
@@ -51,11 +52,12 @@ export async function loadAuthoringLibrary() {
 }
 
 export async function loadAuthoringWorkspace(courseId: string) {
-  const [course, sources, trash, revisions] = await Promise.all([
+  const [course, sources, trash, revisions, assistant] = await Promise.all([
     getAuthoringCourse(courseId),
     listCourseSources(courseId),
     listCourseTrash(courseId),
     listCourseRevisions(courseId),
+    buildOfflineAssistantPayload(courseId),
   ]);
-  return { course, sources, trash, revisions };
+  return { course, sources, trash, revisions, assistant };
 }

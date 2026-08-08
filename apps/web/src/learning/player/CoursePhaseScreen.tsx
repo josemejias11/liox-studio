@@ -11,9 +11,6 @@ import type { LessonRuntime } from './hooks/useLessonRuntime';
 import { ChapterIntro } from './ChapterIntro';
 import { LessonRenderer } from './LessonRenderer';
 
-const CourseQuizDynamic = dynamic(() =>
-  import('./lesson-types/CourseQuiz').then((m) => ({ default: m.CourseQuiz })),
-);
 const QuizLessonDynamic = dynamic(() =>
   import('./lesson-types/QuizLesson').then((m) => ({ default: m.QuizLesson })),
 );
@@ -29,7 +26,6 @@ export interface CoursePhaseScreenProps {
   course: CourseContent;
   structure: CourseStructure;
   lessonRuntime: LessonRuntime;
-  weakTopics: string[];
   sessionId: string;
   persistSession: boolean;
   showChapterIntro: boolean;
@@ -37,7 +33,6 @@ export interface CoursePhaseScreenProps {
   totalHotspots: number;
   goNext: () => void;
   goPrev: () => void;
-  finishQuiz: () => void;
   finishChapterQuiz: (chapterIndex: number) => void;
   dismissChapterIntro: () => void;
   onDisclaimerCanProceedChange: (canProceed: boolean) => void;
@@ -58,8 +53,6 @@ export function getCoursePhaseSlideKey(args: {
       return 'cover';
     case 'specifications':
       return `spec-${phase.specIndex}`;
-    case 'quiz':
-      return 'quiz';
     case 'chapter-quiz':
       return `chapter-quiz-${phase.chapterIndex}`;
     case 'disclaimer':
@@ -77,7 +70,6 @@ export function CoursePhaseScreen({
   course,
   structure,
   lessonRuntime,
-  weakTopics,
   sessionId,
   persistSession,
   showChapterIntro,
@@ -85,7 +77,6 @@ export function CoursePhaseScreen({
   totalHotspots,
   goNext,
   goPrev,
-  finishQuiz,
   finishChapterQuiz,
   dismissChapterIntro,
   onDisclaimerCanProceedChange,
@@ -120,27 +111,6 @@ export function CoursePhaseScreen({
       return spec ? <SpecificationPage spec={spec} /> : null;
     }
 
-    case 'quiz':
-      return (
-        <div className="absolute inset-0 flex items-center justify-center overflow-y-auto bg-[#111225] p-6">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(104,91,199,0.42),transparent_42%)]" />
-          <div className="relative w-full max-w-2xl rounded-[2rem] border border-white/12 bg-white/96 p-4 shadow-[0_32px_90px_rgba(0,0,0,0.42)] md:p-8">
-            <p className="mb-5 text-center text-xs font-semibold tracking-[0.22em] text-[#685bc7] uppercase">
-              Final knowledge check
-            </p>
-            <CourseQuizDynamic
-              {...aiIdentity}
-              weakTopics={weakTopics}
-              onPass={finishQuiz}
-              onFail={finishQuiz}
-              sessionId={persistSession ? sessionId : undefined}
-              courseId={course._id}
-              preview={preview}
-            />
-          </div>
-        </div>
-      );
-
     case 'chapter-quiz': {
       const chapterGroup = structure.chapters.find(
         (chapter) => chapter.chapterIndex === phase.chapterIndex,
@@ -150,9 +120,7 @@ export function CoursePhaseScreen({
         <div className="absolute inset-0 flex items-center justify-center overflow-y-auto bg-[#111225] p-6">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(104,91,199,0.42),transparent_42%)]" />
           <QuizLessonDynamic
-            aiIdentity={aiIdentity}
             courseQuiz={chapterGroup?.quickCheck}
-            weakTopics={weakTopics}
             onPass={() => finishChapterQuiz(phase.chapterIndex)}
             onFail={() => finishChapterQuiz(phase.chapterIndex)}
             sessionId={persistSession ? sessionId : undefined}
@@ -208,7 +176,6 @@ export function CoursePhaseScreen({
           goPrev={goPrev}
           markVisited={lessonRuntime.markVisited}
           baseMarkVisited={lessonRuntime.baseMarkVisited}
-          weakTopics={weakTopics}
           sessionId={sessionId}
           persistSession={persistSession}
           courseId={course._id}

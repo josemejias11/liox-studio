@@ -54,7 +54,7 @@ export function DiscoveryLearnContent({
         <div className="h-px flex-1 bg-white/8" />
         <span className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-semibold tracking-widest uppercase">
           <Sparkles className="h-3 w-3" />
-          Course AI Assistant
+          Course material
         </span>
         <div className="h-px flex-1 bg-white/8" />
       </div>

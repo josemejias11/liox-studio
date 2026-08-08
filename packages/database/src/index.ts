@@ -13,6 +13,8 @@ export type {
   BackgroundJob,
   Course,
   CourseAsset,
+  CourseAssistantQa,
+  CourseAssistantQaStatus,
   CourseChapter,
   CourseGeneration,
   CourseLesson,
@@ -22,6 +24,7 @@ export type {
   CourseReviewFeedback,
   CourseRevision,
   CourseRevisionSource,
+  CourseRevisionAssistantQa,
   CourseSourceFile,
 } from '@prisma/client';
 
@@ -108,3 +111,11 @@ export type {
   LessonInput,
 } from '@moto-ai/contracts/course-studio';
 export type { CourseTrashItem } from './course-trash-repository';
+export {
+  buildOfflineAssistantPayload,
+  buildFrozenOfflineAssistantPayload,
+  deleteCourseAssistantQa,
+  listCourseAssistantQa,
+  replaceCourseAssistantQaDrafts,
+  updateCourseAssistantQa,
+} from './course-assistant-repository';

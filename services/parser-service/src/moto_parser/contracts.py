@@ -14,10 +14,22 @@ class UploadResponse(BaseModel):
     chunks_stored: int
 
 
-class ChatRequest(BaseModel):
+class AssistantCitation(BaseModel):
+    source_id: str = Field(alias="sourceId", min_length=1, max_length=100)
+    label: str = Field(min_length=1, max_length=255)
+    excerpt: str = Field(min_length=1, max_length=1000)
+
+
+class AssistantQaDraft(BaseModel):
+    question_variants: list[str] = Field(alias="questionVariants", min_length=1, max_length=12)
+    matching_keywords: list[str] = Field(alias="matchingKeywords", max_length=30)
+    approved_answer: str = Field(alias="approvedAnswer", min_length=1, max_length=4000)
+    citations: list[AssistantCitation] = Field(min_length=1, max_length=12)
+
+
+class AssistantQaRequest(BaseModel):
     course_id: str
-    source_ids: list[str] = Field(max_length=500)
-    query: str = Field(max_length=2000)
+    source_ids: list[str] = Field(min_length=1, max_length=500)
 
     @field_validator("course_id")
     @classmethod
@@ -25,9 +37,8 @@ class ChatRequest(BaseModel):
         return validate_course_id(value)
 
 
-class ChatResponse(BaseModel):
-    answer: str
-    sources: list[str]
+class AssistantQaResponse(BaseModel):
+    drafts: list[AssistantQaDraft] = Field(min_length=1, max_length=30)
 
 
 class QuizRequest(BaseModel):

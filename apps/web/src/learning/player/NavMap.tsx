@@ -219,12 +219,9 @@ export function NavMap({
 
           {nonLessonItems.map((item, index) => {
             const meta = SECTION_TYPE_META[item.kind];
-            const indexGlyph =
-              item.kind === 'quiz' ? '✓' : item.kind === 'disclaimer' ? '!' : index + 1;
+            const indexGlyph = item.kind === 'disclaimer' ? '!' : index + 1;
             const glyphSrText =
-              item.kind === 'quiz'
-                ? 'Quiz section'
-                : item.kind === 'disclaimer'
+              item.kind === 'disclaimer'
                   ? 'Attention required'
                   : undefined;
 

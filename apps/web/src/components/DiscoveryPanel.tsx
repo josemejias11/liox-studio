@@ -4,8 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import { X, Sparkles } from 'lucide-react';
 import { useFocusTrap } from '@/shared/useFocusTrap';
 import type { RichText, CoursePhoto } from '@/shared/contracts/player-course';
-import { useChatConversation } from './course-ai/useChatConversation';
-import { DiscoveryConversation } from './discovery/DiscoveryConversation';
 import { DiscoveryLearnContent } from './discovery/DiscoveryLearnContent';
 import type { InlineDiscoveryCueResolver } from '@/learning/player/lesson-types/InlineDiscoveryCue';
 
@@ -33,7 +31,7 @@ export function DiscoveryPanel({
   open,
   onClose,
   label,
-  topic,
+  topic: _topic,
   body,
   photos = [],
   videoFile,
@@ -43,8 +41,8 @@ export function DiscoveryPanel({
   mode,
   sidebarPlacement = 'edge',
   dimBackdrop = true,
-  courseId,
-  preview = false,
+  courseId: _courseId,
+  preview: _preview = false,
   resolveLinkedLayer,
 }: DiscoveryPanelProps) {
   const hasVideo = !!videoFile?.asset?.url;
@@ -53,13 +51,8 @@ export function DiscoveryPanel({
   const [liveAnnouncement, setLiveAnnouncement] = useState('');
   const [lastPosition, setLastPosition] = useState<{ x: number; y: number } | null>(null);
   const [isMobileView, setIsMobileView] = useState(false);
-  const { messages, isLoading, send, abort, reset } = useChatConversation({
-    courseId,
-    onAssistantMessage: setLiveAnnouncement,
-  });
 
   const panelRef = useRef<HTMLDivElement>(null);
-  const greetingKeyRef = useRef<string | null>(null);
   const swipeTouchStartX = useRef(0);
   const swipeTouchStartY = useRef(0);
 
@@ -95,39 +88,6 @@ export function DiscoveryPanel({
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
-  useEffect(() => {
-    if (open) {
-      reset();
-      greetingKeyRef.current = null;
-    }
-  }, [open, label, reset]);
-  useEffect(() => {
-    if (preview || !open || !topic) return;
-    const greetingKey = `${label}:${topic}`;
-    if (greetingKeyRef.current === greetingKey) return;
-    greetingKeyRef.current = greetingKey;
-
-    const prompt = `Briefly explain the "${topic}" feature to a sales rep in 2-3 sentences. Be concise and sales-focused.`;
-    void send(prompt, {
-      displayUserMessage: false,
-      displayPendingAssistant: true,
-      queryOverride: `Regarding the "${topic}" feature: ${prompt}`,
-      fallbackMessage: "Couldn't load content right now.",
-    });
-  }, [open, label, preview, topic, send]);
-
-  useEffect(() => {
-    if (!open) abort();
-  }, [open, abort]);
-
-  function handleSend(query: string) {
-    if (preview) return;
-    void send(query, {
-      displayPendingAssistant: true,
-      queryOverride: topic ? `Regarding the "${topic}" feature: ${query}` : query,
-      fallbackMessage: "Couldn't load content right now.",
-    });
-  }
 
   return (
     <div
@@ -267,7 +227,7 @@ export function DiscoveryPanel({
               </div>
             </div>
 
-            {preview ? (
+            {
               <div className="scrollbar-none flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
                 {hasLearnContent ? (
                   <DiscoveryLearnContent
@@ -283,28 +243,7 @@ export function DiscoveryPanel({
                   </p>
                 )}
               </div>
-            ) : (
-              <DiscoveryConversation
-                key={`${label}:${open ? 'open' : 'closed'}`}
-                label={label}
-                topic={topic}
-                messages={messages}
-                isLoading={isLoading}
-                hasLearnContent={hasLearnContent}
-                onSend={handleSend}
-                learnContent={
-                  hasLearnContent ? (
-                    <DiscoveryLearnContent
-                      body={body}
-                      photos={photos}
-                      videoFile={videoFile}
-                      videoAspectRatio={videoAspectRatio}
-                      resolveLinkedLayer={resolveLinkedLayer}
-                    />
-                  ) : undefined
-                }
-              />
-            )}
+            }
           </div>
         );
       })()}

@@ -1,10 +1,10 @@
 'use client';
 
 import { CompletionBurst } from './CompletionBurst';
-import { CourseAIFab } from './CourseAIFab';
+import { CourseAssistant } from './CourseAssistant';
 import type { CourseFlow } from '@/learning/course-flow';
 import type { LessonSection } from '@/shared/contracts/player-course';
-import type { RevisionIdentity } from '@/shared/contracts/api';
+import type { OfflineAssistantPayload } from '@moto-ai/contracts';
 import type { CoursePhase } from './hooks/useCourseNavigation';
 import { NavMap } from './NavMap';
 
@@ -14,13 +14,12 @@ interface PlayerOverlaysProps {
   currentLesson?: LessonSection;
   currentSectionIndex: number;
   visited: Record<string, Set<string>>;
-  courseId: string;
   showNavMap: boolean;
   showBurst: boolean;
   progressError: unknown;
   persistSession: boolean;
-  allowAssistant: boolean;
-  aiIdentity?: RevisionIdentity;
+  assistant?: OfflineAssistantPayload;
+  onAssistantAnswer?: (context: { question: string; matchedQaId: string | null; answer: string }) => void;
   onNavigate: (index: number) => void;
   onCloseNavMap: () => void;
 }
@@ -31,19 +30,17 @@ export function PlayerOverlays({
   currentLesson,
   currentSectionIndex,
   visited,
-  courseId,
   showNavMap,
   showBurst,
   progressError,
   persistSession,
-  allowAssistant,
-  aiIdentity,
+  assistant,
+  onAssistantAnswer,
   onNavigate,
   onCloseNavMap,
 }: PlayerOverlaysProps) {
   const showAssistant =
     phase.phase !== 'cover' &&
-    phase.phase !== 'quiz' &&
     phase.phase !== 'chapter-quiz' &&
     currentLesson?.lessonType !== 'quiz';
 
@@ -59,8 +56,8 @@ export function PlayerOverlays({
         />
       )}
 
-      {allowAssistant && aiIdentity && showAssistant && (
-        <CourseAIFab courseId={courseId} {...aiIdentity} />
+      {assistant && showAssistant && (
+        <CourseAssistant payload={assistant} onAnswer={onAssistantAnswer} />
       )}
 
       {progressError && persistSession && (

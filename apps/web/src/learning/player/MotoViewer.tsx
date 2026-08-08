@@ -9,8 +9,8 @@ import { getChapterLessons } from '@/learning/course-structure';
 import { deriveCourseFlow } from '@/learning/course-flow';
 import type { CourseSection, CourseContent } from '@/shared/contracts/player-course';
 import type { RevisionIdentity } from '@/shared/contracts/api';
+import type { OfflineAssistantPayload } from '@moto-ai/contracts';
 import { useCourseSession } from './hooks/useCourseSession';
-import { useWeakTopics } from './hooks/useWeakTopics';
 import { CoursePhaseScreen, getCoursePhaseSlideKey } from './CoursePhaseScreen';
 import { ErrorBoundary } from '@/shared/ErrorBoundary';
 import { useLessonRuntime } from './hooks/useLessonRuntime';
@@ -43,6 +43,8 @@ export default function MotoViewer({
   initialSectionKey,
   imageSizes = '100vw',
   aiIdentity,
+  assistant,
+  onAssistantAnswer,
 }: {
   course: CourseContent;
   sections: CourseSection[];
@@ -50,6 +52,8 @@ export default function MotoViewer({
   initialSectionKey?: string;
   imageSizes?: string;
   aiIdentity?: RevisionIdentity;
+  assistant?: OfflineAssistantPayload;
+  onAssistantAnswer?: (context: { question: string; matchedQaId: string | null; answer: string }) => void;
 }) {
   const flow = useMemo(
     () => deriveCourseFlow(sections, course.chapters ?? []),
@@ -135,14 +139,6 @@ export default function MotoViewer({
     markLessonViewed(lessonKey, course._id);
   }, [course._id, lessonKey, markLessonViewed, phase.phase, preview, showChapterIntro]);
   const [disclaimerCanProceed, setDisclaimerCanProceed] = useState(true);
-  const { topics: weakTopics } = useWeakTopics({
-    enabled: !preview,
-    phase,
-    structure,
-    visited,
-    courseId: course._id,
-    currentLessonType: currentLesson?.lessonType,
-  });
 
   const slideKey = getCoursePhaseSlideKey({ phase, currentLesson, showChapterIntro });
   const isContentLesson =
@@ -217,7 +213,6 @@ export default function MotoViewer({
               course={course}
               structure={structure}
               lessonRuntime={lessonRuntime}
-              weakTopics={weakTopics}
               sessionId={sessionId}
               persistSession={persistSession}
               showChapterIntro={showChapterIntro}
@@ -225,7 +220,6 @@ export default function MotoViewer({
               totalHotspots={totalHotspots}
               goNext={goNext}
               goPrev={goPrev}
-              finishQuiz={nav.finishQuiz}
               finishChapterQuiz={nav.finishChapterQuiz}
               dismissChapterIntro={nav.dismissChapterIntro}
               onDisclaimerCanProceedChange={setDisclaimerCanProceed}
@@ -243,13 +237,12 @@ export default function MotoViewer({
         currentLesson={currentLesson}
         currentSectionIndex={nav.currentSectionIndex}
         visited={visited}
-        courseId={course._id}
         showNavMap={showNavMap}
         showBurst={showBurst}
         progressError={progressError}
         persistSession={persistSession}
-        allowAssistant={Boolean(aiIdentity)}
-        aiIdentity={aiIdentity}
+        assistant={assistant}
+        onAssistantAnswer={onAssistantAnswer}
         onNavigate={navigateToSection}
         onCloseNavMap={() => setShowNavMap(false)}
       />

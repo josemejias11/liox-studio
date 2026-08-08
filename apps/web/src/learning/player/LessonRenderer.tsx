@@ -17,7 +17,6 @@ export interface LessonRendererProps {
   goPrev: () => void;
   markVisited: (label: string) => void;
   baseMarkVisited: (key: string, label: string, total: number) => Promise<void>;
-  weakTopics: string[];
   sessionId: string;
   persistSession: boolean;
   courseId: string;
@@ -36,7 +35,6 @@ export function LessonRenderer({
   goPrev,
   markVisited,
   baseMarkVisited,
-  weakTopics,
   sessionId,
   persistSession,
   courseId,
@@ -54,7 +52,6 @@ export function LessonRenderer({
     goPrev,
     markVisited,
     baseMarkVisited,
-    weakTopics,
     sessionId,
     persistSession,
     courseId,

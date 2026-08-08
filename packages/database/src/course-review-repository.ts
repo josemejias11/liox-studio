@@ -1,6 +1,9 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from './index';
 import { courseGraphSelect, toCourseGraph, type CourseGraph } from './course-repository';
+import { OfflineAssistantPayloadSchema, OFFLINE_ASSISTANT_PAYLOAD_VERSION, type OfflineAssistantPayload } from '@moto-ai/contracts';
+import type { AssistantQaItem } from '@moto-ai/contracts';
+import { matchOfflineAssistant } from '@moto-ai/contracts';
 
 interface CourseRevisionSummary {
   id: string;
@@ -18,6 +21,8 @@ interface CourseReviewSnapshot {
   version: number;
   title: string;
   course: CourseGraph;
+  assistant: OfflineAssistantPayload;
+  assistantReferences: AssistantQaItem[];
   expiresAt: Date | null;
 }
 
@@ -111,12 +116,16 @@ export async function freezeCourseRevision(
       }
 
       const graph = toCourseGraph(course);
+      const approvedAssistant = await tx.courseAssistantQa.findMany({
+        where: { courseId, status: 'APPROVED' }, orderBy: { id: 'asc' },
+        select: { id: true, questionVariants: true, matchingKeywords: true, approvedAnswer: true, citations: true },
+      });
       const frozenSources = sources.map(({ id, sha256: sourceSha256, filename }) => ({
         sourceFileId: id,
         sha256: sourceSha256,
         filename,
       }));
-      const sourceHash = await sha256(stableJson({ graph, sources: frozenSources }));
+      const sourceHash = await sha256(stableJson({ graph, sources: frozenSources, assistant: approvedAssistant }));
       const existing = await tx.courseRevision.findUnique({
         where: { courseId_sourceHash: { courseId, sourceHash } },
         include: { review: { select: { id: true } } },
@@ -140,6 +149,15 @@ export async function freezeCourseRevision(
           submittedAt: new Date(),
           sources: {
             create: frozenSources,
+          },
+          assistantSnapshot: {
+            create: approvedAssistant.map((item) => ({
+              assistantQaId: item.id,
+              questionVariants: item.questionVariants as Prisma.InputJsonValue,
+              matchingKeywords: item.matchingKeywords as Prisma.InputJsonValue,
+              approvedAnswer: item.approvedAnswer,
+              citations: item.citations as Prisma.InputJsonValue,
+            })),
           },
         },
         include: { review: { select: { id: true } } },
@@ -172,7 +190,7 @@ export async function getReviewByToken(token: string): Promise<CourseReviewSnaps
   const accessTokenHash = await sha256(token);
   const review = await prisma.courseReview.findUnique({
     where: { accessTokenHash },
-    include: { revision: true },
+    include: { revision: { include: { assistantSnapshot: true } } },
   });
   if (!review || (review.expiresAt && review.expiresAt <= new Date())) return null;
   return {
@@ -181,6 +199,18 @@ export async function getReviewByToken(token: string): Promise<CourseReviewSnaps
     version: review.revision.version,
     title: review.revision.sourceTitle,
     course: review.revision.snapshot as unknown as CourseGraph,
+    assistant: OfflineAssistantPayloadSchema.parse({
+      version: OFFLINE_ASSISTANT_PAYLOAD_VERSION,
+      items: review.revision.assistantSnapshot.map(({ citations: _citations, ...item }) => item),
+    }),
+    assistantReferences: review.revision.assistantSnapshot.map((item) => ({
+      id: item.assistantQaId,
+      questionVariants: item.questionVariants as string[],
+      matchingKeywords: item.matchingKeywords as string[],
+      approvedAnswer: item.approvedAnswer,
+      citations: item.citations as AssistantQaItem['citations'],
+      status: 'approved',
+    })),
     expiresAt: review.expiresAt,
   };
 }
@@ -191,18 +221,21 @@ export async function createReviewFeedback(
     authorName: string;
     message: string;
     lessonId?: string;
-    anchor?: Prisma.InputJsonValue;
+    assistantQuestion?: string;
   },
 ) {
   const review = await getReviewByToken(token);
   if (!review) throw new Error('REVIEW_NOT_FOUND');
+  const assistant = input.assistantQuestion
+    ? matchOfflineAssistant(review.assistant, input.assistantQuestion)
+    : undefined;
   return prisma.courseReviewFeedback.create({
     data: {
       reviewId: review.reviewId,
       authorName: input.authorName,
       message: input.message,
       lessonId: input.lessonId || null,
-      ...(input.anchor !== undefined ? { anchor: input.anchor } : {}),
+      ...(assistant ? { anchor: { assistant: { question: input.assistantQuestion, matchedQaId: assistant.itemId, answer: assistant.answer } } as Prisma.InputJsonValue } : {}),
     },
     select: {
       id: true,

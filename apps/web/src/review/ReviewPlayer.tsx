@@ -11,14 +11,19 @@ export function ReviewPlayer({
   version,
   content,
   lessons,
+  assistant,
+  assistantReferences,
 }: {
   token: string;
   title: string;
   version: number;
   content: NormalizedCourseContent;
   lessons: Array<{ id: string; label: string }>;
+  assistant: import('@moto-ai/contracts').OfflineAssistantPayload;
+  assistantReferences: import('@moto-ai/contracts').AssistantQaItem[];
 }) {
   const [selectedLessonId, setSelectedLessonId] = useState<string | undefined>();
+  const [assistantContext, setAssistantContext] = useState<{ question: string; matchedQaId: string | null; answer: string } | undefined>();
 
   return (
     <main className="bg-muted/40 text-foreground min-h-screen px-6 py-8">
@@ -40,6 +45,8 @@ export function ReviewPlayer({
           <div className="border-border min-w-0 rounded-2xl border bg-zinc-950 p-3 shadow-xl">
             <PlayerViewport
               aiIdentity={{ reviewToken: token }}
+              assistant={assistant}
+              onAssistantAnswer={setAssistantContext}
               content={content}
               selectedLessonId={selectedLessonId}
             />
@@ -49,6 +56,8 @@ export function ReviewPlayer({
             onSelectLesson={setSelectedLessonId}
             selectedLessonId={selectedLessonId}
             token={token}
+            assistantContext={assistantContext}
+            assistantReferences={assistantReferences}
           />
         </div>
       </div>

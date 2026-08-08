@@ -17,7 +17,7 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from pydantic import ValidationError
 
-from .contracts import QuizPayload
+from .contracts import AssistantQaDraft, QuizPayload
 from .settings import (
     CHROMA_DIR,
     CHUNK_OVERLAP,
@@ -236,39 +236,32 @@ def response_text(response: object) -> str:
     return str(content)
 
 
-def answer_question(course_id: str, source_ids: list[str], query: str) -> tuple[str, list[str]]:
-    logger.info("Revision-bound chat query for course: %s", course_id)
-    if not source_ids:
-        return NO_CONTEXT_ANSWER, []
-    if not collection_exists(course_id):
-        return NO_MATERIALS_ANSWER, []
-    documents = retrieve_course_documents(course_id, source_ids, query, RETRIEVAL_K_CHAT)
+def generate_assistant_qa(course_id: str, source_ids: list[str]) -> list[AssistantQaDraft]:
+    if not source_ids or not collection_exists(course_id):
+        raise LookupError("No indexed course sources are available for assistant Q&A.")
+    documents = retrieve_course_documents(course_id, source_ids, "key concepts procedures specifications", 30)
     if not documents:
-        return NO_CONTEXT_ANSWER, []
-    context_str = format_context(documents)
-    prompt = f"""You are an expert AI teaching assistant for a specific course.
-Your task is to answer the user's question based strictly on the provided context below.
+        raise LookupError("No relevant indexed material is available for assistant Q&A.")
+    sources = "\n\n".join(
+        f"SOURCE_ID: {doc.metadata.get('source_id')}\nLABEL: {doc.metadata.get('source')}\nEXCERPT: {doc.page_content[:900]}"
+        for doc in documents
+    )
+    schema = json.dumps({"drafts": [AssistantQaDraft.model_json_schema(by_alias=True)]}, indent=2)
+    prompt = f"""Create 5-12 course assistant Q&A drafts using only these selected indexed sources.
+Every answer must be concise, learner-ready, and directly supported by a citation. Each citation must use the supplied SOURCE_ID and LABEL and quote a short source excerpt. Return only JSON matching the schema. These are author drafts, not approved learner content.
 
-Rules:
-1. Only use the provided context to answer the question.
-2. If the context does not contain enough information to answer the question, output EXACTLY: "{NO_CONTEXT_ANSWER}"
-3. Do NOT hallucinate. Do NOT use outside knowledge.
-4. Be extremely concise and precise. Provide the answer in 1-3 short sentences maximum. Avoid long-winded explanations or filler.
-5. Do NOT include any conversational filler, meta-text, or introductions like "Here is an answer". Output ONLY the direct answer.
+SELECTED SOURCES:
+{sources}
 
-Context:
-{context_str}
-
-Question:
-{query}
-
-Answer:"""
-    logger.info("Generating response with OpenAI...")
-    assert runtime.llm is not None
-    answer = response_text(runtime.llm.invoke(prompt)).strip()
-    if NO_CONTEXT_ANSWER in answer:
-        return NO_CONTEXT_ANSWER, []
-    return answer, sorted({document.metadata.get("source", "Unknown") for document in documents})
+JSON SCHEMA:
+{schema}"""
+    assert runtime.quiz_llm is not None
+    try:
+        raw = response_text(runtime.quiz_llm.invoke(prompt))
+        data = json.loads(raw)
+        return [AssistantQaDraft.model_validate(item) for item in data["drafts"]]
+    except (json.JSONDecodeError, KeyError, ValidationError, TypeError) as error:
+        raise RuntimeError("The language model did not return valid assistant Q&A drafts.") from error
 
 
 def generate_quiz(course_id: str, source_ids: list[str], weak_topics: list[str]) -> list[dict]:

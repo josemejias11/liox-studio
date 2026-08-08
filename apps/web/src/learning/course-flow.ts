@@ -4,7 +4,6 @@ import { deriveCourseStructure } from '@/learning/course-structure';
 export type CourseFlowItem =
   | { kind: 'lesson'; key: string; index: number; title: string }
   | { kind: 'specification'; key: string; index: number; title: string }
-  | { kind: 'quiz'; key: 'quiz'; index: number; title: string }
   | { kind: 'disclaimer'; key: string; index: number; title: string };
 
 export interface CourseFlow {
@@ -45,8 +44,6 @@ export function deriveCourseFlow(
       title: structure.disclaimerSection.title ?? 'Disclaimer',
     });
   }
-
-  items.push({ kind: 'quiz', key: 'quiz', index: items.length, title: 'Knowledge Check' });
 
   return { structure, items };
 }

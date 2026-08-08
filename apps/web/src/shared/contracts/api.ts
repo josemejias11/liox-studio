@@ -1,53 +1,7 @@
 import { z } from 'zod';
-import { GenerateQuizRequestSchema } from '@moto-ai/contracts/quiz';
-
-const revisionIdField = z.string().min(1).max(100);
-const reviewTokenField = z.string().min(1).max(200);
 
 export type RevisionIdentity =
   { revisionId: string; reviewToken?: never } | { reviewToken: string; revisionId?: never };
-
-const chatRequestBase = z.object({
-  courseId: z.string().min(1).max(100),
-  query: z.string().min(1).max(2000),
-});
-
-export const ChatRequestSchema = z.union([
-  chatRequestBase
-    .extend({
-      revisionId: revisionIdField,
-      reviewToken: z.never().optional(),
-    })
-    .strict(),
-  chatRequestBase
-    .extend({
-      reviewToken: reviewTokenField,
-      revisionId: z.never().optional(),
-    })
-    .strict(),
-]);
-
-export type ChatRequest = z.infer<typeof ChatRequestSchema>;
-
-export const ChatResponseSchema = z.object({
-  answer: z.string(),
-  sources: z.array(z.string()),
-});
-
-export type ChatResponse = z.infer<typeof ChatResponseSchema>;
-
-export const RevisionBoundQuizRequestSchema = z.union([
-  GenerateQuizRequestSchema.extend({
-    revisionId: revisionIdField,
-    reviewToken: z.never().optional(),
-  }).strict(),
-  GenerateQuizRequestSchema.extend({
-    reviewToken: reviewTokenField,
-    revisionId: z.never().optional(),
-  }).strict(),
-]);
-
-export type RevisionBoundQuizRequest = z.infer<typeof RevisionBoundQuizRequestSchema>;
 
 const LessonProgressSchema = z.object({
   type: z.literal('lesson'),

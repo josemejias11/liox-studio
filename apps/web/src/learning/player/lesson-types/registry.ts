@@ -1,6 +1,5 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
-import { CourseQuiz } from './CourseQuiz';
 import type { RevisionIdentity } from '@/shared/contracts/api';
 import type { CourseHotspot, LessonSection } from '@/shared/contracts/player-course';
 
@@ -31,7 +30,6 @@ interface LessonRenderInput {
   goPrev: () => void;
   markVisited: (label: string) => void;
   baseMarkVisited: (key: string, label: string, total: number) => Promise<void>;
-  weakTopics: string[];
   sessionId: string;
   persistSession: boolean;
   courseId: string;
@@ -104,7 +102,7 @@ const lessonTypeRegistry: Record<LessonType, LessonTypeRegistryEntry> = {
   quiz: {
     completionMode: LessonCompletionMode.NONE,
     requiresManualCompletion: false,
-    render: ({ aiIdentity, weakTopics, goNext, persistSession, sessionId, courseId, preview }) =>
+    render: ({ goNext }) =>
       React.createElement(
         'div',
         {
@@ -129,15 +127,7 @@ const lessonTypeRegistry: Record<LessonType, LessonTypeRegistryEntry> = {
             },
             'Practice challenge',
           ),
-          React.createElement(CourseQuiz, {
-            ...aiIdentity,
-            weakTopics,
-            onPass: goNext,
-            onFail: goNext,
-            sessionId: persistSession ? sessionId : undefined,
-            courseId,
-            preview,
-          }),
+          React.createElement('button', { className: 'rounded-lg bg-primary px-4 py-2 text-primary-foreground', onClick: goNext }, 'Continue'),
         ),
       ),
   },

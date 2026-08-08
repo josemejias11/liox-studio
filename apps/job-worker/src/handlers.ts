@@ -1,10 +1,9 @@
 import { createHash } from 'node:crypto';
-import { type ClientQuiz, type ServerAiQuiz } from '@moto-ai/contracts/quiz';
 import { GeneratedCourseGraphSchema } from '@moto-ai/contracts/course-generation';
 import {
+  AssistantQaGenerationPayloadSchema,
   CourseGenerationPayloadSchema,
   DocumentIndexPayloadSchema,
-  QuizGenerationPayloadSchema,
   type JobKind,
 } from '@moto-ai/contracts/jobs';
 import {
@@ -16,34 +15,15 @@ import {
   markSourceIndexed,
   persistGeneratedCourse,
   prisma,
+  replaceCourseAssistantQaDrafts,
 } from '@moto-ai/database';
 import {
   generateCourseDraft,
-  generateCourseQuiz,
+  generateAssistantQaDrafts,
   RagServiceError,
   uploadCourseDocument,
 } from '@moto-ai/parser-client';
 import { NonRetryableJobError, type ClaimedJob } from '@moto-ai/jobs';
-
-async function persistAndStrip(quiz: ServerAiQuiz): Promise<ClientQuiz> {
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  await prisma.generatedQuiz
-    .deleteMany({ where: { createdAt: { lt: sevenDaysAgo } } })
-    .catch((error) => console.error('Failed to cleanup old quizzes', error));
-
-  const record = await prisma.generatedQuiz.create({ data: { payload: JSON.stringify(quiz) } });
-  return {
-    quizId: record.id,
-    source: 'ai',
-    title: quiz.title,
-    ...(quiz.instructions !== undefined ? { instructions: quiz.instructions } : {}),
-    questions: quiz.questions.map((question) => ({
-      question: question.question,
-      options: question.options,
-      ...(question.image_url !== undefined ? { image_url: question.image_url } : {}),
-    })),
-  };
-}
 
 async function indexDocument(job: ClaimedJob): Promise<{ filename: string; chunksStored: number }> {
   const payload = DocumentIndexPayloadSchema.safeParse(job.payload);
@@ -104,32 +84,26 @@ async function indexDocument(job: ClaimedJob): Promise<{ filename: string; chunk
   }
 }
 
-async function generateQuiz(job: ClaimedJob): Promise<ClientQuiz> {
-  const payload = QuizGenerationPayloadSchema.safeParse(job.payload);
+async function generateAssistantQa(job: ClaimedJob): Promise<{ draftsCreated: number }> {
+  const payload = AssistantQaGenerationPayloadSchema.safeParse(job.payload);
   if (!payload.success) {
     throw new NonRetryableJobError(
-      'The queued quiz request is invalid. Generate a new quiz to retry.',
+      'The queued assistant Q&A request is invalid. Select indexed sources and retry.',
     );
   }
-
-  const result = await generateCourseQuiz(
-    payload.data.courseId,
-    payload.data.sourceIds,
-    payload.data.weakTopics,
-  );
-  const quiz: ServerAiQuiz = {
-    title: 'Knowledge Check',
-    questions: result.questions.map((question) => {
-      const correct = question.options[question.correctAnswerIndex];
-      return {
-        question: question.question,
-        options: question.options,
-        correct_answer: correct,
-        explanation: `The correct answer is “${correct}”.`,
-      };
-    }),
-  };
-  return persistAndStrip(quiz);
+  const selected = await prisma.courseSourceFile.findMany({
+    where: { courseId: payload.data.courseId, id: { in: payload.data.sourceIds }, indexStatus: 'INDEXED' },
+    select: { id: true, sha256: true },
+  });
+  if (selected.length !== payload.data.sourceIds.length || selected.some((item) => !payload.data.sourceHashes.includes(item.sha256))) {
+    throw new NonRetryableJobError('Every selected assistant source must still be indexed and unchanged. Select sources again.');
+  }
+  const drafts = await generateAssistantQaDrafts(payload.data.courseId, payload.data.sourceIds);
+  if (drafts.some((draft) => draft.citations.some((citation) => !payload.data.sourceIds.includes(citation.sourceId)))) {
+    throw new NonRetryableJobError('The generated assistant Q&A cited a source outside the selected indexed set. Generate a new draft.');
+  }
+  await replaceCourseAssistantQaDrafts({ ...payload.data, drafts });
+  return { draftsCreated: drafts.length };
 }
 
 async function generateCourse(job: ClaimedJob): Promise<unknown> {
@@ -191,11 +165,11 @@ export async function executeJob(job: ClaimedJob): Promise<unknown> {
     job.kind === 'DOCUMENT_INDEX'
       ? 'document_index'
       : job.kind === 'QUIZ_GENERATE'
-        ? 'quiz_generate'
+        ? 'ai_operation'
         : 'ai_operation';
 
   if (kind === 'document_index') return indexDocument(job);
-  if (kind === 'quiz_generate') return generateQuiz(job);
+  if (AssistantQaGenerationPayloadSchema.safeParse(job.payload).success) return generateAssistantQa(job);
   if (CourseGenerationPayloadSchema.safeParse(job.payload).success) return generateCourse(job);
   throw new NonRetryableJobError('This AI operation is not registered with the worker.');
 }

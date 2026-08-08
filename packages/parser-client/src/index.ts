@@ -61,9 +61,13 @@ async function parserRequest(
   }
 }
 
-const ParserChatResponseSchema = z.object({
-  answer: z.string(),
-  sources: z.array(z.string()),
+const ParserAssistantQaResponseSchema = z.object({
+  drafts: z.array(z.object({
+    questionVariants: z.array(z.string()).min(1),
+    matchingKeywords: z.array(z.string()),
+    approvedAnswer: z.string().min(1),
+    citations: z.array(z.object({ sourceId: z.string().min(1), label: z.string().min(1), excerpt: z.string().min(1) })).min(1),
+  })).min(1),
 });
 
 const ParserQuizResponseSchema = z.object({
@@ -96,10 +100,6 @@ const ParserCourseGenerationResponseSchema = z.object({
   prompt_template_version: z.string().min(1),
 });
 
-export interface RagChatResponse {
-  answer: string;
-  sources: string[];
-}
 
 export interface RagQuizQuestion {
   question: string;
@@ -129,27 +129,14 @@ export interface RagCourseGenerationResponse {
   promptTemplateVersion: string;
 }
 
-export async function askCourseQuestion(
-  courseId: string,
-  sourceIds: string[],
-  query: string,
-): Promise<RagChatResponse> {
-  const userSafe = 'The AI assistant is temporarily unavailable. Please try again in a moment.';
-  const raw = await parserRequest(
-    'POST',
-    '/api/chat',
-    { json: { course_id: courseId, source_ids: sourceIds, query }, timeoutMs: 60_000 },
-    'api/chat',
-    userSafe,
-  );
-
-  const parsed = ParserChatResponseSchema.safeParse(raw);
-  if (!parsed.success) {
-    console.error('[api/chat] parser response failed validation:', parsed.error.issues);
-    throw new RagServiceError(userSafe);
-  }
-
-  return parsed.data;
+export async function generateAssistantQaDrafts(courseId: string, sourceIds: string[]) {
+  const userSafe = 'Assistant Q&A drafting is temporarily unavailable. Please try again.';
+  const raw = await parserRequest('POST', '/api/generate-assistant-qa', {
+    json: { course_id: courseId, source_ids: sourceIds }, timeoutMs: 180_000,
+  }, 'api/generate-assistant-qa', userSafe);
+  const parsed = ParserAssistantQaResponseSchema.safeParse(raw);
+  if (!parsed.success) throw new RagServiceError(userSafe);
+  return parsed.data.drafts;
 }
 
 export async function generateCourseQuiz(

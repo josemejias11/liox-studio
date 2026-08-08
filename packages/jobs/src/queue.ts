@@ -17,8 +17,7 @@ import {
   type JobKind,
   type JobStatus,
   type JobStatusResponse,
-  type QuizGenerationPayload,
-  normalizeWeakTopics,
+  type AssistantQaGenerationPayload,
 } from '@moto-ai/contracts/jobs';
 
 const DEFAULT_MAX_ATTEMPTS = 3;
@@ -27,14 +26,14 @@ const RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 
 const databaseKind: Record<JobKind, BackgroundJobKind> = {
   document_index: BackgroundJobKind.DOCUMENT_INDEX,
-  quiz_generate: BackgroundJobKind.QUIZ_GENERATE,
+  assistant_qa_generate: BackgroundJobKind.AI_OPERATION,
   course_generate: BackgroundJobKind.AI_OPERATION,
   ai_operation: BackgroundJobKind.AI_OPERATION,
 };
 
 const publicKind: Record<BackgroundJobKind, Exclude<JobKind, 'course_generate'>> = {
   DOCUMENT_INDEX: 'document_index',
-  QUIZ_GENERATE: 'quiz_generate',
+  QUIZ_GENERATE: 'ai_operation',
   AI_OPERATION: 'ai_operation',
 };
 
@@ -48,6 +47,11 @@ function jobKind(job: Pick<BackgroundJob, 'kind' | 'payload'>): JobKind {
   ) {
     return 'course_generate';
   }
+  if (
+    job.kind === BackgroundJobKind.AI_OPERATION &&
+    job.payload && typeof job.payload === 'object' && !Array.isArray(job.payload) &&
+    Array.isArray((job.payload as { sourceIds?: unknown }).sourceIds)
+  ) return 'assistant_qa_generate';
   return publicKind[job.kind];
 }
 
@@ -133,17 +137,16 @@ export async function enqueueDocumentIndexJob(
   );
 }
 
-export async function enqueueQuizGenerationJob(
-  payload: QuizGenerationPayload,
+export async function enqueueAssistantQaGenerationJob(
+  payload: AssistantQaGenerationPayload,
 ): Promise<JobAcceptedResponse> {
-  const weakTopics = normalizeWeakTopics(payload.weakTopics);
   const sourceIds = [...new Set(payload.sourceIds)].sort((left, right) =>
     left.localeCompare(right),
   );
   return enqueue(
-    'quiz_generate',
-    { ...payload, sourceIds, weakTopics },
-    `quiz:${payload.courseId}:${payload.revisionId}:${JSON.stringify(sourceIds)}:${JSON.stringify(weakTopics)}`,
+    'assistant_qa_generate',
+    { ...payload, sourceIds },
+    `assistant-qa:${payload.courseId}:${JSON.stringify(sourceIds)}:${JSON.stringify(payload.sourceHashes)}`,
   );
 }
 

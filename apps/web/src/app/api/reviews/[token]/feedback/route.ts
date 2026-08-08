@@ -7,6 +7,7 @@ const schema = z.object({
   authorName: z.string().trim().min(1).max(100),
   message: z.string().trim().min(1).max(5000),
   lessonId: z.string().min(1).optional(),
+  assistantQuestion: z.string().min(1).max(2000).optional(),
 });
 
 export async function POST(
