@@ -1,10 +1,10 @@
 # Moto AI Parser Service
 
 The parser service is Moto AI's internal FastAPI service for source parsing,
-embedding, revision-grounded chat, and supplemental quiz generation. It is
-called by the Next.js backend and background worker; browsers never call it
-directly. OpenAI is the language-model and embedding provider behind this
-service boundary; browsers never receive the API key.
+embedding, source-grounded authoring drafts, and supplemental quiz-draft
+generation. It is called by the Next.js backend and background worker;
+browsers never call it directly. OpenAI is the language-model and embedding
+provider behind this service boundary; browsers never receive the API key.
 
 ## Quick start
 
@@ -28,22 +28,23 @@ readiness with `curl http://127.0.0.1:8000/health`; when enabled, Swagger is at
 
 ## Endpoints
 
-| Method   | Path                   | Purpose                                                           |
-| -------- | ---------------------- | ----------------------------------------------------------------- |
-| `POST`   | `/api/upload`          | Index one immutable source ID and its SHA-256.                    |
-| `POST`   | `/api/generate-assistant-qa` | Draft source-cited Course Assistant Q&A for author approval. |
-| `POST`   | `/api/generate-quiz`   | Generate a supplemental quiz from explicit revision sources.      |
-| `POST`   | `/api/generate-course` | Generate an editable course draft from explicit revision sources. |
-| `DELETE` | `/api/document`        | Delete chunks for one source ID.                                  |
-| `GET`    | `/health`              | Report OpenAI configuration and Chroma readiness.                 |
+| Method   | Path                         | Purpose                                                           |
+| -------- | ---------------------------- | ----------------------------------------------------------------- |
+| `POST`   | `/api/upload`                | Index one immutable source ID and its SHA-256.                    |
+| `POST`   | `/api/generate-assistant-qa` | Draft source-cited Course Assistant Q&A for author approval.      |
+| `POST`   | `/api/generate-quiz`         | Generate a supplemental quiz from explicit revision sources.      |
+| `POST`   | `/api/generate-course`       | Generate an editable course draft from explicit revision sources. |
+| `DELETE` | `/api/document`              | Delete chunks for one source ID.                                  |
+| `GET`    | `/health`                    | Report OpenAI configuration and Chroma readiness.                 |
 
 All endpoints except `/health` require `X-Internal-Token`.
 
-Chat requests use `{ "course_id", "source_ids", "query" }`. Quiz requests add
-`source_ids` alongside `course_id` and `weak_topics`. An empty `source_ids`
+Generation requests always carry explicit source IDs. An empty `source_ids`
 list never expands to the course corpus: retrieval returns no context. Uploads
 carry `source_id` and `sha256` multipart fields, and every Chroma chunk stores
-`course_id`, `source_id`, and `sha256` metadata.
+`course_id`, `source_id`, and `sha256` metadata. Generated Course Assistant
+Q&A remains a source-cited draft until a Studio author approves it; learners
+never receive parser citations or call this service.
 
 ## Documentation
 

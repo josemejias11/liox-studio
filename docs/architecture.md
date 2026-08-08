@@ -19,8 +19,8 @@ components must not import server infrastructure.
 owns Prisma schema, migrations, and repositories. `packages/jobs` owns durable
 queue behaviour. `packages/parser-client` is the typed server-side parser
 boundary. `apps/job-worker` claims database jobs and calls the parser service.
-`services/parser-service` handles document parsing, retrieval, grounded chat,
-and supplemental quiz generation.
+`services/parser-service` handles document parsing, source-grounded authoring
+drafts, and supplemental quiz-draft generation.
 
 ```text
 browser -> Next.js pages and APIs -> feature use cases -> server adapters
@@ -30,14 +30,14 @@ browser -> Next.js pages and APIs -> feature use cases -> server adapters
 job worker -> parser client -> private parser service -> OpenAI / ChromaDB
 ```
 
-Authored lessons and assessments are authoritative. AI features remain
-optional, revision- and source-scoped support; they must not bypass author
-approval or become a learner-completion requirement. Frozen revisions are
+Authored lessons and assessments are authoritative. AI-generated authoring work
+is draft-only until an author explicitly approves it. Frozen revisions are
 immutable snapshots. Review tokens are read-only, stored only as hashes, and
 identify one frozen revision. Studio and review previews do not persist learner
-identity or progress and do not request weak-topic analytics. When a preview is
-given a revision or review identity, it can conditionally expose optional Course
-AI; any request is scoped to that identity.
+identity or progress and do not request weak-topic analytics. The Course
+Assistant is a deterministic, local match against approved Q&A from the frozen
+revision; it makes no network request and shows the fixed course-materials
+fallback when no answer is confidently matched.
 
 ## Retained web surfaces
 
@@ -55,13 +55,14 @@ inside Studio preview and frozen review.
 API routes:
 
 - `/api/analytics/login`, `/api/analytics/weak-topics`
-- `/api/chat`, `/api/course-assets/[...key]`
+- `/api/course-assets/[...key]`
 - `/api/course-studio/login`, `/api/course-studio/assets`,
   `/api/course-studio/courses`
 - `/api/course-studio/courses/[courseId]`, `/chapters`, `/lessons`, `/reorder`,
   `/revisions`, `/feedback`, `/trash`, and `/trash/[trashId]`
 - `/api/course-studio/courses/[courseId]/sources`,
   `/sources/[sourceId]`, and `/sources/[sourceId]/retry`
+- `/api/course-studio/courses/[courseId]/assistant-qa`
 - `/api/course-studio/generations` and `/generations/[generationId]`
 - `/api/course-studio/revisions/[revisionId]/review`
 - `/api/jobs/[id]`, `/api/progress`, `/api/quiz`, `/api/quiz/grade`
@@ -69,19 +70,19 @@ API routes:
 
 ## Retained commands
 
-| Command | Purpose |
-| --- | --- |
-| `npm run dev` | Start the Next.js web application. |
-| `npm run jobs:worker` | Start the durable background worker. |
-| `npm run build` | Apply committed Prisma migrations and build the web app. |
-| `npm run start` | Start the built web app. |
-| `npm run lint` | Lint application, package, and script source. |
-| `npm run format` | Format repository files. |
-| `npm run typecheck` | Type-check every workspace that exposes the command. |
-| `npm run db:migrate` | Apply committed Prisma migrations. |
-| `npm run db:migrate:dev` | Create and apply a development migration. |
-| `npm run db:generate` | Generate the Prisma client. |
-| `npm run db:studio` | Open Prisma Studio. |
+| Command                  | Purpose                                                  |
+| ------------------------ | -------------------------------------------------------- |
+| `npm run dev`            | Start the Next.js web application.                       |
+| `npm run jobs:worker`    | Start the durable background worker.                     |
+| `npm run build`          | Apply committed Prisma migrations and build the web app. |
+| `npm run start`          | Start the built web app.                                 |
+| `npm run lint`           | Lint application, package, and script source.            |
+| `npm run format`         | Format repository files.                                 |
+| `npm run typecheck`      | Type-check every workspace that exposes the command.     |
+| `npm run db:migrate`     | Apply committed Prisma migrations.                       |
+| `npm run db:migrate:dev` | Create and apply a development migration.                |
+| `npm run db:generate`    | Generate the Prisma client.                              |
+| `npm run db:studio`      | Open Prisma Studio.                                      |
 
 `npm run build` requires the configured PostgreSQL database because it runs
 `npm run db:migrate` first.
