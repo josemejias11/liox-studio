@@ -12,10 +12,10 @@
 
 - Use a light canvas: `#F7F9FC`, white cards, charcoal player chrome, muted gray connectors, and a restrained Moto-blue primary accent.
 - Use actual player screenshots; do not use synthetic mini-screen wireframes or cards labelled as screenshot placeholders.
-- Preserve the verified player order: Course cover → Chapter 1 intro → Content / required Quick Recall → Product Stage → Interaction / required Quick Recall → Split Screen → Chapter 1 Quick Check → Chapter 2 intro → Scroll Story → Canvas Inspection → Drag and Drop → Chapter 3 intro → Colour Switcher → Video → Specifications → Disclaimer acknowledgement → Finish course.
+- Preserve the approved experience-map order: Course cover → Chapter 1 intro → Content / required Quick Recall → Product Stage → Interaction / required Quick Recall → Split Screen → Chapter 1 Quick Check → Chapter 2 intro → Scroll Story → Canvas Inspection → Drag and Drop → Chapter 3 intro → Colour Switcher → Video → Specifications → Disclaimer acknowledgement → Final retail readiness quiz → Finish course.
 - Show the chapter titles exactly: `Capture and create`, `Keep up with every day`, and `Recommend with confidence`.
 - Treat the Chapter 1 Quick Check as a player phase after `From image to share`; it is not a normal lesson card and is not listed in the Course Map.
-- Treat Specifications and Disclaimer as real navigable player phases after Video. Disclaimer keeps Next disabled until the learner reaches the end and checks `I understand the LATAM availability and claim limitations.`
+- Treat Specifications and Disclaimer as real navigable player phases after Video. Disclaimer keeps Next disabled until the learner reaches the end and checks `I understand the LATAM availability and claim limitations.` The approved final retail-readiness quiz follows acknowledgement and gates Course complete.
 - Make every prerequisite explicit: a disabled Next state, the learner action, the visible feedback/state change, and the enabled Next state.
 - Product Stage must show the real required-hotspot loop: open a hotspot, see authored detail/media, close it, update `0/3` through `3/3`, then unlock Next.
 - Keep text legible at 100% board view: section titles at least 24 px; card titles at least 18 px; interaction labels at least 14 px.
