@@ -83,7 +83,7 @@ export function useStudioSelection({
         return current.id === nextCourse.id ? current : { kind: 'course', id: nextCourse.id };
       }
       const chapter = nextCourse.chapters.find((item) => item.id === current.id);
-      if (current.kind === 'chapter' || current.kind === 'chapter-cover')
+      if (current.kind === 'chapter')
         return chapter ? current : { kind: 'course', id: nextCourse.id };
       const lessonExists = nextCourse.chapters.some((item) =>
         item.lessons.some((lesson) => lesson.id === current.id),

@@ -36,9 +36,7 @@ export function StudioInspector({
   sourcePanel,
 }: Props) {
   const chapter =
-    selection.kind === 'chapter' || selection.kind === 'chapter-cover'
-      ? course.chapters.find((item) => item.id === selection.id)
-      : undefined;
+    selection.kind === 'chapter' ? course.chapters.find((item) => item.id === selection.id) : undefined;
   const lesson =
     selection.kind === 'lesson'
       ? course.chapters.flatMap((item) => item.lessons).find((item) => item.id === selection.id)

@@ -98,15 +98,6 @@ export function CourseOutline({
               <button aria-label="Delete chapter" className="rounded p-2 text-destructive hover:bg-destructive/10" disabled={disabled} onClick={() => onAction('delete', 'chapter', chapter.id)} type="button"><Trash2 className="h-4 w-4" /></button>
             </div>
             <div className="space-y-1 border-t border-border p-2">
-              <button
-                className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50 ${selected(selection, 'chapter-cover', chapter.id) ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
-                disabled={disabled}
-                onClick={() => onSelect({ kind: 'chapter-cover', id: chapter.id })}
-                type="button"
-              >
-                <PanelTop className="h-3.5 w-3.5" />
-                Chapter cover
-              </button>
               {chapter.lessons.map((lesson) => (
                 <div className="group flex items-center gap-1" key={lesson.id}>
                   <button

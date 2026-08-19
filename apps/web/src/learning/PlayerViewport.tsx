@@ -20,7 +20,6 @@ export function PlayerViewport({
   onAssistantAnswer,
   onLessonChange,
   initialView,
-  initialChapterId,
   bypassNavigationLocks = false,
 }: {
   content: NormalizedCourseContent;
@@ -32,7 +31,6 @@ export function PlayerViewport({
   onAssistantAnswer?: (context: { question: string; matchedQaId: string | null; answer: string }) => void;
   onLessonChange?: (lessonId: string) => void;
   initialView?: 'cover';
-  initialChapterId?: string;
   bypassNavigationLocks?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -88,7 +86,6 @@ export function PlayerViewport({
             onAssistantAnswer={onAssistantAnswer}
             onLessonChange={onLessonChange}
             initialView={initialView}
-            initialChapterId={initialChapterId}
             bypassNavigationLocks={bypassNavigationLocks}
             imageSizes={imageSizes}
           />

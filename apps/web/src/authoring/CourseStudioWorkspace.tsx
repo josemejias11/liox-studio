@@ -84,7 +84,6 @@ export function CourseStudioWorkspace({
   const { desktopGridStyle, outline, tools, workspaceRef } = useStudioPanelLayout();
   const selectedLessonId = selection.kind === 'lesson' ? selection.id : undefined;
   const showCover = selection.kind === 'cover';
-  const selectedChapterCoverId = selection.kind === 'chapter-cover' ? selection.id : undefined;
   const selectPreviewLesson = useCallback(
     (lessonId: string): void => {
       if (selection.kind === 'lesson' && selection.id === lessonId) return;
@@ -122,7 +121,6 @@ export function CourseStudioWorkspace({
               onLessonChange={selectPreviewLesson}
               selectedLessonId={selectedLessonId}
               initialView={showCover ? 'cover' : undefined}
-              initialChapterId={selectedChapterCoverId}
             />
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-white/70">
@@ -193,7 +191,6 @@ export function CourseStudioWorkspace({
                   onLessonChange={selectPreviewLesson}
                   selectedLessonId={selectedLessonId}
                   initialView={showCover ? 'cover' : undefined}
-                  initialChapterId={selectedChapterCoverId}
                 />
               ) : (
                 <div className="border-destructive/30 bg-card text-destructive flex aspect-video items-center justify-center rounded-xl border p-8 text-center text-sm">

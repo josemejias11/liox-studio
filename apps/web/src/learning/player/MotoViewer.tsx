@@ -50,7 +50,6 @@ export default function MotoViewer({
   onAssistantAnswer,
   onLessonChange,
   initialView,
-  initialChapterId,
   bypassNavigationLocks = false,
 }: {
   course: CourseContent;
@@ -63,7 +62,6 @@ export default function MotoViewer({
   onAssistantAnswer?: (context: { question: string; matchedQaId: string | null; answer: string }) => void;
   onLessonChange?: (lessonId: string) => void;
   initialView?: 'cover';
-  initialChapterId?: string;
   bypassNavigationLocks?: boolean;
 }) {
   const flow = useMemo(
@@ -84,10 +82,21 @@ export default function MotoViewer({
   } = useLessonProgress(sessionId, persistSession, course._id);
 
   const nav = useCourseNavigation(flow, visited, bypassNavigationLocks);
+  const {
+    phase,
+    navDirection,
+    showChapterIntro,
+    showBurst,
+    nextLocked,
+    currentSectionIndex,
+    navigateToSectionUnrestricted: navigateToPreviewSection,
+    dismissChapterIntro: dismissPreviewChapterIntro,
+    restart,
+    restoreComplete,
+  } = nav;
   const restoredResumeKeyRef = useRef<string | null>(null);
   const appliedInitialSectionKeyRef = useRef<string | undefined>(undefined);
   const appliedInitialViewRef = useRef<'cover' | undefined>(undefined);
-  const appliedInitialChapterIdRef = useRef<string | undefined>(undefined);
   const resumeKey = `${preview ? PREVIEW_RESUME_KEY_PREFIX : COURSE_RESUME_KEY_PREFIX}${course._id}`;
 
   useEffect(() => {
@@ -96,47 +105,21 @@ export default function MotoViewer({
     restoredResumeKeyRef.current = resumeKey;
     const savedResume = localStorage.getItem(resumeKey);
     if (savedResume === 'complete') {
-      nav.restoreComplete();
+      restoreComplete();
       return;
     }
 
     const sectionIndex = Number(savedResume);
     if (Number.isInteger(sectionIndex) && sectionIndex >= 0 && sectionIndex < flow.items.length) {
-      nav.navigateToSectionUnrestricted(sectionIndex);
+      navigateToPreviewSection(sectionIndex);
     }
-  }, [flow.items.length, nav, preview, resumeKey, sessionId]);
-  const {
-    phase,
-    navDirection,
-    showChapterIntro,
-    showBurst,
-    nextLocked,
-    navigateToSectionUnrestricted: navigateToPreviewSection,
-    dismissChapterIntro: dismissPreviewChapterIntro,
-  } = nav;
+  }, [flow.items.length, navigateToPreviewSection, preview, restoreComplete, resumeKey, sessionId]);
 
   useEffect(() => {
     if (appliedInitialViewRef.current === initialView) return;
     appliedInitialViewRef.current = initialView;
-    if (initialView === 'cover') nav.restart();
-  }, [initialView, nav]);
-
-  useEffect(() => {
-    if (!initialChapterId) {
-      appliedInitialChapterIdRef.current = undefined;
-      return;
-    }
-    if (appliedInitialChapterIdRef.current === initialChapterId) return;
-
-    const chapterIndex = course.chapters?.findIndex((chapter) => chapter._id === initialChapterId) ?? -1;
-    const firstChapterLesson = flow.items.find(
-      (item) => item.kind === 'lesson' && item.key === course.chapters?.[chapterIndex]?.lessons?.[0]?._key,
-    );
-    if (firstChapterLesson === undefined) return;
-
-    appliedInitialChapterIdRef.current = initialChapterId;
-    navigateToPreviewSection(firstChapterLesson.index);
-  }, [course.chapters, flow.items, initialChapterId, navigateToPreviewSection]);
+    if (initialView === 'cover') restart();
+  }, [initialView, restart]);
 
   useEffect(() => {
     if (!initialSectionKey) {
@@ -151,13 +134,18 @@ export default function MotoViewer({
     if (!target) return;
 
     appliedInitialSectionKeyRef.current = initialSectionKey;
-    navigateToPreviewSection(target.index);
-    dismissPreviewChapterIntro();
+    const alreadyShowingTarget =
+      phase.phase === 'chapter' && currentSectionIndex === target.index;
+    if (!alreadyShowingTarget) navigateToPreviewSection(target.index);
+    if (showChapterIntro) dismissPreviewChapterIntro();
   }, [
+    currentSectionIndex,
     dismissPreviewChapterIntro,
     flow.items,
     initialSectionKey,
     navigateToPreviewSection,
+    phase.phase,
+    showChapterIntro,
   ]);
   const currentLesson =
     phase.phase === 'chapter'
@@ -185,11 +173,11 @@ export default function MotoViewer({
       return;
     }
 
-    const sectionIndex = nav.currentSectionIndex;
+    const sectionIndex = currentSectionIndex;
     if (sectionIndex >= 0 && sectionIndex < flow.items.length) {
       localStorage.setItem(resumeKey, String(sectionIndex));
     }
-  }, [flow.items.length, nav.currentSectionIndex, phase.phase, preview, resumeKey, sessionId]);
+  }, [currentSectionIndex, flow.items.length, phase.phase, preview, resumeKey, sessionId]);
 
   function navigateToSection(i: number) {
     setShowNavMap(false);
