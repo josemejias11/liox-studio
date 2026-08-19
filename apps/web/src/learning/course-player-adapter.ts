@@ -8,10 +8,7 @@ function objectPayload(value: unknown): Record<string, unknown> {
     : {};
 }
 
-function clientSafeQuiz(
-  quiz: NonNullable<CourseGraph['chapters'][number]['quickCheck']>,
-  includeAnswerKey: boolean,
-) {
+function clientSafeQuiz(quiz: NonNullable<CourseGraph['finalQuiz']>, includeAnswerKey: boolean) {
   const payload = objectPayload(quiz.payload);
   const questions = Array.isArray(payload.questions)
     ? payload.questions.map((question) => {
@@ -91,6 +88,7 @@ function rawCourse(course: CourseGraph, includeAnswerKey: boolean) {
         ? clientSafeQuiz(chapter.quickCheck, includeAnswerKey)
         : undefined,
     })),
+    finalQuiz: course.finalQuiz ? clientSafeQuiz(course.finalQuiz, includeAnswerKey) : undefined,
     specifications: courseSections(course.specifications, 'specification'),
     disclaimer: courseSections(course.disclaimer, 'disclaimer')[0],
   };

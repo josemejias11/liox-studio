@@ -14,16 +14,26 @@ export function PlayerViewport({
   content,
   selectedLessonId,
   fill = false,
+  persistProgress = false,
   aiIdentity,
   assistant,
   onAssistantAnswer,
+  onLessonChange,
+  initialView,
+  initialChapterId,
+  bypassNavigationLocks = false,
 }: {
   content: NormalizedCourseContent;
   selectedLessonId?: string;
   fill?: boolean;
+  persistProgress?: boolean;
   aiIdentity?: RevisionIdentity;
   assistant?: OfflineAssistantPayload;
   onAssistantAnswer?: (context: { question: string; matchedQaId: string | null; answer: string }) => void;
+  onLessonChange?: (lessonId: string) => void;
+  initialView?: 'cover';
+  initialChapterId?: string;
+  bypassNavigationLocks?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0);
@@ -72,10 +82,14 @@ export function PlayerViewport({
             course={content.course}
             initialSectionKey={selectedLessonId}
             sections={content.sections}
-            preview
+            preview={!persistProgress}
             aiIdentity={aiIdentity}
             assistant={assistant}
             onAssistantAnswer={onAssistantAnswer}
+            onLessonChange={onLessonChange}
+            initialView={initialView}
+            initialChapterId={initialChapterId}
+            bypassNavigationLocks={bypassNavigationLocks}
             imageSizes={imageSizes}
           />
         </div>

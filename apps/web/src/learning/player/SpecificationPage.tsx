@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { motion } from 'framer-motion';
 import type { CourseSpecification } from '@/shared/contracts/player-course';
 
@@ -9,8 +8,6 @@ interface SpecificationPageProps {
 }
 
 export function SpecificationPage({ spec }: SpecificationPageProps) {
-  const heroUrl = spec.heroImage?.asset?.url;
-
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
@@ -27,23 +24,6 @@ export function SpecificationPage({ spec }: SpecificationPageProps) {
   return (
     <div className="bg-background absolute inset-0 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto overscroll-contain">
-        {heroUrl && (
-          <motion.div
-            initial={{ opacity: 0, scale: 1.05 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
-            className="aspect-4/3 w-full shrink-0 overflow-hidden"
-          >
-            <Image
-              src={heroUrl}
-              alt={spec.title}
-              width={1200}
-              height={900}
-              className="h-full w-full object-cover"
-            />
-          </motion.div>
-        )}
-
         <motion.div
           className="mx-auto w-full max-w-3xl px-6 pb-4 md:px-8"
           variants={containerVariants}

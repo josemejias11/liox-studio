@@ -79,6 +79,9 @@ export const courseGraphSelect = Prisma.validator<Prisma.CourseSelect>()({
   cover: true,
   specifications: true,
   disclaimer: true,
+  finalQuiz: {
+    select: { id: true, title: true, instructions: true, payload: true },
+  },
   chapters: {
     orderBy: { position: 'asc' },
     select: {

@@ -90,6 +90,12 @@ interface ChapterDefinition {
   };
 }
 
+interface FinalQuizDefinition {
+  title: string;
+  instructions: string;
+  payload: Prisma.InputJsonObject;
+}
+
 function newId(prefix: string) {
   return `${prefix}.${crypto.randomUUID()}`;
 }
@@ -519,7 +525,7 @@ function chapterDefinitions(assets: Record<AssetName, StoredAsset>): ChapterDefi
                 'interaction-night',
                 'Night Vision sample',
                 'Low light',
-                'Frame Night Vision as a mode for challenging light, not a promise that every scene looks identical.',
+                'Use Night Vision to capture clearer detail in challenging low light.',
                 66,
                 42,
                 assets.nightVisionSample,
@@ -697,6 +703,36 @@ function chapterDefinitions(assets: Record<AssetName, StoredAsset>): ChapterDefi
   return chapters;
 }
 
+function finalQuizDefinition(assets: Record<AssetName, StoredAsset>): FinalQuizDefinition {
+  return {
+    title: 'moto g87 final assessment',
+    instructions:
+      'Apply the complete moto g87 story: match needs to the right capability, keep claims accurate, and close with confidence.',
+    payload: quickCheck('moto g87 final assessment', 'Review the complete course before you finish.', [
+      authoredQuestion('final-q1', 'Which camera statement is accurate for moto g87?', [
+        { text: 'It combines a 50MP Sony LYTIA 600 main camera with an 8MP 119.5° ultra-wide camera.', isCorrect: true },
+        { text: 'It uses a 108MP main camera with a 5MP macro camera.', isCorrect: false },
+        { text: 'It has a 50MP main camera and a 2MP monochrome camera.', isCorrect: false },
+      ], assets.ultraWideSample),
+      authoredQuestion('final-q2', 'Which shopper benefit best matches the 7000mAh battery?', [
+        { text: 'All-day confidence, with up to 56 hours under the stated mixed-use test conditions.', isCorrect: true },
+        { text: 'Unlimited battery life without charging.', isCorrect: false },
+        { text: 'The fastest charging speed in every market.', isCorrect: false },
+      ]),
+      authoredQuestion('final-q3', 'Which display claim is accurate?', [
+        { text: 'A 6.72-inch FHD+ 120Hz display with up to 1050 nits high brightness mode and Water Touch.', isCorrect: true },
+        { text: 'A 6.1-inch OLED display with 2000 nits brightness.', isCorrect: false },
+        { text: 'A 6.72-inch display that is only designed for indoor use.', isCorrect: false },
+      ]),
+      authoredQuestion('final-q4', 'What is the strongest retail recommendation approach?', [
+        { text: 'Match the shopper need to a verified feature, then explain the real-world benefit clearly.', isCorrect: true },
+        { text: 'Lead with the largest number, regardless of the shopper need.', isCorrect: false },
+        { text: 'Promise every feature performs the same in every condition.', isCorrect: false },
+      ]),
+    ]),
+  };
+}
+
 function assertMotoG87Structure(chapters: ChapterDefinition[]) {
   const types = chapters.flatMap((chapter) => chapter.lessons.map((lesson) => lesson.lessonType));
   const expectedTypes: CourseLessonType[] = [
@@ -841,6 +877,7 @@ async function createCourseChapters(
   tx: Prisma.TransactionClient,
   courseId: string,
   chapters: ChapterDefinition[],
+  finalQuiz: FinalQuizDefinition,
 ): Promise<void> {
   for (const [chapterPosition, chapter] of chapters.entries()) {
     const quickCheckId = chapter.quickCheck ? newId('quiz') : undefined;
@@ -876,6 +913,18 @@ async function createCourseChapters(
       },
     });
   }
+
+  const finalQuizId = newId('quiz');
+  await tx.courseQuiz.create({
+    data: {
+      id: finalQuizId,
+      courseId,
+      title: finalQuiz.title,
+      instructions: finalQuiz.instructions,
+      payload: finalQuiz.payload,
+    },
+  });
+  await tx.course.update({ where: { id: courseId }, data: { finalQuizId } });
 }
 
 async function loadExistingAssets(courseId: string): Promise<Record<AssetName, StoredAsset>> {
@@ -920,6 +969,7 @@ async function createCourse(
   assets: Record<AssetName, StoredAsset>,
 ): Promise<void> {
   const chapters = chapterDefinitions(assets);
+  const finalQuiz = finalQuizDefinition(assets);
   const settings = courseSettings(assets);
 
   await prisma.$transaction(async (tx) => {
@@ -943,7 +993,7 @@ async function createCourse(
       });
     }
 
-    await createCourseChapters(tx, courseId, chapters);
+    await createCourseChapters(tx, courseId, chapters, finalQuiz);
   });
 }
 
@@ -960,6 +1010,7 @@ async function replaceCourse(): Promise<void> {
 
   const assets = await loadExistingAssets(course.id);
   const chapters = chapterDefinitions(assets);
+  const finalQuiz = finalQuizDefinition(assets);
   const settings = courseSettings(assets);
 
   await prisma.$transaction(async (tx) => {
@@ -967,7 +1018,7 @@ async function replaceCourse(): Promise<void> {
     await tx.courseChapter.deleteMany({ where: { courseId: course.id } });
     await tx.courseQuiz.deleteMany({ where: { courseId: course.id } });
     await tx.course.update({ where: { id: course.id }, data: settings });
-    await createCourseChapters(tx, course.id, chapters);
+    await createCourseChapters(tx, course.id, chapters, finalQuiz);
   });
 
   console.log(`/studio/${course.id}`);

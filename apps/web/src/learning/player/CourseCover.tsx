@@ -27,8 +27,9 @@ export function CourseCover({
 }: CourseCoverProps) {
   const finalHeadline = coverHeadline || title;
   let btnClass = 'bg-white text-black hover:bg-white/90';
-  if (buttonColor === 'moto-indigo') btnClass = 'bg-accent text-foreground hover:bg-accent/90';
-  else if (buttonColor === 'moto-frost')
+  if (buttonColor === 'moto-indigo' || buttonColor?.toLowerCase() === '#685bc7') {
+    btnClass = 'bg-accent text-white hover:bg-accent/90';
+  } else if (buttonColor === 'moto-frost')
     btnClass = 'bg-background text-foreground hover:bg-background/90';
   else if (buttonColor === 'moto-pearl') btnClass = 'bg-card text-foreground hover:bg-card/90';
 
@@ -56,7 +57,7 @@ export function CourseCover({
       <div className="pointer-events-none absolute inset-0 bg-linear-to-b from-black/20 via-black/40 to-black/90" />
       <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black via-transparent to-transparent opacity-80" />
       <div className="bg-accent/20 pointer-events-none absolute top-1/2 left-1/2 h-100 w-200 -translate-x-1/2 -translate-y-1/2 rounded-[100%] opacity-50 mix-blend-screen blur-[120px]" />
-      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-8">
+      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-8 pt-8 pb-40 md:pb-44">
         <motion.div
           initial={{ y: 20, opacity: 0, filter: 'blur(10px)' }}
           animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}

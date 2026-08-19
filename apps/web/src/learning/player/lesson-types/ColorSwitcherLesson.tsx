@@ -80,7 +80,7 @@ export function ColorSwitcherLesson({ lesson, imageSizes = '100vw' }: ColorSwitc
               <span className="text-sm font-semibold text-[#18191d]">{currentLabel}</span>
             </div>
           </div>
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          <div className="flex w-full items-center justify-between gap-2 pb-1">
             {variants.map((variant, index) => (
               <button
                 key={`${variant.label}-${index}`}

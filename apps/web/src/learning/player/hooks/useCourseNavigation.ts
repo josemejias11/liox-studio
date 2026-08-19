@@ -11,6 +11,7 @@ export type CoursePhase =
   | { phase: 'cover' }
   | { phase: 'chapter'; chapterIndex: number; lessonIndex: number }
   | { phase: 'chapter-quiz'; chapterIndex: number }
+  | { phase: 'final-quiz' }
   | { phase: 'specifications'; specIndex: number }
   | { phase: 'disclaimer' }
   | { phase: 'complete' };
@@ -25,6 +26,7 @@ export type CourseNavAction =
   | { type: 'NEXT'; visited?: Record<string, Set<string>> }
   | { type: 'PREV' }
   | { type: 'GO_TO_SECTION'; index: number; visited?: Record<string, Set<string>> }
+  | { type: 'RESTORE_COMPLETE' }
   | { type: 'QUIZ_DONE' }
   | { type: 'CHAPTER_QUIZ_DONE'; chapterIndex: number }
   | { type: 'DISMISS_CHAPTER_INTRO' }
@@ -58,6 +60,8 @@ export function getSectionIndex(flow: CourseFlow, phase: CoursePhase): number {
       const chapterLessons = getChapterLessons(structure, phase.chapterIndex);
       return lessonsBeforeThisChapter + Math.max(0, chapterLessons.length - 1);
     }
+    case 'final-quiz':
+      return flow.items.find((item) => item.kind === 'final-quiz')?.index ?? flow.items.length;
     case 'specifications':
       return structure.specSections.length > phase.specIndex
         ? flow.items.find(
@@ -77,6 +81,7 @@ export function getSectionIndex(flow: CourseFlow, phase: CoursePhase): number {
 function postChapterPhase(s: CourseStructure): CoursePhase {
   if (s.specSections.length > 0) return { phase: 'specifications', specIndex: 0 };
   if (s.disclaimerSection) return { phase: 'disclaimer' };
+  if (s.finalQuiz) return { phase: 'final-quiz' };
   return { phase: 'complete' };
 }
 
@@ -93,6 +98,11 @@ function lastChapterOrCover(s: CourseStructure): CoursePhase {
 
 
 function phaseBeforeQuiz(s: CourseStructure): CoursePhase {
+  if (s.finalQuiz) return { phase: 'final-quiz' };
+  return phaseBeforeFinalQuiz(s);
+}
+
+function phaseBeforeFinalQuiz(s: CourseStructure): CoursePhase {
   if (s.disclaimerSection) return { phase: 'disclaimer' };
   if (s.specSections.length > 0) {
     return { phase: 'specifications', specIndex: s.specSections.length - 1 };
@@ -191,9 +201,17 @@ function reduceNext(
           specIndex: phase.specIndex + 1,
         });
       }
-      return forward(structure.disclaimerSection ? { phase: 'disclaimer' } : { phase: 'complete' });
+      return forward(
+        structure.disclaimerSection
+          ? { phase: 'disclaimer' }
+          : structure.finalQuiz
+            ? { phase: 'final-quiz' }
+            : { phase: 'complete' },
+      );
 
     case 'disclaimer':
+      return forward(structure.finalQuiz ? { phase: 'final-quiz' } : { phase: 'complete' });
+    case 'final-quiz':
       return forward({ phase: 'complete' });
     default:
       return state;
@@ -249,6 +267,8 @@ function reducePrev(structure: CourseStructure, state: CourseNavState): CourseNa
 
     case 'complete':
       return back(phaseBeforeQuiz(structure));
+    case 'final-quiz':
+      return back(phaseBeforeFinalQuiz(structure));
 
     default:
       return state;
@@ -304,6 +324,8 @@ function reduceGoToSection(
     }
     case 'disclaimer':
       return jump({ phase: 'disclaimer' });
+    case 'final-quiz':
+      return jump({ phase: 'final-quiz' });
   }
 }
 
@@ -321,6 +343,12 @@ export function courseNavigationReducer(
       return reducePrev(structure, state);
     case 'GO_TO_SECTION':
       return reduceGoToSection(flow, state, action.index, action.visited);
+    case 'RESTORE_COMPLETE':
+      return {
+        phase: { phase: 'complete' },
+        navDirection: 1,
+        showChapterIntro: false,
+      };
     case 'QUIZ_DONE':
       return {
         phase: { phase: 'complete' },
@@ -352,6 +380,7 @@ export function courseNavigationReducer(
 export function useCourseNavigation(
   flow: CourseFlow,
   visited?: Record<string, Set<string>>,
+  bypassNavigationLocks = false,
 ) {
   const structure = flow.structure;
   const [state, dispatch] = useReducer(
@@ -371,19 +400,24 @@ export function useCourseNavigation(
   }, [state.phase.phase]);
 
   const nextLocked = useMemo(() => {
-    return isLessonLocked(structure, state.phase, visited);
-  }, [structure, state.phase, visited]);
+    return !bypassNavigationLocks && isLessonLocked(structure, state.phase, visited);
+  }, [bypassNavigationLocks, structure, state.phase, visited]);
 
-  const goNext = useCallback(() => dispatch({ type: 'NEXT', visited }), [visited]);
+  const goNext = useCallback(
+    () => dispatch({ type: 'NEXT', visited: bypassNavigationLocks ? undefined : visited }),
+    [bypassNavigationLocks, visited],
+  );
   const goPrev = useCallback(() => dispatch({ type: 'PREV' }), []);
   const navigateToSection = useCallback(
-    (index: number) => dispatch({ type: 'GO_TO_SECTION', index, visited }),
-    [visited],
+    (index: number) =>
+      dispatch({ type: 'GO_TO_SECTION', index, visited: bypassNavigationLocks ? undefined : visited }),
+    [bypassNavigationLocks, visited],
   );
   const navigateToSectionUnrestricted = useCallback(
     (index: number) => dispatch({ type: 'GO_TO_SECTION', index }),
     [],
   );
+  const restoreComplete = useCallback(() => dispatch({ type: 'RESTORE_COMPLETE' }), []);
   const finishQuiz = useCallback(() => dispatch({ type: 'QUIZ_DONE' }), []);
   const finishChapterQuiz = useCallback(
     (chapterIndex: number) => dispatch({ type: 'CHAPTER_QUIZ_DONE', chapterIndex }),
@@ -403,6 +437,7 @@ export function useCourseNavigation(
     goPrev,
     navigateToSection,
     navigateToSectionUnrestricted,
+    restoreComplete,
     finishQuiz,
     finishChapterQuiz,
     dismissChapterIntro,

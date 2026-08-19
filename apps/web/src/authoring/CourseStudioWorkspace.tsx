@@ -83,6 +83,17 @@ export function CourseStudioWorkspace({
   });
   const { desktopGridStyle, outline, tools, workspaceRef } = useStudioPanelLayout();
   const selectedLessonId = selection.kind === 'lesson' ? selection.id : undefined;
+  const showCover = selection.kind === 'cover';
+  const selectedChapterCoverId = selection.kind === 'chapter-cover' ? selection.id : undefined;
+  const selectPreviewLesson = useCallback(
+    (lessonId: string): void => {
+      if (selection.kind === 'lesson' && selection.id === lessonId) return;
+      if (course.chapters.some((chapter) => chapter.lessons.some((lesson) => lesson.id === lessonId))) {
+        setStudioSelection({ kind: 'lesson', id: lessonId });
+      }
+    },
+    [course.chapters, selection, setStudioSelection],
+  );
 
   function toggleFocusPreview(): void {
     if (!focusPreview && !confirmDiscardCourseSettings()) return;
@@ -108,7 +119,10 @@ export function CourseStudioWorkspace({
               assistant={initialAssistant}
               content={preview}
               fill
+              onLessonChange={selectPreviewLesson}
               selectedLessonId={selectedLessonId}
+              initialView={showCover ? 'cover' : undefined}
+              initialChapterId={selectedChapterCoverId}
             />
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-white/70">
@@ -176,7 +190,10 @@ export function CourseStudioWorkspace({
                   aiIdentity={initialRevisionId ? { revisionId: initialRevisionId } : undefined}
                   assistant={initialAssistant}
                   content={preview}
+                  onLessonChange={selectPreviewLesson}
                   selectedLessonId={selectedLessonId}
+                  initialView={showCover ? 'cover' : undefined}
+                  initialChapterId={selectedChapterCoverId}
                 />
               ) : (
                 <div className="border-destructive/30 bg-card text-destructive flex aspect-video items-center justify-center rounded-xl border p-8 text-center text-sm">
@@ -215,7 +232,7 @@ export function CourseStudioWorkspace({
                 onSaveStateChange={setCourseSaveState}
                 selection={selection}
                 sourcePanel={
-                  selection.kind === 'course' ? (
+                  selection.kind === 'course' || selection.kind === 'cover' ? (
                     <><SourcePanel courseId={course.id} initialSources={initialSources} /><AssistantQaPanel courseId={course.id} sources={initialSources} /></>
                   ) : undefined
                 }

@@ -42,6 +42,7 @@ export function PlayerOverlays({
   const showAssistant =
     phase.phase !== 'cover' &&
     phase.phase !== 'chapter-quiz' &&
+    phase.phase !== 'final-quiz' &&
     currentLesson?.lessonType !== 'quiz';
 
   return (

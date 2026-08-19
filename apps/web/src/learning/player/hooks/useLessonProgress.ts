@@ -17,13 +17,47 @@ interface ProgressData {
   lessons?: Record<string, LessonData>;
 }
 
+const PREVIEW_PROGRESS_KEY_PREFIX = 'mototutor_preview_progress:';
+
+function isProgressData(value: unknown): value is ProgressData {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const lessons = (value as { lessons?: unknown }).lessons;
+  if (lessons === undefined) return true;
+  if (!lessons || typeof lessons !== 'object' || Array.isArray(lessons)) return false;
+
+  return Object.values(lessons).every((lesson) => {
+    if (!lesson || typeof lesson !== 'object' || Array.isArray(lesson)) return false;
+    const data = lesson as LessonData;
+    return (
+      (data.visitedHotspots === undefined ||
+        (Array.isArray(data.visitedHotspots) && data.visitedHotspots.every((label) => typeof label === 'string'))) &&
+      (data.completed === undefined || typeof data.completed === 'boolean')
+    );
+  });
+}
+
+function readPreviewProgress(storageKey?: string): ProgressData {
+  if (!storageKey || typeof window === 'undefined') return {};
+
+  try {
+    const savedProgress = localStorage.getItem(storageKey);
+    const parsedProgress: unknown = savedProgress ? JSON.parse(savedProgress) : undefined;
+    return isProgressData(parsedProgress) ? parsedProgress : {};
+  } catch {
+    return {};
+  }
+}
 
 export function useLessonProgress(
   sessionId: string,
   persist: boolean = true,
   courseId?: string,
 ) {
-  const [previewData, setPreviewData] = useState<ProgressData>({});
+  const previewStorageKey = !persist && courseId ? `${PREVIEW_PROGRESS_KEY_PREFIX}${courseId}` : undefined;
+  const [previewData, setPreviewData] = useState<ProgressData>(() =>
+    readPreviewProgress(previewStorageKey),
+  );
+
   const markLessonViewed = async (lessonId: string, courseId: string) => {
     if (!sessionId || !persist) return;
     const payload: ProgressRequestBody = { type: 'lesson', sessionId, lessonId, courseId };
@@ -94,6 +128,13 @@ export function useLessonProgress(
 
     if (!persist) {
       setPreviewData(optimisticData);
+      if (previewStorageKey) {
+        try {
+          localStorage.setItem(previewStorageKey, JSON.stringify(optimisticData));
+        } catch {
+          // Keep preview progress for this mounted player when browser storage is unavailable.
+        }
+      }
       return;
     }
 

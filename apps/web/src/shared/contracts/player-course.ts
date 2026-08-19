@@ -208,6 +208,7 @@ export const courseSchema = z.object({
   coverButtonColor: opt(z.string()),
   learningObjectives: opt(z.array(z.string())),
   chapters: opt(z.array(chapterSchema)),
+  finalQuiz: opt(quizDocSchema),
   specifications: opt(z.array(specificationSchema)),
   disclaimer: opt(disclaimerSchema),
 });

@@ -24,7 +24,7 @@ export function useStudioSelection({
 
   const confirmDiscard = useCallback((): boolean => {
     if (saving) return false;
-    if (selection.kind !== 'course' || !courseSettingsDirty) return true;
+    if ((selection.kind !== 'course' && selection.kind !== 'cover') || !courseSettingsDirty) return true;
     if (!window.confirm('Discard unsaved course changes?')) return false;
     onDiscard();
     return true;
@@ -63,7 +63,7 @@ export function useStudioSelection({
   const setStudioSelection = useCallback(
     (nextSelection: StudioSelection): void => {
       setSelection(nextSelection);
-      if (nextSelection.kind !== 'course') onNonCourseSelection();
+      if (nextSelection.kind !== 'course' && nextSelection.kind !== 'cover') onNonCourseSelection();
     },
     [onNonCourseSelection],
   );
@@ -79,11 +79,11 @@ export function useStudioSelection({
 
   const reconcileSelection = useCallback((nextCourse: CourseGraph): void => {
     setSelection((current) => {
-      if (current.kind === 'course') {
+      if (current.kind === 'course' || current.kind === 'cover') {
         return current.id === nextCourse.id ? current : { kind: 'course', id: nextCourse.id };
       }
       const chapter = nextCourse.chapters.find((item) => item.id === current.id);
-      if (current.kind === 'chapter')
+      if (current.kind === 'chapter' || current.kind === 'chapter-cover')
         return chapter ? current : { kind: 'course', id: nextCourse.id };
       const lessonExists = nextCourse.chapters.some((item) =>
         item.lessons.some((lesson) => lesson.id === current.id),

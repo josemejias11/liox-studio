@@ -74,6 +74,13 @@ export interface CourseGraphChapter {
   } | null;
 }
 
+export interface CourseGraphQuiz {
+  id: string;
+  title: string | null;
+  instructions: string | null;
+  payload: unknown;
+}
+
 export interface CourseGraph {
   id: string;
   slug: string;
@@ -83,5 +90,6 @@ export interface CourseGraph {
   cover: unknown | null;
   specifications: unknown | null;
   disclaimer: unknown | null;
+  finalQuiz: CourseGraphQuiz | null;
   chapters: CourseGraphChapter[];
 }

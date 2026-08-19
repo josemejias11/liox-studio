@@ -19,6 +19,7 @@ export interface CourseStructure {
   lessonSections: LessonSection[];
   specSections: CourseSpecification[];
   disclaimerSection: CourseDisclaimer | undefined;
+  finalQuiz: AuthoredQuiz | undefined;
 
   chapters: ChapterGroup[];
   totalSections: number;
@@ -27,6 +28,7 @@ export interface CourseStructure {
 export function deriveCourseStructure(
   sections: CourseSection[],
   rawChapters: Array<{ quickCheck?: AuthoredQuiz }> = [],
+  finalQuiz?: AuthoredQuiz,
 ): CourseStructure {
   const lessonSections = sections.filter((s): s is LessonSection => s.sectionType === 'lesson');
   const specSections = sections.filter(
@@ -57,6 +59,7 @@ export function deriveCourseStructure(
     lessonSections,
     specSections,
     disclaimerSection,
+    finalQuiz,
     chapters,
     totalSections: sections.length,
   };

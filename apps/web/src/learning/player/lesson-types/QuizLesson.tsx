@@ -15,6 +15,7 @@ export interface QuizLessonProps {
   sessionId?: string;
   courseId?: string;
   preview?: boolean;
+  presentation?: 'checkpoint' | 'course-final';
 }
 
 export function QuizLesson({
@@ -24,6 +25,7 @@ export function QuizLesson({
   sessionId,
   courseId,
   preview = false,
+  presentation = 'checkpoint',
 }: QuizLessonProps) {
   if (courseQuiz) {
     return (
@@ -34,6 +36,7 @@ export function QuizLesson({
         sessionId={sessionId}
         courseId={courseId}
         preview={preview}
+        presentation={presentation}
       />
     );
   }

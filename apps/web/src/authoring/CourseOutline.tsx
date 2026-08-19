@@ -1,7 +1,7 @@
 'use client';
 
 import type { CourseGraph, CourseLessonType } from '@moto-ai/contracts/course-studio';
-import { ChevronDown, ChevronUp, Copy, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Copy, PanelTop, Plus, Trash2 } from 'lucide-react';
 import type { CourseInspectorSaveState } from './inspectors/CourseInspector';
 import { TrashPanel } from './TrashPanel';
 import type { StudioSelection, StudioTrashItem } from './studio-types';
@@ -69,10 +69,19 @@ export function CourseOutline({
           onClick={() => onSelect({ kind: 'course', id: course.id })}
           type="button"
         >
-          {course.title}
+          Course settings
         </button>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
+        <button
+          className={`studio-glass-control mb-3 flex w-full items-center gap-3 rounded-xl border border-border px-3 py-3 text-left text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${selected(selection, 'cover', course.id) ? 'bg-primary text-primary-foreground' : 'hover:border-primary/50 hover:bg-muted'}`}
+          disabled={disabled}
+          onClick={() => onSelect({ kind: 'cover', id: course.id })}
+          type="button"
+        >
+          <PanelTop className="h-4 w-4" />
+          <span>Course cover</span>
+        </button>
         {course.chapters.map((chapter) => (
           <section className="studio-glass-control mb-3 rounded-xl border border-border" key={chapter.id}>
             <div className="flex items-center gap-1 p-2">
@@ -89,6 +98,15 @@ export function CourseOutline({
               <button aria-label="Delete chapter" className="rounded p-2 text-destructive hover:bg-destructive/10" disabled={disabled} onClick={() => onAction('delete', 'chapter', chapter.id)} type="button"><Trash2 className="h-4 w-4" /></button>
             </div>
             <div className="space-y-1 border-t border-border p-2">
+              <button
+                className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50 ${selected(selection, 'chapter-cover', chapter.id) ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+                disabled={disabled}
+                onClick={() => onSelect({ kind: 'chapter-cover', id: chapter.id })}
+                type="button"
+              >
+                <PanelTop className="h-3.5 w-3.5" />
+                Chapter cover
+              </button>
               {chapter.lessons.map((lesson) => (
                 <div className="group flex items-center gap-1" key={lesson.id}>
                   <button
@@ -133,7 +151,7 @@ export function CourseOutline({
         onPermanentDelete={onPermanentDeleteTrash}
         onRestore={onRestoreTrash}
       />
-      {selection.kind === 'course' && courseSaveState && (
+      {(selection.kind === 'course' || selection.kind === 'cover') && courseSaveState && (
         <footer className="studio-glass border-x-0 border-b-0 border-t border-border p-4">
           <p aria-live="polite" className={`text-xs ${courseSaveState.error || (courseSaveState.dirty && !courseSaveState.valid) ? 'text-destructive' : 'text-muted-foreground'}`}>
             {courseSaveState.uploading

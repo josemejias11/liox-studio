@@ -47,6 +47,7 @@ export function ReviewPlayer({
               aiIdentity={{ reviewToken: token }}
               assistant={assistant}
               onAssistantAnswer={setAssistantContext}
+              bypassNavigationLocks
               content={content}
               selectedLessonId={selectedLessonId}
             />

@@ -4,7 +4,7 @@ import { useEffect, useReducer, useRef, useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 
-import { CheckCircle2, XCircle, Loader2, ChevronRight, Trophy, RefreshCw } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, ChevronRight, Trophy, RefreshCw, Brain } from 'lucide-react';
 
 import {
   QuestionResultSchema,
@@ -38,6 +38,7 @@ export interface CourseQuizPlayerProps {
   sessionId?: string;
   courseId?: string;
   preview?: boolean;
+  presentation?: 'checkpoint' | 'course-final';
 }
 
 export function CourseQuizPlayer({
@@ -48,6 +49,7 @@ export function CourseQuizPlayer({
   sessionId,
   courseId,
   preview = false,
+  presentation = 'checkpoint',
 }: CourseQuizPlayerProps) {
   const [quiz] = useState<ClientQuiz>(() => toClientQuiz(courseQuiz));
   const [session, dispatch] = useReducer(quizSessionReducer, undefined, createQuizSessionState);
@@ -55,73 +57,46 @@ export function CourseQuizPlayer({
   const [isShaking, setIsShaking] = useState(false);
   const [started, setStarted] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const isCourseFinal = presentation === 'course-final';
 
   useEffect(() => {
     const pendingTimers = timers.current;
     return () => pendingTimers.forEach(clearTimeout);
   }, []);
 
-  if (preview) {
-    return (
-      <div className="absolute inset-0 overflow-y-auto bg-[#111225] px-6 py-8 text-white md:px-10">
-        <div className="mx-auto max-w-5xl">
-          <p className="text-xs font-bold tracking-widest text-[#c4beff] uppercase">Quiz preview</p>
-          <h2 className="mt-2 text-2xl font-black md:text-3xl">{courseQuiz.title}</h2>
-          {courseQuiz.instructions && (
-            <p className="mt-3 max-w-3xl text-base leading-relaxed text-white/70">
-              {courseQuiz.instructions}
-            </p>
-          )}
-          <p className="mt-4 text-sm text-white/55">
-            Review mode: answers are not selectable, graded, or recorded.
-          </p>
-          <ol className="mt-8 space-y-6">
-            {courseQuiz.questions.map((question, questionIndex) => (
-              <li key={`${question._key}-${questionIndex}`} className="rounded-2xl border border-white/12 bg-white/8 p-5">
-                <h3 className="text-lg font-bold">
-                  {questionIndex + 1}. {question.questionText}
-                </h3>
-                <ul className="mt-4 grid gap-3 md:grid-cols-2">
-                  {question.answers.map((answer, answerIndex) => (
-                    <li
-                      key={`${answer._key}-${answerIndex}`}
-                      className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-white/82 ${
-                        answer.isCorrect
-                          ? 'border-[#a9a0ff] bg-[#685bc7]/30 text-white'
-                          : 'border-white/12 bg-white/6'
-                      }`}
-                    >
-                      <span className="mr-2 font-bold text-[#c4beff]">
-                        {OPTION_LABELS[answerIndex] ?? answerIndex + 1}.
-                      </span>
-                      <span>{answer.text}</span>
-                      {answer.isCorrect && (
-                        <span className="ml-auto inline-flex items-center gap-1 text-sm font-bold text-[#e4e1ff]">
-                          <CheckCircle2 aria-hidden="true" className="h-4 w-4" />
-                          Correct answer
-                        </span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            ))}
-          </ol>
-          <button
-            onClick={() => onPass(100)}
-            className="mt-8 flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-base font-black text-[#242051] shadow-[0_0_24px_rgba(0,0,0,0.22)] transition-transform hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2"
-          >
-            Continue
-            <ChevronRight aria-hidden="true" className="h-5 w-5" />
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   async function handleSelect(optionIndex: number) {
     if (session.selectedIndex !== null || grading) return;
     dispatch({ type: 'answer.selected', selectedIndex: optionIndex });
+
+    if (preview) {
+      const question = courseQuiz.questions[session.currentQuestionIndex];
+      const correctIndex = question?.answers.findIndex((answer) => answer.isCorrect) ?? -1;
+
+      if (correctIndex < 0) {
+        dispatch({ type: 'answer.failed', message: 'This question needs a correct answer before it can be previewed.' });
+        return;
+      }
+
+      const correct = optionIndex === correctIndex;
+      dispatch({
+        type: 'answer.revealed',
+        selectedIndex: optionIndex,
+        result: {
+          correct,
+          correctIndex,
+          explanation: correct
+            ? 'Correct answer.'
+            : 'Incorrect. The highlighted option is the correct answer.',
+        },
+      });
+
+      if (!correct) {
+        setIsShaking(true);
+        timers.current.push(setTimeout(() => setIsShaking(false), 400));
+      }
+      return;
+    }
+
     setGrading(true);
 
     try {
@@ -182,6 +157,8 @@ export function CourseQuizPlayer({
       dispatch({ type: 'submission.succeeded', summary: parsed.data });
       const pct = parsed.data.total > 0 ? parsed.data.score / parsed.data.total : 0;
       const pctScore = Math.round(pct * 100);
+      if (isCourseFinal) return;
+
       if (parsed.data.passed) {
         onPass(pctScore);
       } else if (onFail) {
@@ -196,6 +173,30 @@ export function CourseQuizPlayer({
 
   function handleNext() {
     const isLastQuestion = session.currentQuestionIndex + 1 >= quiz.questions.length;
+
+    if (isLastQuestion && preview && !isCourseFinal) {
+      const correctAnswers = session.results.filter((result) => result?.correct).length;
+      const previewScore = Math.round((correctAnswers / quiz.questions.length) * 100);
+      onPass(previewScore);
+      return;
+    }
+
+    if (isLastQuestion && preview && isCourseFinal) {
+      const results = session.results.filter((result): result is NonNullable<typeof result> => result !== undefined);
+      const score = results.filter((result) => result.correct).length;
+      dispatch({
+        type: 'submission.succeeded',
+        summary: {
+          score,
+          total: quiz.questions.length,
+          passed: Math.round((score / quiz.questions.length) * 100) >= 80,
+          passingScore: 80,
+          results,
+        },
+      });
+      return;
+    }
+
     dispatch({ type: 'question.advanced', totalQuestions: quiz.questions.length });
     if (isLastQuestion) {
       void submitQuiz(session.answers);
@@ -204,7 +205,35 @@ export function CourseQuizPlayer({
 
   const total = quiz.questions.length;
 
+  if (isCourseFinal && session.phase === 'complete' && session.summary) {
+    const score = Math.round((session.summary.score / session.summary.total) * 100);
+    return (
+      <CourseFinalAssessmentCard
+        score={score}
+        passed={session.summary.passed}
+        correctAnswers={session.summary.score}
+        total={session.summary.total}
+        passingScore={session.summary.passingScore}
+        onContinue={() => {
+          if (session.summary?.passed) onPass(score);
+          else onFail?.();
+        }}
+        onRetry={() => dispatch({ type: 'session.reset' })}
+      />
+    );
+  }
+
   if (!started && quiz.instructions) {
+    if (isCourseFinal) {
+      return (
+        <CourseFinalAssessmentCard
+          title={quiz.title}
+          instructions={quiz.instructions}
+          questionCount={total}
+          onStart={() => setStarted(true)}
+        />
+      );
+    }
     return (
       <div className="quiz-enter absolute inset-0 flex flex-col items-center justify-center overflow-hidden bg-[#111225] px-8 text-center text-white">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_62%_54%_at_50%_35%,rgba(104,91,199,0.55),transparent_70%)]" />
@@ -260,18 +289,31 @@ export function CourseQuizPlayer({
   const revealed = session.selectedIndex !== null && result !== undefined;
 
   return (
-    <div className="absolute inset-0 flex flex-col bg-[#111225] text-white select-none">
+    <div
+      className={`absolute inset-0 flex flex-col ${
+        isCourseFinal
+          ? 'items-center justify-center bg-[#111225] p-10'
+          : 'bg-[#111225] text-white select-none'
+      }`}
+    >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_65%_55%_at_50%_18%,rgba(104,91,199,0.48),transparent_72%)]" />
 
-      <div className="relative shrink-0 px-6 pt-5 pb-2 md:px-10 md:pt-7">
+      <div
+        className={
+          isCourseFinal
+            ? 'relative flex h-[600px] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-white/15 bg-white/96 text-[#27272c] shadow-xl'
+            : 'contents'
+        }
+      >
+      <div className={`relative shrink-0 px-6 pt-5 pb-2 md:px-10 md:pt-7 ${isCourseFinal ? 'border-b border-[#18191d]/10 px-8 py-5' : ''}`}>
         <div className="mb-3 flex w-full items-center gap-1.5">
           {Array.from({ length: total }).map((_, i) => {
-            let bgColor = 'bg-white/14';
+            let bgColor = isCourseFinal ? 'bg-[#18191d]/10' : 'bg-white/14';
             const r = session.results[i];
             if (r && i !== session.currentQuestionIndex) {
               bgColor = r.correct ? 'bg-accent' : 'bg-destructive/80';
             } else if (i === session.currentQuestionIndex) {
-              bgColor = 'bg-accent/50 animate-pulse';
+              bgColor = isCourseFinal ? 'bg-accent animate-pulse' : 'bg-accent/50 animate-pulse';
             }
             return (
               <div
@@ -282,19 +324,19 @@ export function CourseQuizPlayer({
           })}
         </div>
         <div className="flex items-center justify-between">
-          <p className="text-xs font-bold tracking-widest text-[#c4beff] uppercase">
-            Practice challenge
+          <p className={`text-xs font-bold tracking-widest uppercase ${isCourseFinal ? 'text-[#685bc7]' : 'text-[#c4beff]'}`}>
+            Course assessment
           </p>
-          <p className="text-xs font-bold text-white/72 tabular-nums">
-            {session.currentQuestionIndex + 1} <span className="text-white/38">/ {total}</span>
+          <p className={`text-xs font-bold tabular-nums ${isCourseFinal ? 'text-[#27272c]/70' : 'text-white/72'}`}>
+            {session.currentQuestionIndex + 1} <span className={isCourseFinal ? 'text-[#27272c]/35' : 'text-white/38'}>/ {total}</span>
           </p>
         </div>
       </div>
       <div
         key={session.currentQuestionIndex}
-        className="relative mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col gap-4 overflow-y-auto px-6 pb-24 md:px-10"
+        className={`relative mx-auto flex min-h-0 w-full flex-1 flex-col gap-4 overflow-y-auto px-6 pb-24 md:px-10 ${isCourseFinal ? 'max-w-none px-8 py-7' : 'max-w-5xl'}`}
       >
-        <p className="quiz-enter shrink-0 pt-3 text-xl leading-tight font-bold text-white md:text-3xl">
+        <p className={`quiz-enter shrink-0 pt-3 text-xl leading-tight font-bold md:text-3xl ${isCourseFinal ? 'text-[#27272c]' : 'text-white'}`}>
           {q.question}
         </p>
 
@@ -443,6 +485,95 @@ export function CourseQuizPlayer({
             </motion.button>
           </>
         )}
+      </div>
+      </div>
+    </div>
+  );
+}
+
+function CourseFinalAssessmentCard({
+  title = 'Course assessment',
+  instructions,
+  questionCount,
+  score,
+  passed,
+  correctAnswers,
+  total,
+  passingScore,
+  onStart,
+  onContinue,
+  onRetry,
+}: {
+  title?: string;
+  instructions?: string;
+  questionCount?: number;
+  score?: number;
+  passed?: boolean;
+  correctAnswers?: number;
+  total?: number;
+  passingScore?: number;
+  onStart?: () => void;
+  onContinue?: () => void;
+  onRetry?: () => void;
+}) {
+  const isResult = score !== undefined && passed !== undefined;
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden bg-[#111225] p-10">
+      <div className="relative flex h-[600px] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-white/15 bg-white/96 shadow-xl">
+        <header className="flex items-center border-b border-[#18191d]/10 px-6 py-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#685bc7] text-white shadow-md">
+            <Brain aria-hidden="true" className="h-5 w-5" />
+          </div>
+          <div className="ml-4">
+            <h2 className="text-lg font-semibold text-[#27272c]">Course assessment</h2>
+            <p className="text-xs text-[#595b66]">Complete course recap</p>
+          </div>
+        </header>
+        <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
+          {isResult ? (
+            <>
+              <div className={`mb-6 flex h-24 w-24 items-center justify-center rounded-full shadow-lg ${passed ? 'bg-[#685bc7] text-white' : 'bg-[#e8e7eb] text-[#27272c]'}`}>
+                <span className="text-3xl font-bold">{score}%</span>
+              </div>
+              <h3 className="mb-2 text-2xl font-bold text-[#27272c]">
+                {passed ? 'Assessment complete' : 'Keep practicing'}
+              </h3>
+              <p className="text-[#595b66]">
+                You got {correctAnswers} out of {total} questions correct.
+              </p>
+              {!passed && <p className="mt-1 text-sm text-[#595b66]">Passing score: {passingScore}%</p>}
+              <div className="mt-8 flex flex-col items-center gap-3">
+                {passed ? (
+                  <button type="button" onClick={onContinue} className="rounded-full border-2 border-[#685bc7] px-8 py-3 text-sm font-medium text-[#685bc7] transition-colors hover:bg-[#685bc7]/8">
+                    Continue
+                  </button>
+                ) : (
+                  <>
+                    <button type="button" onClick={onRetry} className="inline-flex items-center gap-2 rounded-full border-2 border-[#685bc7] px-8 py-3 text-sm font-medium text-[#685bc7] transition-colors hover:bg-[#685bc7]/8">
+                      <RefreshCw aria-hidden="true" className="h-4 w-4" /> Try again
+                    </button>
+                    <button type="button" onClick={onContinue} className="text-sm font-medium text-[#595b66] underline underline-offset-4 hover:text-[#27272c]">
+                      Continue without passing
+                    </button>
+                  </>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-[#685bc7]/12">
+                <Brain aria-hidden="true" className="h-12 w-12 text-[#685bc7]" />
+              </div>
+              <h3 className="mb-2 text-2xl font-bold text-[#27272c]">{title}</h3>
+              <p className="max-w-md text-[#595b66]">{instructions}</p>
+              {questionCount !== undefined && <p className="mt-3 text-sm font-medium text-[#595b66]">{questionCount} questions</p>}
+              <button type="button" onClick={onStart} className="mt-8 rounded-full bg-[#685bc7] px-8 py-3.5 text-sm font-medium text-white transition-colors hover:bg-[#5b4eb8]">
+                Start assessment
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

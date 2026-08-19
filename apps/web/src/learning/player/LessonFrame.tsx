@@ -59,8 +59,6 @@ export function LessonFrame({
       >
         {children}
 
-        <div className="from-background pointer-events-none absolute right-0 bottom-0 left-0 z-10 h-40 bg-linear-to-t to-transparent" />
-
         {!showNav && onToggleNavMap && (
           <button
             onClick={onToggleNavMap}

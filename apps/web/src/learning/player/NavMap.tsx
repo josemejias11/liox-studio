@@ -26,11 +26,12 @@ const LESSON_TYPE_META: Record<string, { icon: React.ElementType; color: string;
   };
 
 const SECTION_TYPE_META: Record<
-  'specification' | 'quiz' | 'disclaimer',
+  'specification' | 'quiz' | 'disclaimer' | 'final-quiz',
   { icon: React.ElementType; color: string; label: string }
 > = {
   specification: { icon: FileText, color: 'text-accent/70', label: 'Specifications' },
   quiz: { icon: CircleCheck, color: 'text-muted-foreground', label: 'Knowledge Check' },
+  'final-quiz': { icon: CircleCheck, color: 'text-accent', label: 'Final assessment' },
   disclaimer: { icon: ShieldAlert, color: 'text-muted-foreground', label: 'Disclaimer' },
 };
 

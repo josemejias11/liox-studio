@@ -10,6 +10,7 @@ import {
   InlineDiscoveryCueProvider,
   type InlineDiscoveryCueResolver,
 } from './InlineDiscoveryCue';
+import { CompletionBurst } from '../CompletionBurst';
 
 interface ScrollStoryLessonProps {
   lesson: CourseLesson;
@@ -115,8 +116,11 @@ export default function ScrollStoryLesson({
               exit={{ opacity: 0 }}
               transition={{ duration: shouldReduceMotion ? 0 : 0.3 }}
             >
-              <CheckCircle2 className="mb-2 h-16 w-16 text-[#b48a3a]" />
-              <span className="font-product text-2xl font-semibold text-white">Complete</span>
+              <CompletionBurst active={!shouldReduceMotion} />
+              <div className="relative z-50 flex flex-col items-center">
+                <CheckCircle2 className="mb-2 h-16 w-16 text-[#b48a3a]" />
+                <span className="font-product text-2xl font-semibold text-white">Complete</span>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

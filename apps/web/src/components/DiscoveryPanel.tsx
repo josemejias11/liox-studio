@@ -117,22 +117,13 @@ export function DiscoveryPanel({
 
         if (isFloating && posX !== undefined && posY !== undefined) {
           const isLeft = posX < 50;
-          const isTop = posY < 50;
           if (isLeft) floatingStyle.left = `clamp(4%, ${posX + 2}%, 56%)`;
           else floatingStyle.right = `clamp(4%, ${100 - posX + 2}%, 56%)`;
 
-          if (isTop) {
-            floatingStyle.top = `clamp(2%, ${posY}%, 55%)`;
-            floatingStyle.maxHeight = `min(700px, ${Math.max(20, 98 - posY)}%)`;
-          } else {
-            floatingStyle.bottom = `clamp(2%, ${100 - posY}%, 55%)`;
-            floatingStyle.maxHeight = `min(700px, ${Math.max(20, posY - 2)}%)`;
-          }
+          floatingStyle.top = '4%';
+          floatingStyle.bottom = '4%';
 
-          if (isLeft && isTop) originClass = 'origin-top-left';
-          else if (isLeft && !isTop) originClass = 'origin-bottom-left';
-          else if (!isLeft && isTop) originClass = 'origin-top-right';
-          else originClass = 'origin-bottom-right';
+          originClass = isLeft ? 'origin-top-left' : 'origin-top-right';
         } else if (isFloating) {
           floatingStyle = {
             top: '50%',
@@ -161,7 +152,7 @@ export function DiscoveryPanel({
             ? 'opacity-100 scale-100 duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)]'
             : 'opacity-0 scale-[0.88] pointer-events-none duration-[200ms] ease-[cubic-bezier(0.32,0.72,0,1)]'
           }`;
-        const mobileClasses = `absolute bottom-0 left-0 right-0 w-full h-[72vh] rounded-t-3xl flex flex-col
+        const mobileClasses = `absolute right-0 bottom-0 left-0 h-[92%] rounded-t-3xl flex flex-col
           bg-card/80 dark:bg-card/95 backdrop-blur-3xl border-t border-white/10
           shadow-2xl transition-[transform] ease-[cubic-bezier(0.16,1,0.3,1)]
           ${open
@@ -172,7 +163,7 @@ export function DiscoveryPanel({
           bg-card/80 dark:bg-card/95 backdrop-blur-2xl border-l border-white/10
           shadow-2xl transition-[transform] ease-[cubic-bezier(0.32,0.72,0,1)]
           ${open ? 'translate-x-0 duration-[280ms]' : 'translate-x-full duration-[200ms]'}`;
-        const workbenchSidebarClasses = `pointer-events-auto absolute top-6 right-6 bottom-24 w-[min(27rem,33vw)] flex flex-col rounded-[1.25rem]
+        const workbenchSidebarClasses = `pointer-events-auto absolute top-6 right-6 bottom-6 w-[min(27rem,33vw)] flex flex-col rounded-[1.25rem]
           bg-card/92 dark:bg-card/95 backdrop-blur-2xl border border-white/10
           shadow-[0_24px_80px_rgba(0,0,0,0.38)] transition-[transform,opacity] ease-[cubic-bezier(0.32,0.72,0,1)]
           ${open

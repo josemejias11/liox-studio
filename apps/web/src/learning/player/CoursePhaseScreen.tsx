@@ -34,6 +34,7 @@ export interface CoursePhaseScreenProps {
   goNext: () => void;
   goPrev: () => void;
   finishChapterQuiz: (chapterIndex: number) => void;
+  finishQuiz: () => void;
   dismissChapterIntro: () => void;
   onDisclaimerCanProceedChange: (canProceed: boolean) => void;
   preview: boolean;
@@ -55,6 +56,8 @@ export function getCoursePhaseSlideKey(args: {
       return `spec-${phase.specIndex}`;
     case 'chapter-quiz':
       return `chapter-quiz-${phase.chapterIndex}`;
+    case 'final-quiz':
+      return 'final-quiz';
     case 'disclaimer':
       return 'disclaimer';
     case 'complete':
@@ -78,6 +81,7 @@ export function CoursePhaseScreen({
   goNext,
   goPrev,
   finishChapterQuiz,
+  finishQuiz,
   dismissChapterIntro,
   onDisclaimerCanProceedChange,
   preview,
@@ -130,6 +134,22 @@ export function CoursePhaseScreen({
         </div>
       );
     }
+
+    case 'final-quiz':
+      return structure.finalQuiz ? (
+        <div className="absolute inset-0 flex items-center justify-center overflow-y-auto bg-[#111225] p-6">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(104,91,199,0.42),transparent_42%)]" />
+          <QuizLessonDynamic
+            courseQuiz={structure.finalQuiz}
+            onPass={finishQuiz}
+            onFail={finishQuiz}
+            sessionId={persistSession ? sessionId : undefined}
+            courseId={course._id}
+            preview={preview}
+            presentation="course-final"
+          />
+        </div>
+      ) : null;
 
     case 'disclaimer':
       return structure.disclaimerSection ? (

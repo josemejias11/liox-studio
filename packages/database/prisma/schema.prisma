@@ -54,8 +54,10 @@ model Course {
   cover              Json?
   specifications     Json?
   disclaimer         Json?
+  finalQuizId        String?               @unique
   chapters           CourseChapter[]
-  quizzes            CourseQuiz[]
+  quizzes            CourseQuiz[]          @relation("CourseQuizzes")
+  finalQuiz          CourseQuiz?           @relation("CourseFinalQuiz", fields: [finalQuizId], references: [id], onDelete: SetNull)
   trashItems         CourseLessonTrash[]
   revisions          CourseRevision[]
   sourceFiles        CourseSourceFile[]
@@ -126,8 +128,9 @@ model CourseQuiz {
   title             String?
   instructions      String?
   payload           Json           @default("{}")
-  course            Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course            Course         @relation("CourseQuizzes", fields: [courseId], references: [id], onDelete: Cascade)
   chapterQuickCheck CourseChapter? @relation("ChapterQuickCheck")
+  finalForCourse    Course?        @relation("CourseFinalQuiz")
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
 

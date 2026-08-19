@@ -4,7 +4,8 @@ import { deriveCourseStructure } from '@/learning/course-structure';
 export type CourseFlowItem =
   | { kind: 'lesson'; key: string; index: number; title: string }
   | { kind: 'specification'; key: string; index: number; title: string }
-  | { kind: 'disclaimer'; key: string; index: number; title: string };
+  | { kind: 'disclaimer'; key: string; index: number; title: string }
+  | { kind: 'final-quiz'; key: string; index: number; title: string };
 
 export interface CourseFlow {
   structure: ReturnType<typeof deriveCourseStructure>;
@@ -14,8 +15,9 @@ export interface CourseFlow {
 export function deriveCourseFlow(
   sections: CourseSection[],
   chapters: CourseContent['chapters'] = [],
+  finalQuiz?: CourseContent['finalQuiz'],
 ): CourseFlow {
-  const structure = deriveCourseStructure(sections, chapters);
+  const structure = deriveCourseStructure(sections, chapters, finalQuiz);
   const items: CourseFlowItem[] = [];
 
   for (const section of structure.lessonSections) {
@@ -42,6 +44,15 @@ export function deriveCourseFlow(
       key: structure.disclaimerSection._key ?? 'disclaimer',
       index: items.length,
       title: structure.disclaimerSection.title ?? 'Disclaimer',
+    });
+  }
+
+  if (structure.finalQuiz) {
+    items.push({
+      kind: 'final-quiz',
+      key: structure.finalQuiz._key,
+      index: items.length,
+      title: structure.finalQuiz.title ?? 'Final assessment',
     });
   }
 

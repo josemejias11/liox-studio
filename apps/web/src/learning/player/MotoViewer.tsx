@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LessonFrame } from './LessonFrame';
 import { useLessonProgress } from './hooks/useLessonProgress';
@@ -36,6 +36,9 @@ const slideVariants = {
   }),
 };
 
+const COURSE_RESUME_KEY_PREFIX = 'mototutor_course_resume:';
+const PREVIEW_RESUME_KEY_PREFIX = 'mototutor_preview_resume:';
+
 export default function MotoViewer({
   course,
   sections,
@@ -45,6 +48,10 @@ export default function MotoViewer({
   aiIdentity,
   assistant,
   onAssistantAnswer,
+  onLessonChange,
+  initialView,
+  initialChapterId,
+  bypassNavigationLocks = false,
 }: {
   course: CourseContent;
   sections: CourseSection[];
@@ -54,10 +61,14 @@ export default function MotoViewer({
   aiIdentity?: RevisionIdentity;
   assistant?: OfflineAssistantPayload;
   onAssistantAnswer?: (context: { question: string; matchedQaId: string | null; answer: string }) => void;
+  onLessonChange?: (lessonId: string) => void;
+  initialView?: 'cover';
+  initialChapterId?: string;
+  bypassNavigationLocks?: boolean;
 }) {
   const flow = useMemo(
-    () => deriveCourseFlow(sections, course.chapters ?? []),
-    [sections, course.chapters],
+    () => deriveCourseFlow(sections, course.chapters ?? [], course.finalQuiz),
+    [sections, course.chapters, course.finalQuiz],
   );
   const structure = flow.structure;
 
@@ -72,7 +83,28 @@ export default function MotoViewer({
     error: progressError,
   } = useLessonProgress(sessionId, persistSession, course._id);
 
-  const nav = useCourseNavigation(flow, visited);
+  const nav = useCourseNavigation(flow, visited, bypassNavigationLocks);
+  const restoredResumeKeyRef = useRef<string | null>(null);
+  const appliedInitialSectionKeyRef = useRef<string | undefined>(undefined);
+  const appliedInitialViewRef = useRef<'cover' | undefined>(undefined);
+  const appliedInitialChapterIdRef = useRef<string | undefined>(undefined);
+  const resumeKey = `${preview ? PREVIEW_RESUME_KEY_PREFIX : COURSE_RESUME_KEY_PREFIX}${course._id}`;
+
+  useEffect(() => {
+    if (!sessionId || restoredResumeKeyRef.current === resumeKey) return;
+
+    restoredResumeKeyRef.current = resumeKey;
+    const savedResume = localStorage.getItem(resumeKey);
+    if (savedResume === 'complete') {
+      nav.restoreComplete();
+      return;
+    }
+
+    const sectionIndex = Number(savedResume);
+    if (Number.isInteger(sectionIndex) && sectionIndex >= 0 && sectionIndex < flow.items.length) {
+      nav.navigateToSectionUnrestricted(sectionIndex);
+    }
+  }, [flow.items.length, nav, preview, resumeKey, sessionId]);
   const {
     phase,
     navDirection,
@@ -84,11 +116,41 @@ export default function MotoViewer({
   } = nav;
 
   useEffect(() => {
-    if (!preview || !initialSectionKey) return;
+    if (appliedInitialViewRef.current === initialView) return;
+    appliedInitialViewRef.current = initialView;
+    if (initialView === 'cover') nav.restart();
+  }, [initialView, nav]);
+
+  useEffect(() => {
+    if (!initialChapterId) {
+      appliedInitialChapterIdRef.current = undefined;
+      return;
+    }
+    if (appliedInitialChapterIdRef.current === initialChapterId) return;
+
+    const chapterIndex = course.chapters?.findIndex((chapter) => chapter._id === initialChapterId) ?? -1;
+    const firstChapterLesson = flow.items.find(
+      (item) => item.kind === 'lesson' && item.key === course.chapters?.[chapterIndex]?.lessons?.[0]?._key,
+    );
+    if (firstChapterLesson === undefined) return;
+
+    appliedInitialChapterIdRef.current = initialChapterId;
+    navigateToPreviewSection(firstChapterLesson.index);
+  }, [course.chapters, flow.items, initialChapterId, navigateToPreviewSection]);
+
+  useEffect(() => {
+    if (!initialSectionKey) {
+      appliedInitialSectionKeyRef.current = undefined;
+      return;
+    }
+    if (appliedInitialSectionKeyRef.current === initialSectionKey) return;
+
     const target = flow.items.find(
       (item) => item.kind === 'lesson' && item.key === initialSectionKey,
     );
     if (!target) return;
+
+    appliedInitialSectionKeyRef.current = initialSectionKey;
     navigateToPreviewSection(target.index);
     dismissPreviewChapterIntro();
   }, [
@@ -96,12 +158,15 @@ export default function MotoViewer({
     flow.items,
     initialSectionKey,
     navigateToPreviewSection,
-    preview,
   ]);
   const currentLesson =
     phase.phase === 'chapter'
       ? getChapterLessons(structure, phase.chapterIndex)[phase.lessonIndex]
       : undefined;
+  useEffect(() => {
+    if (showChapterIntro || !currentLesson) return;
+    onLessonChange?.(currentLesson._key);
+  }, [currentLesson, onLessonChange, showChapterIntro]);
   const lessonRuntime = useLessonRuntime({
     currentLesson,
     visited,
@@ -111,6 +176,20 @@ export default function MotoViewer({
   const { lessonKey } = lessonRuntime;
   const goNext = nav.goNext;
   const goPrev = nav.goPrev;
+
+  useEffect(() => {
+    if (!sessionId) return;
+
+    if (phase.phase === 'complete') {
+      localStorage.setItem(resumeKey, 'complete');
+      return;
+    }
+
+    const sectionIndex = nav.currentSectionIndex;
+    if (sectionIndex >= 0 && sectionIndex < flow.items.length) {
+      localStorage.setItem(resumeKey, String(sectionIndex));
+    }
+  }, [flow.items.length, nav.currentSectionIndex, phase.phase, preview, resumeKey, sessionId]);
 
   function navigateToSection(i: number) {
     setShowNavMap(false);
@@ -221,6 +300,7 @@ export default function MotoViewer({
               goNext={goNext}
               goPrev={goPrev}
               finishChapterQuiz={nav.finishChapterQuiz}
+              finishQuiz={nav.finishQuiz}
               dismissChapterIntro={nav.dismissChapterIntro}
               onDisclaimerCanProceedChange={setDisclaimerCanProceed}
               preview={preview}
