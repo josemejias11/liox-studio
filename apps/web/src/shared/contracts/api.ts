@@ -28,12 +28,3 @@ export const WeakTopicsRequestSchema = z.object({
     .min(1)
     .max(100),
 });
-
-export type WeakTopicsRequest = z.infer<typeof WeakTopicsRequestSchema>;
-
-export const WeakTopicsResponseSchema = z.object({
-  weakTopics: z.array(z.string()),
-  engagement: z.array(z.object({ lessonId: z.string(), viewCount: z.number() })),
-});
-
-export type WeakTopicsResponse = z.infer<typeof WeakTopicsResponseSchema>;

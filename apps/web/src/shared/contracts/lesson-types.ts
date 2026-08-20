@@ -10,5 +10,3 @@ export const ALL_LESSON_TYPES = [
   'scrollStory',
   'canvas',
 ] as const;
-
-export type LessonType = (typeof ALL_LESSON_TYPES)[number];
