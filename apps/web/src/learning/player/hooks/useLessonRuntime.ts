@@ -8,7 +8,7 @@ import { getLessonCompletionMode, LessonCompletionMode } from '../lesson-types/r
 
 type CompletionRule = (visited: Set<string>) => boolean;
 
-export type BaseMarkVisited = (
+type BaseMarkVisited = (
   lessonKey: string,
   label: string,
   totalHotspots: number,

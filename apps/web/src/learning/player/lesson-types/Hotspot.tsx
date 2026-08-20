@@ -4,8 +4,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Check } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 
-export type HotspotVariant = 'moto-indigo-black' | 'white-black' | 'pulse';
-export type HotspotPresentation = 'classic' | 'callout' | 'reticle';
+type HotspotVariant = 'moto-indigo-black' | 'white-black' | 'pulse';
+type HotspotPresentation = 'classic' | 'callout' | 'reticle';
 
 interface VariantStyles {
   ariaPrefix: string;

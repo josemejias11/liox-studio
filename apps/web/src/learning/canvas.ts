@@ -1,4 +1,4 @@
-export const CANVAS_LESSON_TYPE = 'canvas' as const;
+const CANVAS_LESSON_TYPE = 'canvas' as const;
 export const MIN_CANVAS_ZOOM = 1;
 export const MAX_CANVAS_ZOOM = 3;
 

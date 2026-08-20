@@ -1,6 +1,6 @@
 import type { QuestionResult, SubmitQuizResponse } from '@moto-ai/contracts/quiz';
 
-export type QuizSessionPhase = 'answering' | 'revealed' | 'submitting' | 'complete';
+type QuizSessionPhase = 'answering' | 'revealed' | 'submitting' | 'complete';
 
 export interface QuizSessionState {
   phase: QuizSessionPhase;

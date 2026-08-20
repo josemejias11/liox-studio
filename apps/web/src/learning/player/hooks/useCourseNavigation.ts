@@ -42,7 +42,7 @@ function findFlowIndex(flow: CourseFlow, kind: 'disclaimer'): number {
   return flow.items.find((item) => item.kind === kind)?.index ?? flow.items.length;
 }
 
-export function getSectionIndex(flow: CourseFlow, phase: CoursePhase): number {
+function getSectionIndex(flow: CourseFlow, phase: CoursePhase): number {
   const structure = flow.structure;
   switch (phase.phase) {
     case 'cover':
@@ -115,7 +115,7 @@ function phaseBeforeDisclaimer(s: CourseStructure): CoursePhase {
   return lastChapterOrCover(s);
 }
 
-export function isLessonLocked(
+function isLessonLocked(
   structure: CourseStructure,
   phase: CoursePhase,
   visited?: Record<string, Set<string>>,
@@ -327,7 +327,7 @@ function reduceGoToSection(
   }
 }
 
-export function courseNavigationReducer(
+function courseNavigationReducer(
   flow: CourseFlow,
   state: CourseNavState,
   action: CourseNavAction,

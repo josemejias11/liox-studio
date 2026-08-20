@@ -6,7 +6,7 @@ import type {
   CourseSpecification,
 } from '@/shared/contracts/player-course';
 
-export interface ChapterGroup {
+interface ChapterGroup {
   chapterIndex: number;
   chapterTitle: string;
   quickCheck?: AuthoredQuiz;

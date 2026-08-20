@@ -1,5 +1,4 @@
 import type { CourseGraph } from '@moto-ai/contracts/course-studio';
-import { courseSummarySchema, type CourseSummary } from '@/shared/contracts/player-course';
 import { normalizeCourseContent, type NormalizedCourseContent } from '@/learning/course-content';
 
 function objectPayload(value: unknown): Record<string, unknown> {
@@ -98,26 +97,4 @@ export function toPlayerCourseContent(
   { includeAnswerKey = false }: { includeAnswerKey?: boolean } = {},
 ): NormalizedCourseContent | null {
   return normalizeCourseContent(rawCourse(course, includeAnswerKey));
-}
-
-export function toPlayerCourseSummary(input: {
-  id: string;
-  slug: string;
-  title: string;
-  description: string | null;
-  learningObjectives: unknown;
-  cover: unknown;
-  _count: { chapters: number };
-}): CourseSummary | null {
-  const cover = objectPayload(input.cover);
-  const parsed = courseSummarySchema.safeParse({
-    _id: input.id,
-    title: input.title,
-    slug: { current: input.slug },
-    description: input.description ?? undefined,
-    thumbnail: cover.thumbnail,
-    learningObjectives: input.learningObjectives ?? undefined,
-    chapterCount: input._count.chapters,
-  });
-  return parsed.success ? parsed.data : null;
 }

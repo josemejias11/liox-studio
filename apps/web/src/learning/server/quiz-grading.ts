@@ -13,7 +13,7 @@ export interface GradableQuestion {
   explanation: string;
 }
 
-export const DEFAULT_PASSING_SCORE = 80;
+const DEFAULT_PASSING_SCORE = 80;
 
 export class CourseConfigurationError extends Error {
   constructor(message: string) {
