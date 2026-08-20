@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Clipboard, Snowflake } from 'lucide-react';
+import { fetchJson } from '@/shared/fetch-json';
 
 interface StudioRevision {
   id: string;
@@ -151,17 +152,16 @@ function RevisionPanelContent({
     setBusy(true);
     setMessage('Freezing master revision…');
     try {
-      const response = await fetch(
+      await fetchJson<{ error?: string }>(
         `/api/course-studio/courses/${encodeURIComponent(courseId)}/revisions`,
         {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ notes }),
         },
+        'Revision could not be created.',
       );
-      const result = (await response.json()) as { error?: string };
       if (!isCurrentCourse(generation)) return;
-      if (!response.ok) throw new Error(result.error || 'Revision could not be created.');
       await load();
       if (!isCurrentCourse(generation)) return;
       setMessage('Master revision frozen. Future authoring changes will not change it.');
@@ -178,14 +178,13 @@ function RevisionPanelContent({
     setBusy(true);
     setReviewUrl(null);
     try {
-      const response = await fetch(
+      const result = await fetchJson<{ reviewUrl?: string; error?: string }>(
         `/api/course-studio/revisions/${encodeURIComponent(revisionId)}/review`,
         { method: 'POST' },
+        'Review link could not be created.',
       );
-      const result = (await response.json()) as { reviewUrl?: string; error?: string };
       if (!isCurrentCourse(generation)) return;
-      if (!response.ok || !result.reviewUrl)
-        throw new Error(result.error || 'Review link could not be created.');
+      if (!result.reviewUrl) throw new Error('Review link could not be created.');
       setReviewUrl(result.reviewUrl);
       setMessage('A new review link was created. Copy it now.');
       await load();
