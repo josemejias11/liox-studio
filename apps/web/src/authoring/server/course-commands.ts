@@ -25,7 +25,7 @@ import {
 } from '@moto-ai/database';
 import type { CourseLessonType, LessonInput } from '@moto-ai/contracts/course-studio';
 
-export function serializeCourseTrashItem(item: CourseTrashItem) {
+function serializeCourseTrashItem(item: CourseTrashItem) {
   return { ...item, deletedAt: item.deletedAt.toISOString() };
 }
 

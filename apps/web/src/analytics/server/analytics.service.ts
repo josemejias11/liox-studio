@@ -67,7 +67,7 @@ function fetchRecentSessions() {
   });
 }
 
-export async function getLessonEngagement(courseId: string): Promise<LessonEngagementRow[]> {
+async function getLessonEngagement(courseId: string): Promise<LessonEngagementRow[]> {
   if (!courseId) {
     throw new Error('getLessonEngagement requires a non-empty courseId');
   }
@@ -80,7 +80,7 @@ export async function getLessonEngagement(courseId: string): Promise<LessonEngag
   return rows.map((r) => ({ lessonId: r.lessonId, viewCount: r._sum.viewCount ?? 0 }));
 }
 
-export async function getAllLessonEngagement(): Promise<LessonEngagementRow[]> {
+async function getAllLessonEngagement(): Promise<LessonEngagementRow[]> {
   const rows = await prisma.lessonProgress.groupBy({
     by: ['lessonId'],
     _sum: { viewCount: true },
@@ -139,7 +139,7 @@ export type WeakTopicsResult = {
   engagement: LessonEngagementRow[];
 };
 
-export function computeWeakTopics(
+function computeWeakTopics(
   engagement: LessonEngagementRow[],
   lessons: LessonTopicMeta[],
 ): string[] {

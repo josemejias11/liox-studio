@@ -5,7 +5,7 @@ import {
 import { getCourseGeneration, prisma } from '@moto-ai/database';
 import { enqueueCourseGenerationJob } from '@moto-ai/jobs';
 
-export function toCourseGenerationSummary(
+function toCourseGenerationSummary(
   generation: Awaited<ReturnType<typeof getCourseGeneration>>,
 ): CourseGenerationSummary {
   if (!generation) throw new Error('COURSE_GENERATION_NOT_FOUND');

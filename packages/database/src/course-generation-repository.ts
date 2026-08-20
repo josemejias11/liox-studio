@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import type { GeneratedCourseGraph } from '@moto-ai/contracts/course-generation';
 import { prisma } from './index';
 
-export type CourseGenerationStatus = 'queued' | 'running' | 'succeeded' | 'failed';
+type CourseGenerationStatus = 'queued' | 'running' | 'succeeded' | 'failed';
 
 export interface RequestedGenerationSource {
   sourceId: string;

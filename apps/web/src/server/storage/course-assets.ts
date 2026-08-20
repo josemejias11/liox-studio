@@ -51,11 +51,11 @@ function safeFilename(filename: string): string {
   return normalized.replace(/-+/g, '-').replace(/^-|-$/g, '') || 'asset';
 }
 
-export function createCourseAssetKey(courseId: string, filename: string): string {
+function createCourseAssetKey(courseId: string, filename: string): string {
   return `courses/${courseId}/${crypto.randomUUID()}-${safeFilename(filename)}`;
 }
 
-export function courseAssetUrl(r2Key: string): string {
+function courseAssetUrl(r2Key: string): string {
   return `/api/course-assets/${r2Key.split('/').map(encodeURIComponent).join('/')}`;
 }
 
