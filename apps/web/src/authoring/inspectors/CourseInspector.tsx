@@ -15,7 +15,7 @@ import {
   type CourseSettingsInput,
   type ImageReference,
   type JsonObject,
-} from '@/shared/contracts/course-studio';
+} from '@/shared/contracts/course-settings';
 import { CourseMediaField } from './CourseMediaField';
 import {
   specificationDrafts,

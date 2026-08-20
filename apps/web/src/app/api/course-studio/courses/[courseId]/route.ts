@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
-import { courseSettingsPatchSchema } from '@/shared/contracts/course-studio';
+import { courseSettingsPatchSchema } from '@/shared/contracts/course-settings';
 import { jsonError, unexpectedApiError } from '@/shared/server/http';
 import { updateAuthoringCourse } from '@/authoring/server/course-commands';
 

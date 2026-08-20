@@ -2,7 +2,7 @@
 
 import type { CourseGraph, LessonInput } from '@moto-ai/contracts/course-studio';
 import { useState, type ReactNode } from 'react';
-import type { CourseSettingsInput } from '@/shared/contracts/course-studio';
+import type { CourseSettingsInput } from '@/shared/contracts/course-settings';
 import { CourseInspector, type CourseInspectorSaveState } from './inspectors/CourseInspector';
 import { LessonInspector } from './inspectors/LessonInspector';
 import type { StudioSelection } from './studio-types';

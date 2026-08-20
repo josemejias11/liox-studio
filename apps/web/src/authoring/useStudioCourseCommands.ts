@@ -7,7 +7,7 @@ import type {
   LessonInput,
 } from '@moto-ai/contracts/course-studio';
 import { useState } from 'react';
-import type { CourseSettingsInput } from '@/shared/contracts/course-studio';
+import type { CourseSettingsInput } from '@/shared/contracts/course-settings';
 import { studioClient } from './studio-client';
 import type { StudioSelection, StudioTrashItem } from './studio-types';
 

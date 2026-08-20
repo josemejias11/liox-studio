@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { ImageReference } from '@/shared/contracts/course-studio';
+import type { ImageReference } from '@/shared/contracts/course-settings';
 
 interface CourseMediaFieldProps {
   courseId: string;

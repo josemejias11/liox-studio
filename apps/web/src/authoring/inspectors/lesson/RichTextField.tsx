@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { toPlainText } from '@/shared/contracts/player-course';
-import { isJsonObject } from '@/shared/contracts/course-studio';
+import { isJsonObject } from '@/shared/contracts/course-settings';
 import type { TextDraft } from '@/authoring/inspectors/lesson/lesson-draft';
 
 interface RichTextFieldProps {

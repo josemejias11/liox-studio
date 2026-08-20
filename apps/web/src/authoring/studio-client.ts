@@ -4,7 +4,7 @@ import type {
   CourseLessonType,
   LessonInput,
 } from '@moto-ai/contracts/course-studio';
-import type { CourseSettingsInput } from '@/shared/contracts/course-studio';
+import type { CourseSettingsInput } from '@/shared/contracts/course-settings';
 
 export interface StudioTrashItem {
   id: string;

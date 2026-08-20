@@ -8,7 +8,7 @@ import {
   jsonObject,
   mergeKnownFields,
   stringField,
-} from '@/shared/contracts/course-studio';
+} from '@/shared/contracts/course-settings';
 
 export type StudioLesson = CourseGraph['chapters'][number]['lessons'][number];
 
