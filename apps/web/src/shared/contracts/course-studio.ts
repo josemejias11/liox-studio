@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export type JsonObject = Record<string, unknown>;
 
-export const coverButtonColorSchema = z.enum(['moto-indigo', 'moto-frost', 'moto-pearl']);
+const coverButtonColorSchema = z.enum(['moto-indigo', 'moto-frost', 'moto-pearl']);
 export const disclaimerCategorySchema = z.enum([
   'legal',
   'safety',
@@ -11,7 +11,7 @@ export const disclaimerCategorySchema = z.enum([
   'general',
 ]);
 
-export const imageReferenceSchema = z
+const imageReferenceSchema = z
   .object({
     asset: z
       .object({
@@ -22,7 +22,7 @@ export const imageReferenceSchema = z
   })
   .passthrough();
 
-export const courseCoverSchema = z
+const courseCoverSchema = z
   .object({
     thumbnail: imageReferenceSchema.optional(),
     coverImage: imageReferenceSchema.optional(),
@@ -32,7 +32,7 @@ export const courseCoverSchema = z
   })
   .passthrough();
 
-export const specificationRowSchema = z
+const specificationRowSchema = z
   .object({
     label: z.string().trim().min(1, 'Label is required.'),
     value: z.string().trim().min(1, 'Value is required.'),
@@ -40,14 +40,14 @@ export const specificationRowSchema = z
   })
   .passthrough();
 
-export const specificationGroupSchema = z
+const specificationGroupSchema = z
   .object({
     groupName: z.string().trim().min(1, 'Group name is required.'),
     specs: z.array(specificationRowSchema),
   })
   .passthrough();
 
-export const courseSpecificationSchema = z
+const courseSpecificationSchema = z
   .object({
     title: z.string().trim().min(1, 'Specification title is required.'),
     subtitle: z.string().optional(),
@@ -57,7 +57,7 @@ export const courseSpecificationSchema = z
   })
   .passthrough();
 
-export const courseDisclaimerSchema = z
+const courseDisclaimerSchema = z
   .object({
     title: z.string().optional(),
     category: disclaimerCategorySchema.optional(),
@@ -83,13 +83,7 @@ export const courseSettingsInputSchema = z
 export const courseSettingsPatchSchema = courseSettingsInputSchema.partial();
 
 export type ImageReference = z.output<typeof imageReferenceSchema>;
-export type CourseCover = z.output<typeof courseCoverSchema>;
-export type SpecificationRow = z.output<typeof specificationRowSchema>;
-export type SpecificationGroup = z.output<typeof specificationGroupSchema>;
-export type CourseSpecification = z.output<typeof courseSpecificationSchema>;
-export type CourseDisclaimer = z.output<typeof courseDisclaimerSchema>;
 export type CourseSettingsInput = z.output<typeof courseSettingsInputSchema>;
-export type CourseSettingsPatchInput = z.output<typeof courseSettingsPatchSchema>;
 
 export function isJsonObject(value: unknown): value is JsonObject {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
