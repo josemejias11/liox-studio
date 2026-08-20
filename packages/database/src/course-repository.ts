@@ -7,15 +7,7 @@ import type {
 } from '@moto-ai/contracts/course-studio';
 import { prisma } from './index';
 
-export { COURSE_LESSON_TYPES } from '@moto-ai/contracts/course-studio';
-export type {
-  ChapterInput,
-  CourseGraph,
-  CourseGraphChapter,
-  CourseGraphLesson,
-  CourseLessonType,
-  LessonInput,
-} from '@moto-ai/contracts/course-studio';
+export type { CourseGraph } from '@moto-ai/contracts/course-studio';
 
 export interface CourseDetailsInput {
   title?: string;
