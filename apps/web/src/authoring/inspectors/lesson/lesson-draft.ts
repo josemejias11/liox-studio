@@ -475,7 +475,7 @@ export function lessonCueTargets(draft: LessonDraft): string[] {
   }
 }
 
-export function layerLinkTargets(value: unknown): string[] {
+function layerLinkTargets(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((block) => {
     const markDefs = asObject(block).markDefs;
@@ -487,10 +487,6 @@ export function layerLinkTargets(value: unknown): string[] {
         : [];
     });
   });
-}
-
-export function mergeImage(original: unknown, image: LessonImageDraft | undefined): unknown {
-  return imagePayload(image) ?? (original === undefined ? undefined : original);
 }
 
 export function mergeRow(

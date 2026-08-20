@@ -14,7 +14,7 @@ import {
 import { CourseMediaField } from './CourseMediaField';
 import { StringListField, type StringListItem } from './StringListField';
 
-export interface SpecificationRowDraft {
+interface SpecificationRowDraft {
   clientKey: string;
   highlight: boolean;
   label: string;
@@ -22,7 +22,7 @@ export interface SpecificationRowDraft {
   value: string;
 }
 
-export interface SpecificationGroupDraft {
+interface SpecificationGroupDraft {
   clientKey: string;
   groupName: string;
   original?: JsonObject;
@@ -67,7 +67,7 @@ function createGroup(): SpecificationGroupDraft {
   return { clientKey: createCourseStudioKey('spec-group'), groupName: '', rows: [] };
 }
 
-export function createSpecification(): SpecificationDraft {
+function createSpecification(): SpecificationDraft {
   return {
     clientKey: createCourseStudioKey('specification'),
     title: '',

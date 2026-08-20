@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Clipboard, Snowflake } from 'lucide-react';
 
-export interface StudioRevision {
+interface StudioRevision {
   id: string;
   version: number;
   status: string;
@@ -12,7 +12,7 @@ export interface StudioRevision {
   hasReview: boolean;
 }
 
-export interface StudioFeedback {
+interface StudioFeedback {
   id: string;
   revisionVersion: number;
   lessonId: string | null;

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 type ClientKeyed = { clientKey: string };
 
-export interface RepeatableFieldActions<T extends ClientKeyed> {
+interface RepeatableFieldActions<T extends ClientKeyed> {
   append: (item?: T) => void;
   move: (clientKey: string, direction: -1 | 1) => void;
   remove: (clientKey: string) => void;
