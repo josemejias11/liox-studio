@@ -184,7 +184,7 @@ function RevisionPanelContent({
         'Review link could not be created.',
       );
       if (!isCurrentCourse(generation)) return;
-      if (!result.reviewUrl) throw new Error('Review link could not be created.');
+      if (!result.reviewUrl) throw new Error(result.error || 'Review link could not be created.');
       setReviewUrl(result.reviewUrl);
       setMessage('A new review link was created. Copy it now.');
       await load();
