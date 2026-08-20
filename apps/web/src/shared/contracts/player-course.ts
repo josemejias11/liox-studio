@@ -22,7 +22,7 @@ const resolvedArray = <T extends z.ZodType>(schema: T) =>
     .array(schema.nullable())
     .transform((values) => values.filter((value): value is z.output<T> => value !== null));
 
-export const portableTextSchema = z.custom<PortableTextBlock[]>((v) => Array.isArray(v));
+const portableTextSchema = z.custom<PortableTextBlock[]>((v) => Array.isArray(v));
 
 export type RichText = string | PortableTextBlock[];
 const richTextSchema = z.union([z.string(), portableTextSchema]);
@@ -36,7 +36,7 @@ const imageSchema = z.object({
   asset: opt(z.object({ url: opt(z.string()) })),
 });
 
-export const photoSchema = z.object({
+const photoSchema = z.object({
   asset: opt(z.object({ url: opt(z.string()), originalFilename: opt(z.string()) })),
 });
 export type CoursePhoto = z.output<typeof photoSchema>;
@@ -47,7 +47,7 @@ const textOverlaySchema = z.object({
   width: opt(z.string()),
 });
 
-export const hotspotSchema = z.object({
+const hotspotSchema = z.object({
   _key: z.string(),
   label: plainStringSchema,
   topic: z.string().catch(''),
@@ -61,7 +61,7 @@ export const hotspotSchema = z.object({
 });
 export type CourseHotspot = z.output<typeof hotspotSchema>;
 
-export const lessonSchema = z.object({
+const lessonSchema = z.object({
   sectionType: z.literal('lesson'),
   _key: z.string(),
   headline: plainStringSchema,
@@ -135,7 +135,7 @@ export type LessonSection = CourseLesson & {
   chapterIndex: number;
 };
 
-export const specificationSchema = z.object({
+const specificationSchema = z.object({
   sectionType: z.literal('specification'),
   _key: opt(z.string()),
   title: z.string().catch(''),
@@ -161,7 +161,7 @@ export const specificationSchema = z.object({
 });
 export type CourseSpecification = z.output<typeof specificationSchema>;
 
-export const quizDocSchema = z.object({
+const quizDocSchema = z.object({
   sectionType: z.literal('quiz'),
   _key: z.string(),
   title: opt(z.string()),
@@ -191,7 +191,7 @@ export const quizDocSchema = z.object({
 });
 export type AuthoredQuiz = z.output<typeof quizDocSchema>;
 
-export const disclaimerSchema = z.object({
+const disclaimerSchema = z.object({
   sectionType: z.literal('disclaimer'),
   _key: opt(z.string()),
   title: opt(z.string()),
