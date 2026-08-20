@@ -4,15 +4,7 @@ import { createContext, useContext, useState, type ReactNode } from 'react';
 import type { PortableTextMarkComponent } from '@portabletext/react';
 import { Check, Plus } from 'lucide-react';
 
-export interface InlineDiscoveryCueProps {
-  label: string;
-  summary?: string;
-  visited: boolean;
-  onActivate: () => void;
-  children: ReactNode;
-}
-
-export interface InlineDiscoveryCueValue {
+interface InlineDiscoveryCueValue {
   label: string;
   summary?: string;
   visited: boolean;
@@ -45,20 +37,11 @@ export const InlineDiscoveryCueMark: PortableTextMarkComponent<{
 }> = ({ children, value }) => {
   const resolveLinkedLayer = useContext(InlineDiscoveryCueContext);
   const cue = resolveLinkedLayer?.(value?.linkedLayer);
+  const [expanded, setExpanded] = useState(false);
 
   if (!cue) return <>{children}</>;
 
-  return <InlineDiscoveryCue {...cue}>{children}</InlineDiscoveryCue>;
-};
-
-export function InlineDiscoveryCue({
-  label,
-  summary,
-  visited,
-  onActivate,
-  children,
-}: InlineDiscoveryCueProps) {
-  const [expanded, setExpanded] = useState(false);
+  const { label, summary, visited, onActivate } = cue;
 
   function activate() {
     onActivate();
@@ -89,4 +72,4 @@ export function InlineDiscoveryCue({
       )}
     </span>
   );
-}
+};
