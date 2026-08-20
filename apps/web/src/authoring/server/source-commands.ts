@@ -32,7 +32,12 @@ export async function uploadAuthoringSource({
   let source: Awaited<ReturnType<typeof createPendingSource>> | undefined;
 
   try {
-    uploaded = await putCourseAsset({ courseId: `${courseId}/sources`, filename, contentType, bytes });
+    uploaded = await putCourseAsset({
+      courseId: `${courseId}/sources`,
+      filename,
+      contentType,
+      bytes,
+    });
     source = await createPendingSource({
       courseId,
       r2Key: uploaded.r2Key,
@@ -42,7 +47,13 @@ export async function uploadAuthoringSource({
       sha256,
     });
     const job = await enqueueDocumentIndexJob(
-      { sourceId: source.id, courseId, sha256, filename: source.filename, contentType: source.contentType },
+      {
+        sourceId: source.id,
+        courseId,
+        sha256,
+        filename: source.filename,
+        contentType: source.contentType,
+      },
       bytes,
     );
     return { source, job };
@@ -52,7 +63,9 @@ export async function uploadAuthoringSource({
       await beginCourseSourceRemoval(courseId, sourceId)
         .then(() => (uploaded ? deleteCourseAsset(uploaded.r2Key) : undefined))
         .then(() => completeCourseSourceRemoval(courseId, sourceId))
-        .catch((cleanupError) => console.error('[authoring/source-upload] cleanup failed:', cleanupError));
+        .catch((cleanupError) =>
+          console.error('[authoring/source-upload] cleanup failed:', cleanupError),
+        );
     } else if (uploaded) {
       await deleteCourseAsset(uploaded.r2Key).catch((cleanupError) =>
         console.error('[authoring/source-upload] R2 cleanup failed:', cleanupError),

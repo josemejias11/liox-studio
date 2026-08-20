@@ -9,7 +9,9 @@ export async function GET(
 ): Promise<NextResponse> {
   if (!(await isCourseStudioAuthorized(request))) return jsonError('Unauthorized', 401);
   try {
-    return NextResponse.json({ generation: await getAuthoringGeneration((await params).generationId) });
+    return NextResponse.json({
+      generation: await getAuthoringGeneration((await params).generationId),
+    });
   } catch (error) {
     if (error instanceof Error && error.message === 'COURSE_GENERATION_NOT_FOUND') {
       return jsonError('Generation not found', 404);

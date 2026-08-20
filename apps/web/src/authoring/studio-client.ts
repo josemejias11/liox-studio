@@ -34,7 +34,7 @@ async function mutate(
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
-  const result = await response.json() as { course?: CourseGraph; error?: string };
+  const result = (await response.json()) as { course?: CourseGraph; error?: string };
   if (!response.ok || !result.course) {
     throw new Error(result.error || 'Course Studio could not save this change.');
   }
@@ -51,19 +51,16 @@ async function mutateTrash(
     headers: { 'content-type': 'application/json' },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
-  const result = await response.json() as StudioTrashMutation & { error?: string };
+  const result = (await response.json()) as StudioTrashMutation & { error?: string };
   if (!response.ok || !result.course || !Array.isArray(result.trash)) {
     throw new Error(result.error || 'Course Studio could not save this change.');
   }
   return result;
 }
 
-async function mutateTrashList(
-  url: string,
-  method: 'DELETE',
-): Promise<StudioTrashItem[]> {
+async function mutateTrashList(url: string, method: 'DELETE'): Promise<StudioTrashItem[]> {
   const response = await fetch(url, { method });
-  const result = await response.json() as { trash?: StudioTrashItem[]; error?: string };
+  const result = (await response.json()) as { trash?: StudioTrashItem[]; error?: string };
   if (!response.ok || !Array.isArray(result.trash)) {
     throw new Error(result.error || 'Course Studio could not save this change.');
   }

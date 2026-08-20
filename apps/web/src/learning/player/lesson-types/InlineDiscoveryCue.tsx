@@ -72,7 +72,7 @@ export function InlineDiscoveryCue({
         aria-label={`Connect to ${label}`}
         aria-expanded={summary ? expanded : undefined}
         onClick={activate}
-        className="pointer-events-auto group/cue inline-flex min-h-11 items-center gap-1 rounded-lg px-1.5 font-semibold text-[#443b86] underline decoration-[#685bc7]/45 decoration-2 underline-offset-4 transition-colors hover:bg-[#685bc7]/8 hover:decoration-[#685bc7] focus-visible:ring-2 focus-visible:ring-[#685bc7] focus-visible:outline-none"
+        className="group/cue pointer-events-auto inline-flex min-h-11 items-center gap-1 rounded-lg px-1.5 font-semibold text-[#443b86] underline decoration-[#685bc7]/45 decoration-2 underline-offset-4 transition-colors hover:bg-[#685bc7]/8 hover:decoration-[#685bc7] focus-visible:ring-2 focus-visible:ring-[#685bc7] focus-visible:outline-none"
       >
         {children}
         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#685bc7] text-white">

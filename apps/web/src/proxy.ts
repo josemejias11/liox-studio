@@ -1,5 +1,3 @@
-
-
 import { NextRequest, NextResponse } from 'next/server';
 
 export function proxy(req: NextRequest): NextResponse {
@@ -14,9 +12,5 @@ export function proxy(req: NextRequest): NextResponse {
 }
 
 export const config = {
-  matcher: [
-
-    '/analytics',
-    '/analytics/((?!login).*)',
-  ],
+  matcher: ['/analytics', '/analytics/((?!login).*)'],
 };

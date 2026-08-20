@@ -8,8 +8,17 @@ import { Hotspot } from './Hotspot';
 import { PortableText } from '@portabletext/react';
 import { clampCanvasZoom, MAX_CANVAS_ZOOM, MIN_CANVAS_ZOOM } from '@/learning/canvas';
 import { supMark } from '@/shared/portable-text-components';
-import type { LessonSection, RichText, CourseHotspot, CoursePhoto } from '@/shared/contracts/player-course';
-import { InlineDiscoveryCueMark, InlineDiscoveryCueProvider, type InlineDiscoveryCueResolver } from './InlineDiscoveryCue';
+import type {
+  LessonSection,
+  RichText,
+  CourseHotspot,
+  CoursePhoto,
+} from '@/shared/contracts/player-course';
+import {
+  InlineDiscoveryCueMark,
+  InlineDiscoveryCueProvider,
+  type InlineDiscoveryCueResolver,
+} from './InlineDiscoveryCue';
 
 interface CanvasInspectionLessonProps {
   lesson: LessonSection;
@@ -89,7 +98,14 @@ export function CanvasInspectionLesson({
   const resolveLinkedLayer: InlineDiscoveryCueResolver = (linkedLayer) => {
     const target = targets.find((item) => item.label === linkedLayer);
     if (!target) return undefined;
-    return { label: target.label, visited: visitedLabels.has(target.label), onActivate: () => { onVisit(target.label); openInspectionTarget(target); } };
+    return {
+      label: target.label,
+      visited: visitedLabels.has(target.label),
+      onActivate: () => {
+        onVisit(target.label);
+        openInspectionTarget(target);
+      },
+    };
   };
 
   function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
@@ -150,7 +166,20 @@ export function CanvasInspectionLesson({
               <ScanSearch className="h-4 w-4" /> Inspection canvas
             </p>
             <h2 className="mt-1 text-xl font-semibold">{lesson.headline}</h2>
-            {lesson.body && <div className="mt-1 text-sm text-white/62">{typeof lesson.body === 'string' ? <p>{lesson.body}</p> : <InlineDiscoveryCueProvider resolveLinkedLayer={resolveLinkedLayer}><PortableText value={lesson.body} components={{ marks: { layerLink: InlineDiscoveryCueMark, ...supMark } }} /></InlineDiscoveryCueProvider>}</div>}
+            {lesson.body && (
+              <div className="mt-1 text-sm text-white/62">
+                {typeof lesson.body === 'string' ? (
+                  <p>{lesson.body}</p>
+                ) : (
+                  <InlineDiscoveryCueProvider resolveLinkedLayer={resolveLinkedLayer}>
+                    <PortableText
+                      value={lesson.body}
+                      components={{ marks: { layerLink: InlineDiscoveryCueMark, ...supMark } }}
+                    />
+                  </InlineDiscoveryCueProvider>
+                )}
+              </div>
+            )}
             {targets.length > 0 && (
               <div className="mt-3 flex items-center gap-2 text-xs font-medium text-[#b8c3d8]">
                 <Crosshair className="h-3.5 w-3.5 text-[#9eb0ff]" />

@@ -8,7 +8,12 @@ import { supMark } from '@/shared/portable-text-components';
 import { Hotspot } from './Hotspot';
 import { DiscoveryPanel } from '@/components/DiscoveryPanel';
 import { getSemanticWidthClass } from '@/shared/utils';
-import type { LessonSection, RichText, CourseHotspot, CoursePhoto } from '@/shared/contracts/player-course';
+import type {
+  LessonSection,
+  RichText,
+  CourseHotspot,
+  CoursePhoto,
+} from '@/shared/contracts/player-course';
 import {
   InlineDiscoveryCueMark,
   InlineDiscoveryCueProvider,
@@ -244,26 +249,24 @@ export function ContentLesson({
         </div>
       )}
       {visibleHotspots.map((h, i) => (
-          <Hotspot
-            key={i}
-            ref={(element) => {
-              hotspotRefs.current[i] = element;
-            }}
-            x={h.x}
-            y={h.y}
-            label={h.label}
-            visited={visitedLabels.has(h.label)}
-            variant={isInteraction ? 'pulse' : 'moto-indigo-black'}
-            icon={
-              h.videoFile?.asset?.url ? <PlayCircle className="h-5 w-5 text-white" /> : undefined
-            }
-            onVisit={() => onVisit(h.label)}
-            onOpen={() => {
-              activeLearningHotspotRef.current = hotspotRefs.current[i];
-              setActiveLearningTarget(h);
-            }}
-          />
-        ))}
+        <Hotspot
+          key={i}
+          ref={(element) => {
+            hotspotRefs.current[i] = element;
+          }}
+          x={h.x}
+          y={h.y}
+          label={h.label}
+          visited={visitedLabels.has(h.label)}
+          variant={isInteraction ? 'pulse' : 'moto-indigo-black'}
+          icon={h.videoFile?.asset?.url ? <PlayCircle className="h-5 w-5 text-white" /> : undefined}
+          onVisit={() => onVisit(h.label)}
+          onOpen={() => {
+            activeLearningHotspotRef.current = hotspotRefs.current[i];
+            setActiveLearningTarget(h);
+          }}
+        />
+      ))}
 
       {activeLearningTarget && (
         <FeatureLearningLoop

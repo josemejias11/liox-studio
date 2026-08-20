@@ -2,7 +2,6 @@ import { z } from 'zod';
 import type { PortableTextBlock } from '@portabletext/types';
 import { ALL_LESSON_TYPES } from '@/shared/contracts/lesson-types';
 
-
 export function toPlainText(value: unknown): string {
   if (typeof value === 'string') return value;
   if (Array.isArray(value)) {
@@ -16,21 +15,17 @@ export function toPlainText(value: unknown): string {
   return value == null ? '' : String(value);
 }
 
-
 const opt = <T extends z.ZodType>(schema: T) =>
   schema.nullish().transform((v) => (v ?? undefined) as z.output<T> | undefined);
 const resolvedArray = <T extends z.ZodType>(schema: T) =>
-  z.array(schema.nullable()).transform((values) =>
-    values.filter((value): value is z.output<T> => value !== null),
-  );
-
+  z
+    .array(schema.nullable())
+    .transform((values) => values.filter((value): value is z.output<T> => value !== null));
 
 export const portableTextSchema = z.custom<PortableTextBlock[]>((v) => Array.isArray(v));
 
-
 export type RichText = string | PortableTextBlock[];
 const richTextSchema = z.union([z.string(), portableTextSchema]);
-
 
 const plainStringSchema = z
   .union([z.string(), portableTextSchema])
@@ -73,11 +68,15 @@ export const lessonSchema = z.object({
   body: opt(richTextSchema),
   lessonType: z.enum(ALL_LESSON_TYPES).catch('content'),
   deviceName: opt(z.string()),
-  coveredFeatures: opt(z.array(z.object({
-    _key: z.string(),
-    label: z.string().catch(''),
-    summary: opt(z.string()),
-  }))),
+  coveredFeatures: opt(
+    z.array(
+      z.object({
+        _key: z.string(),
+        label: z.string().catch(''),
+        summary: opt(z.string()),
+      }),
+    ),
+  ),
   media: opt(imageSchema),
   textOverlay: opt(textOverlaySchema),
   hotspots: opt(z.array(hotspotSchema)),
@@ -86,35 +85,50 @@ export const lessonSchema = z.object({
   stageBackground: opt(imageSchema),
   enableCompletionAnimation: opt(z.boolean()),
   completionTransition: opt(z.enum(['spin', 'rise', 'fade'])),
-  colorVariants: opt(z.array(z.object({
-    label: z.string().catch(''),
-    colorHex: opt(z.string()),
-    image: opt(imageSchema),
-  }))),
+  colorVariants: opt(
+    z.array(
+      z.object({
+        label: z.string().catch(''),
+        colorHex: opt(z.string()),
+        image: opt(imageSchema),
+      }),
+    ),
+  ),
   splitReverseLayout: opt(z.boolean()),
-  dropZones: opt(z.array(z.object({
-    id: z.string().catch(''),
-    label: z.string().catch(''),
-    correctChipId: z.string().catch(''),
-    xPositionPct: z.number().catch(0),
-    yPositionPct: z.number().catch(0),
-  }))),
-  chips: opt(z.array(z.object({
-    id: z.string().catch(''),
-    text: z.string().catch(''),
-  }))),
-  scrollChapters: opt(z.array(z.object({
-    heading: z.string().catch(''),
-    body: opt(richTextSchema),
-    image: opt(imageSchema),
-    targetScale: opt(z.number()),
-    targetRotation: opt(z.number()),
-    targetX: opt(z.number()),
-    targetY: opt(z.number()),
-  }))),
+  dropZones: opt(
+    z.array(
+      z.object({
+        id: z.string().catch(''),
+        label: z.string().catch(''),
+        correctChipId: z.string().catch(''),
+        xPositionPct: z.number().catch(0),
+        yPositionPct: z.number().catch(0),
+      }),
+    ),
+  ),
+  chips: opt(
+    z.array(
+      z.object({
+        id: z.string().catch(''),
+        text: z.string().catch(''),
+      }),
+    ),
+  ),
+  scrollChapters: opt(
+    z.array(
+      z.object({
+        heading: z.string().catch(''),
+        body: opt(richTextSchema),
+        image: opt(imageSchema),
+        targetScale: opt(z.number()),
+        targetRotation: opt(z.number()),
+        targetX: opt(z.number()),
+        targetY: opt(z.number()),
+      }),
+    ),
+  ),
 });
 export type CourseLesson = z.output<typeof lessonSchema>;
-
 
 export type LessonSection = CourseLesson & {
   chapterTitle: string;
@@ -213,7 +227,6 @@ export const courseSchema = z.object({
   disclaimer: opt(disclaimerSchema),
 });
 export type CourseContent = z.output<typeof courseSchema>;
-
 
 export type CourseSection = LessonSection | CourseSpecification | AuthoredQuiz | CourseDisclaimer;
 

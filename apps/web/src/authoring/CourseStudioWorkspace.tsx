@@ -46,7 +46,10 @@ export function CourseStudioWorkspace({
     useState<CourseInspectorSaveState>(neutralCourseSaveState);
   const persistence = useStudioCoursePersistence({ initialCourse, initialTrash });
   const { course, saving, status, trash, undoTrashId } = persistence;
-  const preview = useMemo(() => toPlayerCourseContent(course, { includeAnswerKey: true }), [course]);
+  const preview = useMemo(
+    () => toPlayerCourseContent(course, { includeAnswerKey: true }),
+    [course],
+  );
 
   const discardCourseSettings = useCallback((): void => {
     setCourseSettingsDirty(false);
@@ -87,7 +90,9 @@ export function CourseStudioWorkspace({
   const selectPreviewLesson = useCallback(
     (lessonId: string): void => {
       if (selection.kind === 'lesson' && selection.id === lessonId) return;
-      if (course.chapters.some((chapter) => chapter.lessons.some((lesson) => lesson.id === lessonId))) {
+      if (
+        course.chapters.some((chapter) => chapter.lessons.some((lesson) => lesson.id === lessonId))
+      ) {
         setStudioSelection({ kind: 'lesson', id: lessonId });
       }
     },
@@ -230,7 +235,10 @@ export function CourseStudioWorkspace({
                 selection={selection}
                 sourcePanel={
                   selection.kind === 'course' || selection.kind === 'cover' ? (
-                    <><SourcePanel courseId={course.id} initialSources={initialSources} /><AssistantQaPanel courseId={course.id} sources={initialSources} /></>
+                    <>
+                      <SourcePanel courseId={course.id} initialSources={initialSources} />
+                      <AssistantQaPanel courseId={course.id} sources={initialSources} />
+                    </>
                   ) : undefined
                 }
               />

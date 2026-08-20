@@ -64,11 +64,12 @@ export function getSectionIndex(flow: CourseFlow, phase: CoursePhase): number {
       return flow.items.find((item) => item.kind === 'final-quiz')?.index ?? flow.items.length;
     case 'specifications':
       return structure.specSections.length > phase.specIndex
-        ? flow.items.find(
+        ? (flow.items.find(
             (item) =>
               item.kind === 'specification' &&
-              item.key === (structure.specSections[phase.specIndex]?._key ?? `spec-${phase.specIndex}`),
-          )?.index ?? -1
+              item.key ===
+                (structure.specSections[phase.specIndex]?._key ?? `spec-${phase.specIndex}`),
+          )?.index ?? -1)
         : -1;
     case 'disclaimer':
       return findFlowIndex(flow, 'disclaimer');
@@ -77,14 +78,12 @@ export function getSectionIndex(flow: CourseFlow, phase: CoursePhase): number {
   }
 }
 
-
 function postChapterPhase(s: CourseStructure): CoursePhase {
   if (s.specSections.length > 0) return { phase: 'specifications', specIndex: 0 };
   if (s.disclaimerSection) return { phase: 'disclaimer' };
   if (s.finalQuiz) return { phase: 'final-quiz' };
   return { phase: 'complete' };
 }
-
 
 function lastChapterOrCover(s: CourseStructure): CoursePhase {
   const lastChapter = s.chapters[s.chapters.length - 1];
@@ -95,7 +94,6 @@ function lastChapterOrCover(s: CourseStructure): CoursePhase {
     lessonIndex: Math.max(0, lastChapter.lessons.length - 1),
   };
 }
-
 
 function phaseBeforeQuiz(s: CourseStructure): CoursePhase {
   if (s.finalQuiz) return { phase: 'final-quiz' };
@@ -109,7 +107,6 @@ function phaseBeforeFinalQuiz(s: CourseStructure): CoursePhase {
   }
   return lastChapterOrCover(s);
 }
-
 
 function phaseBeforeDisclaimer(s: CourseStructure): CoursePhase {
   if (s.specSections.length > 0) {
@@ -288,7 +285,7 @@ function reduceGoToSection(
   const currentIdx = getSectionIndex(flow, state.phase);
   const isForward = index > currentIdx;
   if (isForward && isLessonLocked(structure, state.phase, visited)) {
-     return state;
+    return state;
   }
 
   const navDirection: 1 | -1 = isForward ? 1 : -1;
@@ -303,7 +300,8 @@ function reduceGoToSection(
       const group = structure.chapters.find((chapter) =>
         chapter.lessons.some((lesson) => lesson.section._key === item.key),
       );
-      const lessonIdx = group?.lessons.findIndex((lesson) => lesson.section._key === item.key) ?? -1;
+      const lessonIdx =
+        group?.lessons.findIndex((lesson) => lesson.section._key === item.key) ?? -1;
       return jump(
         {
           phase: 'chapter',
@@ -328,7 +326,6 @@ function reduceGoToSection(
       return jump({ phase: 'final-quiz' });
   }
 }
-
 
 export function courseNavigationReducer(
   flow: CourseFlow,
@@ -410,7 +407,11 @@ export function useCourseNavigation(
   const goPrev = useCallback(() => dispatch({ type: 'PREV' }), []);
   const navigateToSection = useCallback(
     (index: number) =>
-      dispatch({ type: 'GO_TO_SECTION', index, visited: bypassNavigationLocks ? undefined : visited }),
+      dispatch({
+        type: 'GO_TO_SECTION',
+        index,
+        visited: bypassNavigationLocks ? undefined : visited,
+      }),
     [bypassNavigationLocks, visited],
   );
   const navigateToSectionUnrestricted = useCallback(

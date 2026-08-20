@@ -19,7 +19,11 @@ interface PlayerOverlaysProps {
   progressError: unknown;
   persistSession: boolean;
   assistant?: OfflineAssistantPayload;
-  onAssistantAnswer?: (context: { question: string; matchedQaId: string | null; answer: string }) => void;
+  onAssistantAnswer?: (context: {
+    question: string;
+    matchedQaId: string | null;
+    answer: string;
+  }) => void;
   onNavigate: (index: number) => void;
   onCloseNavMap: () => void;
 }

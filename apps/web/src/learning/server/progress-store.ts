@@ -135,10 +135,7 @@ export async function recordLessonView(
   });
 }
 
-export async function recordHotspots(
-  input: RecordHotspotsInput,
-  db: ProgressStoreDb = defaultDb,
-) {
+export async function recordHotspots(input: RecordHotspotsInput, db: ProgressStoreDb = defaultDb) {
   await db.$transaction(async (tx) => {
     await upsertSession(tx, input.sessionId);
 

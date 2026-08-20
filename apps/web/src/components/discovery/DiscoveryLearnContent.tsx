@@ -6,7 +6,11 @@ import type { RichText, CoursePhoto } from '@/shared/contracts/player-course';
 import { supMark } from '@/shared/portable-text-components';
 import { cssAspectRatio } from '@/shared/utils';
 import { PhotoCardStack } from '../PhotoCardStack';
-import { InlineDiscoveryCueMark, InlineDiscoveryCueProvider, type InlineDiscoveryCueResolver } from '@/learning/player/lesson-types/InlineDiscoveryCue';
+import {
+  InlineDiscoveryCueMark,
+  InlineDiscoveryCueProvider,
+  type InlineDiscoveryCueResolver,
+} from '@/learning/player/lesson-types/InlineDiscoveryCue';
 
 interface DiscoveryLearnContentProps {
   body?: RichText;
@@ -45,7 +49,14 @@ export function DiscoveryLearnContent({
           {typeof body === 'string' ? (
             body
           ) : (
-            <InlineDiscoveryCueProvider resolveLinkedLayer={resolveLinkedLayer ?? (() => undefined)}><PortableText value={body} components={{ marks: { layerLink: InlineDiscoveryCueMark, ...supMark } }} /></InlineDiscoveryCueProvider>
+            <InlineDiscoveryCueProvider
+              resolveLinkedLayer={resolveLinkedLayer ?? (() => undefined)}
+            >
+              <PortableText
+                value={body}
+                components={{ marks: { layerLink: InlineDiscoveryCueMark, ...supMark } }}
+              />
+            </InlineDiscoveryCueProvider>
           )}
         </div>
       )}

@@ -46,7 +46,7 @@ export default function ScrollStoryLesson({
   const [activeChapter, setActiveChapter] = useState(0);
   const [showCompletionOverlay, setShowCompletionOverlay] = useState(false);
 
-  const hasChapterImages = scrollChapters.some(c => c.image?.asset?.url);
+  const hasChapterImages = scrollChapters.some((c) => c.image?.asset?.url);
   const resolveLinkedLayer: InlineDiscoveryCueResolver = (linkedLayer) => {
     const feature = lesson.coveredFeatures?.find((item) => item.label === linkedLayer);
     if (!feature) return undefined;
@@ -76,15 +76,18 @@ export default function ScrollStoryLesson({
   }, [isCompleted]);
 
   return (
-    <div ref={scrollContainerRef} className="font-product relative h-full w-full overflow-y-scroll bg-[#f0ede9] text-[#18191d]">
-      <div className="sticky top-0 h-0 z-50 overflow-visible pointer-events-none">
+    <div
+      ref={scrollContainerRef}
+      className="font-product relative h-full w-full overflow-y-scroll bg-[#f0ede9] text-[#18191d]"
+    >
+      <div className="pointer-events-none sticky top-0 z-50 h-0 overflow-visible">
         <motion.div
-          className="absolute top-0 left-0 right-0 h-1 bg-[#685bc7] origin-left"
+          className="absolute top-0 right-0 left-0 h-1 origin-left bg-[#685bc7]"
           style={{ scaleX: scrollYProgress }}
         />
         {scrollChapters.length > 1 && (
           <div
-            className="absolute right-4 flex flex-col gap-3 pointer-events-auto"
+            className="pointer-events-auto absolute right-4 flex flex-col gap-3"
             style={{ top: '50vh', transform: 'translateY(-50%)' }}
           >
             {scrollChapters.map((_, i) => (
@@ -93,14 +96,17 @@ export default function ScrollStoryLesson({
                 onClick={() => {
                   const blocks = scrollContainerRef.current?.querySelectorAll('.chapter-block');
                   if (blocks?.[i]) {
-                    (blocks[i] as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    (blocks[i] as HTMLElement).scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'start',
+                    });
                   }
                 }}
                 aria-label={`Scroll to chapter ${i + 1}`}
-                className={`h-3 w-3 rounded-full border-2 border-[#685bc7] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#685bc7] focus:ring-offset-2 focus:ring-offset-[#f0ede9] hover:scale-125 ${
+                className={`h-3 w-3 rounded-full border-2 border-[#685bc7] transition-all duration-300 hover:scale-125 focus:ring-2 focus:ring-[#685bc7] focus:ring-offset-2 focus:ring-offset-[#f0ede9] focus:outline-none ${
                   i === activeChapter
                     ? 'scale-110 bg-[#685bc7] shadow-[0_0_10px_rgba(104,91,199,0.45)]'
-                    : 'bg-transparent cursor-pointer'
+                    : 'cursor-pointer bg-transparent'
                 }`}
               />
             ))}
@@ -126,8 +132,8 @@ export default function ScrollStoryLesson({
         </AnimatePresence>
       </div>
       {!hasChapterImages && media?.asset?.url && (
-        <div className="px-4 md:px-8 pt-8">
-          <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-8">
+        <div className="px-4 pt-8 md:px-8">
+          <div className="relative mb-8 aspect-video w-full overflow-hidden rounded-2xl">
             <Image
               src={media.asset.url}
               alt={headline || 'Story Hero'}
@@ -139,7 +145,9 @@ export default function ScrollStoryLesson({
       )}
       <div className="px-4 pb-8 md:px-8">
         <div className="mx-auto max-w-6xl px-2 pt-8 md:px-6 md:pt-12">
-          <p className="mb-3 text-xs font-semibold tracking-[0.24em] text-[#685bc7] uppercase">Story mode</p>
+          <p className="mb-3 text-xs font-semibold tracking-[0.24em] text-[#685bc7] uppercase">
+            Story mode
+          </p>
           <h2 className="max-w-3xl text-4xl leading-[0.95] tracking-[-0.04em] text-[#18191d] md:text-6xl">
             {headline}
           </h2>
@@ -159,7 +167,7 @@ export default function ScrollStoryLesson({
             }}
           >
             {chapter.image?.asset?.url && (
-              <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-6">
+              <div className="relative mb-6 aspect-video w-full overflow-hidden rounded-2xl">
                 <Image
                   src={chapter.image.asset.url}
                   alt={chapter.heading}
@@ -168,12 +176,14 @@ export default function ScrollStoryLesson({
                 />
               </div>
             )}
-            <p className="mb-3 text-xs font-semibold tracking-[0.2em] text-[#b48a3a] uppercase">Moment {String(i + 1).padStart(2, '0')}</p>
+            <p className="mb-3 text-xs font-semibold tracking-[0.2em] text-[#b48a3a] uppercase">
+              Moment {String(i + 1).padStart(2, '0')}
+            </p>
             <h3 className="font-product mb-6 text-4xl leading-[0.98] tracking-[-0.035em] text-[#18191d] md:text-5xl">
               {chapter.heading}
             </h3>
             {chapter.body && (
-              <div className="font-product prose prose-lg max-w-none font-light leading-relaxed text-[#595b66]">
+              <div className="font-product prose prose-lg max-w-none leading-relaxed font-light text-[#595b66]">
                 {typeof chapter.body === 'string' ? (
                   <p>{chapter.body}</p>
                 ) : (
@@ -189,7 +199,6 @@ export default function ScrollStoryLesson({
           </div>
         ))}
       </div>
-
     </div>
   );
 }

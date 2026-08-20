@@ -10,7 +10,11 @@ import { CompletionBurst } from '../CompletionBurst';
 import { PortableText } from '@portabletext/react';
 import { supMark } from '@/shared/portable-text-components';
 import type { RichText, CourseHotspot, CoursePhoto } from '@/shared/contracts/player-course';
-import { InlineDiscoveryCueMark, InlineDiscoveryCueProvider, type InlineDiscoveryCueResolver } from './InlineDiscoveryCue';
+import {
+  InlineDiscoveryCueMark,
+  InlineDiscoveryCueProvider,
+  type InlineDiscoveryCueResolver,
+} from './InlineDiscoveryCue';
 
 interface ProductStageProps {
   headline: string;
@@ -63,7 +67,16 @@ export function ProductStage({
       visited: visited.has(hotspot.label),
       onActivate: () => {
         onVisit(hotspot.label);
-        setActivePanel({ label: hotspot.label, topic: hotspot.topic, body: hotspot.body, photos: hotspot.photos, videoFile: hotspot.videoFile, videoAspectRatio: hotspot.videoAspectRatio, x: hotspot.x, y: hotspot.y });
+        setActivePanel({
+          label: hotspot.label,
+          topic: hotspot.topic,
+          body: hotspot.body,
+          photos: hotspot.photos,
+          videoFile: hotspot.videoFile,
+          videoAspectRatio: hotspot.videoAspectRatio,
+          x: hotspot.x,
+          y: hotspot.y,
+        });
       },
     };
   };
@@ -71,7 +84,12 @@ export function ProductStage({
   const [showBurst, setShowBurst] = useState(false);
   const prevAllDiscovered = useRef(false);
   const [entered, setEntered] = useState(false);
-  const [imageRect, setImageRect] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
+  const [imageRect, setImageRect] = useState<{
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const imageWrapperRef = useRef<HTMLDivElement>(null);
 
@@ -224,7 +242,6 @@ export function ProductStage({
         if (e.currentTarget.scrollTop !== 0) e.currentTarget.scrollTop = 0;
       }}
     >
-
       {stageBackground ? (
         <motion.div
           className="stage-enter-bg absolute inset-0"
@@ -246,7 +263,8 @@ export function ProductStage({
       <motion.div
         className="pointer-events-none absolute inset-[-50%]"
         style={{
-          background: 'radial-gradient(ellipse 62% 52% at center, rgba(104,91,199,0.09), transparent)',
+          background:
+            'radial-gradient(ellipse 62% 52% at center, rgba(104,91,199,0.09), transparent)',
           x: glowTranslateX,
           y: glowTranslateY,
         }}
@@ -279,7 +297,8 @@ export function ProductStage({
                     completionTransition === 'spin' ? 'stage-spin-glow' : 'stage-rise-glow'
                   }`}
                   style={{
-                    background: 'radial-gradient(ellipse 70% 70% at 50% 50%, rgba(255,255,255,0.6), transparent)',
+                    background:
+                      'radial-gradient(ellipse 70% 70% at 50% 50%, rgba(255,255,255,0.6), transparent)',
                   }}
                 />
               )}
@@ -300,7 +319,7 @@ export function ProductStage({
         ? hotspots.map((h, i) => (
             <div
               key={h._key}
-              className="absolute pointer-events-none"
+              className="pointer-events-none absolute"
               style={{
                 left: imageRect.left,
                 top: imageRect.top,
@@ -439,7 +458,7 @@ export function ProductStage({
         {allDiscovered && (
           <div className="completion-badge bg-accent/15 border-accent/35 flex items-center gap-1.5 rounded-full border px-3 py-1.5">
             <CheckCircle2 className="text-accent h-3.5 w-3.5 shrink-0" />
-            <span className="text-white text-xs font-semibold tracking-wide whitespace-nowrap">
+            <span className="text-xs font-semibold tracking-wide whitespace-nowrap text-white">
               All {total} features discovered
             </span>
           </div>
@@ -451,30 +470,35 @@ export function ProductStage({
           className="stage-enter-top pointer-events-none absolute top-13 right-3 z-20"
           style={{ animationDelay: '200ms' }}
         >
-          <p className="text-white/35 text-right text-[8px] tracking-wide select-none">
+          <p className="text-right text-[8px] tracking-wide text-white/35 select-none">
             ← → to explore
           </p>
         </div>
       )}
 
       <div
-        className="stage-enter-top pointer-events-none absolute top-6 left-6 z-20 max-w-md md:max-w-xl pr-6"
+        className="stage-enter-top pointer-events-none absolute top-6 left-6 z-20 max-w-md pr-6 md:max-w-xl"
         style={{ animationDelay: '380ms' }}
       >
         <p className="mb-1.5 text-[10px] font-bold tracking-[0.2em] text-[#a9a0ff] uppercase">
           Product exploration
         </p>
-        <h2 className="mb-3 text-2xl leading-tight font-bold text-white md:text-3xl">
-          {headline}
-        </h2>
+        <h2 className="mb-3 text-2xl leading-tight font-bold text-white md:text-3xl">{headline}</h2>
         {body && (
-          <div className="prose prose-sm max-w-none font-light leading-relaxed text-white/70 md:prose-base prose-invert">
-            {typeof body === 'string' ? <p>{body}</p> : <InlineDiscoveryCueProvider resolveLinkedLayer={resolveLinkedLayer}><PortableText value={body as import('@portabletext/types').PortableTextBlock[]} components={STAGE_PORTABLE_TEXT_COMPONENTS} /></InlineDiscoveryCueProvider>}
+          <div className="prose prose-sm md:prose-base prose-invert max-w-none leading-relaxed font-light text-white/70">
+            {typeof body === 'string' ? (
+              <p>{body}</p>
+            ) : (
+              <InlineDiscoveryCueProvider resolveLinkedLayer={resolveLinkedLayer}>
+                <PortableText
+                  value={body as import('@portabletext/types').PortableTextBlock[]}
+                  components={STAGE_PORTABLE_TEXT_COMPONENTS}
+                />
+              </InlineDiscoveryCueProvider>
+            )}
           </div>
         )}
       </div>
-
-
 
       {discoveredCount === 0 && total > 0 && (
         <div

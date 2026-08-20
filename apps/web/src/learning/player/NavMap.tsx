@@ -115,13 +115,7 @@ interface NavMapProps {
   onClose: () => void;
 }
 
-export function NavMap({
-  flow,
-  currentSectionIndex,
-  visited,
-  onNavigate,
-  onClose,
-}: NavMapProps) {
+export function NavMap({ flow, currentSectionIndex, visited, onNavigate, onClose }: NavMapProps) {
   const panelRef = useRef<HTMLElement>(null);
   const onCloseRef = useRef(onClose);
   useEffect(() => {
@@ -139,10 +133,7 @@ export function NavMap({
   }, []);
 
   const { structure } = flow;
-  const {
-    lessonSections,
-    chapters: chapterGroups,
-  } = structure;
+  const { lessonSections, chapters: chapterGroups } = structure;
   const navItems = getNavItems(flow);
   const lessonIndices = new Map(
     navItems
@@ -157,7 +148,6 @@ export function NavMap({
     const st = lessonCompletion(ls, visited);
     return st === 'auto' || st === 'full';
   }).length;
-
 
   return (
     <div className="absolute inset-0 z-[60] flex">
@@ -221,10 +211,7 @@ export function NavMap({
           {nonLessonItems.map((item, index) => {
             const meta = SECTION_TYPE_META[item.kind];
             const indexGlyph = item.kind === 'disclaimer' ? '!' : index + 1;
-            const glyphSrText =
-              item.kind === 'disclaimer'
-                  ? 'Attention required'
-                  : undefined;
+            const glyphSrText = item.kind === 'disclaimer' ? 'Attention required' : undefined;
 
             return (
               <SectionRow

@@ -4,7 +4,7 @@ import { normalizeCourseContent, type NormalizedCourseContent } from '@/learning
 
 function objectPayload(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value)
-    ? value as Record<string, unknown>
+    ? (value as Record<string, unknown>)
     : {};
 }
 
@@ -47,9 +47,8 @@ function clientSafeQuiz(quiz: NonNullable<CourseGraph['finalQuiz']>, includeAnsw
 }
 
 function courseSections(value: unknown, sectionType: 'specification' | 'disclaimer') {
-  const items = sectionType === 'specification'
-    ? (Array.isArray(value) ? value : [])
-    : (value ? [value] : []);
+  const items =
+    sectionType === 'specification' ? (Array.isArray(value) ? value : []) : value ? [value] : [];
   return items.map((item) => {
     const source = objectPayload(item);
     return {

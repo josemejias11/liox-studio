@@ -13,8 +13,8 @@ interface CourseMediaFieldProps {
   value: ImageReference | undefined;
 }
 
-const buttonClass = 'studio-glass-control inline-flex min-h-11 items-center justify-center rounded-lg border border-input px-3 text-xs font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
-
+const buttonClass =
+  'studio-glass-control inline-flex min-h-11 items-center justify-center rounded-lg border border-input px-3 text-xs font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 export function CourseMediaField({
   courseId,
@@ -37,9 +37,12 @@ export function CourseMediaField({
     onUploadStateChange?.(id, next);
   }
 
-  useEffect(() => () => {
-    if (uploadActiveRef.current) onUploadStateChange?.(id, false);
-  }, [id, onUploadStateChange]);
+  useEffect(
+    () => () => {
+      if (uploadActiveRef.current) onUploadStateChange?.(id, false);
+    },
+    [id, onUploadStateChange],
+  );
 
   async function upload(file: File) {
     setUploadActive(true);
@@ -49,14 +52,16 @@ export function CourseMediaField({
       data.set('courseId', courseId);
       data.set('file', file);
       const response = await fetch('/api/course-studio/assets', { method: 'POST', body: data });
-      const result = await response.json() as {
+      const result = (await response.json()) as {
         asset?: { deliveryUrl?: string; filename?: string };
         error?: string;
       };
       if (!response.ok || !result.asset?.deliveryUrl) {
         throw new Error(result.error || 'Image upload failed.');
       }
-      onChange({ asset: { url: result.asset.deliveryUrl, originalFilename: result.asset.filename } });
+      onChange({
+        asset: { url: result.asset.deliveryUrl, originalFilename: result.asset.filename },
+      });
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Image upload failed.');
     } finally {
@@ -67,13 +72,25 @@ export function CourseMediaField({
 
   const locked = disabled || uploading;
   return (
-    <section aria-labelledby={`${id}-label`} className="studio-glass-control rounded-lg border border-border p-3">
+    <section
+      aria-labelledby={`${id}-label`}
+      className="studio-glass-control border-border rounded-lg border p-3"
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h4 className="text-sm font-medium" id={`${id}-label`}>{label}</h4>
-          {filename && <p className="mt-1 truncate text-xs text-muted-foreground">{filename}</p>}
+          <h4 className="text-sm font-medium" id={`${id}-label`}>
+            {label}
+          </h4>
+          {filename && <p className="text-muted-foreground mt-1 truncate text-xs">{filename}</p>}
         </div>
-        {value && <div aria-label={`${label} preview`} className="h-16 w-24 rounded-md border border-border bg-cover bg-center" role="img" style={{ backgroundImage: `url(${value.asset.url})` }} />}
+        {value && (
+          <div
+            aria-label={`${label} preview`}
+            className="border-border h-16 w-24 rounded-md border bg-cover bg-center"
+            role="img"
+            style={{ backgroundImage: `url(${value.asset.url})` }}
+          />
+        )}
       </div>
       <input
         accept="image/*"
@@ -89,13 +106,38 @@ export function CourseMediaField({
         type="file"
       />
       <div className="mt-3 flex flex-wrap gap-2">
-        <button className={buttonClass} disabled={locked} onClick={() => inputRef.current?.click()} type="button">
+        <button
+          className={buttonClass}
+          disabled={locked}
+          onClick={() => inputRef.current?.click()}
+          type="button"
+        >
           {uploading ? 'Uploading image…' : value ? 'Replace image' : 'Upload image'}
         </button>
-        {value && <button className={buttonClass} disabled={locked} onClick={() => { setError(null); onChange(undefined); }} type="button">Remove image</button>}
+        {value && (
+          <button
+            className={buttonClass}
+            disabled={locked}
+            onClick={() => {
+              setError(null);
+              onChange(undefined);
+            }}
+            type="button"
+          >
+            Remove image
+          </button>
+        )}
       </div>
-      {uploading && <p aria-live="polite" className="mt-2 text-xs text-muted-foreground">Image upload in progress.</p>}
-      {error && <p className="mt-2 text-xs text-destructive" role="alert">{error}</p>}
+      {uploading && (
+        <p aria-live="polite" className="text-muted-foreground mt-2 text-xs">
+          Image upload in progress.
+        </p>
+      )}
+      {error && (
+        <p className="text-destructive mt-2 text-xs" role="alert">
+          {error}
+        </p>
+      )}
     </section>
   );
 }

@@ -23,7 +23,9 @@ export function ReviewPlayer({
   assistantReferences: import('@moto-ai/contracts').AssistantQaItem[];
 }) {
   const [selectedLessonId, setSelectedLessonId] = useState<string | undefined>();
-  const [assistantContext, setAssistantContext] = useState<{ question: string; matchedQaId: string | null; answer: string } | undefined>();
+  const [assistantContext, setAssistantContext] = useState<
+    { question: string; matchedQaId: string | null; answer: string } | undefined
+  >();
 
   return (
     <main className="bg-muted/40 text-foreground min-h-screen px-6 py-8">

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ProgressRequestSchema } from '@/shared/contracts/api';
-import { loadSessionProgress, recordHotspots, recordLessonView } from '@/learning/server/progress-store';
+import {
+  loadSessionProgress,
+  recordHotspots,
+  recordLessonView,
+} from '@/learning/server/progress-store';
 import { jsonError, readJson, unexpectedApiError } from '@/shared/server/http';
 
 export async function GET(req: NextRequest) {

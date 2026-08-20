@@ -13,7 +13,12 @@ function parseItem(value: unknown): AssistantQaItem {
 }
 
 function toItem(record: {
-  id: string; questionVariants: unknown; matchingKeywords: unknown; approvedAnswer: string; status: string; citations: unknown;
+  id: string;
+  questionVariants: unknown;
+  matchingKeywords: unknown;
+  approvedAnswer: string;
+  status: string;
+  citations: unknown;
 }): AssistantQaItem {
   return parseItem({
     id: record.id,
@@ -26,7 +31,10 @@ function toItem(record: {
 }
 
 export async function listCourseAssistantQa(courseId: string): Promise<AssistantQaItem[]> {
-  const records = await prisma.courseAssistantQa.findMany({ where: { courseId }, orderBy: { updatedAt: 'desc' } });
+  const records = await prisma.courseAssistantQa.findMany({
+    where: { courseId },
+    orderBy: { updatedAt: 'desc' },
+  });
   return records.map(toItem);
 }
 
@@ -38,24 +46,28 @@ export async function replaceCourseAssistantQaDrafts(input: {
 }): Promise<void> {
   await prisma.$transaction(async (tx) => {
     await tx.courseAssistantQa.deleteMany({ where: { courseId: input.courseId, status: 'DRAFT' } });
-    if (input.drafts.length) await tx.courseAssistantQa.createMany({
-      data: input.drafts.map((draft) => ({
-        courseId: input.courseId,
-        questionVariants: draft.questionVariants as Prisma.InputJsonValue,
-        matchingKeywords: draft.matchingKeywords as Prisma.InputJsonValue,
-        approvedAnswer: draft.approvedAnswer,
-        citations: draft.citations as Prisma.InputJsonValue,
-        sourceIds: input.sourceIds as Prisma.InputJsonValue,
-        sourceHashes: input.sourceHashes as Prisma.InputJsonValue,
-      })),
-    });
+    if (input.drafts.length)
+      await tx.courseAssistantQa.createMany({
+        data: input.drafts.map((draft) => ({
+          courseId: input.courseId,
+          questionVariants: draft.questionVariants as Prisma.InputJsonValue,
+          matchingKeywords: draft.matchingKeywords as Prisma.InputJsonValue,
+          approvedAnswer: draft.approvedAnswer,
+          citations: draft.citations as Prisma.InputJsonValue,
+          sourceIds: input.sourceIds as Prisma.InputJsonValue,
+          sourceHashes: input.sourceHashes as Prisma.InputJsonValue,
+        })),
+      });
   });
 }
 
 export async function updateCourseAssistantQa(
   courseId: string,
   id: string,
-  input: Pick<AssistantQaItem, 'questionVariants' | 'matchingKeywords' | 'approvedAnswer' | 'citations' | 'status'>,
+  input: Pick<
+    AssistantQaItem,
+    'questionVariants' | 'matchingKeywords' | 'approvedAnswer' | 'citations' | 'status'
+  >,
 ): Promise<AssistantQaItem> {
   const record = await prisma.courseAssistantQa.updateMany({
     where: { id, courseId },
@@ -77,15 +89,21 @@ export async function deleteCourseAssistantQa(courseId: string, id: string): Pro
   if (result.count !== 1) throw new Error('ASSISTANT_QA_NOT_FOUND');
 }
 
-export async function buildOfflineAssistantPayload(courseId: string): Promise<OfflineAssistantPayload> {
+export async function buildOfflineAssistantPayload(
+  courseId: string,
+): Promise<OfflineAssistantPayload> {
   const items = await listCourseAssistantQa(courseId);
   return {
     version: OFFLINE_ASSISTANT_PAYLOAD_VERSION,
-    items: items.filter((item) => item.status === 'approved').map(({ citations: _citations, status: _status, ...item }) => item),
+    items: items
+      .filter((item) => item.status === 'approved')
+      .map(({ citations: _citations, status: _status, ...item }) => item),
   };
 }
 
-export async function buildFrozenOfflineAssistantPayload(revisionId: string): Promise<OfflineAssistantPayload> {
+export async function buildFrozenOfflineAssistantPayload(
+  revisionId: string,
+): Promise<OfflineAssistantPayload> {
   const revision = await prisma.courseRevision.findUnique({
     where: { id: revisionId },
     select: { assistantSnapshot: { orderBy: { assistantQaId: 'asc' } } },

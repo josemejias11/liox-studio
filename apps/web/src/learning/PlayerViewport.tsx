@@ -9,7 +9,6 @@ import type { OfflineAssistantPayload } from '@moto-ai/contracts';
 const PLAYER_WIDTH = 1440;
 const PLAYER_HEIGHT = 810;
 
-
 export function PlayerViewport({
   content,
   selectedLessonId,
@@ -28,7 +27,11 @@ export function PlayerViewport({
   persistProgress?: boolean;
   aiIdentity?: RevisionIdentity;
   assistant?: OfflineAssistantPayload;
-  onAssistantAnswer?: (context: { question: string; matchedQaId: string | null; answer: string }) => void;
+  onAssistantAnswer?: (context: {
+    question: string;
+    matchedQaId: string | null;
+    answer: string;
+  }) => void;
   onLessonChange?: (lessonId: string) => void;
   initialView?: 'cover';
   bypassNavigationLocks?: boolean;

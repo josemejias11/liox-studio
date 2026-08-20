@@ -30,7 +30,8 @@ function isProgressData(value: unknown): value is ProgressData {
     const data = lesson as LessonData;
     return (
       (data.visitedHotspots === undefined ||
-        (Array.isArray(data.visitedHotspots) && data.visitedHotspots.every((label) => typeof label === 'string'))) &&
+        (Array.isArray(data.visitedHotspots) &&
+          data.visitedHotspots.every((label) => typeof label === 'string'))) &&
       (data.completed === undefined || typeof data.completed === 'boolean')
     );
   });
@@ -48,12 +49,9 @@ function readPreviewProgress(storageKey?: string): ProgressData {
   }
 }
 
-export function useLessonProgress(
-  sessionId: string,
-  persist: boolean = true,
-  courseId?: string,
-) {
-  const previewStorageKey = !persist && courseId ? `${PREVIEW_PROGRESS_KEY_PREFIX}${courseId}` : undefined;
+export function useLessonProgress(sessionId: string, persist: boolean = true, courseId?: string) {
+  const previewStorageKey =
+    !persist && courseId ? `${PREVIEW_PROGRESS_KEY_PREFIX}${courseId}` : undefined;
   const [previewData, setPreviewData] = useState<ProgressData>(() =>
     readPreviewProgress(previewStorageKey),
   );

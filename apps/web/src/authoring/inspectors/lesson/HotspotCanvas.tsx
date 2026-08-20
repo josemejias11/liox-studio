@@ -15,7 +15,6 @@ interface HotspotCanvasProps {
 const clamp = (value: number) => Math.min(100, Math.max(0, value));
 const coordinate = (value: number) => String(Math.round(clamp(value) * 100) / 100);
 
-
 export function HotspotCanvas({
   image,
   hotspots,

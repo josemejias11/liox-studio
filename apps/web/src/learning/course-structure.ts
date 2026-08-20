@@ -65,7 +65,6 @@ export function deriveCourseStructure(
   };
 }
 
-
 export function getChapterLessons(
   structure: CourseStructure,
   chapterIndex: number,

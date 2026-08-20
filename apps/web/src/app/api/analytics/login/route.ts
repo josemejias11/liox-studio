@@ -1,5 +1,3 @@
-
-
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { analyticsCookieValue, isAnalyticsPasswordValid } from '@/analytics/server/analytics-auth';

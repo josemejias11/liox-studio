@@ -35,6 +35,7 @@ The spec was written from a sampled audit. Full research for this plan surfaced 
 ### Task 1.1: Run Prettier across the repo
 
 **Files:**
+
 - Modify: every file `prettier --check` currently fails on (82 of ~165 files, spanning `apps/web`, `apps/job-worker`, `packages/*`) — Prettier decides exactly which, mechanically.
 
 **Interfaces:** None — purely mechanical formatting, no code behavior changes.
@@ -82,6 +83,7 @@ EOF
 ### Task 2.1: Delete the fully-unreferenced `revision-sources.ts`
 
 **Files:**
+
 - Delete: `apps/web/src/learning/server/revision-sources.ts`
 
 **Interfaces:** None. `resolveRevisionSources` (the file's only export) has zero references anywhere in the repo — verified by grep during the audit.
@@ -119,9 +121,11 @@ EOF
 ### Task 2.2: Clean up `InlineDiscoveryCue.tsx`
 
 **Files:**
+
 - Modify: `apps/web/src/learning/player/lesson-types/InlineDiscoveryCue.tsx`
 
 **Interfaces:**
+
 - Produces: `InlineDiscoveryCueMark`, `InlineDiscoveryCueProvider`, `InlineDiscoveryCueResolver` (type), `InlineDiscoveryCueValue` (no longer exported, but still used internally to build the exported `InlineDiscoveryCueResolver` type) — all unchanged, still consumed by 6 other lesson-type files.
 
 Three edits in this one file:
@@ -147,7 +151,6 @@ export interface InlineDiscoveryCueProps {
   onActivate: () => void;
   children: ReactNode;
 }
-
 ```
 
 Change:
@@ -235,7 +238,7 @@ export const InlineDiscoveryCueMark: PortableTextMarkComponent<{
         aria-label={`Connect to ${label}`}
         aria-expanded={summary ? expanded : undefined}
         onClick={activate}
-        className="pointer-events-auto group/cue inline-flex min-h-11 items-center gap-1 rounded-lg px-1.5 font-semibold text-[#443b86] underline decoration-[#685bc7]/45 decoration-2 underline-offset-4 transition-colors hover:bg-[#685bc7]/8 hover:decoration-[#685bc7] focus-visible:ring-2 focus-visible:ring-[#685bc7] focus-visible:outline-none"
+        className="group/cue pointer-events-auto inline-flex min-h-11 items-center gap-1 rounded-lg px-1.5 font-semibold text-[#443b86] underline decoration-[#685bc7]/45 decoration-2 underline-offset-4 transition-colors hover:bg-[#685bc7]/8 hover:decoration-[#685bc7] focus-visible:ring-2 focus-visible:ring-[#685bc7] focus-visible:outline-none"
       >
         {children}
         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#685bc7] text-white">
@@ -287,6 +290,7 @@ EOF
 ### Task 2.3: Delete `cn()` and its now-unused dependencies
 
 **Files:**
+
 - Modify: `apps/web/src/shared/utils.ts`
 - Modify: `apps/web/package.json`
 
@@ -311,7 +315,6 @@ import { twMerge } from 'tailwind-merge';
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
-
 ```
 
 from the top of the file, leaving `getSemanticWidthClass`, `titleFromFilename`, `CSS_ASPECT_RATIOS`, and `cssAspectRatio` untouched.
@@ -344,9 +347,11 @@ EOF
 ### Task 2.4: Trim the dead re-export names in `course-repository.ts`
 
 **Files:**
+
 - Modify: `packages/database/src/course-repository.ts:9-18`
 
 **Interfaces:**
+
 - Produces: `CourseGraph` type re-export stays (consumed via `import { ..., type CourseGraph } from './course-repository'` by `packages/database/src/course-review-repository.ts` and `packages/database/src/course-trash-repository.ts`).
 - Removed: `COURSE_LESSON_TYPES`, `ChapterInput`, `CourseGraphChapter`, `CourseGraphLesson`, `CourseLessonType`, `LessonInput` re-exports from this file — none of these six are imported from `./course-repository` by anything (verified: the package's public entry point `packages/database/src/index.ts` re-exports `ChapterInput`/`CourseLessonType`/`LessonInput`/`COURSE_LESSON_TYPES`/`CourseGraphChapter`/`CourseGraphLesson` independently, directly from `@moto-ai/contracts/course-studio` — not from this file — so this file's copies are unreachable dead re-exports).
 
@@ -404,6 +409,7 @@ EOF
 ### Task 2.5: Drop-export sweep — analytics, authoring/server, storage, database (8 items, 5 files)
 
 **Files:**
+
 - Modify: `apps/web/src/analytics/server/analytics.service.ts:72,85,138`
 - Modify: `apps/web/src/authoring/server/course-commands.ts:28`
 - Modify: `apps/web/src/authoring/server/generation-commands.ts:8`
@@ -455,6 +461,7 @@ EOF
 ### Task 2.6: Authoring UI drafts sweep (9 items, 5 files)
 
 **Files:**
+
 - Modify: `apps/web/src/authoring/inspectors/lesson/lesson-draft.ts:480,494`
 - Modify: `apps/web/src/authoring/inspectors/SpecificationsField.tsx:17,25,66`
 - Modify: `apps/web/src/authoring/inspectors/lesson/RepeatableField.tsx:5`
@@ -508,6 +515,7 @@ EOF
 ### Task 2.7: `learning/*` sweep (11 items, 8 files)
 
 **Files:**
+
 - Modify: `apps/web/src/learning/canvas.ts:1`
 - Modify: `apps/web/src/learning/course-player-adapter.ts:2,104`
 - Modify: `apps/web/src/learning/player/hooks/useCourseNavigation.ts:45,121,333`
@@ -518,6 +526,7 @@ EOF
 - Modify: `apps/web/src/learning/quiz-session.ts:3`
 
 **Interfaces:**
+
 - Removed: `toPlayerCourseSummary` from `course-player-adapter.ts` (the file's other export, `toPlayerCourseContent`, is untouched and uses a different import, `NormalizedCourseContent`, so nothing else in the file is affected).
 - Everything else in this task is drop-export only, zero interface change.
 
@@ -578,10 +587,12 @@ EOF
 ### Task 2.8: `shared/contracts/api.ts` and `lesson-types.ts` cleanup (4 items, 2 files)
 
 **Files:**
+
 - Modify: `apps/web/src/shared/contracts/api.ts:32,34,39`
 - Modify: `apps/web/src/shared/contracts/lesson-types.ts:14`
 
 **Interfaces:**
+
 - Removed: `WeakTopicsResponseSchema`, `WeakTopicsRequest`, `WeakTopicsResponse` from `api.ts`. Verified: `apps/web/src/app/api/analytics/weak-topics/route.ts` — the only consumer of this file's weak-topics exports — imports only `WeakTopicsRequestSchema` (a different, unflagged symbol that stays) and builds its response directly without validating against `WeakTopicsResponseSchema`.
 - Removed: `LessonType` from `lesson-types.ts`. Verified: the only other repo-wide hit for the name `LessonType` is `learning/player/lesson-types/registry.ts:15`, which defines its **own**, unrelated local `type LessonType` — it does not import this one. The sibling `ALL_LESSON_TYPES` const (unflagged by knip) is untouched, still actively used elsewhere.
 
@@ -619,6 +630,7 @@ EOF
 ### Task 2.9: `shared/contracts/course-studio.ts` cleanup (13 items, 1 file)
 
 **Files:**
+
 - Modify: `apps/web/src/shared/contracts/course-studio.ts:6,16,23,31,37,42,50,74,75,76,77,78,80`
 
 Do this task **before** Task 3.2 (which renames this file) — the rename task's import-line updates assume this cleanup has already landed.
@@ -668,6 +680,7 @@ EOF
 ### Task 2.10: `shared/contracts/player-course.ts` drop-export sweep (7 items, 1 file)
 
 **Files:**
+
 - Modify: `apps/web/src/shared/contracts/player-course.ts:28,44,55,69,124,150,180`
 
 **Interfaces:** None — every symbol below is used only within this file (verified by grep).
@@ -709,6 +722,7 @@ EOF
 ### Task 3.1: Move `apps/web/src/components/` into `apps/web/src/learning/player/discovery/`
 
 **Files:**
+
 - Move: `apps/web/src/components/DiscoveryPanel.tsx` → `apps/web/src/learning/player/discovery/DiscoveryPanel.tsx`
 - Move: `apps/web/src/components/PhotoCardStack.tsx` → `apps/web/src/learning/player/discovery/PhotoCardStack.tsx`
 - Move: `apps/web/src/components/discovery/DiscoveryLearnContent.tsx` → `apps/web/src/learning/player/discovery/DiscoveryLearnContent.tsx`
@@ -826,6 +840,7 @@ EOF
 ### Task 3.2: Rename `shared/contracts/course-studio.ts` to `course-settings.ts`
 
 **Files:**
+
 - Move: `apps/web/src/shared/contracts/course-studio.ts` → `apps/web/src/shared/contracts/course-settings.ts`
 - Modify (import specifier only): `apps/web/src/app/api/course-studio/courses/[courseId]/route.ts:3`
 - Modify: `apps/web/src/authoring/studio-client.ts:7`
@@ -897,9 +912,11 @@ Scope correction from the spec (see "Deviations" above): only 11 of ~19 fetch ca
 ### Task 4.1: Add the shared `fetchJson` helper
 
 **Files:**
+
 - Create: `apps/web/src/shared/fetch-json.ts`
 
 **Interfaces:**
+
 - Produces: `fetchJson<T>(url: string, init: RequestInit, fallbackMessage: string): Promise<T>` — every task in this phase consumes this exact signature.
 
 - [ ] **Step 1: Create the file**
@@ -943,9 +960,11 @@ EOF
 ### Task 4.2: Migrate `RevisionPanel.tsx` (`freeze`, `createLink`)
 
 **Files:**
+
 - Modify: `apps/web/src/authoring/RevisionPanel.tsx`
 
 **Interfaces:**
+
 - Consumes: `fetchJson<T>(url, init, fallbackMessage)` from `@/shared/fetch-json` (Task 4.1).
 
 Leave `load()` (dual-fetch with combined error message across two requests — not a clean single-`fetchJson` fit) and `resolveFeedback()` (never reads the response body) untouched — both are intentionally different control flow.
@@ -1013,9 +1032,11 @@ EOF
 ### Task 4.3: Migrate `AssistantQaPanel.tsx` (`load`, `generate`, `save`)
 
 **Files:**
+
 - Modify: `apps/web/src/authoring/AssistantQaPanel.tsx`
 
 **Interfaces:**
+
 - Consumes: `fetchJson<T>` from `@/shared/fetch-json` (Task 4.1).
 
 Leave `remove()` untouched (never reads the response body — throws a hardcoded string on `!response.ok` only).
@@ -1091,9 +1112,11 @@ EOF
 ### Task 4.4: Migrate `CreateWithAiDialog.tsx` (`submit`)
 
 **Files:**
+
 - Modify: `apps/web/src/authoring/CreateWithAiDialog.tsx`
 
 **Interfaces:**
+
 - Consumes: `fetchJson<T>` from `@/shared/fetch-json` (Task 4.1).
 
 - [ ] **Step 1: Add the import**
@@ -1140,9 +1163,11 @@ EOF
 ### Task 4.5: Migrate `SourcePanel.tsx` (all 4 call sites, drop local `responseJson`)
 
 **Files:**
+
 - Modify: `apps/web/src/authoring/SourcePanel.tsx`
 
 **Interfaces:**
+
 - Consumes: `fetchJson<T>` from `@/shared/fetch-json` (Task 4.1).
 - Removes: the file's local `responseJson()` mini-helper (~lines 32-36) — becomes dead once all 4 call sites route through `fetchJson` instead.
 
@@ -1233,11 +1258,13 @@ EOF
 ### Task 4.6: Migrate the 3-way duplicated asset-upload pattern (`CourseMediaField.tsx`, `LessonInspector.tsx`, `AssetCollectionField.tsx`)
 
 **Files:**
+
 - Modify: `apps/web/src/authoring/inspectors/CourseMediaField.tsx`
 - Modify: `apps/web/src/authoring/inspectors/LessonInspector.tsx`
 - Modify: `apps/web/src/authoring/inspectors/lesson/AssetCollectionField.tsx`
 
 **Interfaces:**
+
 - Consumes: `fetchJson<T>` from `@/shared/fetch-json` (Task 4.1).
 
 These three files independently duplicate the exact same upload shape: POST `FormData` to `/api/course-studio/assets`, parse `{asset?: {deliveryUrl?: string; filename?: string}; error?: string}`, throw if `!response.ok || !result.asset?.deliveryUrl`. Migrate all three to `fetchJson` with matching generic types (each keeps its own existing fallback message).
@@ -1319,9 +1346,11 @@ EOF
 ### Task 4.7: Migrate `ReviewFeedbackPanel.tsx` (`submit`)
 
 **Files:**
+
 - Modify: `apps/web/src/review/ReviewFeedbackPanel.tsx`
 
 **Interfaces:**
+
 - Consumes: `fetchJson<T>` from `@/shared/fetch-json` (Task 4.1).
 
 - [ ] **Step 1: Add the import**
@@ -1370,10 +1399,12 @@ EOF
 ### Task 5.1: Extract `CourseInspector.tsx`'s draft/validation helpers into `course-inspector-draft.ts`
 
 **Files:**
+
 - Create: `apps/web/src/authoring/inspectors/course-inspector-draft.ts`
 - Modify: `apps/web/src/authoring/inspectors/CourseInspector.tsx`
 
 **Interfaces:**
+
 - Produces (from the new file): `objectiveDrafts` (internal only — called by `formDraft`, not re-exported), `coverDraft` (internal only), `disclaimerDraft` (internal only), `formDraft(course: CourseGraph): CourseFormDraft`, `formFingerprint(draft: CourseFormDraft): string`, `formPayload(draft: CourseFormDraft): /* existing payload type */`, `errorMap(/* existing params */): /* existing return type */`, plus the types `CourseFormDraft`, `CoverDraft`, `DisclaimerDraft`.
 - Consumes (in `CourseInspector.tsx`, from the new file): `formDraft`, `formFingerprint`, `formPayload`, `errorMap`, and the types `CourseFormDraft`, `CoverDraft`, `DisclaimerDraft`.
 
@@ -1462,10 +1493,12 @@ EOF
 ### Task 5.2: Extract `CourseFinalAssessmentCard` from `CourseQuizPlayer.tsx`
 
 **Files:**
+
 - Create: `apps/web/src/learning/player/lesson-types/CourseFinalAssessmentCard.tsx`
 - Modify: `apps/web/src/learning/player/lesson-types/CourseQuizPlayer.tsx`
 
 **Interfaces:**
+
 - Produces (from the new file): `CourseFinalAssessmentCard` component, same props as today (an inline/unnamed props type — copy it verbatim).
 - Consumes (in `CourseQuizPlayer.tsx`, from the new file): `CourseFinalAssessmentCard`, used at its two existing call sites (lines 211 and 229, per planning research — re-confirm by reading before editing since Phase 4 doesn't touch this file's line numbers but re-check regardless).
 

@@ -190,13 +190,21 @@
   }
 
   .glass-panel {
-    @apply bg-white/40 backdrop-blur-xl border border-white/30 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:bg-black/40 dark:border-white/10 dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)];
+    @apply border border-white/30 bg-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl dark:border-white/10 dark:bg-black/40 dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)];
   }
 
   .studio-workspace {
     background:
-      radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 14%, transparent), transparent 34%),
-      radial-gradient(circle at bottom right, color-mix(in srgb, var(--foreground) 8%, transparent), transparent 38%),
+      radial-gradient(
+        circle at top left,
+        color-mix(in srgb, var(--accent) 14%, transparent),
+        transparent 34%
+      ),
+      radial-gradient(
+        circle at bottom right,
+        color-mix(in srgb, var(--foreground) 8%, transparent),
+        transparent 38%
+      ),
       var(--background);
   }
 
@@ -222,7 +230,9 @@
   .studio-glass-selected {
     background: color-mix(in srgb, var(--accent) 14%, var(--card));
     border-color: color-mix(in srgb, var(--accent) 55%, transparent);
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent), 0 12px 30px rgb(104 91 199 / 12%);
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent),
+      0 12px 30px rgb(104 91 199 / 12%);
   }
 
   @media (prefers-reduced-transparency: reduce) {
@@ -284,25 +294,44 @@
 }
 
 @keyframes stage-product-spin {
-  0%   { transform: scale(1); }
-  35%  { transform: scale(1.035); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.035);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 @keyframes stage-product-rise {
-  0%   { transform: translateY(0) scale(1); }
-  100% { transform: translateY(-24px) scale(1.02); }
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    transform: translateY(-24px) scale(1.02);
+  }
 }
 
 /* Composited glow overlays — opacity only, replaces filter: drop-shadow/brightness */
 @keyframes stage-product-spin-glow {
-  0%, 100% { opacity: 0; }
-  35%       { opacity: 0.35; }
+  0%,
+  100% {
+    opacity: 0;
+  }
+  35% {
+    opacity: 0.35;
+  }
 }
 
 @keyframes stage-product-rise-glow {
-  0%   { opacity: 0; }
-  100% { opacity: 0.22; }
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0.22;
+  }
 }
 
 @keyframes stage-check-pop {
@@ -326,11 +355,11 @@
   border-radius: 9999px;
   border-width: 2px;
   border-style: solid;
-  animation: stage-wave 3.0s ease-out infinite;
+  animation: stage-wave 3s ease-out infinite;
   pointer-events: none;
 }
 .stage-ring-2 {
-  animation-delay: 1.0s;
+  animation-delay: 1s;
 }
 
 .stage-burst {

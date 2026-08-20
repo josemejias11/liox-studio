@@ -49,9 +49,12 @@ function jobKind(job: Pick<BackgroundJob, 'kind' | 'payload'>): JobKind {
   }
   if (
     job.kind === BackgroundJobKind.AI_OPERATION &&
-    job.payload && typeof job.payload === 'object' && !Array.isArray(job.payload) &&
+    job.payload &&
+    typeof job.payload === 'object' &&
+    !Array.isArray(job.payload) &&
     Array.isArray((job.payload as { sourceIds?: unknown }).sourceIds)
-  ) return 'assistant_qa_generate';
+  )
+    return 'assistant_qa_generate';
   return publicKind[job.kind];
 }
 

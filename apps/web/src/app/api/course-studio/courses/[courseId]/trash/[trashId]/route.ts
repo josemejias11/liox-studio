@@ -39,7 +39,9 @@ export async function DELETE(
   if (!(await isCourseStudioAuthorized(request))) return jsonError('Unauthorized', 401);
   try {
     const { courseId, trashId } = await params;
-    return NextResponse.json({ trash: await permanentlyDeleteAuthoringTrashItem(courseId, trashId) });
+    return NextResponse.json({
+      trash: await permanentlyDeleteAuthoringTrashItem(courseId, trashId),
+    });
   } catch (error) {
     return trashError(error);
   }

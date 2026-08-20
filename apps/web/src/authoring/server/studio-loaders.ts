@@ -29,23 +29,27 @@ export async function loadAuthoringLibrary() {
       select: { id: true },
     }),
   ]);
-  const generationDetails = await Promise.all(generationRecords.map(({ id }) => getCourseGeneration(id)));
+  const generationDetails = await Promise.all(
+    generationRecords.map(({ id }) => getCourseGeneration(id)),
+  );
   const generations: CourseGenerationSummary[] = generationDetails.flatMap((generation) =>
     generation
-      ? [{
-          id: generation.id,
-          jobId: generation.jobId,
-          sourceRevisionId: generation.sourceRevisionId,
-          brief: generation.brief,
-          promptTemplateVersion: generation.promptTemplateVersion,
-          requestedSourceIds: generation.requestedSources.map((source) => source.sourceId),
-          modelIdentifier: generation.modelIdentifier,
-          status: generation.status,
-          error: generation.error,
-          createdCourseId: generation.createdCourseId,
-          createdAt: generation.createdAt.toISOString(),
-          updatedAt: generation.updatedAt.toISOString(),
-        }]
+      ? [
+          {
+            id: generation.id,
+            jobId: generation.jobId,
+            sourceRevisionId: generation.sourceRevisionId,
+            brief: generation.brief,
+            promptTemplateVersion: generation.promptTemplateVersion,
+            requestedSourceIds: generation.requestedSources.map((source) => source.sourceId),
+            modelIdentifier: generation.modelIdentifier,
+            status: generation.status,
+            error: generation.error,
+            createdCourseId: generation.createdCourseId,
+            createdAt: generation.createdAt.toISOString(),
+            updatedAt: generation.updatedAt.toISOString(),
+          },
+        ]
       : [],
   );
   return { courses, generations, sourceRevisions: revisionRecords };

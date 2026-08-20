@@ -92,7 +92,11 @@ export function DiscoveryPanel({
   return (
     <div
       className={`absolute inset-0 z-30 transition-all duration-300 ease-out ${
-        isWorkbenchSidebar ? 'pointer-events-none' : open ? 'pointer-events-auto' : 'pointer-events-none'
+        isWorkbenchSidebar
+          ? 'pointer-events-none'
+          : open
+            ? 'pointer-events-auto'
+            : 'pointer-events-none'
       }`}
     >
       {!isWorkbenchSidebar && (
@@ -148,16 +152,18 @@ export function DiscoveryPanel({
         const floatingClasses = `absolute ${panelWidthClass} rounded-3xl flex flex-col
           bg-card/80 dark:bg-card/95 backdrop-blur-3xl border border-white/10
           shadow-2xl transition-[opacity,transform] ${originClass}
-          ${open
-            ? 'opacity-100 scale-100 duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)]'
-            : 'opacity-0 scale-[0.88] pointer-events-none duration-[200ms] ease-[cubic-bezier(0.32,0.72,0,1)]'
+          ${
+            open
+              ? 'opacity-100 scale-100 duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)]'
+              : 'opacity-0 scale-[0.88] pointer-events-none duration-[200ms] ease-[cubic-bezier(0.32,0.72,0,1)]'
           }`;
         const mobileClasses = `absolute right-0 bottom-0 left-0 h-[92%] rounded-t-3xl flex flex-col
           bg-card/80 dark:bg-card/95 backdrop-blur-3xl border-t border-white/10
           shadow-2xl transition-[transform] ease-[cubic-bezier(0.16,1,0.3,1)]
-          ${open
-            ? 'translate-y-0 duration-[320ms]'
-            : 'translate-y-full pointer-events-none duration-[200ms]'
+          ${
+            open
+              ? 'translate-y-0 duration-[320ms]'
+              : 'translate-y-full pointer-events-none duration-[200ms]'
           }`;
         const sidebarClasses = `absolute top-0 right-0 bottom-0 w-[48%] flex flex-col
           bg-card/80 dark:bg-card/95 backdrop-blur-2xl border-l border-white/10
@@ -166,9 +172,11 @@ export function DiscoveryPanel({
         const workbenchSidebarClasses = `pointer-events-auto absolute top-6 right-6 bottom-6 w-[min(27rem,33vw)] flex flex-col rounded-[1.25rem]
           bg-card/92 dark:bg-card/95 backdrop-blur-2xl border border-white/10
           shadow-[0_24px_80px_rgba(0,0,0,0.38)] transition-[transform,opacity] ease-[cubic-bezier(0.32,0.72,0,1)]
-          ${open
-            ? 'translate-x-0 opacity-100 duration-[280ms]'
-            : 'translate-x-[calc(100%+1.5rem)] opacity-0 pointer-events-none duration-[200ms]'}`;
+          ${
+            open
+              ? 'translate-x-0 opacity-100 duration-[280ms]'
+              : 'translate-x-[calc(100%+1.5rem)] opacity-0 pointer-events-none duration-[200ms]'
+          }`;
 
         return (
           <div
@@ -219,7 +227,10 @@ export function DiscoveryPanel({
             </div>
 
             {
-              <div className="scrollbar-none flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+              <div
+                className="flex-1 scrollbar-none overflow-y-auto"
+                style={{ scrollbarWidth: 'none' }}
+              >
                 {hasLearnContent ? (
                   <DiscoveryLearnContent
                     body={body}
@@ -229,7 +240,7 @@ export function DiscoveryPanel({
                     resolveLinkedLayer={resolveLinkedLayer}
                   />
                 ) : (
-                  <p className="px-5 py-8 text-sm text-muted-foreground">
+                  <p className="text-muted-foreground px-5 py-8 text-sm">
                     No additional authored material is available for this feature.
                   </p>
                 )}

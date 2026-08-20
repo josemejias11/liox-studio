@@ -68,11 +68,13 @@ export async function DELETE(
   const body = await readJson(request, actionSchema);
   if (!body.success) return body.response;
   try {
-    return NextResponse.json(await deleteOrDuplicateAuthoringLesson({
-      courseId: (await params).courseId,
-      lessonId: body.data.lessonId,
-      action: body.data.action,
-    }));
+    return NextResponse.json(
+      await deleteOrDuplicateAuthoringLesson({
+        courseId: (await params).courseId,
+        lessonId: body.data.lessonId,
+        action: body.data.action,
+      }),
+    );
   } catch (error) {
     return lessonError(error);
   }

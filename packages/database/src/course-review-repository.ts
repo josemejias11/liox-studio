@@ -1,7 +1,11 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from './index';
 import { courseGraphSelect, toCourseGraph, type CourseGraph } from './course-repository';
-import { OfflineAssistantPayloadSchema, OFFLINE_ASSISTANT_PAYLOAD_VERSION, type OfflineAssistantPayload } from '@moto-ai/contracts';
+import {
+  OfflineAssistantPayloadSchema,
+  OFFLINE_ASSISTANT_PAYLOAD_VERSION,
+  type OfflineAssistantPayload,
+} from '@moto-ai/contracts';
 import type { AssistantQaItem } from '@moto-ai/contracts';
 import { matchOfflineAssistant } from '@moto-ai/contracts';
 
@@ -117,15 +121,24 @@ export async function freezeCourseRevision(
 
       const graph = toCourseGraph(course);
       const approvedAssistant = await tx.courseAssistantQa.findMany({
-        where: { courseId, status: 'APPROVED' }, orderBy: { id: 'asc' },
-        select: { id: true, questionVariants: true, matchingKeywords: true, approvedAnswer: true, citations: true },
+        where: { courseId, status: 'APPROVED' },
+        orderBy: { id: 'asc' },
+        select: {
+          id: true,
+          questionVariants: true,
+          matchingKeywords: true,
+          approvedAnswer: true,
+          citations: true,
+        },
       });
       const frozenSources = sources.map(({ id, sha256: sourceSha256, filename }) => ({
         sourceFileId: id,
         sha256: sourceSha256,
         filename,
       }));
-      const sourceHash = await sha256(stableJson({ graph, sources: frozenSources, assistant: approvedAssistant }));
+      const sourceHash = await sha256(
+        stableJson({ graph, sources: frozenSources, assistant: approvedAssistant }),
+      );
       const existing = await tx.courseRevision.findUnique({
         where: { courseId_sourceHash: { courseId, sourceHash } },
         include: { review: { select: { id: true } } },
@@ -235,7 +248,17 @@ export async function createReviewFeedback(
       authorName: input.authorName,
       message: input.message,
       lessonId: input.lessonId || null,
-      ...(assistant ? { anchor: { assistant: { question: input.assistantQuestion, matchedQaId: assistant.itemId, answer: assistant.answer } } as Prisma.InputJsonValue } : {}),
+      ...(assistant
+        ? {
+            anchor: {
+              assistant: {
+                question: input.assistantQuestion,
+                matchedQaId: assistant.itemId,
+                answer: assistant.answer,
+              },
+            } as Prisma.InputJsonValue,
+          }
+        : {}),
     },
     select: {
       id: true,

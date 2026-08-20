@@ -41,7 +41,8 @@ export function LessonFrame({
   moduleTitle,
   sectionType = 'lesson',
 }: LessonFrameProps) {
-  const showNav = (currentLesson !== undefined && totalLessons !== undefined) || onNext !== undefined;
+  const showNav =
+    (currentLesson !== undefined && totalLessons !== undefined) || onNext !== undefined;
 
   const showProgress =
     currentLesson !== undefined && totalLessons !== undefined && totalLessons > 0;
@@ -54,9 +55,7 @@ export function LessonFrame({
         contained ? 'h-full' : 'h-dvh'
       }`}
     >
-      <div
-        className={`relative w-full flex-1 overflow-clip rounded-none ${className}`}
-      >
+      <div className={`relative w-full flex-1 overflow-clip rounded-none ${className}`}>
         {children}
 
         {!showNav && onToggleNavMap && (
@@ -86,7 +85,7 @@ export function LessonFrame({
                   onClick={onToggleNavMap}
                   aria-label="Open course navigation"
                   title="Course map"
-                  className="pointer-events-auto glass-panel text-foreground/60 hover:text-foreground flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-[color,background-color,opacity,transform] hover:scale-105 active:scale-95"
+                  className="glass-panel text-foreground/60 hover:text-foreground pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-[color,background-color,opacity,transform] hover:scale-105 active:scale-95"
                 >
                   <LayoutGrid className="h-5 w-5" />
                 </button>
@@ -94,7 +93,7 @@ export function LessonFrame({
                 <div />
               )}
 
-              <div className="pointer-events-auto glass-panel flex h-14 items-center gap-2 rounded-full px-2 shadow-lg">
+              <div className="glass-panel pointer-events-auto flex h-14 items-center gap-2 rounded-full px-2 shadow-lg">
                 {onPrev !== undefined && (
                   <button
                     onClick={onPrev}
@@ -124,13 +123,17 @@ export function LessonFrame({
                   onClick={onNext}
                   disabled={nextDisabled}
                   className={`flex h-10 w-10 items-center justify-center rounded-full transition-[color,background-color,opacity] ${
-                    nextDisabled 
-                      ? 'text-foreground/40 bg-foreground/5 cursor-not-allowed' 
+                    nextDisabled
+                      ? 'text-foreground/40 bg-foreground/5 cursor-not-allowed'
                       : 'text-foreground hover:bg-foreground/10 bg-accent/10 completion-button-glow'
                   }`}
                   aria-label="Next lesson"
                 >
-                  {nextDisabled ? <Lock className="h-4 w-4" /> : <ChevronRight className="h-6 w-6" />}
+                  {nextDisabled ? (
+                    <Lock className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-6 w-6" />
+                  )}
                 </button>
               </div>
             </div>
@@ -157,7 +160,7 @@ export function LessonFrame({
       {moduleTitle && (
         <div
           aria-hidden="true"
-          className="glass-panel rounded-t-3xl border-b-0 flex w-full shrink-0 flex-col items-center justify-center gap-1 py-3"
+          className="glass-panel flex w-full shrink-0 flex-col items-center justify-center gap-1 rounded-t-3xl border-b-0 py-3"
         >
           <p className="text-muted-foreground text-[11px] leading-none font-medium tracking-[0.22em] uppercase">
             You are learning about

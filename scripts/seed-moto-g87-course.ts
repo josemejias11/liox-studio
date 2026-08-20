@@ -708,28 +708,52 @@ function finalQuizDefinition(assets: Record<AssetName, StoredAsset>): FinalQuizD
     title: 'moto g87 final assessment',
     instructions:
       'Apply the complete moto g87 story: match needs to the right capability, keep claims accurate, and close with confidence.',
-    payload: quickCheck('moto g87 final assessment', 'Review the complete course before you finish.', [
-      authoredQuestion('final-q1', 'Which camera statement is accurate for moto g87?', [
-        { text: 'It combines a 50MP Sony LYTIA 600 main camera with an 8MP 119.5° ultra-wide camera.', isCorrect: true },
-        { text: 'It uses a 108MP main camera with a 5MP macro camera.', isCorrect: false },
-        { text: 'It has a 50MP main camera and a 2MP monochrome camera.', isCorrect: false },
-      ], assets.ultraWideSample),
-      authoredQuestion('final-q2', 'Which shopper benefit best matches the 7000mAh battery?', [
-        { text: 'All-day confidence, with up to 56 hours under the stated mixed-use test conditions.', isCorrect: true },
-        { text: 'Unlimited battery life without charging.', isCorrect: false },
-        { text: 'The fastest charging speed in every market.', isCorrect: false },
-      ]),
-      authoredQuestion('final-q3', 'Which display claim is accurate?', [
-        { text: 'A 6.72-inch FHD+ 120Hz display with up to 1050 nits high brightness mode and Water Touch.', isCorrect: true },
-        { text: 'A 6.1-inch OLED display with 2000 nits brightness.', isCorrect: false },
-        { text: 'A 6.72-inch display that is only designed for indoor use.', isCorrect: false },
-      ]),
-      authoredQuestion('final-q4', 'What is the strongest retail recommendation approach?', [
-        { text: 'Match the shopper need to a verified feature, then explain the real-world benefit clearly.', isCorrect: true },
-        { text: 'Lead with the largest number, regardless of the shopper need.', isCorrect: false },
-        { text: 'Promise every feature performs the same in every condition.', isCorrect: false },
-      ]),
-    ]),
+    payload: quickCheck(
+      'moto g87 final assessment',
+      'Review the complete course before you finish.',
+      [
+        authoredQuestion(
+          'final-q1',
+          'Which camera statement is accurate for moto g87?',
+          [
+            {
+              text: 'It combines a 50MP Sony LYTIA 600 main camera with an 8MP 119.5° ultra-wide camera.',
+              isCorrect: true,
+            },
+            { text: 'It uses a 108MP main camera with a 5MP macro camera.', isCorrect: false },
+            { text: 'It has a 50MP main camera and a 2MP monochrome camera.', isCorrect: false },
+          ],
+          assets.ultraWideSample,
+        ),
+        authoredQuestion('final-q2', 'Which shopper benefit best matches the 7000mAh battery?', [
+          {
+            text: 'All-day confidence, with up to 56 hours under the stated mixed-use test conditions.',
+            isCorrect: true,
+          },
+          { text: 'Unlimited battery life without charging.', isCorrect: false },
+          { text: 'The fastest charging speed in every market.', isCorrect: false },
+        ]),
+        authoredQuestion('final-q3', 'Which display claim is accurate?', [
+          {
+            text: 'A 6.72-inch FHD+ 120Hz display with up to 1050 nits high brightness mode and Water Touch.',
+            isCorrect: true,
+          },
+          { text: 'A 6.1-inch OLED display with 2000 nits brightness.', isCorrect: false },
+          { text: 'A 6.72-inch display that is only designed for indoor use.', isCorrect: false },
+        ]),
+        authoredQuestion('final-q4', 'What is the strongest retail recommendation approach?', [
+          {
+            text: 'Match the shopper need to a verified feature, then explain the real-world benefit clearly.',
+            isCorrect: true,
+          },
+          {
+            text: 'Lead with the largest number, regardless of the shopper need.',
+            isCorrect: false,
+          },
+          { text: 'Promise every feature performs the same in every condition.', isCorrect: false },
+        ]),
+      ],
+    ),
   };
 }
 

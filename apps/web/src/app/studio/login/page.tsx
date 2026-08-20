@@ -23,7 +23,10 @@ export default async function CourseStudioLoginPage({ searchParams }: CourseStud
         <div className="bg-card border-border rounded-2xl border px-6 py-7 shadow-sm">
           <h2 className="mb-5 text-base font-semibold">Sign in to continue</h2>
           {error === '1' && (
-            <p className="border-destructive/30 bg-destructive/10 text-destructive mb-4 rounded-lg border px-4 py-3 text-sm" role="alert">
+            <p
+              className="border-destructive/30 bg-destructive/10 text-destructive mb-4 rounded-lg border px-4 py-3 text-sm"
+              role="alert"
+            >
               Incorrect password. Please try again.
             </p>
           )}
@@ -33,14 +36,17 @@ export default async function CourseStudioLoginPage({ searchParams }: CourseStud
               <input
                 autoComplete="current-password"
                 autoFocus
-                className="border-input bg-input/30 text-foreground focus-visible:ring-ring rounded-lg border px-3.5 py-2.5 text-sm normal-case tracking-normal outline-none focus-visible:ring-2"
+                className="border-input bg-input/30 text-foreground focus-visible:ring-ring rounded-lg border px-3.5 py-2.5 text-sm tracking-normal normal-case outline-none focus-visible:ring-2"
                 id="password"
                 name="password"
                 required
                 type="password"
               />
             </label>
-            <button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors" type="submit">
+            <button
+              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors"
+              type="submit"
+            >
               Sign in
             </button>
           </form>

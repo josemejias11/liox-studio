@@ -6,9 +6,7 @@ interface ReadJsonOptions {
   invalidPayloadMessage?: string;
 }
 
-type ReadJsonResult<T> =
-  | { success: true; data: T }
-  | { success: false; response: NextResponse };
+type ReadJsonResult<T> = { success: true; data: T } | { success: false; response: NextResponse };
 
 export function jsonError(message: string, status: number, details?: unknown) {
   return NextResponse.json(

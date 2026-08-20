@@ -92,15 +92,30 @@ async function generateAssistantQa(job: ClaimedJob): Promise<{ draftsCreated: nu
     );
   }
   const selected = await prisma.courseSourceFile.findMany({
-    where: { courseId: payload.data.courseId, id: { in: payload.data.sourceIds }, indexStatus: 'INDEXED' },
+    where: {
+      courseId: payload.data.courseId,
+      id: { in: payload.data.sourceIds },
+      indexStatus: 'INDEXED',
+    },
     select: { id: true, sha256: true },
   });
-  if (selected.length !== payload.data.sourceIds.length || selected.some((item) => !payload.data.sourceHashes.includes(item.sha256))) {
-    throw new NonRetryableJobError('Every selected assistant source must still be indexed and unchanged. Select sources again.');
+  if (
+    selected.length !== payload.data.sourceIds.length ||
+    selected.some((item) => !payload.data.sourceHashes.includes(item.sha256))
+  ) {
+    throw new NonRetryableJobError(
+      'Every selected assistant source must still be indexed and unchanged. Select sources again.',
+    );
   }
   const drafts = await generateAssistantQaDrafts(payload.data.courseId, payload.data.sourceIds);
-  if (drafts.some((draft) => draft.citations.some((citation) => !payload.data.sourceIds.includes(citation.sourceId)))) {
-    throw new NonRetryableJobError('The generated assistant Q&A cited a source outside the selected indexed set. Generate a new draft.');
+  if (
+    drafts.some((draft) =>
+      draft.citations.some((citation) => !payload.data.sourceIds.includes(citation.sourceId)),
+    )
+  ) {
+    throw new NonRetryableJobError(
+      'The generated assistant Q&A cited a source outside the selected indexed set. Generate a new draft.',
+    );
   }
   await replaceCourseAssistantQaDrafts({ ...payload.data, drafts });
   return { draftsCreated: drafts.length };
@@ -169,7 +184,8 @@ export async function executeJob(job: ClaimedJob): Promise<unknown> {
         : 'ai_operation';
 
   if (kind === 'document_index') return indexDocument(job);
-  if (AssistantQaGenerationPayloadSchema.safeParse(job.payload).success) return generateAssistantQa(job);
+  if (AssistantQaGenerationPayloadSchema.safeParse(job.payload).success)
+    return generateAssistantQa(job);
   if (CourseGenerationPayloadSchema.safeParse(job.payload).success) return generateCourse(job);
   throw new NonRetryableJobError('This AI operation is not registered with the worker.');
 }

@@ -1,4 +1,9 @@
-import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import type { CourseAssetRef } from '@moto-ai/contracts/course-assets';
 
 interface R2Config {
@@ -22,7 +27,9 @@ function getR2Config(): R2Config {
   const bucket = process.env.R2_BUCKET;
 
   if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
-    throw new Error('Cloudflare R2 is not configured. Set the R2_* environment variables before uploading assets.');
+    throw new Error(
+      'Cloudflare R2 is not configured. Set the R2_* environment variables before uploading assets.',
+    );
   }
 
   return { accountId, accessKeyId, secretAccessKey, bucket };
@@ -52,7 +59,9 @@ export function courseAssetUrl(r2Key: string): string {
   return `/api/course-assets/${r2Key.split('/').map(encodeURIComponent).join('/')}`;
 }
 
-export async function putCourseAsset(input: CourseAssetUpload): Promise<CourseAssetRef & { r2Key: string }> {
+export async function putCourseAsset(
+  input: CourseAssetUpload,
+): Promise<CourseAssetRef & { r2Key: string }> {
   const config = getR2Config();
   const r2Key = createCourseAssetKey(input.courseId, input.filename);
   await createR2Client(config).send(

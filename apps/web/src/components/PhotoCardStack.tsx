@@ -61,7 +61,7 @@ export function PhotoCardStack({ photos = [], autoScrollInterval = 3500 }: Photo
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="overflow-hidden w-full relative rounded-2xl">
+      <div className="relative w-full overflow-hidden rounded-2xl">
         <div
           className="flex transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]"
           style={{ transform: `translateX(-${activeIndex * 100}%)` }}
@@ -72,24 +72,21 @@ export function PhotoCardStack({ photos = [], autoScrollInterval = 3500 }: Photo
           {validPhotos.map((p, i) => {
             const title = titleFromFilename(p.asset?.originalFilename);
             return (
-              <div
-                key={i}
-                className="flex w-full shrink-0 flex-col items-center gap-3 pb-1"
-              >
+              <div key={i} className="flex w-full shrink-0 flex-col items-center gap-3 pb-1">
                 <div className="relative flex w-full max-w-[480px] items-center justify-center">
                   <Image
                     src={p.asset!.url!}
                     alt={title || `Product photo ${i + 1}`}
                     width={800}
                     height={800}
-                    className="block h-auto w-full max-h-[50vh] object-contain pointer-events-none drop-shadow-xl"
+                    className="pointer-events-none block h-auto max-h-[50vh] w-full object-contain drop-shadow-xl"
                     draggable={false}
                     loading={i === 0 ? 'eager' : 'lazy'}
                     priority={i === 0}
                   />
                 </div>
                 {title && (
-                  <p className="text-muted-foreground px-4 text-center text-[12px] font-medium leading-relaxed tracking-wide">
+                  <p className="text-muted-foreground px-4 text-center text-[12px] leading-relaxed font-medium tracking-wide">
                     {title}
                   </p>
                 )}
@@ -103,23 +100,23 @@ export function PhotoCardStack({ photos = [], autoScrollInterval = 3500 }: Photo
           <button
             onClick={() => setActiveIndex(Math.max(0, activeIndex - 1))}
             disabled={activeIndex === 0}
-            className="text-foreground hover:text-foreground absolute top-[40%] left-2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-background/50 backdrop-blur-md shadow-lg transition-all hover:bg-background/80 active:scale-90 disabled:opacity-0 z-10 md:opacity-0 md:group-hover/stack:opacity-100"
+            className="text-foreground hover:text-foreground bg-background/50 hover:bg-background/80 absolute top-[40%] left-2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full shadow-lg backdrop-blur-md transition-all active:scale-90 disabled:opacity-0 md:opacity-0 md:group-hover/stack:opacity-100"
             aria-label="Previous photo"
           >
-            <ChevronLeft className="h-5 w-5 ml-[-2px]" />
+            <ChevronLeft className="ml-[-2px] h-5 w-5" />
           </button>
           <button
             onClick={() => setActiveIndex(Math.min(validPhotos.length - 1, activeIndex + 1))}
             disabled={activeIndex === validPhotos.length - 1}
-            className="text-foreground hover:text-foreground absolute top-[40%] right-2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-background/50 backdrop-blur-md shadow-lg transition-all hover:bg-background/80 active:scale-90 disabled:opacity-0 z-10 md:opacity-0 md:group-hover/stack:opacity-100"
+            className="text-foreground hover:text-foreground bg-background/50 hover:bg-background/80 absolute top-[40%] right-2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full shadow-lg backdrop-blur-md transition-all active:scale-90 disabled:opacity-0 md:opacity-0 md:group-hover/stack:opacity-100"
             aria-label="Next photo"
           >
-            <ChevronRight className="h-5 w-5 mr-[-2px]" />
+            <ChevronRight className="mr-[-2px] h-5 w-5" />
           </button>
         </>
       )}
       {!isSingle && (
-        <div className="mt-3 flex justify-center gap-2 z-10">
+        <div className="z-10 mt-3 flex justify-center gap-2">
           {validPhotos.map((_, i) => (
             <button
               key={i}

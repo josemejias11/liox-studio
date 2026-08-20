@@ -455,7 +455,6 @@ export function validateLessonDraft(draft: LessonDraft): LessonValidation {
   return { valid: Object.keys(errors).length === 0, errors };
 }
 
-
 export function lessonCueTargets(draft: LessonDraft): string[] {
   const hotspots = draft.hotspots.map((hotspot) => hotspot.label.trim()).filter(Boolean);
   const coveredFeatures = draft.coveredFeatures
@@ -475,7 +474,6 @@ export function lessonCueTargets(draft: LessonDraft): string[] {
       return [];
   }
 }
-
 
 export function layerLinkTargets(value: unknown): string[] {
   if (!Array.isArray(value)) return [];

@@ -2,10 +2,7 @@ import { getCourseAsset } from '@/server/storage/course-assets';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ key: string[] }> },
-) {
+export async function GET(_request: Request, { params }: { params: Promise<{ key: string[] }> }) {
   const segments = (await params).key;
   if (
     segments.length < 2 ||

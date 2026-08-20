@@ -70,7 +70,17 @@ const lessonTypeRegistry: Record<LessonType, LessonTypeRegistryEntry> = {
   stage: {
     completionMode: LessonCompletionMode.HOTSPOT,
     requiresManualCompletion: false,
-    render: ({ lesson, hotspots, visited, markVisited, goNext, goPrev, courseId, preview, imageSizes }) =>
+    render: ({
+      lesson,
+      hotspots,
+      visited,
+      markVisited,
+      goNext,
+      goPrev,
+      courseId,
+      preview,
+      imageSizes,
+    }) =>
       React.createElement(ProductStageDynamic, {
         headline: lesson.headline,
         body: lesson.body,
@@ -127,7 +137,14 @@ const lessonTypeRegistry: Record<LessonType, LessonTypeRegistryEntry> = {
             },
             'Practice challenge',
           ),
-          React.createElement('button', { className: 'rounded-lg bg-primary px-4 py-2 text-primary-foreground', onClick: goNext }, 'Continue'),
+          React.createElement(
+            'button',
+            {
+              className: 'rounded-lg bg-primary px-4 py-2 text-primary-foreground',
+              onClick: goNext,
+            },
+            'Continue',
+          ),
         ),
       ),
   },
@@ -187,7 +204,10 @@ const lessonTypeRegistry: Record<LessonType, LessonTypeRegistryEntry> = {
 export function getLessonCompletionMode(
   lesson: Pick<LessonSection, 'lessonType'>,
 ): LessonCompletionMode {
-  return lessonTypeRegistry[lesson.lessonType ?? 'content']?.completionMode ?? LessonCompletionMode.HOTSPOT;
+  return (
+    lessonTypeRegistry[lesson.lessonType ?? 'content']?.completionMode ??
+    LessonCompletionMode.HOTSPOT
+  );
 }
 
 export function renderLesson(input: LessonRenderInput): React.ReactNode {

@@ -10,7 +10,10 @@ export async function loadReviewPlayer(token: string) {
     assistant: review.assistant,
     assistantReferences: review.assistantReferences,
     lessons: review.course.chapters.flatMap((chapter) =>
-      chapter.lessons.map((lesson) => ({ id: lesson.id, label: `${chapter.title} — ${lesson.headline}` })),
+      chapter.lessons.map((lesson) => ({
+        id: lesson.id,
+        label: `${chapter.title} — ${lesson.headline}`,
+      })),
     ),
     title: review.title,
     version: review.version,

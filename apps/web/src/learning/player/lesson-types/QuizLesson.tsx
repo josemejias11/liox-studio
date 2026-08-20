@@ -5,7 +5,6 @@ import type { AuthoredQuiz } from '@/shared/contracts/player-course';
 import { CourseQuizPlayer } from './CourseQuizPlayer';
 
 export interface QuizLessonProps {
-
   courseQuiz?: AuthoredQuiz;
 
   onPass: (score: number) => void;
@@ -55,7 +54,13 @@ export function QuizLesson({
           </p>
         </div>
         <div className="flex justify-center">
-          <button className="rounded-lg bg-primary px-4 py-2 text-primary-foreground" onClick={onFail} type="button">Continue</button>
+          <button
+            className="bg-primary text-primary-foreground rounded-lg px-4 py-2"
+            onClick={onFail}
+            type="button"
+          >
+            Continue
+          </button>
         </div>
       </div>
     </div>

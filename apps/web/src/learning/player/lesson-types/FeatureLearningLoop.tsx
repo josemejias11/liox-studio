@@ -82,7 +82,9 @@ function FeatureLearningLoopCard({
     >
       <header className="flex shrink-0 items-start justify-between gap-4 border-b border-white/10 px-6 pt-5 pb-4">
         <div className="min-w-0">
-          <p className="text-xs font-semibold tracking-[0.2em] text-[#bcb4ff] uppercase">Product lens</p>
+          <p className="text-xs font-semibold tracking-[0.2em] text-[#bcb4ff] uppercase">
+            Product lens
+          </p>
           <h2 id={headingId} className="mt-1 truncate text-xl leading-tight font-semibold">
             {label}
           </h2>
@@ -97,7 +99,10 @@ function FeatureLearningLoopCard({
         </button>
       </header>
 
-      <div className="flex shrink-0 gap-2 border-b border-white/10 px-6 py-3" aria-label="Learning progress">
+      <div
+        className="flex shrink-0 gap-2 border-b border-white/10 px-6 py-3"
+        aria-label="Learning progress"
+      >
         {LEARNING_STEPS.map((item, index) => {
           const isCurrent = item === step;
           const isComplete = index < LEARNING_STEPS.indexOf(step);
@@ -187,7 +192,8 @@ function FeatureLearningLoopCard({
               </div>
               <div>
                 <p className="text-lg leading-relaxed font-medium">
-                  How would you point out this benefit to someone seeing the product for the first time?
+                  How would you point out this benefit to someone seeing the product for the first
+                  time?
                 </p>
               </div>
               <div className="grid gap-3">

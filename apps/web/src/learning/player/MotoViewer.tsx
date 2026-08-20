@@ -59,7 +59,11 @@ export default function MotoViewer({
   imageSizes?: string;
   aiIdentity?: RevisionIdentity;
   assistant?: OfflineAssistantPayload;
-  onAssistantAnswer?: (context: { question: string; matchedQaId: string | null; answer: string }) => void;
+  onAssistantAnswer?: (context: {
+    question: string;
+    matchedQaId: string | null;
+    answer: string;
+  }) => void;
   onLessonChange?: (lessonId: string) => void;
   initialView?: 'cover';
   bypassNavigationLocks?: boolean;
@@ -134,8 +138,7 @@ export default function MotoViewer({
     if (!target) return;
 
     appliedInitialSectionKeyRef.current = initialSectionKey;
-    const alreadyShowingTarget =
-      phase.phase === 'chapter' && currentSectionIndex === target.index;
+    const alreadyShowingTarget = phase.phase === 'chapter' && currentSectionIndex === target.index;
     if (!alreadyShowingTarget) navigateToPreviewSection(target.index);
     if (showChapterIntro) dismissPreviewChapterIntro();
   }, [

@@ -24,7 +24,8 @@ export function useStudioSelection({
 
   const confirmDiscard = useCallback((): boolean => {
     if (saving) return false;
-    if ((selection.kind !== 'course' && selection.kind !== 'cover') || !courseSettingsDirty) return true;
+    if ((selection.kind !== 'course' && selection.kind !== 'cover') || !courseSettingsDirty)
+      return true;
     if (!window.confirm('Discard unsaved course changes?')) return false;
     onDiscard();
     return true;

@@ -15,7 +15,12 @@ function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(safeMaximum, Math.max(minimum, value));
 }
 
-function readStoredSize(key: string, defaultValue: number, minimum: number, maximum: number): number {
+function readStoredSize(
+  key: string,
+  defaultValue: number,
+  minimum: number,
+  maximum: number,
+): number {
   if (typeof window === 'undefined') return clamp(defaultValue, minimum, maximum);
 
   try {
@@ -26,8 +31,7 @@ function readStoredSize(key: string, defaultValue: number, minimum: number, maxi
         return clamp(parsedValue, minimum, maximum);
       }
     }
-  } catch {
-  }
+  } catch {}
 
   return clamp(defaultValue, minimum, maximum);
 }
@@ -66,16 +70,18 @@ export function usePersistentPanelSize({
 
     try {
       window.localStorage.setItem(key, JSON.stringify(clampedSize));
-    } catch {
-    }
+    } catch {}
   }, [clampedSize, key, restoredKey]);
 
-  const setPersistentSize = useCallback<Dispatch<SetStateAction<number>>>((nextSize) => {
-    setSize((current) => {
-      const resolvedSize = typeof nextSize === 'function' ? nextSize(current) : nextSize;
-      return clamp(resolvedSize, minimum, maximum);
-    });
-  }, [maximum, minimum]);
+  const setPersistentSize = useCallback<Dispatch<SetStateAction<number>>>(
+    (nextSize) => {
+      setSize((current) => {
+        const resolvedSize = typeof nextSize === 'function' ? nextSize(current) : nextSize;
+        return clamp(resolvedSize, minimum, maximum);
+      });
+    },
+    [maximum, minimum],
+  );
 
   return [clampedSize, setPersistentSize];
 }

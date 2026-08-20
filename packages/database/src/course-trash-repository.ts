@@ -38,8 +38,10 @@ function toCourseTrashItem(item: {
   return item;
 }
 
-function toInputJson(value: Prisma.JsonValue | null): Prisma.InputJsonValue | Prisma.NullTypes.JsonNull {
-  return value === null ? Prisma.JsonNull : value as Prisma.InputJsonValue;
+function toInputJson(
+  value: Prisma.JsonValue | null,
+): Prisma.InputJsonValue | Prisma.NullTypes.JsonNull {
+  return value === null ? Prisma.JsonNull : (value as Prisma.InputJsonValue);
 }
 
 async function requireAuthoringCourse(courseId: string): Promise<CourseGraph> {
@@ -130,7 +132,10 @@ export async function trashLesson(lessonId: string): Promise<TrashLessonResult> 
     };
   });
 
-  const [course, trash] = await Promise.all([requireAuthoringCourse(courseId), listCourseTrash(courseId)]);
+  const [course, trash] = await Promise.all([
+    requireAuthoringCourse(courseId),
+    listCourseTrash(courseId),
+  ]);
   return { course, trashItem, trash };
 }
 
@@ -184,7 +189,10 @@ export async function restoreCourseTrashItem(
     return trashItem.lessonId;
   });
 
-  const [course, trash] = await Promise.all([requireAuthoringCourse(courseId), listCourseTrash(courseId)]);
+  const [course, trash] = await Promise.all([
+    requireAuthoringCourse(courseId),
+    listCourseTrash(courseId),
+  ]);
   return { course, restoredLessonId, trash };
 }
 

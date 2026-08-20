@@ -42,18 +42,26 @@ export function matchOfflineAssistant(
   question: string,
 ): { itemId: string | null; answer: string; matched: boolean } {
   const query = new Set(normalizeAssistantQuestion(question));
-  if (!payload || query.size === 0) return { itemId: null, answer: COURSE_ASSISTANT_FALLBACK, matched: false };
-  const ranked = payload.items.map((item) => {
-    const candidate = new Set([
-      ...item.questionVariants.flatMap(normalizeAssistantQuestion),
-      ...item.matchingKeywords.flatMap(normalizeAssistantQuestion),
-    ]);
-    const shared = [...query].filter((word) => candidate.has(word)).length;
-    return { item, score: shared / Math.max(query.size, candidate.size, 1), shared };
-  }).sort((a, b) => b.score - a.score || b.shared - a.shared);
+  if (!payload || query.size === 0)
+    return { itemId: null, answer: COURSE_ASSISTANT_FALLBACK, matched: false };
+  const ranked = payload.items
+    .map((item) => {
+      const candidate = new Set([
+        ...item.questionVariants.flatMap(normalizeAssistantQuestion),
+        ...item.matchingKeywords.flatMap(normalizeAssistantQuestion),
+      ]);
+      const shared = [...query].filter((word) => candidate.has(word)).length;
+      return { item, score: shared / Math.max(query.size, candidate.size, 1), shared };
+    })
+    .sort((a, b) => b.score - a.score || b.shared - a.shared);
   const best = ranked[0];
   const second = ranked[1];
-  if (!best || best.shared < 2 || best.score < 0.22 || (second && best.score - second.score < 0.08)) {
+  if (
+    !best ||
+    best.shared < 2 ||
+    best.score < 0.22 ||
+    (second && best.score - second.score < 0.08)
+  ) {
     return { itemId: null, answer: COURSE_ASSISTANT_FALLBACK, matched: false };
   }
   return { itemId: best.item.id, answer: best.item.approvedAnswer, matched: true };

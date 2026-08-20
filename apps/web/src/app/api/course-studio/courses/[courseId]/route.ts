@@ -4,14 +4,19 @@ import { courseSettingsPatchSchema } from '@/shared/contracts/course-studio';
 import { jsonError, unexpectedApiError } from '@/shared/server/http';
 import { updateAuthoringCourse } from '@/authoring/server/course-commands';
 
-function invalidCourseSettings(issues: Array<{ path: PropertyKey[]; message: string }>): NextResponse {
-  return NextResponse.json({
-    error: 'Invalid course settings',
-    issues: issues.map((issue) => ({
-      path: issue.path.map(String).join('.') || 'course',
-      message: issue.message,
-    })),
-  }, { status: 400 });
+function invalidCourseSettings(
+  issues: Array<{ path: PropertyKey[]; message: string }>,
+): NextResponse {
+  return NextResponse.json(
+    {
+      error: 'Invalid course settings',
+      issues: issues.map((issue) => ({
+        path: issue.path.map(String).join('.') || 'course',
+        message: issue.message,
+      })),
+    },
+    { status: 400 },
+  );
 }
 
 export async function PATCH(
@@ -28,10 +33,7 @@ export async function PATCH(
   const body = courseSettingsPatchSchema.safeParse(payload);
   if (!body.success) return invalidCourseSettings(body.error.issues);
   try {
-    const course = await updateAuthoringCourse(
-      (await params).courseId,
-      body.data,
-    );
+    const course = await updateAuthoringCourse((await params).courseId, body.data);
     return NextResponse.json({ course });
   } catch (error) {
     if (error instanceof Error && error.message === 'COURSE_NOT_FOUND') {

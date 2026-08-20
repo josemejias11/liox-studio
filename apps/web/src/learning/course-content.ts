@@ -1,10 +1,14 @@
-import { courseSchema, type CourseSection, type LessonSection, type CourseContent } from '@/shared/contracts/player-course';
+import {
+  courseSchema,
+  type CourseSection,
+  type LessonSection,
+  type CourseContent,
+} from '@/shared/contracts/player-course';
 
 export interface NormalizedCourseContent {
   course: CourseContent;
   sections: CourseSection[];
 }
-
 
 export function normalizeCourseContent(raw: unknown): NormalizedCourseContent | null {
   const parsed = courseSchema.safeParse(raw);

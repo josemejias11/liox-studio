@@ -13,13 +13,19 @@ export function AssetField({ label, value, accept, disabled, onUpload }: AssetFi
   return (
     <label className="block text-xs font-medium">
       {label}
-      <span className="studio-glass-control mt-1 block rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">
+      <span className="studio-glass-control border-border text-muted-foreground mt-1 block rounded-lg border border-dashed p-3 text-xs">
         {value?.originalFilename ?? (value ? 'Uploaded asset' : 'No asset selected')}
-        <input accept={accept} className={`${lessonInputClass} mt-2 text-xs`} disabled={disabled} onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) onUpload(file);
-          event.currentTarget.value = '';
-        }} type="file" />
+        <input
+          accept={accept}
+          className={`${lessonInputClass} mt-2 text-xs`}
+          disabled={disabled}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) onUpload(file);
+            event.currentTarget.value = '';
+          }}
+          type="file"
+        />
       </span>
     </label>
   );

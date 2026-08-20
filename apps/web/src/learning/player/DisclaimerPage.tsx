@@ -99,7 +99,7 @@ export function DisclaimerPage({ disclaimer, onCanProceedChange }: DisclaimerPag
           </motion.div>
           {disclaimer.disclaimers && disclaimer.disclaimers.length > 0 && (
             <motion.div variants={itemVariants} className="mt-6">
-              <ol className="list-decimal list-outside space-y-3 pl-6">
+              <ol className="list-outside list-decimal space-y-3 pl-6">
                 {disclaimer.disclaimers.map((item, i) => (
                   <li key={i} className="text-muted-foreground leading-relaxed">
                     {item}
@@ -112,7 +112,7 @@ export function DisclaimerPage({ disclaimer, onCanProceedChange }: DisclaimerPag
           {requiresAck && (
             <motion.label
               variants={itemVariants}
-              className="mt-6 flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground"
+              className="border-border bg-card text-foreground mt-6 flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium"
             >
               <input
                 checked={hasAcknowledged}

@@ -1,5 +1,3 @@
-
-
 import { Bot } from 'lucide-react';
 
 interface LoginPageProps {

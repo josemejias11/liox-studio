@@ -3,9 +3,7 @@
 import type { LessonSection, CourseHotspot } from '@/shared/contracts/player-course';
 import type { RevisionIdentity } from '@/shared/contracts/api';
 import { RefresherFeaturePanel } from './RefresherFeaturePanel';
-import {
-  renderLesson,
-} from './lesson-types/registry';
+import { renderLesson } from './lesson-types/registry';
 
 export interface LessonRendererProps {
   lesson: LessonSection;

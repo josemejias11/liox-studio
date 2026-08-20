@@ -61,8 +61,10 @@ export function CourseOutline({
   onAction,
 }: Props) {
   return (
-    <aside className={`studio-glass-panel flex max-h-[32rem] min-h-0 flex-col border-b border-border xl:h-full xl:max-h-none xl:border-r xl:border-b-0 xl:overflow-hidden ${className ?? ''}`}>
-      <div className="border-b border-border p-4">
+    <aside
+      className={`studio-glass-panel border-border flex max-h-[32rem] min-h-0 flex-col border-b xl:h-full xl:max-h-none xl:overflow-hidden xl:border-r xl:border-b-0 ${className ?? ''}`}
+    >
+      <div className="border-border border-b p-4">
         <button
           className={`w-full rounded-lg px-3 py-2 text-left text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${selected(selection, 'course', course.id) ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
           disabled={disabled}
@@ -74,7 +76,7 @@ export function CourseOutline({
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
         <button
-          className={`studio-glass-control mb-3 flex w-full items-center gap-3 rounded-xl border border-border px-3 py-3 text-left text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${selected(selection, 'cover', course.id) ? 'bg-primary text-primary-foreground' : 'hover:border-primary/50 hover:bg-muted'}`}
+          className={`studio-glass-control border-border mb-3 flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${selected(selection, 'cover', course.id) ? 'bg-primary text-primary-foreground' : 'hover:border-primary/50 hover:bg-muted'}`}
           disabled={disabled}
           onClick={() => onSelect({ kind: 'cover', id: course.id })}
           type="button"
@@ -83,7 +85,10 @@ export function CourseOutline({
           <span>Course cover</span>
         </button>
         {course.chapters.map((chapter) => (
-          <section className="studio-glass-control mb-3 rounded-xl border border-border" key={chapter.id}>
+          <section
+            className="studio-glass-control border-border mb-3 rounded-xl border"
+            key={chapter.id}
+          >
             <div className="flex items-center gap-1 p-2">
               <button
                 className={`min-w-0 flex-1 rounded-md px-2 py-2 text-left text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50 ${selected(selection, 'chapter', chapter.id) ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`}
@@ -93,11 +98,35 @@ export function CourseOutline({
               >
                 {chapter.title}
               </button>
-              <button aria-label="Move chapter up" className="rounded p-2 hover:bg-muted" disabled={disabled} onClick={() => onAction('up', 'chapter', chapter.id)} type="button"><ChevronUp className="h-4 w-4" /></button>
-              <button aria-label="Move chapter down" className="rounded p-2 hover:bg-muted" disabled={disabled} onClick={() => onAction('down', 'chapter', chapter.id)} type="button"><ChevronDown className="h-4 w-4" /></button>
-              <button aria-label="Delete chapter" className="rounded p-2 text-destructive hover:bg-destructive/10" disabled={disabled} onClick={() => onAction('delete', 'chapter', chapter.id)} type="button"><Trash2 className="h-4 w-4" /></button>
+              <button
+                aria-label="Move chapter up"
+                className="hover:bg-muted rounded p-2"
+                disabled={disabled}
+                onClick={() => onAction('up', 'chapter', chapter.id)}
+                type="button"
+              >
+                <ChevronUp className="h-4 w-4" />
+              </button>
+              <button
+                aria-label="Move chapter down"
+                className="hover:bg-muted rounded p-2"
+                disabled={disabled}
+                onClick={() => onAction('down', 'chapter', chapter.id)}
+                type="button"
+              >
+                <ChevronDown className="h-4 w-4" />
+              </button>
+              <button
+                aria-label="Delete chapter"
+                className="text-destructive hover:bg-destructive/10 rounded p-2"
+                disabled={disabled}
+                onClick={() => onAction('delete', 'chapter', chapter.id)}
+                type="button"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
             </div>
-            <div className="space-y-1 border-t border-border p-2">
+            <div className="border-border space-y-1 border-t p-2">
               {chapter.lessons.map((lesson) => (
                 <div className="group flex items-center gap-1" key={lesson.id}>
                   <button
@@ -109,31 +138,78 @@ export function CourseOutline({
                     <span className="block truncate font-medium">{lesson.headline}</span>
                     <span className="block opacity-65">{lesson.lessonType}</span>
                   </button>
-                  <div className="hidden items-center group-hover:flex group-focus-within:flex">
-                    <button aria-label="Move screen up" className="rounded p-1.5 hover:bg-muted" disabled={disabled} onClick={() => onAction('up', 'lesson', lesson.id)} type="button"><ChevronUp className="h-3.5 w-3.5" /></button>
-                    <button aria-label="Move screen down" className="rounded p-1.5 hover:bg-muted" disabled={disabled} onClick={() => onAction('down', 'lesson', lesson.id)} type="button"><ChevronDown className="h-3.5 w-3.5" /></button>
-                    <button aria-label="Duplicate screen" className="rounded p-1.5 hover:bg-muted" disabled={disabled} onClick={() => onAction('duplicate', 'lesson', lesson.id)} type="button"><Copy className="h-3.5 w-3.5" /></button>
-                    <button aria-label="Delete screen" className="rounded p-1.5 text-destructive hover:bg-destructive/10" disabled={disabled} onClick={() => onAction('delete', 'lesson', lesson.id)} type="button"><Trash2 className="h-3.5 w-3.5" /></button>
+                  <div className="hidden items-center group-focus-within:flex group-hover:flex">
+                    <button
+                      aria-label="Move screen up"
+                      className="hover:bg-muted rounded p-1.5"
+                      disabled={disabled}
+                      onClick={() => onAction('up', 'lesson', lesson.id)}
+                      type="button"
+                    >
+                      <ChevronUp className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      aria-label="Move screen down"
+                      className="hover:bg-muted rounded p-1.5"
+                      disabled={disabled}
+                      onClick={() => onAction('down', 'lesson', lesson.id)}
+                      type="button"
+                    >
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      aria-label="Duplicate screen"
+                      className="hover:bg-muted rounded p-1.5"
+                      disabled={disabled}
+                      onClick={() => onAction('duplicate', 'lesson', lesson.id)}
+                      type="button"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      aria-label="Delete screen"
+                      className="text-destructive hover:bg-destructive/10 rounded p-1.5"
+                      disabled={disabled}
+                      onClick={() => onAction('delete', 'lesson', lesson.id)}
+                      type="button"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 </div>
               ))}
               <select
                 aria-label={`Add screen to ${chapter.title}`}
-                className="studio-glass-control mt-2 w-full rounded-md border border-input px-2 py-2 text-xs"
+                className="studio-glass-control border-input mt-2 w-full rounded-md border px-2 py-2 text-xs"
                 defaultValue=""
                 disabled={disabled}
                 onChange={(event) => {
-                  if (event.target.value) onAddLesson(chapter.id, event.target.value as CourseLessonType);
+                  if (event.target.value)
+                    onAddLesson(chapter.id, event.target.value as CourseLessonType);
                   event.target.value = '';
                 }}
               >
-                <option disabled value="">+ Add screen</option>
-                {BLOCKS.map((block) => <option key={block.type} value={block.type}>{block.label}</option>)}
+                <option disabled value="">
+                  + Add screen
+                </option>
+                {BLOCKS.map((block) => (
+                  <option key={block.type} value={block.type}>
+                    {block.label}
+                  </option>
+                ))}
               </select>
             </div>
           </section>
         ))}
-        <button className="studio-glass-control flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm hover:border-primary hover:text-primary" disabled={disabled} onClick={onAddChapter} type="button"><Plus className="h-4 w-4" />Add chapter</button>
+        <button
+          className="studio-glass-control border-border hover:border-primary hover:text-primary flex w-full items-center justify-center gap-2 rounded-lg border border-dashed px-3 py-2 text-sm"
+          disabled={disabled}
+          onClick={onAddChapter}
+          type="button"
+        >
+          <Plus className="h-4 w-4" />
+          Add chapter
+        </button>
       </div>
       <TrashPanel
         disabled={disabled}
@@ -143,23 +219,29 @@ export function CourseOutline({
         onRestore={onRestoreTrash}
       />
       {(selection.kind === 'course' || selection.kind === 'cover') && courseSaveState && (
-        <footer className="studio-glass border-x-0 border-b-0 border-t border-border p-4">
-          <p aria-live="polite" className={`text-xs ${courseSaveState.error || (courseSaveState.dirty && !courseSaveState.valid) ? 'text-destructive' : 'text-muted-foreground'}`}>
+        <footer className="studio-glass border-border border-x-0 border-t border-b-0 p-4">
+          <p
+            aria-live="polite"
+            className={`text-xs ${courseSaveState.error || (courseSaveState.dirty && !courseSaveState.valid) ? 'text-destructive' : 'text-muted-foreground'}`}
+          >
             {courseSaveState.uploading
               ? 'Image upload in progress. Course settings are locked.'
               : courseSaveState.saving
                 ? 'Saving course settings…'
-                : courseSaveState.error ?? (courseSaveState.saved
-                  ? 'Course settings saved.'
-                  : courseSaveState.dirty && !courseSaveState.valid
-                    ? 'Correct the highlighted fields before saving.'
-                    : courseSaveState.dirty
-                      ? 'Unsaved changes.'
-                      : 'No unsaved changes.')}
+                : (courseSaveState.error ??
+                  (courseSaveState.saved
+                    ? 'Course settings saved.'
+                    : courseSaveState.dirty && !courseSaveState.valid
+                      ? 'Correct the highlighted fields before saving.'
+                      : courseSaveState.dirty
+                        ? 'Unsaved changes.'
+                        : 'No unsaved changes.'))}
           </p>
           <button
-            className="mt-3 min-h-11 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            disabled={disabled || courseSaveState.locked || !courseSaveState.dirty || !courseSaveState.valid}
+            className="bg-primary text-primary-foreground focus-visible:ring-ring mt-3 min-h-11 w-full rounded-lg px-4 py-2.5 text-sm font-semibold focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={
+              disabled || courseSaveState.locked || !courseSaveState.dirty || !courseSaveState.valid
+            }
             form={courseSettingsFormId}
             type="submit"
           >

@@ -62,12 +62,24 @@ async function parserRequest(
 }
 
 const ParserAssistantQaResponseSchema = z.object({
-  drafts: z.array(z.object({
-    questionVariants: z.array(z.string()).min(1),
-    matchingKeywords: z.array(z.string()),
-    approvedAnswer: z.string().min(1),
-    citations: z.array(z.object({ sourceId: z.string().min(1), label: z.string().min(1), excerpt: z.string().min(1) })).min(1),
-  })).min(1),
+  drafts: z
+    .array(
+      z.object({
+        questionVariants: z.array(z.string()).min(1),
+        matchingKeywords: z.array(z.string()),
+        approvedAnswer: z.string().min(1),
+        citations: z
+          .array(
+            z.object({
+              sourceId: z.string().min(1),
+              label: z.string().min(1),
+              excerpt: z.string().min(1),
+            }),
+          )
+          .min(1),
+      }),
+    )
+    .min(1),
 });
 
 const ParserQuizResponseSchema = z.object({
@@ -100,7 +112,6 @@ const ParserCourseGenerationResponseSchema = z.object({
   prompt_template_version: z.string().min(1),
 });
 
-
 export interface RagQuizQuestion {
   question: string;
   options: string[];
@@ -131,9 +142,16 @@ export interface RagCourseGenerationResponse {
 
 export async function generateAssistantQaDrafts(courseId: string, sourceIds: string[]) {
   const userSafe = 'Assistant Q&A drafting is temporarily unavailable. Please try again.';
-  const raw = await parserRequest('POST', '/api/generate-assistant-qa', {
-    json: { course_id: courseId, source_ids: sourceIds }, timeoutMs: 180_000,
-  }, 'api/generate-assistant-qa', userSafe);
+  const raw = await parserRequest(
+    'POST',
+    '/api/generate-assistant-qa',
+    {
+      json: { course_id: courseId, source_ids: sourceIds },
+      timeoutMs: 180_000,
+    },
+    'api/generate-assistant-qa',
+    userSafe,
+  );
   const parsed = ParserAssistantQaResponseSchema.safeParse(raw);
   if (!parsed.success) throw new RagServiceError(userSafe);
   return parsed.data.drafts;

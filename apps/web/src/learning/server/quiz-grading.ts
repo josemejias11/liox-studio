@@ -23,15 +23,32 @@ export class CourseConfigurationError extends Error {
 }
 
 const courseGradingSchema = z.object({
-  questions: z.array(z.object({
-    answers: z.array(z.object({
-      text: z.string().catch(''),
-      isCorrect: z.boolean().catch(false),
-      feedback: z.string().nullish().transform((value) => value ?? undefined),
-    })).catch([]),
-    explanation: z.string().nullish().transform((value) => value ?? undefined),
-  })).catch([]),
-  passingScore: z.number().nullish().transform((value) => value ?? undefined),
+  questions: z
+    .array(
+      z.object({
+        answers: z
+          .array(
+            z.object({
+              text: z.string().catch(''),
+              isCorrect: z.boolean().catch(false),
+              feedback: z
+                .string()
+                .nullish()
+                .transform((value) => value ?? undefined),
+            }),
+          )
+          .catch([]),
+        explanation: z
+          .string()
+          .nullish()
+          .transform((value) => value ?? undefined),
+      }),
+    )
+    .catch([]),
+  passingScore: z
+    .number()
+    .nullish()
+    .transform((value) => value ?? undefined),
 });
 
 interface AnswerKey {
@@ -39,7 +56,10 @@ interface AnswerKey {
   passingScore: number;
 }
 
-export async function loadQuizAnswerKey(source: QuizSource, quizId: string): Promise<AnswerKey | null> {
+export async function loadQuizAnswerKey(
+  source: QuizSource,
+  quizId: string,
+): Promise<AnswerKey | null> {
   if (source === 'ai') {
     const record = await prisma.generatedQuiz.findUnique({ where: { id: quizId } });
     if (!record) return null;
@@ -61,7 +81,10 @@ export async function loadQuizAnswerKey(source: QuizSource, quizId: string): Pro
     };
   }
 
-  const record = await prisma.courseQuiz.findUnique({ where: { id: quizId }, select: { payload: true } });
+  const record = await prisma.courseQuiz.findUnique({
+    where: { id: quizId },
+    select: { payload: true },
+  });
   if (!record) return null;
   const parsed = courseGradingSchema.safeParse(record.payload);
   if (!parsed.success || parsed.data.questions.length === 0) return null;
@@ -108,11 +131,13 @@ export async function recordQuizAttempt({
         score: result.score,
         total: result.total,
         passed: result.passed,
-        answers: JSON.stringify(answers.map((selectedIndex, questionIndex) => ({
-          questionIndex,
-          selectedIndex,
-          correct: result.results[questionIndex]?.correct ?? false,
-        }))),
+        answers: JSON.stringify(
+          answers.map((selectedIndex, questionIndex) => ({
+            questionIndex,
+            selectedIndex,
+            correct: result.results[questionIndex]?.correct ?? false,
+          })),
+        ),
       },
       create: {
         sessionId,
@@ -121,11 +146,13 @@ export async function recordQuizAttempt({
         score: result.score,
         total: result.total,
         passed: result.passed,
-        answers: JSON.stringify(answers.map((selectedIndex, questionIndex) => ({
-          questionIndex,
-          selectedIndex,
-          correct: result.results[questionIndex]?.correct ?? false,
-        }))),
+        answers: JSON.stringify(
+          answers.map((selectedIndex, questionIndex) => ({
+            questionIndex,
+            selectedIndex,
+            correct: result.results[questionIndex]?.correct ?? false,
+          })),
+        ),
       },
     });
   });

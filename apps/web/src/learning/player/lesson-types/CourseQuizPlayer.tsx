@@ -4,7 +4,15 @@ import { useEffect, useReducer, useRef, useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 
-import { CheckCircle2, XCircle, Loader2, ChevronRight, Trophy, RefreshCw, Brain } from 'lucide-react';
+import {
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  ChevronRight,
+  Trophy,
+  RefreshCw,
+  Brain,
+} from 'lucide-react';
 
 import {
   QuestionResultSchema,
@@ -73,7 +81,10 @@ export function CourseQuizPlayer({
       const correctIndex = question?.answers.findIndex((answer) => answer.isCorrect) ?? -1;
 
       if (correctIndex < 0) {
-        dispatch({ type: 'answer.failed', message: 'This question needs a correct answer before it can be previewed.' });
+        dispatch({
+          type: 'answer.failed',
+          message: 'This question needs a correct answer before it can be previewed.',
+        });
         return;
       }
 
@@ -182,7 +193,9 @@ export function CourseQuizPlayer({
     }
 
     if (isLastQuestion && preview && isCourseFinal) {
-      const results = session.results.filter((result): result is NonNullable<typeof result> => result !== undefined);
+      const results = session.results.filter(
+        (result): result is NonNullable<typeof result> => result !== undefined,
+      );
       const score = results.filter((result) => result.correct).length;
       dispatch({
         type: 'submission.succeeded',
@@ -305,187 +318,198 @@ export function CourseQuizPlayer({
             : 'contents'
         }
       >
-      <div className={`relative shrink-0 px-6 pt-5 pb-2 md:px-10 md:pt-7 ${isCourseFinal ? 'border-b border-[#18191d]/10 px-8 py-5' : ''}`}>
-        <div className="mb-3 flex w-full items-center gap-1.5">
-          {Array.from({ length: total }).map((_, i) => {
-            let bgColor = isCourseFinal ? 'bg-[#18191d]/10' : 'bg-white/14';
-            const r = session.results[i];
-            if (r && i !== session.currentQuestionIndex) {
-              bgColor = r.correct ? 'bg-accent' : 'bg-destructive/80';
-            } else if (i === session.currentQuestionIndex) {
-              bgColor = isCourseFinal ? 'bg-accent animate-pulse' : 'bg-accent/50 animate-pulse';
-            }
-            return (
-              <div
-                key={i}
-                className={`h-1.5 flex-1 rounded-full ${bgColor} transition-colors duration-300`}
-              />
-            );
-          })}
-        </div>
-        <div className="flex items-center justify-between">
-          <p className={`text-xs font-bold tracking-widest uppercase ${isCourseFinal ? 'text-[#685bc7]' : 'text-[#c4beff]'}`}>
-            Course assessment
-          </p>
-          <p className={`text-xs font-bold tabular-nums ${isCourseFinal ? 'text-[#27272c]/70' : 'text-white/72'}`}>
-            {session.currentQuestionIndex + 1} <span className={isCourseFinal ? 'text-[#27272c]/35' : 'text-white/38'}>/ {total}</span>
-          </p>
-        </div>
-      </div>
-      <div
-        key={session.currentQuestionIndex}
-        className={`relative mx-auto flex min-h-0 w-full flex-1 flex-col gap-4 overflow-y-auto px-6 pb-24 md:px-10 ${isCourseFinal ? 'max-w-none px-8 py-7' : 'max-w-5xl'}`}
-      >
-        <p className={`quiz-enter shrink-0 pt-3 text-xl leading-tight font-bold md:text-3xl ${isCourseFinal ? 'text-[#27272c]' : 'text-white'}`}>
-          {q.question}
-        </p>
-
-        {q.image_url && (
-          <div className="quiz-enter border-border/10 mx-auto w-full max-w-lg shrink-0 overflow-hidden rounded-xl border shadow-lg">
-            <Image
-              src={q.image_url}
-              alt="Question reference"
-              width={800}
-              height={450}
-              sizes="(min-width: 560px) 512px, 100vw"
-              className="h-auto max-h-[30vh] w-full object-cover"
-            />
-          </div>
-        )}
-
-        <motion.div
-          className="grid flex-1 grid-cols-1 content-start gap-3 md:grid-cols-2"
-          role="radiogroup"
-          aria-label="Answer options"
-          animate={isShaking ? { x: [-6, 6, -6, 6, 0] } : { x: 0 }}
-          transition={{ duration: 0.4 }}
+        <div
+          className={`relative shrink-0 px-6 pt-5 pb-2 md:px-10 md:pt-7 ${isCourseFinal ? 'border-b border-[#18191d]/10 px-8 py-5' : ''}`}
         >
-          {q.options.map((option, i) => {
-            const isSelected = session.selectedIndex === i;
-            const isCorrect = result !== undefined && i === result.correctIndex;
-            const showGreen = revealed && isCorrect;
-            const showRed = revealed && isSelected && !isCorrect;
-            const dimmed = revealed && !isCorrect && !isSelected;
-
-            const baseClass =
-              'relative flex items-start gap-3 p-4 rounded-2xl border text-left shadow-sm ' +
-              'transition-all duration-150 disabled:cursor-default ';
-
-            const stateClass = !revealed
-              ? isSelected
-                ? 'border-[#a9a0ff] bg-[#ddd9ff]'
-                : 'border-white/16 bg-white/94 hover:-translate-y-0.5 hover:border-[#b8b0ff] hover:bg-white'
-              : showGreen
-                ? 'border-[#7770d8] bg-[#e8e5ff] quiz-option-correct'
-                : showRed
-                  ? 'border-[#b8b4c4] bg-[#e8e7eb] quiz-option-wrong'
-                  : dimmed
-                    ? 'border-white/8 bg-white/80 opacity-45'
-                    : 'border-white/16 bg-white/94';
-
-            return (
-              <button
-                key={`${i}-${option}`}
-                onClick={() => void handleSelect(i)}
-                disabled={session.selectedIndex !== null || grading}
-                role="radio"
-                aria-checked={isSelected}
-                aria-label={`${OPTION_LABELS[i] ?? i + 1}: ${option}${
-                  revealed && isCorrect
-                    ? ' — correct'
-                    : revealed && isSelected && !isCorrect
-                      ? ' — incorrect'
-                      : ''
-                }`}
-                className={`${baseClass} ${stateClass} quiz-enter`}
-                style={{ animationDelay: `${60 + i * 45}ms` }}
-              >
-                <span
-                  className={`mt-px flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold ${
-                    showGreen
-                      ? 'border-[#685bc7] text-[#685bc7]'
-                      : showRed
-                        ? 'border-[#85838c] text-[#77757d]'
-                        : 'border-[#18191d]/18 text-[#18191d]/46'
-                  }`}
-                >
-                  {OPTION_LABELS[i] ?? i + 1}
-                </span>
-
-                <span
-                  className={`mt-px text-base leading-snug font-semibold ${
-                    showGreen ? 'text-[#242051]' : showRed ? 'text-[#5d5a62]' : 'text-[#27272c]'
-                  }`}
-                >
-                  {option}
-                </span>
-
-                {grading && isSelected && (
-                  <span className="absolute top-3 right-3">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin text-[#685bc7]" />
-                  </span>
-                )}
-
-                {revealed && isSelected && (
-                  <span className="absolute top-3 right-3">
-                    {isCorrect ? (
-                      <CheckCircle2 className="h-3.5 w-3.5 text-[#685bc7]" />
-                    ) : (
-                      <XCircle className="h-3.5 w-3.5 text-[#77757d]" />
-                    )}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </motion.div>
-
-        {session.error && (
-          <p role="alert" className="shrink-0 text-sm font-medium text-[#ffb5b5]">
-            {session.error}
-          </p>
-        )}
-
-        {revealed && result && (
-          <>
-            <div className="quiz-enter mt-2 shrink-0 rounded-2xl border border-white/14 bg-white/95 px-5 py-4 text-[#27272c] shadow-lg">
-              {(() => {
-                const isCorrect = result.correct;
-                return (
-                  <div
-                    className={`mb-2 flex items-center gap-1.5 ${isCorrect ? 'text-[#685bc7]' : 'text-[#a04747]'}`}
-                  >
-                    {isCorrect ? (
-                      <CheckCircle2 className="h-5 w-5" />
-                    ) : (
-                      <XCircle className="h-5 w-5" />
-                    )}
-                    <p className="text-sm font-black tracking-widest uppercase">
-                      {isCorrect ? 'Correct!' : 'Incorrect'}
-                    </p>
-                  </div>
-                );
-              })()}
-              <p className="text-base leading-relaxed font-medium text-[#45434b]">
-                {result.explanation}
-              </p>
-            </div>
-
-            <motion.button
-              autoFocus
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleNext}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 text-base font-black text-[#242051] shadow-[0_0_24px_rgba(0,0,0,0.22)] focus-visible:outline-2 focus-visible:outline-offset-2"
+          <div className="mb-3 flex w-full items-center gap-1.5">
+            {Array.from({ length: total }).map((_, i) => {
+              let bgColor = isCourseFinal ? 'bg-[#18191d]/10' : 'bg-white/14';
+              const r = session.results[i];
+              if (r && i !== session.currentQuestionIndex) {
+                bgColor = r.correct ? 'bg-accent' : 'bg-destructive/80';
+              } else if (i === session.currentQuestionIndex) {
+                bgColor = isCourseFinal ? 'bg-accent animate-pulse' : 'bg-accent/50 animate-pulse';
+              }
+              return (
+                <div
+                  key={i}
+                  className={`h-1.5 flex-1 rounded-full ${bgColor} transition-colors duration-300`}
+                />
+              );
+            })}
+          </div>
+          <div className="flex items-center justify-between">
+            <p
+              className={`text-xs font-bold tracking-widest uppercase ${isCourseFinal ? 'text-[#685bc7]' : 'text-[#c4beff]'}`}
             >
-              {session.currentQuestionIndex + 1 >= total ? 'Finish Quiz' : 'Next Question'}
-              <ChevronRight className="h-5 w-5" />
-            </motion.button>
-          </>
-        )}
-      </div>
+              Course assessment
+            </p>
+            <p
+              className={`text-xs font-bold tabular-nums ${isCourseFinal ? 'text-[#27272c]/70' : 'text-white/72'}`}
+            >
+              {session.currentQuestionIndex + 1}{' '}
+              <span className={isCourseFinal ? 'text-[#27272c]/35' : 'text-white/38'}>
+                / {total}
+              </span>
+            </p>
+          </div>
+        </div>
+        <div
+          key={session.currentQuestionIndex}
+          className={`relative mx-auto flex min-h-0 w-full flex-1 flex-col gap-4 overflow-y-auto px-6 pb-24 md:px-10 ${isCourseFinal ? 'max-w-none px-8 py-7' : 'max-w-5xl'}`}
+        >
+          <p
+            className={`quiz-enter shrink-0 pt-3 text-xl leading-tight font-bold md:text-3xl ${isCourseFinal ? 'text-[#27272c]' : 'text-white'}`}
+          >
+            {q.question}
+          </p>
+
+          {q.image_url && (
+            <div className="quiz-enter border-border/10 mx-auto w-full max-w-lg shrink-0 overflow-hidden rounded-xl border shadow-lg">
+              <Image
+                src={q.image_url}
+                alt="Question reference"
+                width={800}
+                height={450}
+                sizes="(min-width: 560px) 512px, 100vw"
+                className="h-auto max-h-[30vh] w-full object-cover"
+              />
+            </div>
+          )}
+
+          <motion.div
+            className="grid flex-1 grid-cols-1 content-start gap-3 md:grid-cols-2"
+            role="radiogroup"
+            aria-label="Answer options"
+            animate={isShaking ? { x: [-6, 6, -6, 6, 0] } : { x: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            {q.options.map((option, i) => {
+              const isSelected = session.selectedIndex === i;
+              const isCorrect = result !== undefined && i === result.correctIndex;
+              const showGreen = revealed && isCorrect;
+              const showRed = revealed && isSelected && !isCorrect;
+              const dimmed = revealed && !isCorrect && !isSelected;
+
+              const baseClass =
+                'relative flex items-start gap-3 p-4 rounded-2xl border text-left shadow-sm ' +
+                'transition-all duration-150 disabled:cursor-default ';
+
+              const stateClass = !revealed
+                ? isSelected
+                  ? 'border-[#a9a0ff] bg-[#ddd9ff]'
+                  : 'border-white/16 bg-white/94 hover:-translate-y-0.5 hover:border-[#b8b0ff] hover:bg-white'
+                : showGreen
+                  ? 'border-[#7770d8] bg-[#e8e5ff] quiz-option-correct'
+                  : showRed
+                    ? 'border-[#b8b4c4] bg-[#e8e7eb] quiz-option-wrong'
+                    : dimmed
+                      ? 'border-white/8 bg-white/80 opacity-45'
+                      : 'border-white/16 bg-white/94';
+
+              return (
+                <button
+                  key={`${i}-${option}`}
+                  onClick={() => void handleSelect(i)}
+                  disabled={session.selectedIndex !== null || grading}
+                  role="radio"
+                  aria-checked={isSelected}
+                  aria-label={`${OPTION_LABELS[i] ?? i + 1}: ${option}${
+                    revealed && isCorrect
+                      ? ' — correct'
+                      : revealed && isSelected && !isCorrect
+                        ? ' — incorrect'
+                        : ''
+                  }`}
+                  className={`${baseClass} ${stateClass} quiz-enter`}
+                  style={{ animationDelay: `${60 + i * 45}ms` }}
+                >
+                  <span
+                    className={`mt-px flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold ${
+                      showGreen
+                        ? 'border-[#685bc7] text-[#685bc7]'
+                        : showRed
+                          ? 'border-[#85838c] text-[#77757d]'
+                          : 'border-[#18191d]/18 text-[#18191d]/46'
+                    }`}
+                  >
+                    {OPTION_LABELS[i] ?? i + 1}
+                  </span>
+
+                  <span
+                    className={`mt-px text-base leading-snug font-semibold ${
+                      showGreen ? 'text-[#242051]' : showRed ? 'text-[#5d5a62]' : 'text-[#27272c]'
+                    }`}
+                  >
+                    {option}
+                  </span>
+
+                  {grading && isSelected && (
+                    <span className="absolute top-3 right-3">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-[#685bc7]" />
+                    </span>
+                  )}
+
+                  {revealed && isSelected && (
+                    <span className="absolute top-3 right-3">
+                      {isCorrect ? (
+                        <CheckCircle2 className="h-3.5 w-3.5 text-[#685bc7]" />
+                      ) : (
+                        <XCircle className="h-3.5 w-3.5 text-[#77757d]" />
+                      )}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </motion.div>
+
+          {session.error && (
+            <p role="alert" className="shrink-0 text-sm font-medium text-[#ffb5b5]">
+              {session.error}
+            </p>
+          )}
+
+          {revealed && result && (
+            <>
+              <div className="quiz-enter mt-2 shrink-0 rounded-2xl border border-white/14 bg-white/95 px-5 py-4 text-[#27272c] shadow-lg">
+                {(() => {
+                  const isCorrect = result.correct;
+                  return (
+                    <div
+                      className={`mb-2 flex items-center gap-1.5 ${isCorrect ? 'text-[#685bc7]' : 'text-[#a04747]'}`}
+                    >
+                      {isCorrect ? (
+                        <CheckCircle2 className="h-5 w-5" />
+                      ) : (
+                        <XCircle className="h-5 w-5" />
+                      )}
+                      <p className="text-sm font-black tracking-widest uppercase">
+                        {isCorrect ? 'Correct!' : 'Incorrect'}
+                      </p>
+                    </div>
+                  );
+                })()}
+                <p className="text-base leading-relaxed font-medium text-[#45434b]">
+                  {result.explanation}
+                </p>
+              </div>
+
+              <motion.button
+                autoFocus
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleNext}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 text-base font-black text-[#242051] shadow-[0_0_24px_rgba(0,0,0,0.22)] focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                {session.currentQuestionIndex + 1 >= total ? 'Finish Quiz' : 'Next Question'}
+                <ChevronRight className="h-5 w-5" />
+              </motion.button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -533,7 +557,9 @@ function CourseFinalAssessmentCard({
         <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
           {isResult ? (
             <>
-              <div className={`mb-6 flex h-24 w-24 items-center justify-center rounded-full shadow-lg ${passed ? 'bg-[#685bc7] text-white' : 'bg-[#e8e7eb] text-[#27272c]'}`}>
+              <div
+                className={`mb-6 flex h-24 w-24 items-center justify-center rounded-full shadow-lg ${passed ? 'bg-[#685bc7] text-white' : 'bg-[#e8e7eb] text-[#27272c]'}`}
+              >
                 <span className="text-3xl font-bold">{score}%</span>
               </div>
               <h3 className="mb-2 text-2xl font-bold text-[#27272c]">
@@ -542,18 +568,32 @@ function CourseFinalAssessmentCard({
               <p className="text-[#595b66]">
                 You got {correctAnswers} out of {total} questions correct.
               </p>
-              {!passed && <p className="mt-1 text-sm text-[#595b66]">Passing score: {passingScore}%</p>}
+              {!passed && (
+                <p className="mt-1 text-sm text-[#595b66]">Passing score: {passingScore}%</p>
+              )}
               <div className="mt-8 flex flex-col items-center gap-3">
                 {passed ? (
-                  <button type="button" onClick={onContinue} className="rounded-full border-2 border-[#685bc7] px-8 py-3 text-sm font-medium text-[#685bc7] transition-colors hover:bg-[#685bc7]/8">
+                  <button
+                    type="button"
+                    onClick={onContinue}
+                    className="rounded-full border-2 border-[#685bc7] px-8 py-3 text-sm font-medium text-[#685bc7] transition-colors hover:bg-[#685bc7]/8"
+                  >
                     Continue
                   </button>
                 ) : (
                   <>
-                    <button type="button" onClick={onRetry} className="inline-flex items-center gap-2 rounded-full border-2 border-[#685bc7] px-8 py-3 text-sm font-medium text-[#685bc7] transition-colors hover:bg-[#685bc7]/8">
+                    <button
+                      type="button"
+                      onClick={onRetry}
+                      className="inline-flex items-center gap-2 rounded-full border-2 border-[#685bc7] px-8 py-3 text-sm font-medium text-[#685bc7] transition-colors hover:bg-[#685bc7]/8"
+                    >
                       <RefreshCw aria-hidden="true" className="h-4 w-4" /> Try again
                     </button>
-                    <button type="button" onClick={onContinue} className="text-sm font-medium text-[#595b66] underline underline-offset-4 hover:text-[#27272c]">
+                    <button
+                      type="button"
+                      onClick={onContinue}
+                      className="text-sm font-medium text-[#595b66] underline underline-offset-4 hover:text-[#27272c]"
+                    >
                       Continue without passing
                     </button>
                   </>
@@ -567,8 +607,14 @@ function CourseFinalAssessmentCard({
               </div>
               <h3 className="mb-2 text-2xl font-bold text-[#27272c]">{title}</h3>
               <p className="max-w-md text-[#595b66]">{instructions}</p>
-              {questionCount !== undefined && <p className="mt-3 text-sm font-medium text-[#595b66]">{questionCount} questions</p>}
-              <button type="button" onClick={onStart} className="mt-8 rounded-full bg-[#685bc7] px-8 py-3.5 text-sm font-medium text-white transition-colors hover:bg-[#5b4eb8]">
+              {questionCount !== undefined && (
+                <p className="mt-3 text-sm font-medium text-[#595b66]">{questionCount} questions</p>
+              )}
+              <button
+                type="button"
+                onClick={onStart}
+                className="mt-8 rounded-full bg-[#685bc7] px-8 py-3.5 text-sm font-medium text-white transition-colors hover:bg-[#5b4eb8]"
+              >
                 Start assessment
               </button>
             </>

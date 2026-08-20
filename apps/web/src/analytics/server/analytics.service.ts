@@ -14,9 +14,7 @@ type ScoreBucket = { label: string; count: number; color: string };
 
 type QuizRow = { score: number; total: number };
 
-function toSessionData(
-  sessions: Awaited<ReturnType<typeof fetchRecentSessions>>,
-): SessionData[] {
+function toSessionData(sessions: Awaited<ReturnType<typeof fetchRecentSessions>>): SessionData[] {
   return sessions.map((s) => ({
     id: s.id,
     lessonCount: s._count.progress,
@@ -93,20 +91,26 @@ export async function getAllLessonEngagement(): Promise<LessonEngagementRow[]> {
 
 export async function getAnalyticsData() {
   try {
-    const [sessions, allQuizzes, totalHotspotsVisited, topHotspots, totalSessions, lessonEngagement] =
-      await Promise.all([
-        fetchRecentSessions(),
-        prisma.quizAttempt.findMany({ select: { score: true, total: true } }),
-        prisma.hotspotVisit.count(),
-        prisma.hotspotVisit.groupBy({
-          by: ['label'],
-          _count: { label: true },
-          orderBy: { _count: { label: 'desc' } },
-          take: 8,
-        }),
-        prisma.session.count(),
-        getAllLessonEngagement(),
-      ]);
+    const [
+      sessions,
+      allQuizzes,
+      totalHotspotsVisited,
+      topHotspots,
+      totalSessions,
+      lessonEngagement,
+    ] = await Promise.all([
+      fetchRecentSessions(),
+      prisma.quizAttempt.findMany({ select: { score: true, total: true } }),
+      prisma.hotspotVisit.count(),
+      prisma.hotspotVisit.groupBy({
+        by: ['label'],
+        _count: { label: true },
+        orderBy: { _count: { label: 'desc' } },
+        take: 8,
+      }),
+      prisma.session.count(),
+      getAllLessonEngagement(),
+    ]);
 
     return {
       totalSessions,

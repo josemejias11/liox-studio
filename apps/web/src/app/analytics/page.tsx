@@ -86,7 +86,6 @@ export default async function AnalyticsPage() {
 
       <main className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-8">
         {totalSessions === 0 ? (
-
           <div className="flex flex-col items-center justify-center gap-4 py-32 text-center">
             <Users className="text-muted-foreground h-10 w-10" aria-hidden="true" />
             <p className="text-muted-foreground text-base font-medium">No learner activity yet.</p>
