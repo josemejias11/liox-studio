@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { X, Sparkles } from 'lucide-react';
 import { useFocusTrap } from '@/shared/useFocusTrap';
 import type { RichText, CoursePhoto } from '@/shared/contracts/player-course';
-import { DiscoveryLearnContent } from './discovery/DiscoveryLearnContent';
+import { DiscoveryLearnContent } from './DiscoveryLearnContent';
 import type { InlineDiscoveryCueResolver } from '@/learning/player/lesson-types/InlineDiscoveryCue';
 
 interface DiscoveryPanelProps {

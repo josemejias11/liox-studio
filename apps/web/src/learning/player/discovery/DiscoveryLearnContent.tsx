@@ -5,7 +5,7 @@ import { Sparkles } from 'lucide-react';
 import type { RichText, CoursePhoto } from '@/shared/contracts/player-course';
 import { supMark } from '@/shared/portable-text-components';
 import { cssAspectRatio } from '@/shared/utils';
-import { PhotoCardStack } from '../PhotoCardStack';
+import { PhotoCardStack } from './PhotoCardStack';
 import {
   InlineDiscoveryCueMark,
   InlineDiscoveryCueProvider,

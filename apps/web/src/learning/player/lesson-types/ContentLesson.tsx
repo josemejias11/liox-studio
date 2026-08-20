@@ -6,7 +6,7 @@ import { BookOpen, MousePointer2, PlayCircle } from 'lucide-react';
 import { PortableText } from '@portabletext/react';
 import { supMark } from '@/shared/portable-text-components';
 import { Hotspot } from './Hotspot';
-import { DiscoveryPanel } from '@/components/DiscoveryPanel';
+import { DiscoveryPanel } from '@/learning/player/discovery/DiscoveryPanel';
 import { getSemanticWidthClass } from '@/shared/utils';
 import type {
   LessonSection,

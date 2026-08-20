@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Eye, Lightbulb, X } from 'lucide-react';
-import { DiscoveryLearnContent } from '@/components/discovery/DiscoveryLearnContent';
+import { DiscoveryLearnContent } from '@/learning/player/discovery/DiscoveryLearnContent';
 import type { RichText, CoursePhoto } from '@/shared/contracts/player-course';
 import { useFocusTrap } from '@/shared/useFocusTrap';
 import type { InlineDiscoveryCueResolver } from './InlineDiscoveryCue';

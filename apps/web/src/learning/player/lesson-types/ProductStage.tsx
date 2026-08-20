@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { Check, CheckCircle2 } from 'lucide-react';
 import { Hotspot } from './Hotspot';
-import { DiscoveryPanel } from '@/components/DiscoveryPanel';
+import { DiscoveryPanel } from '@/learning/player/discovery/DiscoveryPanel';
 import { CompletionBurst } from '../CompletionBurst';
 import { PortableText } from '@portabletext/react';
 import { supMark } from '@/shared/portable-text-components';
