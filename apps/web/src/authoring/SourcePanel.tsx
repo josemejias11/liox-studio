@@ -4,6 +4,8 @@ import type { CourseSourceFile } from '@moto-ai/contracts/course-studio';
 import { FileText, LoaderCircle, RefreshCw, Trash2, Upload, XCircle } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { fetchJson } from '@/shared/fetch-json';
+
 interface SourcePanelProps {
   courseId: string;
   initialSources: CourseSourceFile[];
@@ -29,12 +31,6 @@ function statusLabel(source: CourseSourceFile): string {
   return 'Indexing failed';
 }
 
-async function responseJson(
-  response: Response,
-): Promise<{ error?: string; sources?: CourseSourceFile[] }> {
-  return response.json() as Promise<{ error?: string; sources?: CourseSourceFile[] }>;
-}
-
 export function SourcePanel({ courseId, initialSources }: SourcePanelProps) {
   const [sources, setSources] = useState(initialSources);
   const [uploading, setUploading] = useState(false);
@@ -44,11 +40,12 @@ export function SourcePanel({ courseId, initialSources }: SourcePanelProps) {
   const hasPendingSources = sources.some((source) => source.indexStatus === 'pending');
 
   const refresh = useCallback(async (): Promise<void> => {
-    const response = await fetch(sourceUrl(courseId), { cache: 'no-store' });
-    const result = await responseJson(response);
-    if (!response.ok || !result.sources) {
-      throw new Error(result.error || 'Source status could not be refreshed.');
-    }
+    const result = await fetchJson<{ error?: string; sources?: CourseSourceFile[] }>(
+      sourceUrl(courseId),
+      { cache: 'no-store' },
+      'Source status could not be refreshed.',
+    );
+    if (!result.sources) throw new Error(result.error || 'Source status could not be refreshed.');
     setSources(result.sources);
   }, [courseId]);
 
@@ -70,9 +67,11 @@ export function SourcePanel({ courseId, initialSources }: SourcePanelProps) {
     try {
       const form = new FormData();
       form.set('file', file);
-      const response = await fetch(sourceUrl(courseId), { method: 'POST', body: form });
-      const result = await responseJson(response);
-      if (!response.ok) throw new Error(result.error || 'The source could not be uploaded.');
+      await fetchJson<{ error?: string; sources?: CourseSourceFile[] }>(
+        sourceUrl(courseId),
+        { method: 'POST', body: form },
+        'The source could not be uploaded.',
+      );
       await refresh();
       setMessage(`${file.name} uploaded. Indexing has been queued.`);
     } catch (error) {
@@ -87,11 +86,11 @@ export function SourcePanel({ courseId, initialSources }: SourcePanelProps) {
     setBusySourceId(source.id);
     setMessage(null);
     try {
-      const response = await fetch(sourceUrl(courseId, `/${encodeURIComponent(source.id)}/retry`), {
-        method: 'POST',
-      });
-      const result = await responseJson(response);
-      if (!response.ok) throw new Error(result.error || 'The source retry could not be queued.');
+      await fetchJson<{ error?: string; sources?: CourseSourceFile[] }>(
+        sourceUrl(courseId, `/${encodeURIComponent(source.id)}/retry`),
+        { method: 'POST' },
+        'The source retry could not be queued.',
+      );
       await refresh();
       setMessage(`Retry queued for ${source.filename}.`);
     } catch (error) {
@@ -115,11 +114,11 @@ export function SourcePanel({ courseId, initialSources }: SourcePanelProps) {
     setBusySourceId(source.id);
     setMessage(null);
     try {
-      const response = await fetch(sourceUrl(courseId, `/${encodeURIComponent(source.id)}`), {
-        method: 'DELETE',
-      });
-      const result = await responseJson(response);
-      if (!response.ok) throw new Error(result.error || 'The source could not be removed.');
+      await fetchJson<{ error?: string; sources?: CourseSourceFile[] }>(
+        sourceUrl(courseId, `/${encodeURIComponent(source.id)}`),
+        { method: 'DELETE' },
+        'The source could not be removed.',
+      );
       await refresh();
       setMessage(`${source.filename} was removed.`);
     } catch (error) {
