@@ -162,7 +162,10 @@ export async function requestScormExport(revisionId: string): Promise<JobAccepte
     revision.assistantSnapshot.length > 0
       ? OfflineAssistantPayloadSchema.parse({
           version: OFFLINE_ASSISTANT_PAYLOAD_VERSION,
-          items: revision.assistantSnapshot.map(({ citations: _citations, ...item }) => item),
+          items: revision.assistantSnapshot.map(({ assistantQaId, citations: _citations, ...item }) => ({
+            id: assistantQaId,
+            ...item,
+          })),
         })
       : undefined;
 
