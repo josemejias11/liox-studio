@@ -4,6 +4,8 @@ import type { CourseGenerationSummary } from '@moto-ai/contracts/course-generati
 import { Sparkles, X } from 'lucide-react';
 import { useState } from 'react';
 
+import { fetchJson } from '@/shared/fetch-json';
+
 export interface GenerationSourceRevision {
   id: string;
   courseTitle: string;
@@ -40,16 +42,16 @@ export function CreateWithAiDialog({
     setBusy(true);
     setError(null);
     try {
-      const response = await fetch('/api/course-studio/generations', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ brief, sourceRevisionId }),
-      });
-      const result = (await response.json()) as {
-        generation?: CourseGenerationSummary;
-        error?: string;
-      };
-      if (!response.ok || !result.generation) {
+      const result = await fetchJson<{ generation?: CourseGenerationSummary; error?: string }>(
+        '/api/course-studio/generations',
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ brief, sourceRevisionId }),
+        },
+        'The generation request could not be queued.',
+      );
+      if (!result.generation) {
         throw new Error(result.error || 'The generation request could not be queued.');
       }
       onCreated(result.generation);
