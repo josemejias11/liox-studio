@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Clipboard, Snowflake } from 'lucide-react';
+import { Clipboard, Download, Snowflake } from 'lucide-react';
 import { fetchJson } from '@/shared/fetch-json';
 
 interface StudioRevision {
@@ -22,6 +22,8 @@ interface StudioFeedback {
   status: string;
   createdAt: string;
 }
+
+type ScormExportJobStatus = 'queued' | 'running' | 'succeeded' | 'failed';
 
 interface RevisionPanelProps {
   courseId: string;
@@ -49,6 +51,7 @@ function RevisionPanelContent({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [reviewUrl, setReviewUrl] = useState<string | null>(null);
+  const [exportUrl, setExportUrl] = useState<string | null>(null);
   const latestLoadId = useRef(0);
   const courseGeneration = useRef(0);
 
@@ -73,6 +76,7 @@ function RevisionPanelContent({
         setRevisions([]);
         setFeedback([]);
         setReviewUrl(null);
+        setExportUrl(null);
         setMessage(null);
       }
       setLoading(true);
@@ -197,6 +201,46 @@ function RevisionPanelContent({
     }
   }
 
+  async function exportScorm(revisionId: string) {
+    const generation = courseGeneration.current;
+    setBusy(true);
+    setExportUrl(null);
+    setMessage('Building SCORM package…');
+    try {
+      const { jobId } = await fetchJson<{ jobId: string }>(
+        `/api/course-studio/revisions/${encodeURIComponent(revisionId)}/scorm-export`,
+        { method: 'POST' },
+        'SCORM export could not be started.',
+      );
+      if (!isCurrentCourse(generation)) return;
+
+      let status: ScormExportJobStatus = 'queued';
+      let result: { exportId?: string } | null = null;
+      while (status === 'queued' || status === 'running') {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        if (!isCurrentCourse(generation)) return;
+        const job = await fetchJson<{
+          status: ScormExportJobStatus;
+          result: { exportId?: string } | null;
+          errorMessage: string | null;
+        }>(`/api/jobs/${encodeURIComponent(jobId)}`, { method: 'GET' }, 'SCORM export status could not be read.');
+        if (!isCurrentCourse(generation)) return;
+        status = job.status;
+        result = job.result;
+        if (status === 'failed') throw new Error(job.errorMessage || 'SCORM export failed.');
+      }
+
+      if (!result?.exportId) throw new Error('SCORM export finished without a result.');
+      setExportUrl(`/api/course-studio/exports/${encodeURIComponent(result.exportId)}/download`);
+      setMessage('SCORM package ready. Download it now.');
+    } catch (error) {
+      if (!isCurrentCourse(generation)) return;
+      setMessage(error instanceof Error ? error.message : 'SCORM export could not be started.');
+    } finally {
+      if (isCurrentCourse(generation)) setBusy(false);
+    }
+  }
+
   return (
     <section className="studio-glass border-border border-x-0 border-t border-b-0 p-4">
       <div className="flex items-center justify-between gap-3">
@@ -248,6 +292,16 @@ function RevisionPanelContent({
           <span className="truncate">Copy review link</span>
         </button>
       )}
+      {exportUrl && (
+        <a
+          className="studio-glass-control border-primary text-primary mt-3 flex w-full items-center gap-2 rounded-lg border p-2 text-left text-xs"
+          href={exportUrl}
+          download
+        >
+          <Download className="h-4 w-4 shrink-0" />
+          <span className="truncate">Download SCORM package</span>
+        </a>
+      )}
       <div className="mt-3 max-h-36 space-y-2 overflow-y-auto">
         {revisions.map((revision) => (
           <div
@@ -267,6 +321,14 @@ function RevisionPanelContent({
               type="button"
             >
               {revision.hasReview ? 'Replace review link' : 'Create review link'}
+            </button>
+            <button
+              className="studio-glass-control border-border hover:border-primary hover:text-primary rounded-md border px-2 py-1"
+              disabled={busy}
+              onClick={() => exportScorm(revision.id)}
+              type="button"
+            >
+              Export SCORM package
             </button>
           </div>
         ))}
