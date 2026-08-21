@@ -5,6 +5,7 @@ import type {
   LessonInput,
 } from '@moto-ai/contracts/course-studio';
 import type { CourseSettingsInput } from '@/shared/contracts/course-settings';
+import { fetchJson } from '@/shared/fetch-json';
 
 export interface StudioTrashItem {
   id: string;
@@ -29,13 +30,17 @@ async function mutate(
   method: 'POST' | 'PATCH' | 'DELETE',
   body: unknown,
 ): Promise<CourseGraph> {
-  const response = await fetch(url, {
+  const init: RequestInit = {
     method,
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
-  });
-  const result = (await response.json()) as { course?: CourseGraph; error?: string };
-  if (!response.ok || !result.course) {
+  };
+  const result = await fetchJson<{ course?: CourseGraph; error?: string }>(
+    url,
+    init,
+    'Course Studio could not save this change.',
+  );
+  if (!result.course) {
     throw new Error(result.error || 'Course Studio could not save this change.');
   }
   return result.course;
@@ -46,22 +51,30 @@ async function mutateTrash(
   method: 'POST' | 'DELETE',
   body?: unknown,
 ): Promise<StudioTrashMutation> {
-  const response = await fetch(url, {
+  const init: RequestInit = {
     method,
     headers: { 'content-type': 'application/json' },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-  });
-  const result = (await response.json()) as StudioTrashMutation & { error?: string };
-  if (!response.ok || !result.course || !Array.isArray(result.trash)) {
+  };
+  const result = await fetchJson<StudioTrashMutation & { error?: string }>(
+    url,
+    init,
+    'Course Studio could not save this change.',
+  );
+  if (!result.course || !Array.isArray(result.trash)) {
     throw new Error(result.error || 'Course Studio could not save this change.');
   }
   return result;
 }
 
 async function mutateTrashList(url: string, method: 'DELETE'): Promise<StudioTrashItem[]> {
-  const response = await fetch(url, { method });
-  const result = (await response.json()) as { trash?: StudioTrashItem[]; error?: string };
-  if (!response.ok || !Array.isArray(result.trash)) {
+  const init: RequestInit = { method };
+  const result = await fetchJson<{ trash?: StudioTrashItem[]; error?: string }>(
+    url,
+    init,
+    'Course Studio could not save this change.',
+  );
+  if (!Array.isArray(result.trash)) {
     throw new Error(result.error || 'Course Studio could not save this change.');
   }
   return result.trash;

@@ -229,14 +229,3 @@ export const courseSchema = z.object({
 export type CourseContent = z.output<typeof courseSchema>;
 
 export type CourseSection = LessonSection | CourseSpecification | AuthoredQuiz | CourseDisclaimer;
-
-export const courseSummarySchema = z.object({
-  _id: z.string(),
-  title: z.string().catch(''),
-  slug: z.object({ current: z.string() }),
-  description: opt(z.string()),
-  thumbnail: opt(imageSchema),
-  learningObjectives: opt(z.array(z.string())),
-  chapterCount: z.number().catch(0),
-});
-export type CourseSummary = z.output<typeof courseSummarySchema>;
