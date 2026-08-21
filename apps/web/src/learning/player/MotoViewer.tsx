@@ -149,7 +149,16 @@ export default function MotoViewer({
 
     appliedInitialSectionKeyRef.current = initialSectionKey;
     const alreadyShowingTarget = phase.phase === 'chapter' && currentSectionIndex === target.index;
-    if (!alreadyShowingTarget) navigateToPreviewSection(target.index);
+    if (!alreadyShowingTarget) {
+      // The onLessonChange effect below runs in this same commit and would
+      // otherwise report the pre-dispatch (stale) lesson back to the parent,
+      // which "corrects" the selection back to where we just navigated away
+      // from — flipping initialSectionKey back and forth forever. Suppress
+      // that one stale report; the effect fires again with the real target
+      // once this dispatch's render lands.
+      suppressNextLessonChangeRef.current = true;
+      navigateToPreviewSection(target.index);
+    }
     if (showChapterIntro) dismissPreviewChapterIntro();
   }, [
     currentSectionIndex,
