@@ -205,10 +205,17 @@ async function scormExport(job: ClaimedJob): Promise<ScormExportResult> {
   }
 
   const playerBundleDir = path.join(playerBundleRoot(), 'dist');
-  const playerBundle = {
-    'player.js': await readFile(path.join(playerBundleDir, 'player.js')),
-    'player.css': await readFile(path.join(playerBundleDir, 'player.css')),
-  };
+  let playerBundle: { 'player.js': Buffer; 'player.css': Buffer };
+  try {
+    playerBundle = {
+      'player.js': await readFile(path.join(playerBundleDir, 'player.js')),
+      'player.css': await readFile(path.join(playerBundleDir, 'player.css')),
+    };
+  } catch {
+    throw new NonRetryableJobError(
+      "The course export tool's player bundle is missing or incomplete in this environment. Contact an administrator before triggering exports.",
+    );
+  }
 
   const scoIdentifier = `export_${revision.id}`;
   const built = await buildScormPackage({
@@ -240,7 +247,7 @@ function playerBundleRoot(): string {
   const configured = process.env.SCORM_PLAYER_BUNDLE_PATH;
   if (configured) return configured;
   throw new NonRetryableJobError(
-    'SCORM_PLAYER_BUNDLE_PATH is not configured. The player bundle must be built and its location set before exports can run.',
+    'The course export tool is not fully configured in this environment. Contact an administrator before triggering exports.',
   );
 }
 
