@@ -20,7 +20,14 @@ await build({
   outfile: path.join(outDir, 'player.js'),
   jsx: 'automatic',
   loader: { '.tsx': 'tsx', '.ts': 'ts' },
-  alias: { '@': webSrc },
+  alias: {
+    '@': webSrc,
+    // Scoped to this build only — apps/web keeps using the real next/image everywhere
+    // else. The standalone bundle has no Next.js server behind it, so next/image's
+    // default loader (which calls /_next/image?url=...) would 404 on every image; this
+    // aliases it to a plain <img>-rendering shim instead. See next-image-shim.tsx.
+    'next/image': path.join(root, 'src', 'player-bundle', 'next-image-shim.tsx'),
+  },
   // 'process.env' as a whole (in addition to the specific NODE_ENV key) because the
   // bundled Next.js internals (next/image, next/link) read several other
   // process.env.__NEXT_* flags directly with no runtime guard; without a catch-all
