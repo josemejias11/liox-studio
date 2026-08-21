@@ -1,10 +1,13 @@
 import { createHash } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import { GeneratedCourseGraphSchema } from '@moto-ai/contracts/course-generation';
 import {
   AssistantQaGenerationPayloadSchema,
   CourseGenerationPayloadSchema,
   DocumentIndexPayloadSchema,
-  type JobKind,
+  ScormExportPayloadSchema,
+  type ScormExportResult,
 } from '@moto-ai/contracts/jobs';
 import {
   getCourseGeneration,
@@ -24,6 +27,8 @@ import {
   uploadCourseDocument,
 } from '@moto-ai/parser-client';
 import { NonRetryableJobError, type ClaimedJob } from '@moto-ai/jobs';
+import { buildScormPackage } from '@moto-ai/scorm-export';
+import { putR2Object } from '@moto-ai/storage';
 
 async function indexDocument(job: ClaimedJob): Promise<{ filename: string; chunksStored: number }> {
   const payload = DocumentIndexPayloadSchema.safeParse(job.payload);
@@ -175,15 +180,74 @@ async function generateCourse(job: ClaimedJob): Promise<unknown> {
   }
 }
 
-export async function executeJob(job: ClaimedJob): Promise<unknown> {
-  const kind: JobKind =
-    job.kind === 'DOCUMENT_INDEX'
-      ? 'document_index'
-      : job.kind === 'QUIZ_GENERATE'
-        ? 'ai_operation'
-        : 'ai_operation';
+async function scormExport(job: ClaimedJob): Promise<ScormExportResult> {
+  const payload = ScormExportPayloadSchema.safeParse(job.payload);
+  if (!payload.success) {
+    throw new NonRetryableJobError('The queued export request is invalid. Trigger a new export.');
+  }
+  if (!job.artifact) {
+    throw new NonRetryableJobError('The queued course content is missing. Trigger a new export.');
+  }
 
-  if (kind === 'document_index') return indexDocument(job);
+  const revision = await prisma.courseRevision.findUnique({
+    where: { id: payload.data.revisionId },
+    select: { id: true, sourceTitle: true, version: true },
+  });
+  if (!revision) {
+    throw new NonRetryableJobError('The frozen revision no longer exists. Trigger a new export.');
+  }
+
+  let bundlePayload: { content: unknown; assistant: unknown; masteryScore: number };
+  try {
+    bundlePayload = JSON.parse(job.artifact.bytes.toString('utf8'));
+  } catch {
+    throw new NonRetryableJobError('The queued course content is corrupted. Trigger a new export.');
+  }
+
+  const playerBundleDir = path.join(playerBundleRoot(), 'dist');
+  const playerBundle = {
+    'player.js': await readFile(path.join(playerBundleDir, 'player.js')),
+    'player.css': await readFile(path.join(playerBundleDir, 'player.css')),
+  };
+
+  const scoIdentifier = `export_${revision.id}`;
+  const built = await buildScormPackage({
+    title: revision.sourceTitle,
+    scoIdentifier,
+    masteryScore: bundlePayload.masteryScore,
+    content: bundlePayload.content,
+    assistant: bundlePayload.assistant,
+    playerBundle,
+  });
+
+  const r2Key = `exports/${revision.id}/${job.id}.zip`;
+  await putR2Object({ key: r2Key, bytes: built.buffer, contentType: 'application/zip' });
+
+  const record = await prisma.courseScormExport.create({
+    data: {
+      revisionId: revision.id,
+      jobId: job.id,
+      r2Key,
+      byteSize: built.byteSize,
+      sha256: built.sha256,
+    },
+  });
+
+  return { exportId: record.id, r2Key, byteSize: built.byteSize, sha256: built.sha256 };
+}
+
+function playerBundleRoot(): string {
+  const configured = process.env.SCORM_PLAYER_BUNDLE_PATH;
+  if (configured) return configured;
+  throw new NonRetryableJobError(
+    'SCORM_PLAYER_BUNDLE_PATH is not configured. The player bundle must be built and its location set before exports can run.',
+  );
+}
+
+export async function executeJob(job: ClaimedJob): Promise<unknown> {
+  if (job.kind === 'DOCUMENT_INDEX') return indexDocument(job);
+  if (job.kind === 'SCORM_EXPORT') return scormExport(job);
+
   if (AssistantQaGenerationPayloadSchema.safeParse(job.payload).success)
     return generateAssistantQa(job);
   if (CourseGenerationPayloadSchema.safeParse(job.payload).success) return generateCourse(job);
