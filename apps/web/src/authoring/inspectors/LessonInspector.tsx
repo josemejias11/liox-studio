@@ -8,6 +8,7 @@ import {
   validateLessonDraft,
   type LessonDraft,
 } from '@/authoring/inspectors/lesson/lesson-draft';
+import { fetchJson } from '@/shared/fetch-json';
 import { serializeLessonDraft } from './lesson/lesson-serializer';
 import { AssetField } from './lesson/AssetField';
 import { CoveredFeaturesField } from './lesson/CoveredFeaturesField';
@@ -69,13 +70,11 @@ export function LessonInspector({
       const data = new FormData();
       data.set('courseId', course.id);
       data.set('file', file);
-      const response = await fetch('/api/course-studio/assets', { method: 'POST', body: data });
-      const result = (await response.json()) as {
+      const result = await fetchJson<{
         asset?: { deliveryUrl?: string; filename?: string };
         error?: string;
-      };
-      if (!response.ok || !result.asset?.deliveryUrl)
-        throw new Error(result.error || 'Asset upload failed.');
+      }>('/api/course-studio/assets', { method: 'POST', body: data }, 'Asset upload failed.');
+      if (!result.asset?.deliveryUrl) throw new Error(result.error || 'Asset upload failed.');
       update((current) => ({
         ...current,
         [field]: { url: result.asset!.deliveryUrl!, originalFilename: result.asset!.filename },

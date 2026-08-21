@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { fetchJson } from '@/shared/fetch-json';
 import type { ImageReference } from '@/shared/contracts/course-settings';
 
 interface CourseMediaFieldProps {
@@ -51,14 +52,11 @@ export function CourseMediaField({
       const data = new FormData();
       data.set('courseId', courseId);
       data.set('file', file);
-      const response = await fetch('/api/course-studio/assets', { method: 'POST', body: data });
-      const result = (await response.json()) as {
+      const result = await fetchJson<{
         asset?: { deliveryUrl?: string; filename?: string };
         error?: string;
-      };
-      if (!response.ok || !result.asset?.deliveryUrl) {
-        throw new Error(result.error || 'Image upload failed.');
-      }
+      }>('/api/course-studio/assets', { method: 'POST', body: data }, 'Image upload failed.');
+      if (!result.asset?.deliveryUrl) throw new Error(result.error || 'Image upload failed.');
       onChange({
         asset: { url: result.asset.deliveryUrl, originalFilename: result.asset.filename },
       });
