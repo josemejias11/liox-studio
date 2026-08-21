@@ -101,6 +101,11 @@ export default function MotoViewer({
   const restoredResumeKeyRef = useRef<string | null>(null);
   const appliedInitialSectionKeyRef = useRef<string | undefined>(undefined);
   const appliedInitialViewRef = useRef<'cover' | undefined>(undefined);
+  // Set right before a navigation dispatch that originates from this component's own
+  // mount-time bookkeeping (resume-from-localStorage, restart-to-cover) rather than
+  // from the learner/author actually navigating. Consumed by the onLessonChange effect
+  // below so those internal jumps don't get reported to the parent as a real selection.
+  const suppressNextLessonChangeRef = useRef(false);
   const resumeKey = `${preview ? PREVIEW_RESUME_KEY_PREFIX : COURSE_RESUME_KEY_PREFIX}${course._id}`;
 
   useEffect(() => {
@@ -109,12 +114,14 @@ export default function MotoViewer({
     restoredResumeKeyRef.current = resumeKey;
     const savedResume = localStorage.getItem(resumeKey);
     if (savedResume === 'complete') {
+      suppressNextLessonChangeRef.current = true;
       restoreComplete();
       return;
     }
 
     const sectionIndex = Number(savedResume);
     if (Number.isInteger(sectionIndex) && sectionIndex >= 0 && sectionIndex < flow.items.length) {
+      suppressNextLessonChangeRef.current = true;
       navigateToPreviewSection(sectionIndex);
     }
   }, [flow.items.length, navigateToPreviewSection, preview, restoreComplete, resumeKey, sessionId]);
@@ -122,7 +129,10 @@ export default function MotoViewer({
   useEffect(() => {
     if (appliedInitialViewRef.current === initialView) return;
     appliedInitialViewRef.current = initialView;
-    if (initialView === 'cover') restart();
+    if (initialView === 'cover') {
+      suppressNextLessonChangeRef.current = true;
+      restart();
+    }
   }, [initialView, restart]);
 
   useEffect(() => {
@@ -156,6 +166,10 @@ export default function MotoViewer({
       : undefined;
   useEffect(() => {
     if (showChapterIntro || !currentLesson) return;
+    if (suppressNextLessonChangeRef.current) {
+      suppressNextLessonChangeRef.current = false;
+      return;
+    }
     onLessonChange?.(currentLesson._key);
   }, [currentLesson, onLessonChange, showChapterIntro]);
   const lessonRuntime = useLessonRuntime({
