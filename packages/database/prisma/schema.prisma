@@ -205,6 +205,7 @@ model CourseRevision {
   review      CourseReview?
   sources     CourseRevisionSource[]
   generations CourseGeneration[]
+  scormExports CourseScormExport[]
   assistantSnapshot CourseRevisionAssistantQa[]
 
   @@unique([courseId, version])
@@ -278,6 +279,24 @@ model CourseGeneration {
 
   @@index([sourceRevisionId, createdAt])
   @@index([status, createdAt])
+}
+
+// Durable record of one SCORM export artifact for a frozen revision. Kept
+// separate from the BackgroundJob row itself, same pattern as CourseGeneration,
+// so the export's identity (and its R2 location) survives independent of job
+// retention/cleanup.
+model CourseScormExport {
+  id         String         @id @default(cuid())
+  revisionId String
+  jobId      String         @unique
+  r2Key      String
+  byteSize   Int
+  sha256     String
+  createdAt  DateTime       @default(now())
+  revision   CourseRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+  job        BackgroundJob  @relation(fields: [jobId], references: [id], onDelete: Restrict)
+
+  @@index([revisionId, createdAt])
 }
 
 // A review link grants read-only access to exactly one immutable revision.
@@ -386,6 +405,7 @@ enum BackgroundJobKind {
   DOCUMENT_INDEX
   QUIZ_GENERATE
   AI_OPERATION
+  SCORM_EXPORT
 }
 
 enum BackgroundJobStatus {
@@ -418,6 +438,7 @@ model BackgroundJob {
   updatedAt      DateTime            @updatedAt
   artifact       JobArtifact?
   generation     CourseGeneration?
+  scormExport    CourseScormExport?
 
   @@index([status, runAfter])
   @@index([leaseExpiresAt])
