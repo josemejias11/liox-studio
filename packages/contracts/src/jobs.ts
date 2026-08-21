@@ -57,7 +57,7 @@ export type ScormExportResult = z.infer<typeof ScormExportResultSchema>;
 export const ScormExportArtifactSchema = z.object({
   content: z.unknown(),
   assistant: z.unknown().nullish(),
-  masteryScore: z.number().int().min(0).max(100),
+  masteryScore: z.number().min(0).max(100),
 });
 export type ScormExportArtifact = z.infer<typeof ScormExportArtifactSchema>;
 
