@@ -3,6 +3,7 @@
 import type { AssistantQaItem } from '@moto-ai/contracts';
 import type { CourseSourceFile } from '@moto-ai/contracts/course-studio';
 import { useCallback, useEffect, useState } from 'react';
+import { fetchJson } from '@/shared/fetch-json';
 
 export function AssistantQaPanel({
   courseId,
@@ -21,9 +22,11 @@ export function AssistantQaPanel({
   const [busy, setBusy] = useState(false);
   const url = `/api/course-studio/courses/${encodeURIComponent(courseId)}/assistant-qa`;
   const load = useCallback(async () => {
-    const response = await fetch(url, { cache: 'no-store' });
-    const result = (await response.json()) as { items?: AssistantQaItem[]; error?: string };
-    if (!response.ok) throw new Error(result.error || 'Assistant Q&A could not be loaded.');
+    const result = await fetchJson<{ items?: AssistantQaItem[]; error?: string }>(
+      url,
+      { cache: 'no-store' },
+      'Assistant Q&A could not be loaded.',
+    );
     setItems(result.items ?? []);
   }, [url]);
   useEffect(() => {
@@ -38,13 +41,15 @@ export function AssistantQaPanel({
     setBusy(true);
     setMessage(null);
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ sourceIds: selected }),
-      });
-      const result = (await response.json()) as { error?: string };
-      if (!response.ok) throw new Error(result.error || 'Draft generation could not start.');
+      await fetchJson<{ error?: string }>(
+        url,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ sourceIds: selected }),
+        },
+        'Draft generation could not start.',
+      );
       setMessage('Draft generation is queued. Refresh this panel after processing completes.');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Draft generation could not start.');
@@ -56,14 +61,16 @@ export function AssistantQaPanel({
     setBusy(true);
     setMessage(null);
     try {
-      const response = await fetch(url, {
-        method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ ...item, status }),
-      });
-      const result = (await response.json()) as { item?: AssistantQaItem; error?: string };
-      if (!response.ok || !result.item)
-        throw new Error(result.error || 'Assistant Q&A could not be saved.');
+      const result = await fetchJson<{ item?: AssistantQaItem; error?: string }>(
+        url,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ ...item, status }),
+        },
+        'Assistant Q&A could not be saved.',
+      );
+      if (!result.item) throw new Error(result.error || 'Assistant Q&A could not be saved.');
       setItems((current) => current.map((entry) => (entry.id === item.id ? result.item! : entry)));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Assistant Q&A could not be saved.');
