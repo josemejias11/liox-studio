@@ -205,11 +205,17 @@ async function scormExport(job: ClaimedJob): Promise<ScormExportResult> {
   }
 
   const playerBundleDir = path.join(playerBundleRoot(), 'dist');
-  let playerBundle: { 'player.js': Buffer; 'player.css': Buffer };
+  let playerBundle: Record<string, Buffer>;
   try {
     playerBundle = {
       'player.js': await readFile(path.join(playerBundleDir, 'player.js')),
       'player.css': await readFile(path.join(playerBundleDir, 'player.css')),
+      'fonts/MotoSans-Regular.otf': await readFile(
+        path.join(playerBundleDir, 'fonts', 'MotoSans-Regular.otf'),
+      ),
+      'fonts/MotoSans-Italic.otf': await readFile(
+        path.join(playerBundleDir, 'fonts', 'MotoSans-Italic.otf'),
+      ),
     };
   } catch {
     throw new NonRetryableJobError(
