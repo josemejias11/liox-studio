@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx src/index.ts",
+    "build": "npm run build --workspace=@moto-ai/scorm-export",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
