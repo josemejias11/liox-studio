@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { fetchJson } from '@/shared/fetch-json';
 
 export function ReviewFeedbackPanel({
   token,
@@ -26,18 +27,20 @@ export function ReviewFeedbackPanel({
     setSending(true);
     setStatus(null);
     try {
-      const response = await fetch(`/api/reviews/${encodeURIComponent(token)}/feedback`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          authorName,
-          message,
-          lessonId: selectedLessonId,
-          assistantQuestion: assistantContext?.question,
-        }),
-      });
-      const result = (await response.json()) as { error?: string };
-      if (!response.ok) throw new Error(result.error || 'Feedback could not be submitted.');
+      await fetchJson<{ error?: string }>(
+        `/api/reviews/${encodeURIComponent(token)}/feedback`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            authorName,
+            message,
+            lessonId: selectedLessonId,
+            assistantQuestion: assistantContext?.question,
+          }),
+        },
+        'Feedback could not be submitted.',
+      );
       setMessage('');
       setStatus('Feedback submitted. Thank you.');
     } catch (error) {
