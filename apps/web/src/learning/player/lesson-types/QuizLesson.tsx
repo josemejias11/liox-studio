@@ -11,6 +11,8 @@ export interface QuizLessonProps {
 
   onFail: () => void;
 
+  onScored?: (result: { score: number; total: number; passed: boolean }) => void;
+
   sessionId?: string;
   courseId?: string;
   preview?: boolean;
@@ -21,6 +23,7 @@ export function QuizLesson({
   courseQuiz,
   onPass,
   onFail,
+  onScored,
   sessionId,
   courseId,
   preview = false,
@@ -32,6 +35,7 @@ export function QuizLesson({
         courseQuiz={courseQuiz}
         onPass={onPass}
         onFail={onFail}
+        onScored={onScored}
         sessionId={sessionId}
         courseId={courseId}
         preview={preview}

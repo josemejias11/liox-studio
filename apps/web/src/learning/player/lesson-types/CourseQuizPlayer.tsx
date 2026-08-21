@@ -35,6 +35,7 @@ export interface CourseQuizPlayerProps {
   courseQuiz: AuthoredQuiz;
   onPass: (score: number) => void;
   onFail?: () => void;
+  onScored?: (result: { score: number; total: number; passed: boolean }) => void;
 
   sessionId?: string;
   courseId?: string;
@@ -46,6 +47,7 @@ export function CourseQuizPlayer({
   courseQuiz,
   onPass,
   onFail,
+  onScored,
 
   sessionId,
   courseId,
@@ -221,6 +223,13 @@ export function CourseQuizPlayer({
         total={session.summary.total}
         passingScore={session.summary.passingScore}
         onContinue={() => {
+          if (session.summary) {
+            onScored?.({
+              score: session.summary.score,
+              total: session.summary.total,
+              passed: session.summary.passed,
+            });
+          }
           if (session.summary?.passed) onPass(score);
           else onFail?.();
         }}

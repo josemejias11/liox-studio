@@ -49,6 +49,8 @@ export default function MotoViewer({
   assistant,
   onAssistantAnswer,
   onLessonChange,
+  onFinalQuizResult,
+  onCourseComplete,
   initialView,
   bypassNavigationLocks = false,
 }: {
@@ -65,6 +67,8 @@ export default function MotoViewer({
     answer: string;
   }) => void;
   onLessonChange?: (lessonId: string) => void;
+  onFinalQuizResult?: (result: { score: number; total: number; passed: boolean }) => void;
+  onCourseComplete?: () => void;
   initialView?: 'cover';
   bypassNavigationLocks?: boolean;
 }) {
@@ -106,6 +110,10 @@ export default function MotoViewer({
   // from the learner/author actually navigating. Consumed by the onLessonChange effect
   // below so those internal jumps don't get reported to the parent as a real selection.
   const suppressNextLessonChangeRef = useRef(false);
+  // Guards onCourseComplete so it fires once on the transition into the 'complete'
+  // phase rather than on every render/effect re-run while the course stays complete
+  // (mirrors the wasComplete ref pattern in useCourseNavigation.ts).
+  const wasCourseCompleteRef = useRef(false);
   const resumeKey = `${preview ? PREVIEW_RESUME_KEY_PREFIX : COURSE_RESUME_KEY_PREFIX}${course._id}`;
 
   useEffect(() => {
@@ -196,14 +204,27 @@ export default function MotoViewer({
 
     if (phase.phase === 'complete') {
       localStorage.setItem(resumeKey, 'complete');
+      if (!wasCourseCompleteRef.current) {
+        wasCourseCompleteRef.current = true;
+        onCourseComplete?.();
+      }
       return;
     }
 
+    wasCourseCompleteRef.current = false;
     const sectionIndex = currentSectionIndex;
     if (sectionIndex >= 0 && sectionIndex < flow.items.length) {
       localStorage.setItem(resumeKey, String(sectionIndex));
     }
-  }, [currentSectionIndex, flow.items.length, phase.phase, preview, resumeKey, sessionId]);
+  }, [
+    currentSectionIndex,
+    flow.items.length,
+    onCourseComplete,
+    phase.phase,
+    preview,
+    resumeKey,
+    sessionId,
+  ]);
 
   function navigateToSection(i: number) {
     setShowNavMap(false);
@@ -317,6 +338,7 @@ export default function MotoViewer({
               finishQuiz={nav.finishQuiz}
               dismissChapterIntro={nav.dismissChapterIntro}
               onDisclaimerCanProceedChange={setDisclaimerCanProceed}
+              onFinalQuizResult={onFinalQuizResult}
               preview={preview}
               aiIdentity={aiIdentity}
               imageSizes={imageSizes}

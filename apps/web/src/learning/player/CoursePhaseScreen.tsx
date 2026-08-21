@@ -37,6 +37,7 @@ export interface CoursePhaseScreenProps {
   finishQuiz: () => void;
   dismissChapterIntro: () => void;
   onDisclaimerCanProceedChange: (canProceed: boolean) => void;
+  onFinalQuizResult?: (result: { score: number; total: number; passed: boolean }) => void;
   preview: boolean;
   imageSizes: string;
   aiIdentity?: RevisionIdentity;
@@ -84,6 +85,7 @@ export function CoursePhaseScreen({
   finishQuiz,
   dismissChapterIntro,
   onDisclaimerCanProceedChange,
+  onFinalQuizResult,
   preview,
   imageSizes,
   aiIdentity,
@@ -143,6 +145,7 @@ export function CoursePhaseScreen({
             courseQuiz={structure.finalQuiz}
             onPass={finishQuiz}
             onFail={finishQuiz}
+            onScored={onFinalQuizResult}
             sessionId={persistSession ? sessionId : undefined}
             courseId={course._id}
             preview={preview}
