@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "node scripts/run-workspace.mjs @moto-ai/web dev",
     "jobs:worker": "node scripts/run-workspace.mjs @moto-ai/job-worker dev",
-    "build": "npm run db:migrate && node scripts/run-workspace.mjs @moto-ai/web build && node scripts/run-workspace.mjs @moto-ai/job-worker build",
+    "build": "npm run db:migrate && node scripts/run-workspace.mjs @moto-ai/web build",
     "start": "node scripts/run-workspace.mjs @moto-ai/web start",
     "lint": "eslint apps packages scripts",
     "format": "prettier --write .",
