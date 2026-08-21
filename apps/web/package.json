@@ -14,6 +14,7 @@
     "@moto-ai/database": "0.1.0",
     "@moto-ai/jobs": "0.1.0",
     "@moto-ai/parser-client": "0.1.0",
+    "@moto-ai/storage": "0.1.0",
     "@portabletext/react": "^6.2.0",
     "@portabletext/types": "^4.0.2",
     "framer-motion": "^12.40.0",
