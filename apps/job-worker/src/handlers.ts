@@ -6,6 +6,7 @@ import {
   AssistantQaGenerationPayloadSchema,
   CourseGenerationPayloadSchema,
   DocumentIndexPayloadSchema,
+  ScormExportArtifactSchema,
   ScormExportPayloadSchema,
   type ScormExportResult,
 } from '@moto-ai/contracts/jobs';
@@ -27,7 +28,7 @@ import {
   uploadCourseDocument,
 } from '@moto-ai/parser-client';
 import { NonRetryableJobError, type ClaimedJob } from '@moto-ai/jobs';
-import { buildScormPackage } from '@moto-ai/scorm-export';
+import { AssetNotFoundError, buildScormPackage } from '@moto-ai/scorm-export';
 import { putR2Object } from '@moto-ai/storage';
 
 async function indexDocument(job: ClaimedJob): Promise<{ filename: string; chunksStored: number }> {
@@ -197,12 +198,17 @@ async function scormExport(job: ClaimedJob): Promise<ScormExportResult> {
     throw new NonRetryableJobError('The frozen revision no longer exists. Trigger a new export.');
   }
 
-  let bundlePayload: { content: unknown; assistant: unknown; masteryScore: number };
+  let parsedArtifact: unknown;
   try {
-    bundlePayload = JSON.parse(job.artifact.bytes.toString('utf8'));
+    parsedArtifact = JSON.parse(job.artifact.bytes.toString('utf8'));
   } catch {
     throw new NonRetryableJobError('The queued course content is corrupted. Trigger a new export.');
   }
+  const artifact = ScormExportArtifactSchema.safeParse(parsedArtifact);
+  if (!artifact.success) {
+    throw new NonRetryableJobError('The queued course content is corrupted. Trigger a new export.');
+  }
+  const bundlePayload = artifact.data;
 
   const playerBundleDir = path.join(playerBundleRoot(), 'dist');
   let playerBundle: Record<string, Buffer>;
@@ -224,14 +230,24 @@ async function scormExport(job: ClaimedJob): Promise<ScormExportResult> {
   }
 
   const scoIdentifier = `export_${revision.id}`;
-  const built = await buildScormPackage({
-    title: revision.sourceTitle,
-    scoIdentifier,
-    masteryScore: bundlePayload.masteryScore,
-    content: bundlePayload.content,
-    assistant: bundlePayload.assistant,
-    playerBundle,
-  });
+  let built: Awaited<ReturnType<typeof buildScormPackage>>;
+  try {
+    built = await buildScormPackage({
+      title: revision.sourceTitle,
+      scoIdentifier,
+      masteryScore: bundlePayload.masteryScore,
+      content: bundlePayload.content,
+      assistant: bundlePayload.assistant,
+      playerBundle,
+    });
+  } catch (error: unknown) {
+    if (error instanceof AssetNotFoundError) {
+      throw new NonRetryableJobError(
+        "One of this course's images or videos is missing from storage. Re-upload it, freeze a new revision, and export again.",
+      );
+    }
+    throw error;
+  }
 
   const r2Key = `exports/${revision.id}/${job.id}.zip`;
   await putR2Object({ key: r2Key, bytes: built.buffer, contentType: 'application/zip' });
@@ -246,7 +262,7 @@ async function scormExport(job: ClaimedJob): Promise<ScormExportResult> {
     },
   });
 
-  return { exportId: record.id, r2Key, byteSize: built.byteSize, sha256: built.sha256 };
+  return { exportId: record.id, byteSize: built.byteSize, sha256: built.sha256 };
 }
 
 function playerBundleRoot(): string {

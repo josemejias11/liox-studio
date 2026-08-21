@@ -1,5 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import MotoViewer from '@/learning/player/MotoViewer';
+import type { CourseContent, CourseSection } from '@/shared/contracts/player-course';
+import type { OfflineAssistantPayload } from '@moto-ai/contracts';
 import { ScormBridge } from './scorm-api';
 
 // styles.css is NOT imported here on purpose: it is compiled to dist/player.css by a
@@ -10,8 +12,8 @@ import { ScormBridge } from './scorm-api';
 // entry point makes esbuild try (and fail) to resolve those same imports itself.
 
 interface CourseDataPayload {
-  content: { course: unknown; sections: unknown };
-  assistant: unknown;
+  content: { course: CourseContent; sections: CourseSection[] };
+  assistant: OfflineAssistantPayload | undefined;
 }
 
 function readCoursePayload(): CourseDataPayload {
@@ -33,10 +35,8 @@ function mount(): void {
   const root = createRoot(container);
   root.render(
     <MotoViewer
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      course={payload.content.course as any}
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      sections={payload.content.sections as any}
+      course={payload.content.course}
+      sections={payload.content.sections}
       preview
       bypassNavigationLocks={false}
       initialSectionKey={savedBookmark}

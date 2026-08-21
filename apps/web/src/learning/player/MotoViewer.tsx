@@ -15,6 +15,7 @@ import { CoursePhaseScreen, getCoursePhaseSlideKey } from './CoursePhaseScreen';
 import { ErrorBoundary } from '@/shared/ErrorBoundary';
 import { useLessonRuntime } from './hooks/useLessonRuntime';
 import { PlayerOverlays } from './PlayerOverlays';
+import { safeLocalStorageGet, safeLocalStorageSet } from './safe-storage';
 
 const slideVariants = {
   enter: (direction: number) => ({
@@ -120,7 +121,7 @@ export default function MotoViewer({
     if (!sessionId || restoredResumeKeyRef.current === resumeKey) return;
 
     restoredResumeKeyRef.current = resumeKey;
-    const savedResume = localStorage.getItem(resumeKey);
+    const savedResume = safeLocalStorageGet(resumeKey);
     if (savedResume === 'complete') {
       suppressNextLessonChangeRef.current = true;
       restoreComplete();
@@ -203,7 +204,7 @@ export default function MotoViewer({
     if (!sessionId) return;
 
     if (phase.phase === 'complete') {
-      localStorage.setItem(resumeKey, 'complete');
+      safeLocalStorageSet(resumeKey, 'complete');
       if (!wasCourseCompleteRef.current) {
         wasCourseCompleteRef.current = true;
         onCourseComplete?.();
@@ -214,7 +215,7 @@ export default function MotoViewer({
     wasCourseCompleteRef.current = false;
     const sectionIndex = currentSectionIndex;
     if (sectionIndex >= 0 && sectionIndex < flow.items.length) {
-      localStorage.setItem(resumeKey, String(sectionIndex));
+      safeLocalStorageSet(resumeKey, String(sectionIndex));
     }
   }, [
     currentSectionIndex,

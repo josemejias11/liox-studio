@@ -216,7 +216,19 @@ function RevisionPanelContent({
 
       let status: ScormExportJobStatus = 'queued';
       let result: { exportId?: string } | null = null;
+      // ~150 iterations at the 2s poll interval below is a ~5 minute cap — a generous
+      // safety margin over the ~30s a real export has actually taken in testing. Without
+      // a cap, a stuck job-worker (down, misconfigured SCORM_PLAYER_BUNDLE_PATH, etc.)
+      // would leave this panel's busy state locked forever with no way out but a reload.
+      const MAX_POLL_ITERATIONS = 150;
+      let iterations = 0;
+      let timedOut = false;
       while (status === 'queued' || status === 'running') {
+        if (iterations >= MAX_POLL_ITERATIONS) {
+          timedOut = true;
+          break;
+        }
+        iterations += 1;
         await new Promise((resolve) => setTimeout(resolve, 2000));
         if (!isCurrentCourse(generation)) return;
         const job = await fetchJson<{
@@ -228,6 +240,11 @@ function RevisionPanelContent({
         status = job.status;
         result = job.result;
         if (status === 'failed') throw new Error(job.errorMessage || 'SCORM export failed.');
+      }
+
+      if (timedOut) {
+        setMessage('Still building — this is taking longer than expected. Check back in a few minutes.');
+        return;
       }
 
       if (!result?.exportId) throw new Error('SCORM export finished without a result.');

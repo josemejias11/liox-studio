@@ -6,6 +6,17 @@ import { getR2Object } from '@moto-ai/storage';
 import { buildImsManifest } from './manifest';
 import { collectAssetRefs, rewriteAssetUrls, r2KeyFor } from './assets';
 
+// Thrown when a course-referenced asset's R2 object is missing at export time. Distinguished
+// from a generic Error so callers (the job-worker handler) can treat this as non-retryable and
+// show the author a clean, actionable message instead of burning retries re-fetching every
+// other already-successfully-fetched asset on a failure that retrying can't fix.
+export class AssetNotFoundError extends Error {
+  constructor(public readonly r2Key: string) {
+    super(`Asset not found in storage: ${r2Key}`);
+    this.name = 'AssetNotFoundError';
+  }
+}
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const STATIC_DIR = path.join(__dirname, '..', 'static');
 const XSD_FILES = [
@@ -46,7 +57,7 @@ export async function buildScormPackage(input: ScormPackageInput): Promise<{
     const relativePath = `assets/${r2Key.split('/').slice(1).join('/')}`;
     urlMap.set(assetUrl, relativePath);
     const object = await getR2Object(r2Key);
-    if (!object.Body) throw new Error(`Asset not found in storage: ${r2Key}`);
+    if (!object.Body) throw new AssetNotFoundError(r2Key);
     assetFiles[relativePath] = await streamToBuffer(object.Body);
   }
 

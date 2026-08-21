@@ -188,6 +188,7 @@ export function CourseQuizPlayer({
     }
 
     if (isLastQuestion && preview && isCourseFinal) {
+      const pass = courseQuiz.passingScore ?? 80;
       const results = session.results.filter(
         (result): result is NonNullable<typeof result> => result !== undefined,
       );
@@ -197,8 +198,8 @@ export function CourseQuizPlayer({
         summary: {
           score,
           total: quiz.questions.length,
-          passed: Math.round((score / quiz.questions.length) * 100) >= 80,
-          passingScore: 80,
+          passed: Math.round((score / quiz.questions.length) * 100) >= pass,
+          passingScore: pass,
           results,
         },
       });

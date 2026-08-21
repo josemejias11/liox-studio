@@ -46,11 +46,20 @@ export type ScormExportPayload = z.infer<typeof ScormExportPayloadSchema>;
 
 export const ScormExportResultSchema = z.object({
   exportId: z.string().min(1),
-  r2Key: z.string().min(1),
   byteSize: z.number().int().min(0),
   sha256: z.string().regex(/^[0-9a-f]{64}$/),
 });
 export type ScormExportResult = z.infer<typeof ScormExportResultSchema>;
+
+// Shape of the job artifact bytes written by enqueueScormExportJob (packages/jobs/src/queue.ts)
+// and read back by the job-worker's scormExport handler. masteryScore flows unvalidated into
+// the generated SCORM manifest's <adlcp:masteryscore> tag otherwise.
+export const ScormExportArtifactSchema = z.object({
+  content: z.unknown(),
+  assistant: z.unknown().nullish(),
+  masteryScore: z.number().int().min(0).max(100),
+});
+export type ScormExportArtifact = z.infer<typeof ScormExportArtifactSchema>;
 
 export const AiOperationPayloadSchema = z.object({
   operation: z.string().min(1).max(100),
