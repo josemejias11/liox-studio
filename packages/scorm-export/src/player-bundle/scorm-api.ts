@@ -18,10 +18,14 @@ const MAX_WINDOW_HOPS = 500;
 function searchWindowChain(start: Window): ScormLmsApi | null {
   let current: Window = start;
   for (let hops = 0; hops < MAX_WINDOW_HOPS; hops += 1) {
-    if (current.API) return current.API;
-    if (current.parent && current.parent !== current) {
-      current = current.parent;
-      continue;
+    try {
+      if (current.API) return current.API;
+      if (current.parent && current.parent !== current) {
+        current = current.parent;
+        continue;
+      }
+    } catch {
+      return null;
     }
     break;
   }
@@ -31,8 +35,12 @@ function searchWindowChain(start: Window): ScormLmsApi | null {
 function findApi(win: Window): ScormLmsApi | null {
   const fromSelf = searchWindowChain(win);
   if (fromSelf) return fromSelf;
-  const opener = win.opener as Window | null | undefined;
-  if (opener && !opener.closed) return searchWindowChain(opener);
+  try {
+    const opener = win.opener as Window | null | undefined;
+    if (opener && !opener.closed) return searchWindowChain(opener);
+  } catch {
+    return null;
+  }
   return null;
 }
 
