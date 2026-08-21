@@ -5,6 +5,7 @@ export const JobKindSchema = z.enum([
   'assistant_qa_generate',
   'course_generate',
   'ai_operation',
+  'scorm_export',
 ]);
 export type JobKind = z.infer<typeof JobKindSchema>;
 
@@ -37,6 +38,19 @@ export const CourseGenerationPayloadSchema = z.object({
   generationId: z.string().min(1).max(100),
 });
 export type CourseGenerationPayload = z.infer<typeof CourseGenerationPayloadSchema>;
+
+export const ScormExportPayloadSchema = z.object({
+  revisionId: z.string().min(1).max(100),
+});
+export type ScormExportPayload = z.infer<typeof ScormExportPayloadSchema>;
+
+export const ScormExportResultSchema = z.object({
+  exportId: z.string().min(1),
+  r2Key: z.string().min(1),
+  byteSize: z.number().int().min(0),
+  sha256: z.string().regex(/^[0-9a-f]{64}$/),
+});
+export type ScormExportResult = z.infer<typeof ScormExportResultSchema>;
 
 export const AiOperationPayloadSchema = z.object({
   operation: z.string().min(1).max(100),
