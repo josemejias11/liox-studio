@@ -15,6 +15,9 @@ services/parser-service/chroma_db/
 # Local browser-inspection artifacts
 .playwright-mcp/
 
+# Package build output
+packages/scorm-export/dist/
+
 # Local environment files
 .env*
 !.env.example

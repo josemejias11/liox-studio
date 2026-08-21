@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     '**/build/**',
     '**/next-env.d.ts',
     'packages/database/src/generated/**',
+    // Generated esbuild output — not authored source.
+    'packages/scorm-export/dist/**',
     // The parser service uses Python tooling and is not part of ESLint.
     'services/parser-service/**',
   ]),
