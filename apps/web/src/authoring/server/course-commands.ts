@@ -13,6 +13,7 @@ import {
   listCourseTrash,
   listFrozenRevisionSourceIds,
   permanentlyDeleteCourseTrashItem,
+  prisma,
   reorderCourseItem,
   resolveCourseReviewFeedback,
   restoreCourseTrashItem,
@@ -23,7 +24,11 @@ import {
   type CourseDetailsInput,
   type CourseTrashItem,
 } from '@moto-ai/database';
-import type { CourseLessonType, LessonInput } from '@moto-ai/contracts/course-studio';
+import { enqueueScormExportJob } from '@moto-ai/jobs';
+import { OfflineAssistantPayloadSchema, OFFLINE_ASSISTANT_PAYLOAD_VERSION } from '@moto-ai/contracts';
+import type { JobAcceptedResponse } from '@moto-ai/contracts/jobs';
+import type { CourseLessonType, LessonInput, CourseGraph } from '@moto-ai/contracts/course-studio';
+import { toPlayerCourseContent } from '@/learning/course-player-adapter';
 
 function serializeCourseTrashItem(item: CourseTrashItem) {
   return { ...item, deletedAt: item.deletedAt.toISOString() };
@@ -140,4 +145,36 @@ export async function permanentlyDeleteAuthoringTrashItem(courseId: string, tras
 
 export function createAuthoringReview(revisionId: string) {
   return createCourseReview(revisionId);
+}
+
+export async function requestScormExport(revisionId: string): Promise<JobAcceptedResponse> {
+  const revision = await prisma.courseRevision.findUnique({
+    where: { id: revisionId },
+    include: { assistantSnapshot: true },
+  });
+  if (!revision) throw new Error('REVISION_NOT_FOUND');
+
+  const graph = revision.snapshot as unknown as CourseGraph;
+  const content = toPlayerCourseContent(graph, { includeAnswerKey: true });
+  if (!content) throw new Error('REVISION_CONTENT_INVALID');
+
+  const assistant =
+    revision.assistantSnapshot.length > 0
+      ? OfflineAssistantPayloadSchema.parse({
+          version: OFFLINE_ASSISTANT_PAYLOAD_VERSION,
+          items: revision.assistantSnapshot.map(({ citations: _citations, ...item }) => item),
+        })
+      : undefined;
+
+  const finalQuizPassingScore =
+    graph.finalQuiz && typeof graph.finalQuiz.payload === 'object' && graph.finalQuiz.payload
+      ? (graph.finalQuiz.payload as { passingScore?: number }).passingScore
+      : undefined;
+
+  return enqueueScormExportJob({
+    revisionId,
+    content,
+    assistant,
+    masteryScore: finalQuizPassingScore ?? 80,
+  });
 }

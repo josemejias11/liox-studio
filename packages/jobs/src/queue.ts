@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 
 import {
   BackgroundJobKind,
@@ -29,12 +29,14 @@ const databaseKind: Record<JobKind, BackgroundJobKind> = {
   assistant_qa_generate: BackgroundJobKind.AI_OPERATION,
   course_generate: BackgroundJobKind.AI_OPERATION,
   ai_operation: BackgroundJobKind.AI_OPERATION,
+  scorm_export: BackgroundJobKind.SCORM_EXPORT,
 };
 
 const publicKind: Record<BackgroundJobKind, Exclude<JobKind, 'course_generate'>> = {
   DOCUMENT_INDEX: 'document_index',
   QUIZ_GENERATE: 'ai_operation',
   AI_OPERATION: 'ai_operation',
+  SCORM_EXPORT: 'scorm_export',
 };
 
 function jobKind(job: Pick<BackgroundJob, 'kind' | 'payload'>): JobKind {
@@ -184,6 +186,33 @@ export async function enqueueAiOperationJob(
     'ai_operation',
     payload,
     `ai:${payload.operation}:${JSON.stringify(payload.input)}`,
+  );
+}
+
+export async function enqueueScormExportJob(input: {
+  revisionId: string;
+  content: unknown;
+  assistant: unknown;
+  masteryScore: number;
+}): Promise<JobAcceptedResponse> {
+  const bytes = Buffer.from(
+    JSON.stringify({
+      content: input.content,
+      assistant: input.assistant,
+      masteryScore: input.masteryScore,
+    }),
+    'utf8',
+  );
+  const contentHash = createHash('sha256').update(bytes).digest('hex');
+  return enqueue(
+    'scorm_export',
+    { revisionId: input.revisionId },
+    `scorm-export:${input.revisionId}:${contentHash}`,
+    {
+      filename: 'course-content.json',
+      contentType: 'application/json',
+      bytes,
+    },
   );
 }
 
