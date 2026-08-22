@@ -86,6 +86,13 @@ export function useStudioSelection({
       const chapter = nextCourse.chapters.find((item) => item.id === current.id);
       if (current.kind === 'chapter')
         return chapter ? current : { kind: 'course', id: nextCourse.id };
+      if (current.kind === 'quickCheck') {
+        const selectedChapter = nextCourse.chapters.find((item) => item.id === current.id);
+        return selectedChapter?.quickCheck ? current : { kind: 'chapter', id: current.id };
+      }
+      if (current.kind === 'finalQuiz') {
+        return nextCourse.finalQuiz ? current : { kind: 'course', id: nextCourse.id };
+      }
       const lessonExists = nextCourse.chapters.some((item) =>
         item.lessons.some((lesson) => lesson.id === current.id),
       );

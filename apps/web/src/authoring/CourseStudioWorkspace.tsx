@@ -76,8 +76,12 @@ export function CourseStudioWorkspace({
     permanentlyDeleteTrashItem,
     restoreTrashItem,
     saveChapter,
+    saveChapterQuickCheck,
     saveCourse,
+    saveFinalAssessment,
     saveLesson,
+    removeChapterQuickCheck,
+    removeFinalAssessment,
   } = useStudioCourseCommands({
     persistence,
     confirmDiscard: confirmDiscardCourseSettings,
@@ -230,6 +234,10 @@ export function CourseStudioWorkspace({
                 onSaveChapter={(chapterId, input) => saveChapter(chapterId, input as ChapterInput)}
                 onDirtyChange={setCourseSettingsDirty}
                 onSaveCourse={saveCourse}
+                onSaveChapterQuickCheck={saveChapterQuickCheck}
+                onRemoveChapterQuickCheck={removeChapterQuickCheck}
+                onSaveFinalAssessment={saveFinalAssessment}
+                onRemoveFinalAssessment={removeFinalAssessment}
                 onSaveLesson={saveLesson}
                 onSaveStateChange={setCourseSaveState}
                 selection={selection}

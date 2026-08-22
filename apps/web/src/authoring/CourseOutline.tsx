@@ -11,7 +11,6 @@ const BLOCKS: Array<{ type: CourseLessonType; label: string }> = [
   { type: 'interaction', label: 'Hotspot' },
   { type: 'stage', label: 'Product stage' },
   { type: 'video', label: 'Video' },
-  { type: 'quiz', label: 'Quiz' },
   { type: 'canvas', label: 'Canvas inspection' },
   { type: 'colorSwitcher', label: 'Colour switcher' },
   { type: 'splitScreen', label: 'Split screen' },
@@ -198,9 +197,25 @@ export function CourseOutline({
                   </option>
                 ))}
               </select>
+              <button
+                className={`mt-2 min-h-11 w-full rounded-md px-2 py-2 text-left text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50 ${selected(selection, 'quickCheck', chapter.id) ? 'bg-primary text-primary-foreground' : 'border-border hover:border-primary hover:text-primary border border-dashed'}`}
+                disabled={disabled}
+                onClick={() => onSelect({ kind: 'quickCheck', id: chapter.id })}
+                type="button"
+              >
+                {chapter.quickCheck ? 'Chapter knowledge check' : 'Add knowledge check'}
+              </button>
             </div>
           </section>
         ))}
+        <button
+          className={`border-border mb-3 min-h-11 w-full rounded-lg border border-dashed px-3 py-2 text-left text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${selected(selection, 'finalQuiz', course.id) ? 'bg-primary text-primary-foreground' : 'hover:border-primary hover:text-primary'}`}
+          disabled={disabled}
+          onClick={() => onSelect({ kind: 'finalQuiz', id: course.id })}
+          type="button"
+        >
+          {course.finalQuiz ? 'Final assessment' : 'Add final assessment'}
+        </button>
         <button
           className="studio-glass-control border-border hover:border-primary hover:text-primary flex w-full items-center justify-center gap-2 rounded-lg border border-dashed px-3 py-2 text-sm"
           disabled={disabled}

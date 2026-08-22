@@ -6,6 +6,7 @@ import type {
   CourseLessonType,
   LessonInput,
 } from '@moto-ai/contracts/course-studio';
+import type { CourseAssessmentInput } from '@moto-ai/contracts';
 import { useState } from 'react';
 import type { CourseSettingsInput } from '@/shared/contracts/course-settings';
 import { studioClient } from './studio-client';
@@ -251,6 +252,33 @@ export function useStudioCourseCommands({
     await run('Screen', () => studioClient.updateLesson(course.id, lessonId, input));
   }
 
+  async function saveChapterQuickCheck(
+    chapterId: string,
+    input: CourseAssessmentInput,
+  ): Promise<void> {
+    await run('Knowledge check', () =>
+      studioClient.upsertChapterQuickCheck(course.id, chapterId, input),
+    );
+  }
+
+  async function removeChapterQuickCheck(chapterId: string): Promise<void> {
+    await run('Knowledge check', () => studioClient.removeChapterQuickCheck(course.id, chapterId), {
+      structural: true,
+      onSuccess: reconcileSelection,
+    });
+  }
+
+  async function saveFinalAssessment(input: CourseAssessmentInput): Promise<void> {
+    await run('Final assessment', () => studioClient.upsertFinalAssessment(course.id, input));
+  }
+
+  async function removeFinalAssessment(): Promise<void> {
+    await run('Final assessment', () => studioClient.removeFinalAssessment(course.id), {
+      structural: true,
+      onSuccess: reconcileSelection,
+    });
+  }
+
   return {
     action,
     addChapter,
@@ -260,7 +288,11 @@ export function useStudioCourseCommands({
     permanentlyDeleteTrashItem,
     restoreTrashItem,
     saveChapter,
+    saveChapterQuickCheck,
     saveCourse,
+    saveFinalAssessment,
     saveLesson,
+    removeChapterQuickCheck,
+    removeFinalAssessment,
   };
 }

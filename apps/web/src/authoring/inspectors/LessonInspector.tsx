@@ -13,9 +13,8 @@ import { serializeLessonDraft } from './lesson/lesson-serializer';
 import { AssetField } from './lesson/AssetField';
 import { CoveredFeaturesField } from './lesson/CoveredFeaturesField';
 import { DragDropField } from './lesson/DragDropField';
-import { FieldError, lessonInputClass, lessonTextareaClass } from './lesson/FieldError';
+import { FieldError, lessonInputClass } from './lesson/FieldError';
 import { HotspotsField } from './lesson/HotspotsField';
-import { QuizQuestionsField } from './lesson/QuizQuestionsField';
 import { RichTextField } from './lesson/RichTextField';
 import { ScrollChaptersField } from './lesson/ScrollChaptersField';
 import { TextOverlayCanvas } from './lesson/TextOverlayCanvas';
@@ -37,7 +36,12 @@ function fingerprint(draft: LessonDraft) {
   return JSON.stringify(draft, (_key, value) => (_key === 'clientKey' ? undefined : value));
 }
 
-export function LessonInspector({
+export function LessonInspector({ lesson, ...props }: LessonInspectorProps) {
+  if (lesson.lessonType === 'quiz') return <LegacyInlineQuizInspector />;
+  return <LessonInspectorEditor {...props} lesson={lesson} />;
+}
+
+function LessonInspectorEditor({
   course,
   lesson,
   disabled = false,
@@ -283,79 +287,6 @@ export function LessonInspector({
           </>
         )}
 
-        {type === 'quiz' && (
-          <>
-            <fieldset className="studio-glass-control border-border space-y-3 rounded-xl border p-3">
-              <legend className="px-1 text-sm font-semibold">Quiz settings</legend>
-              <label className="block text-xs font-medium">
-                Title
-                <input
-                  className={inputClass}
-                  disabled={locked}
-                  onChange={(event) =>
-                    update((current) => ({ ...current, quizTitle: event.target.value }))
-                  }
-                  value={draft.quizTitle}
-                />
-              </label>
-              <label className="block text-xs font-medium">
-                Instructions
-                <textarea
-                  className={lessonTextareaClass}
-                  disabled={locked}
-                  onChange={(event) =>
-                    update((current) => ({ ...current, quizInstructions: event.target.value }))
-                  }
-                  value={draft.quizInstructions}
-                />
-              </label>
-              <label className="block text-xs font-medium">
-                Passing score (%)
-                <input
-                  className={inputClass}
-                  disabled={locked}
-                  max="100"
-                  min="0"
-                  onChange={(event) =>
-                    update((current) => ({ ...current, passingScore: event.target.value }))
-                  }
-                  type="number"
-                  value={draft.passingScore}
-                />
-              </label>
-              <label className="flex items-center gap-2 text-xs font-medium">
-                <input
-                  checked={draft.allowRetry}
-                  disabled={locked}
-                  onChange={(event) =>
-                    update((current) => ({ ...current, allowRetry: event.target.checked }))
-                  }
-                  type="checkbox"
-                />{' '}
-                Allow retry
-              </label>
-              <label className="flex items-center gap-2 text-xs font-medium">
-                <input
-                  checked={draft.showCorrectAnswers}
-                  disabled={locked}
-                  onChange={(event) =>
-                    update((current) => ({ ...current, showCorrectAnswers: event.target.checked }))
-                  }
-                  type="checkbox"
-                />{' '}
-                Show correct answers after grading
-              </label>
-            </fieldset>
-            <QuizQuestionsField
-              courseId={course.id}
-              disabled={locked}
-              errors={validation.errors}
-              items={draft.quizQuestions}
-              onChange={(quizQuestions) => update((current) => ({ ...current, quizQuestions }))}
-            />
-          </>
-        )}
-
         {type === 'colorSwitcher' && (
           <VariantsField
             courseId={course.id}
@@ -450,5 +381,22 @@ export function LessonInspector({
         </button>
       </div>
     </form>
+  );
+}
+
+function LegacyInlineQuizInspector() {
+  return (
+    <aside className="studio-glass-panel border-border h-full min-h-0 overflow-y-auto overscroll-contain border-l p-5">
+      <p className="text-primary text-[11px] font-semibold tracking-[0.16em] uppercase">
+        Legacy inline quiz
+      </p>
+      <div className="studio-glass-control border-border mt-5 rounded-xl border p-4 text-sm">
+        <p className="font-semibold">This legacy screen is read-only.</p>
+        <p className="text-muted-foreground mt-2 text-xs leading-5">
+          New assessments are structural chapter knowledge checks or a final assessment. Remove or
+          replace this legacy inline quiz to continue authoring with the guided assessment editor.
+        </p>
+      </div>
+    </aside>
   );
 }

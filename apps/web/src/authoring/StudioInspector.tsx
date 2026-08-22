@@ -1,7 +1,9 @@
 'use client';
 
+import type { CourseAssessmentInput } from '@moto-ai/contracts';
 import type { CourseGraph, LessonInput } from '@moto-ai/contracts/course-studio';
 import { useState, type ReactNode } from 'react';
+import { AssessmentInspector } from './AssessmentInspector';
 import type { CourseSettingsInput } from '@/shared/contracts/course-settings';
 import { CourseInspector, type CourseInspectorSaveState } from './inspectors/CourseInspector';
 import { LessonInspector } from './inspectors/LessonInspector';
@@ -17,6 +19,10 @@ interface Props {
   onSaveCourse: (input: CourseSettingsInput) => Promise<void>;
   onSaveChapter: (chapterId: string, input: Record<string, unknown>) => Promise<void>;
   onSaveLesson: (lessonId: string, input: LessonInput) => Promise<void>;
+  onSaveChapterQuickCheck: (chapterId: string, input: CourseAssessmentInput) => Promise<void>;
+  onRemoveChapterQuickCheck: (chapterId: string) => Promise<void>;
+  onSaveFinalAssessment: (input: CourseAssessmentInput) => Promise<void>;
+  onRemoveFinalAssessment: () => Promise<void>;
   sourcePanel?: ReactNode;
 }
 
@@ -33,6 +39,10 @@ export function StudioInspector({
   onSaveCourse,
   onSaveChapter,
   onSaveLesson,
+  onSaveChapterQuickCheck,
+  onRemoveChapterQuickCheck,
+  onSaveFinalAssessment,
+  onRemoveFinalAssessment,
   sourcePanel,
 }: Props) {
   const chapter =
@@ -42,6 +52,10 @@ export function StudioInspector({
   const lesson =
     selection.kind === 'lesson'
       ? course.chapters.flatMap((item) => item.lessons).find((item) => item.id === selection.id)
+      : undefined;
+  const quickCheck =
+    selection.kind === 'quickCheck'
+      ? course.chapters.find((item) => item.id === selection.id)
       : undefined;
   const [form, setForm] = useState<Record<string, string>>((): Record<string, string> => {
     if (chapter) {
@@ -100,6 +114,36 @@ export function StudioInspector({
         lesson={lesson}
         onDirtyChange={onDirtyChange}
         onSaveLesson={onSaveLesson}
+      />
+    );
+  }
+
+  if (quickCheck) {
+    return (
+      <AssessmentInspector
+        courseId={course.id}
+        disabled={disabled}
+        fallbackTitle="Chapter knowledge check"
+        key={`quick-check:${quickCheck.id}:${quickCheck.quickCheck?.id ?? 'new'}`}
+        onDirtyChange={onDirtyChange}
+        onRemove={() => onRemoveChapterQuickCheck(quickCheck.id)}
+        onSave={(input) => onSaveChapterQuickCheck(quickCheck.id, input)}
+        quiz={quickCheck.quickCheck}
+      />
+    );
+  }
+
+  if (selection.kind === 'finalQuiz') {
+    return (
+      <AssessmentInspector
+        courseId={course.id}
+        disabled={disabled}
+        fallbackTitle="Final assessment"
+        key={`final-assessment:${course.finalQuiz?.id ?? 'new'}`}
+        onDirtyChange={onDirtyChange}
+        onRemove={onRemoveFinalAssessment}
+        onSave={onSaveFinalAssessment}
+        quiz={course.finalQuiz}
       />
     );
   }
