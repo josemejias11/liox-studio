@@ -2,7 +2,7 @@
 
 import type { ChapterInput, CourseGraph, CourseSourceFile } from '@moto-ai/contracts/course-studio';
 import type { OfflineAssistantPayload } from '@moto-ai/contracts';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toPlayerCourseContent } from '@/learning/course-player-adapter';
 import { PlayerViewport } from '@/learning/PlayerViewport';
 import { CourseOutline } from './CourseOutline';
@@ -91,17 +91,21 @@ export function CourseStudioWorkspace({
   const { desktopGridStyle, outline, tools, workspaceRef } = useStudioPanelLayout();
   const selectedLessonId = selection.kind === 'lesson' ? selection.id : undefined;
   const showCover = selection.kind === 'cover';
-  const selectPreviewLesson = useCallback(
-    (lessonId: string): void => {
-      if (selection.kind === 'lesson' && selection.id === lessonId) return;
-      if (
-        course.chapters.some((chapter) => chapter.lessons.some((lesson) => lesson.id === lessonId))
-      ) {
-        setStudioSelection({ kind: 'lesson', id: lessonId });
-      }
-    },
-    [course.chapters, selection, setStudioSelection],
-  );
+  const selectRef = useRef(select);
+  const courseChaptersRef = useRef(course.chapters);
+  useEffect(() => {
+    selectRef.current = select;
+    courseChaptersRef.current = course.chapters;
+  }, [course.chapters, select]);
+  const selectPreviewLesson = useCallback((lessonId: string): void => {
+    if (
+      !courseChaptersRef.current.some((chapter) =>
+        chapter.lessons.some((lesson) => lesson.id === lessonId),
+      )
+    )
+      return;
+    selectRef.current({ kind: 'lesson', id: lessonId });
+  }, []);
 
   function toggleFocusPreview(): void {
     if (!focusPreview && !confirmDiscardCourseSettings()) return;
