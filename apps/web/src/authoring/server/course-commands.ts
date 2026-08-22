@@ -15,17 +15,25 @@ import {
   permanentlyDeleteCourseTrashItem,
   prisma,
   reorderCourseItem,
+  removeChapterQuickCheck,
+  removeFinalAssessment,
   resolveCourseReviewFeedback,
   restoreCourseTrashItem,
   trashLesson,
   updateChapter,
   updateCourseDetails,
   updateLesson,
+  upsertChapterQuickCheck,
+  upsertFinalAssessment,
   type CourseDetailsInput,
   type CourseTrashItem,
 } from '@moto-ai/database';
 import { enqueueScormExportJob } from '@moto-ai/jobs';
-import { OfflineAssistantPayloadSchema, OFFLINE_ASSISTANT_PAYLOAD_VERSION } from '@moto-ai/contracts';
+import {
+  OfflineAssistantPayloadSchema,
+  OFFLINE_ASSISTANT_PAYLOAD_VERSION,
+  type CourseAssessmentInput,
+} from '@moto-ai/contracts';
 import type { JobAcceptedResponse } from '@moto-ai/contracts/jobs';
 import type { CourseLessonType, LessonInput, CourseGraph } from '@moto-ai/contracts/course-studio';
 import { toPlayerCourseContent } from '@/learning/course-player-adapter';
@@ -63,6 +71,26 @@ export function createAuthoringLesson(chapterId: string, lessonType: CourseLesso
 
 export function updateAuthoringLesson(lessonId: string, input: LessonInput) {
   return updateLesson(lessonId, input);
+}
+
+export function upsertAuthoringChapterQuickCheck(
+  courseId: string,
+  chapterId: string,
+  input: CourseAssessmentInput,
+) {
+  return upsertChapterQuickCheck(courseId, chapterId, input);
+}
+
+export function removeAuthoringChapterQuickCheck(courseId: string, chapterId: string) {
+  return removeChapterQuickCheck(courseId, chapterId);
+}
+
+export function upsertAuthoringFinalAssessment(courseId: string, input: CourseAssessmentInput) {
+  return upsertFinalAssessment(courseId, input);
+}
+
+export function removeAuthoringFinalAssessment(courseId: string) {
+  return removeFinalAssessment(courseId);
 }
 
 export async function deleteOrDuplicateAuthoringLesson({

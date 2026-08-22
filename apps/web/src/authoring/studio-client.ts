@@ -4,6 +4,7 @@ import type {
   CourseLessonType,
   LessonInput,
 } from '@moto-ai/contracts/course-studio';
+import type { CourseAssessmentInput } from '@moto-ai/contracts';
 import type { CourseSettingsInput } from '@/shared/contracts/course-settings';
 import { fetchJson } from '@/shared/fetch-json';
 
@@ -27,7 +28,7 @@ export interface StudioTrashMutation {
 
 async function mutate(
   url: string,
-  method: 'POST' | 'PATCH' | 'DELETE',
+  method: 'POST' | 'PATCH' | 'PUT' | 'DELETE',
   body: unknown,
 ): Promise<CourseGraph> {
   const init: RequestInit = {
@@ -110,6 +111,22 @@ export const studioClient = {
   emptyTrash: async (courseId: string): Promise<void> => {
     await mutateTrashList(courseUrl(courseId, '/trash'), 'DELETE');
   },
+  upsertChapterQuickCheck: (courseId: string, chapterId: string, input: CourseAssessmentInput) =>
+    mutate(
+      courseUrl(courseId, `/chapters/${encodeURIComponent(chapterId)}/quick-check`),
+      'PUT',
+      input,
+    ),
+  removeChapterQuickCheck: (courseId: string, chapterId: string) =>
+    mutate(
+      courseUrl(courseId, `/chapters/${encodeURIComponent(chapterId)}/quick-check`),
+      'DELETE',
+      undefined,
+    ),
+  upsertFinalAssessment: (courseId: string, input: CourseAssessmentInput) =>
+    mutate(courseUrl(courseId, '/final-assessment'), 'PUT', input),
+  removeFinalAssessment: (courseId: string) =>
+    mutate(courseUrl(courseId, '/final-assessment'), 'DELETE', undefined),
   reorder: (
     courseId: string,
     input: { kind: 'chapter' | 'lesson'; id: string; direction: 'up' | 'down' },

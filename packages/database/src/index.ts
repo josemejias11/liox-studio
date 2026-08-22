@@ -112,6 +112,12 @@ export type {
 } from '@moto-ai/contracts/course-studio';
 export type { CourseTrashItem } from './course-trash-repository';
 export {
+  removeChapterQuickCheck,
+  removeFinalAssessment,
+  upsertChapterQuickCheck,
+  upsertFinalAssessment,
+} from './course-assessment-repository';
+export {
   buildOfflineAssistantPayload,
   buildFrozenOfflineAssistantPayload,
   deleteCourseAssistantQa,
