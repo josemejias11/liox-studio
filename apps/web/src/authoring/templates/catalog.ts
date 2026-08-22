@@ -22,13 +22,16 @@ function parseTemplate(definition: unknown): CourseTemplateDefinition {
 
 function currentCourseTemplates(): CourseTemplateDefinition[] {
   const latestTemplates = new Map<string, CourseTemplateDefinition>();
+  const templateVersions = new Set<string>();
   for (const template of [comprehensiveCourseTemplate].map(parseTemplate)) {
-    const current = latestTemplates.get(template.key);
-    if (current?.version === template.version) {
+    const versionKey = `${template.key}:${template.version}`;
+    if (templateVersions.has(versionKey)) {
       throw new Error(
         `Duplicate course template configuration for "${template.key}" version ${template.version}.`,
       );
     }
+    templateVersions.add(versionKey);
+    const current = latestTemplates.get(template.key);
     if (!current || template.version > current.version) latestTemplates.set(template.key, template);
   }
   return [...latestTemplates.values()];
