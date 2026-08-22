@@ -15,8 +15,9 @@ import {
   type CourseDuplicateCurrentPayload,
   type CourseDuplicatePayload,
   CourseDuplicateArtifactSchema,
+  CourseDuplicateFingerprintLegacyPayloadSchema,
+  CourseDuplicateLegacyPayloadSchema,
   CourseDuplicatePayloadSchema,
-  isCurrentCourseDuplicatePayload,
   type CourseGenerationPayload,
   type DocumentIndexPayload,
   type JobAcceptedResponse,
@@ -179,6 +180,59 @@ function duplicateRequestFingerprint(sourceCourseId: string, requestedTitle: str
     .digest('hex');
 }
 
+function normalizeCourseDuplicatePayload(
+  payload: unknown,
+  artifactBytes: Buffer,
+): {
+  payload: CourseDuplicateCurrentPayload;
+  artifact: CourseDuplicateArtifact;
+  legacy: boolean;
+} | null {
+  let artifact: CourseDuplicateArtifact;
+  try {
+    artifact = CourseDuplicateArtifactSchema.parse(JSON.parse(artifactBytes.toString('utf8')));
+  } catch {
+    return null;
+  }
+
+  const current = CourseDuplicatePayloadSchema.safeParse(payload);
+  if (current.success) return { payload: current.data, artifact, legacy: false };
+
+  const fingerprintLegacy = CourseDuplicateFingerprintLegacyPayloadSchema.safeParse(payload);
+  if (
+    fingerprintLegacy.success &&
+    fingerprintLegacy.data.requestFingerprint ===
+      duplicateRequestFingerprint(fingerprintLegacy.data.sourceCourseId, artifact.requestedTitle)
+  ) {
+    return {
+      payload: {
+        sourceCourseId: fingerprintLegacy.data.sourceCourseId,
+        destinationCourseId: fingerprintLegacy.data.destinationCourseId,
+        requestedTitle: artifact.requestedTitle,
+        requestFingerprint: fingerprintLegacy.data.requestFingerprint,
+      },
+      artifact,
+      legacy: true,
+    };
+  }
+
+  const legacy = CourseDuplicateLegacyPayloadSchema.safeParse(payload);
+  if (!legacy.success) return null;
+  return {
+    payload: {
+      sourceCourseId: legacy.data.sourceCourseId,
+      destinationCourseId: legacy.data.destinationCourseId,
+      requestedTitle: artifact.requestedTitle,
+      requestFingerprint: duplicateRequestFingerprint(
+        legacy.data.sourceCourseId,
+        artifact.requestedTitle,
+      ),
+    },
+    artifact,
+    legacy: true,
+  };
+}
+
 export async function findExistingCourseDuplicateJob(input: {
   requestId: string;
   sourceCourseId: string;
@@ -191,58 +245,45 @@ export async function findExistingCourseDuplicateJob(input: {
   if (!job) return null;
   if (job.kind !== BackgroundJobKind.COURSE_DUPLICATE) duplicateRequestConflict();
 
-  let payload: CourseDuplicatePayload;
-  try {
-    payload = CourseDuplicatePayloadSchema.parse(job.payload);
-  } catch {
-    duplicateRequestConflict();
-  }
-
-  if (
-    payload.sourceCourseId !== input.sourceCourseId ||
-    payload.destinationCourseId !== `course.duplicate.${input.requestId}`
-  ) {
-    duplicateRequestConflict();
-  }
-
   const normalizedTitle = input.requestedTitle.trim();
-  if (isCurrentCourseDuplicatePayload(payload)) {
+  const current = CourseDuplicatePayloadSchema.safeParse(job.payload);
+  if (current.success) {
+    const payload = current.data;
     if (
+      payload.sourceCourseId !== input.sourceCourseId ||
+      payload.destinationCourseId !== `course.duplicate.${input.requestId}` ||
       payload.requestedTitle !== normalizedTitle ||
       payload.requestFingerprint !==
         duplicateRequestFingerprint(input.sourceCourseId, normalizedTitle)
     ) {
       duplicateRequestConflict();
     }
-    if (!job.artifact) {
-      if (job.status !== BackgroundJobStatus.SUCCEEDED) duplicateRequestConflict();
-      return accepted(job);
+    if (!job.artifact && job.status !== BackgroundJobStatus.SUCCEEDED) {
+      duplicateRequestConflict();
     }
+    if (!job.artifact) return accepted(job);
   } else if (!job.artifact) {
     duplicateRequestConflict();
   }
 
-  let artifact: CourseDuplicateArtifact;
-  try {
-    artifact = CourseDuplicateArtifactSchema.parse(JSON.parse(job.artifact.bytes.toString('utf8')));
-  } catch {
+  const normalized = normalizeCourseDuplicatePayload(job.payload, job.artifact.bytes);
+  if (!normalized) duplicateRequestConflict();
+  const { payload, artifact, legacy } = normalized;
+  if (
+    payload.sourceCourseId !== input.sourceCourseId ||
+    payload.destinationCourseId !== `course.duplicate.${input.requestId}` ||
+    payload.requestedTitle !== normalizedTitle ||
+    payload.requestFingerprint !==
+      duplicateRequestFingerprint(input.sourceCourseId, normalizedTitle)
+  ) {
     duplicateRequestConflict();
   }
   if (artifact.requestedTitle !== normalizedTitle) duplicateRequestConflict();
 
-  if (!isCurrentCourseDuplicatePayload(payload)) {
-    const currentPayload: CourseDuplicateCurrentPayload = {
-      sourceCourseId: payload.sourceCourseId,
-      destinationCourseId: payload.destinationCourseId,
-      requestedTitle: artifact.requestedTitle,
-      requestFingerprint: duplicateRequestFingerprint(
-        payload.sourceCourseId,
-        artifact.requestedTitle,
-      ),
-    };
+  if (legacy) {
     await prisma.backgroundJob.update({
       where: { id: job.id },
-      data: { payload: jsonValue(currentPayload) },
+      data: { payload: jsonValue(payload) },
     });
   }
   return accepted(job);
@@ -423,6 +464,18 @@ export async function claimNextJob(): Promise<ClaimedJob | null> {
       },
       include: { artifact: true },
     });
+
+    if (job.kind === BackgroundJobKind.COURSE_DUPLICATE && job.artifact) {
+      const normalized = normalizeCourseDuplicatePayload(job.payload, job.artifact.bytes);
+      if (normalized?.legacy) {
+        const updated = await tx.backgroundJob.update({
+          where: { id: job.id },
+          data: { payload: jsonValue(normalized.payload) },
+          include: { artifact: true },
+        });
+        return { ...updated, leaseToken };
+      }
+    }
 
     return { ...job, leaseToken };
   });
