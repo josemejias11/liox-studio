@@ -1,5 +1,24 @@
 import { z } from 'zod';
 
+type CourseGraphJsonValue =
+  | null
+  | boolean
+  | number
+  | string
+  | CourseGraphJsonValue[]
+  | { [key: string]: CourseGraphJsonValue };
+
+const CourseGraphJsonValueSchema: z.ZodType<CourseGraphJsonValue> = z.lazy(() =>
+  z.union([
+    z.null(),
+    z.boolean(),
+    z.number(),
+    z.string(),
+    z.array(CourseGraphJsonValueSchema),
+    z.record(z.string(), CourseGraphJsonValueSchema),
+  ]),
+);
+
 export const COURSE_LESSON_TYPES = [
   'content',
   'interaction',
@@ -106,15 +125,15 @@ export const CourseGraphLessonSchema = z.object({
   position: z.number().int().min(0),
   lessonType: z.string().min(1),
   headline: z.string(),
-  body: z.unknown().nullable(),
-  payload: z.unknown(),
+  body: CourseGraphJsonValueSchema,
+  payload: CourseGraphJsonValueSchema,
 });
 
 export const CourseGraphQuizSchema = z.object({
   id: z.string().min(1),
   title: z.string().nullable(),
   instructions: z.string().nullable(),
-  payload: z.unknown(),
+  payload: CourseGraphJsonValueSchema,
 });
 
 export const CourseGraphChapterSchema = z.object({
@@ -133,13 +152,13 @@ export const CourseGraphSchema = z.object({
   description: z.string().nullable(),
   createdFromTemplateKey: z.string().nullable(),
   createdFromTemplateVersion: z.number().int().nullable(),
-  templateChecklist: z.unknown().nullable(),
+  templateChecklist: CourseGraphJsonValueSchema,
   creationJobId: z.string().nullable(),
   duplicatedFromCourseId: z.string().nullable(),
-  learningObjectives: z.unknown().nullable(),
-  cover: z.unknown().nullable(),
-  specifications: z.unknown().nullable(),
-  disclaimer: z.unknown().nullable(),
+  learningObjectives: CourseGraphJsonValueSchema,
+  cover: CourseGraphJsonValueSchema,
+  specifications: CourseGraphJsonValueSchema,
+  disclaimer: CourseGraphJsonValueSchema,
   finalQuiz: CourseGraphQuizSchema.nullable(),
   chapters: z.array(CourseGraphChapterSchema),
 });
