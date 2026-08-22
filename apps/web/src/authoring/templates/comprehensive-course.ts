@@ -117,6 +117,34 @@ export const comprehensiveCourseTemplate: CourseTemplateDefinition = {
       'Describe the learner benefit',
     ),
     changed(
+      'specification-subtitle',
+      'course',
+      'specifications.0.subtitle',
+      'Specification subtitle',
+      'Replace with the details learners need.',
+    ),
+    changed(
+      'specification-label',
+      'course',
+      'specifications.0.specGroups.0.specs.0.label',
+      'Specification label',
+      'Replace with specification',
+    ),
+    changed(
+      'specification-value',
+      'course',
+      'specifications.0.specGroups.0.specs.0.value',
+      'Specification value',
+      'Replace with value',
+    ),
+    changed(
+      'disclaimer-body',
+      'course',
+      'disclaimer.body',
+      'Disclaimer',
+      'Replace with the applicable disclaimer.',
+    ),
+    changed(
       'content-headline',
       'discover-content',
       'headline',
@@ -189,6 +217,13 @@ export const comprehensiveCourseTemplate: CourseTemplateDefinition = {
       rule: 'assessment' as const,
     },
     changed(
+      'chapter-check-instructions',
+      'discover-check',
+      'instructions',
+      'Chapter knowledge-check guidance',
+      'Replace with guidance for this knowledge check.',
+    ),
+    changed(
       'chapter-check-question',
       'discover-check',
       'payload.questions.0.questionText',
@@ -216,6 +251,13 @@ export const comprehensiveCourseTemplate: CourseTemplateDefinition = {
       label: 'Final assessment',
       rule: 'assessment' as const,
     },
+    changed(
+      'final-assessment-instructions',
+      'final-assessment',
+      'instructions',
+      'Final assessment guidance',
+      'Replace with guidance for the final assessment.',
+    ),
     changed(
       'final-assessment-question',
       'final-assessment',

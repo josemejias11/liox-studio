@@ -128,6 +128,56 @@ export const CourseTemplateDefinitionSchema = z
         message: 'A final assessment requires a definition-local key.',
       });
     }
+
+    const entityKeys = new Set(['course']);
+    const registerEntityKey = (key: string, path: Array<string | number>) => {
+      if (key === 'course') {
+        context.addIssue({
+          code: 'custom',
+          path,
+          message: 'The definition-local key "course" is reserved.',
+        });
+      } else if (entityKeys.has(key)) {
+        context.addIssue({
+          code: 'custom',
+          path,
+          message: `Definition-local key "${key}" is already in use.`,
+        });
+      } else {
+        entityKeys.add(key);
+      }
+    };
+
+    definition.chapters.forEach((chapter, chapterIndex) => {
+      registerEntityKey(chapter.key, ['chapters', chapterIndex, 'key']);
+      chapter.lessons.forEach((lesson, lessonIndex) => {
+        registerEntityKey(lesson.key, ['chapters', chapterIndex, 'lessons', lessonIndex, 'key']);
+      });
+      if (chapter.quickCheckKey) {
+        registerEntityKey(chapter.quickCheckKey, ['chapters', chapterIndex, 'quickCheckKey']);
+      }
+    });
+    if (definition.finalQuizKey) registerEntityKey(definition.finalQuizKey, ['finalQuizKey']);
+
+    const requirementIds = new Set<string>();
+    definition.requirements?.forEach((requirement, requirementIndex) => {
+      if (requirementIds.has(requirement.id)) {
+        context.addIssue({
+          code: 'custom',
+          path: ['requirements', requirementIndex, 'id'],
+          message: `Template requirement ID "${requirement.id}" is already in use.`,
+        });
+      } else {
+        requirementIds.add(requirement.id);
+      }
+      if (!entityKeys.has(requirement.entityId)) {
+        context.addIssue({
+          code: 'custom',
+          path: ['requirements', requirementIndex, 'entityId'],
+          message: `Template requirement references unknown entity "${requirement.entityId}".`,
+        });
+      }
+    });
   });
 export type CourseTemplateDefinition = z.infer<typeof CourseTemplateDefinitionSchema>;
 

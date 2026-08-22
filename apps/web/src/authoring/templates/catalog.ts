@@ -20,10 +20,22 @@ function parseTemplate(definition: unknown): CourseTemplateDefinition {
   throw new Error(`Invalid course template configuration for "${key}".`);
 }
 
-const courseTemplates = [comprehensiveCourseTemplate].map(parseTemplate);
+function currentCourseTemplates(): CourseTemplateDefinition[] {
+  const latestTemplates = new Map<string, CourseTemplateDefinition>();
+  for (const template of [comprehensiveCourseTemplate].map(parseTemplate)) {
+    const current = latestTemplates.get(template.key);
+    if (current?.version === template.version) {
+      throw new Error(
+        `Duplicate course template configuration for "${template.key}" version ${template.version}.`,
+      );
+    }
+    if (!current || template.version > current.version) latestTemplates.set(template.key, template);
+  }
+  return [...latestTemplates.values()];
+}
 
 export function listCourseTemplateSummaries(): CourseTemplateSummary[] {
-  return courseTemplates.map(({ key, version, title, description }) => ({
+  return currentCourseTemplates().map(({ key, version, title, description }) => ({
     key,
     version,
     title,
@@ -32,5 +44,5 @@ export function listCourseTemplateSummaries(): CourseTemplateSummary[] {
 }
 
 export function getCourseTemplate(key: string): CourseTemplateDefinition | null {
-  return courseTemplates.find((template) => template.key === key) ?? null;
+  return currentCourseTemplates().find((template) => template.key === key) ?? null;
 }
