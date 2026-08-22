@@ -30,6 +30,7 @@ const databaseKind: Record<JobKind, BackgroundJobKind> = {
   course_generate: BackgroundJobKind.AI_OPERATION,
   ai_operation: BackgroundJobKind.AI_OPERATION,
   scorm_export: BackgroundJobKind.SCORM_EXPORT,
+  course_duplicate: BackgroundJobKind.COURSE_DUPLICATE,
 };
 
 const publicKind: Record<BackgroundJobKind, Exclude<JobKind, 'course_generate'>> = {
@@ -37,6 +38,7 @@ const publicKind: Record<BackgroundJobKind, Exclude<JobKind, 'course_generate'>>
   QUIZ_GENERATE: 'ai_operation',
   AI_OPERATION: 'ai_operation',
   SCORM_EXPORT: 'scorm_export',
+  COURSE_DUPLICATE: 'course_duplicate',
 };
 
 function jobKind(job: Pick<BackgroundJob, 'kind' | 'payload'>): JobKind {

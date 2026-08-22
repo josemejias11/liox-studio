@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { CourseImageReferenceSchema } from '@moto-ai/contracts/course-assets';
+
 export type JsonObject = Record<string, unknown>;
 
 const coverButtonColorSchema = z.enum(['moto-indigo', 'moto-frost', 'moto-pearl']);
@@ -11,21 +13,10 @@ export const disclaimerCategorySchema = z.enum([
   'general',
 ]);
 
-const imageReferenceSchema = z
-  .object({
-    asset: z
-      .object({
-        url: z.string().url(),
-        originalFilename: z.string().optional(),
-      })
-      .passthrough(),
-  })
-  .passthrough();
-
 const courseCoverSchema = z
   .object({
-    thumbnail: imageReferenceSchema.optional(),
-    coverImage: imageReferenceSchema.optional(),
+    thumbnail: CourseImageReferenceSchema.optional(),
+    coverImage: CourseImageReferenceSchema.optional(),
     coverHeadline: z.string().optional(),
     coverButtonText: z.string().optional(),
     coverButtonColor: coverButtonColorSchema.optional(),
@@ -51,7 +42,7 @@ const courseSpecificationSchema = z
   .object({
     title: z.string().trim().min(1, 'Specification title is required.'),
     subtitle: z.string().optional(),
-    heroImage: imageReferenceSchema.optional(),
+    heroImage: CourseImageReferenceSchema.optional(),
     specGroups: z.array(specificationGroupSchema),
     footnotes: z.array(z.string().trim().min(1, 'Footnote cannot be empty.')).optional(),
   })
@@ -82,7 +73,7 @@ export const courseSettingsInputSchema = z
 
 export const courseSettingsPatchSchema = courseSettingsInputSchema.partial();
 
-export type ImageReference = z.output<typeof imageReferenceSchema>;
+export type ImageReference = z.output<typeof CourseImageReferenceSchema>;
 export type CourseSettingsInput = z.output<typeof courseSettingsInputSchema>;
 
 export function isJsonObject(value: unknown): value is JsonObject {
@@ -125,6 +116,6 @@ export function booleanField(value: unknown): boolean {
 }
 
 export function imageReference(value: unknown): ImageReference | undefined {
-  const parsed = imageReferenceSchema.safeParse(value);
+  const parsed = CourseImageReferenceSchema.safeParse(value);
   return parsed.success ? parsed.data : undefined;
 }

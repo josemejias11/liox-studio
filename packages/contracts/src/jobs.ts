@@ -1,11 +1,15 @@
 import { z } from 'zod';
 
+import { AssistantQaItemSchema } from './course-assistant';
+import type { CourseGraph } from './course-studio';
+
 export const JobKindSchema = z.enum([
   'document_index',
   'assistant_qa_generate',
   'course_generate',
   'ai_operation',
   'scorm_export',
+  'course_duplicate',
 ]);
 export type JobKind = z.infer<typeof JobKindSchema>;
 
@@ -38,6 +42,28 @@ export const CourseGenerationPayloadSchema = z.object({
   generationId: z.string().min(1).max(100),
 });
 export type CourseGenerationPayload = z.infer<typeof CourseGenerationPayloadSchema>;
+
+export const CourseDuplicatePayloadSchema = z.object({
+  sourceCourseId: z.string().min(1).max(100),
+  destinationCourseId: z.string().min(1).max(100),
+});
+export type CourseDuplicatePayload = z.infer<typeof CourseDuplicatePayloadSchema>;
+
+export const CourseDuplicateArtifactSchema = z.object({
+  requestedTitle: z.string().trim().min(1).max(120),
+  slugBase: z.string().trim().min(1).max(100),
+  graph: z.custom<CourseGraph>(),
+  assistantQa: z.array(AssistantQaItemSchema.extend({ status: z.literal('approved') })).max(200),
+  sourceIds: z.array(z.string().min(1).max(100)).max(500),
+  assetUrls: z.array(z.string().url()).max(1000),
+  contentHash: z.string().regex(/^[0-9a-f]{64}$/),
+});
+export type CourseDuplicateArtifact = z.infer<typeof CourseDuplicateArtifactSchema>;
+
+export const CourseDuplicateResultSchema = z.object({
+  courseId: z.string().min(1).max(100),
+});
+export type CourseDuplicateResult = z.infer<typeof CourseDuplicateResultSchema>;
 
 export const ScormExportPayloadSchema = z.object({
   revisionId: z.string().min(1).max(100),

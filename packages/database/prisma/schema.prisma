@@ -46,26 +46,31 @@ enum CourseAssistantQaStatus {
 }
 
 model Course {
-  id                 String                @id
-  slug               String                @unique
-  title              String
-  description        String?
-  learningObjectives Json?
-  cover              Json?
-  specifications     Json?
-  disclaimer         Json?
-  finalQuizId        String?               @unique
-  chapters           CourseChapter[]
-  quizzes            CourseQuiz[]          @relation("CourseQuizzes")
-  finalQuiz          CourseQuiz?           @relation("CourseFinalQuiz", fields: [finalQuizId], references: [id], onDelete: SetNull)
-  trashItems         CourseLessonTrash[]
-  revisions          CourseRevision[]
-  sourceFiles        CourseSourceFile[]
-  sourceBindings     CourseSourceBinding[]
-  assistantQa        CourseAssistantQa[]
-  generatedBy        CourseGeneration?     @relation("GeneratedCourse")
-  createdAt          DateTime              @default(now())
-  updatedAt          DateTime              @updatedAt
+  id                         String                @id
+  slug                       String                @unique
+  title                      String
+  description                String?
+  createdFromTemplateKey     String?
+  createdFromTemplateVersion Int?
+  templateChecklist          Json?
+  creationJobId              String?               @unique
+  duplicatedFromCourseId     String?
+  learningObjectives         Json?
+  cover                      Json?
+  specifications             Json?
+  disclaimer                 Json?
+  finalQuizId                String?               @unique
+  chapters                   CourseChapter[]
+  quizzes                    CourseQuiz[]          @relation("CourseQuizzes")
+  finalQuiz                  CourseQuiz?           @relation("CourseFinalQuiz", fields: [finalQuizId], references: [id], onDelete: SetNull)
+  trashItems                 CourseLessonTrash[]
+  revisions                  CourseRevision[]
+  sourceFiles                CourseSourceFile[]
+  sourceBindings             CourseSourceBinding[]
+  assistantQa                CourseAssistantQa[]
+  generatedBy                CourseGeneration?     @relation("GeneratedCourse")
+  createdAt                  DateTime              @default(now())
+  updatedAt                  DateTime              @updatedAt
 }
 
 model CourseChapter {
@@ -409,6 +414,7 @@ enum BackgroundJobKind {
   QUIZ_GENERATE
   AI_OPERATION
   SCORM_EXPORT
+  COURSE_DUPLICATE
 }
 
 enum BackgroundJobStatus {

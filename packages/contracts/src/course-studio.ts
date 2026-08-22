@@ -86,6 +86,11 @@ export interface CourseGraph {
   slug: string;
   title: string;
   description: string | null;
+  createdFromTemplateKey: string | null;
+  createdFromTemplateVersion: number | null;
+  templateChecklist: unknown | null;
+  creationJobId: string | null;
+  duplicatedFromCourseId: string | null;
   learningObjectives: unknown | null;
   cover: unknown | null;
   specifications: unknown | null;
