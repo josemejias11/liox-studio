@@ -11,6 +11,8 @@ import {
 import { prisma } from '@moto-ai/database';
 import {
   type AiOperationPayload,
+  type CourseDuplicateArtifact,
+  type CourseDuplicatePayload,
   type CourseGenerationPayload,
   type DocumentIndexPayload,
   type JobAcceptedResponse,
@@ -94,13 +96,19 @@ async function enqueue(
   payload: unknown,
   dedupeKey: string,
   artifact?: { filename: string; contentType?: string; bytes: Buffer },
+  jobId?: string,
 ): Promise<JobAcceptedResponse> {
+  if (jobId) {
+    const existingById = await prisma.backgroundJob.findUnique({ where: { id: jobId } });
+    if (existingById) return accepted(existingById);
+  }
   const existing = await prisma.backgroundJob.findUnique({ where: { dedupeKey } });
   if (existing) return accepted(existing);
 
   try {
     const job = await prisma.backgroundJob.create({
       data: {
+        ...(jobId ? { id: jobId } : {}),
         kind: databaseKind[kind],
         dedupeKey,
         payload: jsonValue(payload),
@@ -121,11 +129,38 @@ async function enqueue(
     return accepted(job);
   } catch (error: unknown) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      if (jobId) {
+        const duplicateById = await prisma.backgroundJob.findUnique({ where: { id: jobId } });
+        if (duplicateById) return accepted(duplicateById);
+      }
       const duplicate = await prisma.backgroundJob.findUnique({ where: { dedupeKey } });
       if (duplicate) return accepted(duplicate);
     }
     throw error;
   }
+}
+
+export async function enqueueCourseDuplicateJob(input: {
+  requestId: string;
+  sourceCourseId: string;
+  requestedTitle: string;
+  artifact: CourseDuplicateArtifact;
+}): Promise<JobAcceptedResponse> {
+  const payload: CourseDuplicatePayload = {
+    sourceCourseId: input.sourceCourseId,
+    destinationCourseId: `course.duplicate.${input.requestId}`,
+  };
+  return enqueue(
+    'course_duplicate',
+    payload,
+    `course-duplicate:${input.requestId}`,
+    {
+      filename: 'course-duplicate.json',
+      contentType: 'application/json',
+      bytes: Buffer.from(JSON.stringify(input.artifact), 'utf8'),
+    },
+    input.requestId,
+  );
 }
 
 export async function enqueueDocumentIndexJob(

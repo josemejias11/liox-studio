@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { AssistantQaItemSchema } from './course-assistant';
+import { courseAssetUrlSchema } from './course-assets';
 import { CourseGraphSchema } from './course-studio';
 
 export const JobKindSchema = z.enum([
@@ -49,13 +50,23 @@ export const CourseDuplicatePayloadSchema = z.object({
 });
 export type CourseDuplicatePayload = z.infer<typeof CourseDuplicatePayloadSchema>;
 
+export const CourseDuplicateAssistantQaItemSchema = AssistantQaItemSchema.extend({
+  status: z.literal('approved'),
+  sourceIds: z.array(z.string().min(1).max(100)).min(1).max(500),
+  sourceHashes: z
+    .array(z.string().regex(/^[0-9a-f]{64}$/))
+    .min(1)
+    .max(500),
+});
+export type CourseDuplicateAssistantQaItem = z.infer<typeof CourseDuplicateAssistantQaItemSchema>;
+
 export const CourseDuplicateArtifactSchema = z.object({
   requestedTitle: z.string().trim().min(1).max(120),
   slugBase: z.string().trim().min(1).max(100),
   graph: CourseGraphSchema,
-  assistantQa: z.array(AssistantQaItemSchema.extend({ status: z.literal('approved') })).max(200),
+  assistantQa: z.array(CourseDuplicateAssistantQaItemSchema).max(200),
   sourceIds: z.array(z.string().min(1).max(100)).max(500),
-  assetUrls: z.array(z.string().url()).max(1000),
+  assetUrls: z.array(courseAssetUrlSchema).max(1000),
   contentHash: z.string().regex(/^[0-9a-f]{64}$/),
 });
 export type CourseDuplicateArtifact = z.infer<typeof CourseDuplicateArtifactSchema>;
