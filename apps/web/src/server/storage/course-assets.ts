@@ -1,4 +1,4 @@
-import { getR2Object, putR2Object, deleteR2Object } from '@moto-ai/storage';
+import { getObject, putObject, deleteObject } from '@moto-ai/storage';
 import type { CourseAssetRef } from '@moto-ai/contracts/course-assets';
 
 export interface CourseAssetUpload {
@@ -25,7 +25,7 @@ export async function putCourseAsset(
   input: CourseAssetUpload,
 ): Promise<CourseAssetRef & { r2Key: string }> {
   const r2Key = createCourseAssetKey(input.courseId, input.filename);
-  await putR2Object({ key: r2Key, bytes: input.bytes, contentType: input.contentType });
+  await putObject({ key: r2Key, bytes: input.bytes, contentType: input.contentType });
 
   return {
     id: r2Key,
@@ -37,9 +37,9 @@ export async function putCourseAsset(
 }
 
 export async function getCourseAsset(r2Key: string) {
-  return getR2Object(r2Key);
+  return getObject(r2Key);
 }
 
 export async function deleteCourseAsset(r2Key: string): Promise<void> {
-  await deleteR2Object(r2Key);
+  await deleteObject(r2Key);
 }

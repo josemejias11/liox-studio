@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@moto-ai/database';
-import { getR2Object } from '@moto-ai/storage';
+import { getObject } from '@moto-ai/storage';
 import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
 
 export const dynamic = 'force-dynamic';
@@ -16,7 +16,7 @@ export async function GET(
   if (!record) return new Response('Export not found', { status: 404 });
 
   try {
-    const object = await getR2Object(record.r2Key);
+    const object = await getObject(record.r2Key);
     if (!object.Body) return new Response('Export not found', { status: 404 });
 
     const headers = new Headers({
@@ -29,7 +29,7 @@ export async function GET(
   } catch (error) {
     const status = (error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode;
     if (status === 404) return new Response('Export not found', { status: 404 });
-    console.error('[api/course-studio/exports] R2 read failed');
+    console.error('[api/course-studio/exports] storage read failed');
     return new Response('Export unavailable', { status: 502 });
   }
 }

@@ -137,8 +137,9 @@ model CourseQuiz {
   @@index([courseId])
 }
 
-// R2 owns the bytes. This table is the durable application inventory for asset
-// identity, object location, and delivery metadata.
+// Local filesystem storage owns the bytes. This table is the durable
+// application inventory for asset identity, object location, and delivery
+// metadata.
 model CourseAsset {
   id          String   @id @default(cuid())
   r2Key       String   @unique
@@ -150,8 +151,9 @@ model CourseAsset {
   updatedAt   DateTime @updatedAt
 }
 
-// R2 owns source bytes. This table is the course-scoped inventory and indexing
-// lifecycle for those bytes; revisions copy the immutable file identity they use.
+// Local filesystem storage owns source bytes. This table is the course-scoped
+// inventory and indexing lifecycle for those bytes; revisions copy the
+// immutable file identity they use.
 model CourseSourceFile {
   id             String                  @id @default(cuid())
   courseId       String
@@ -173,9 +175,10 @@ model CourseSourceFile {
   @@index([courseId, createdAt])
 }
 
-// A course can inherit an immutable source identity without copying the R2
-// object. Generated drafts use this binding to retain the exact frozen source
-// set used to create them while the source file remains owned by its origin.
+// A course can inherit an immutable source identity without copying the
+// stored file. Generated drafts use this binding to retain the exact frozen
+// source set used to create them while the source file remains owned by its
+// origin.
 model CourseSourceBinding {
   courseId     String
   sourceFileId String
@@ -283,8 +286,8 @@ model CourseGeneration {
 
 // Durable record of one SCORM export artifact for a frozen revision. Kept
 // separate from the BackgroundJob row itself, same pattern as CourseGeneration,
-// so the export's identity (and its R2 location) survives independent of job
-// retention/cleanup.
+// so the export's identity (and its storage location) survives independent of
+// job retention/cleanup.
 model CourseScormExport {
   id         String         @id @default(cuid())
   revisionId String

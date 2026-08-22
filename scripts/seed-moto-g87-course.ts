@@ -34,13 +34,7 @@ const veniceSourceDocuments = [
   },
 ] as const;
 
-const REQUIRED_ENVIRONMENT_VARIABLES = [
-  'DATABASE_URL',
-  'R2_ACCOUNT_ID',
-  'R2_ACCESS_KEY_ID',
-  'R2_SECRET_ACCESS_KEY',
-  'R2_BUCKET',
-] as const;
+const REQUIRED_ENVIRONMENT_VARIABLES = ['DATABASE_URL', 'LOCAL_STORAGE_ROOT'] as const;
 
 const DATABASE_ENVIRONMENT_VARIABLE = 'DATABASE_URL';
 

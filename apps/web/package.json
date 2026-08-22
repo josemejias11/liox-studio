@@ -9,7 +9,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1096.0",
     "@moto-ai/contracts": "0.1.0",
     "@moto-ai/database": "0.1.0",
     "@moto-ai/jobs": "0.1.0",

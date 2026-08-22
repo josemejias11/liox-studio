@@ -2,11 +2,11 @@ import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import archiver from 'archiver';
-import { getR2Object } from '@moto-ai/storage';
+import { getObject } from '@moto-ai/storage';
 import { buildImsManifest } from './manifest';
 import { collectAssetRefs, rewriteAssetUrls, r2KeyFor } from './assets';
 
-// Thrown when a course-referenced asset's R2 object is missing at export time. Distinguished
+// Thrown when a course-referenced asset is missing from storage at export time. Distinguished
 // from a generic Error so callers (the job-worker handler) can treat this as non-retryable and
 // show the author a clean, actionable message instead of burning retries re-fetching every
 // other already-successfully-fetched asset on a failure that retrying can't fix.
@@ -15,6 +15,10 @@ export class AssetNotFoundError extends Error {
     super(`Asset not found in storage: ${r2Key}`);
     this.name = 'AssetNotFoundError';
   }
+}
+
+function isNotFoundError(error: unknown): boolean {
+  return (error as { $metadata?: { httpStatusCode?: number } })?.$metadata?.httpStatusCode === 404;
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -56,7 +60,13 @@ export async function buildScormPackage(input: ScormPackageInput): Promise<{
     if (!r2Key) continue;
     const relativePath = `assets/${r2Key.split('/').slice(1).join('/')}`;
     urlMap.set(assetUrl, relativePath);
-    const object = await getR2Object(r2Key);
+    let object: Awaited<ReturnType<typeof getObject>>;
+    try {
+      object = await getObject(r2Key);
+    } catch (error) {
+      if (isNotFoundError(error)) throw new AssetNotFoundError(r2Key);
+      throw error;
+    }
     if (!object.Body) throw new AssetNotFoundError(r2Key);
     assetFiles[relativePath] = await streamToBuffer(object.Body);
   }

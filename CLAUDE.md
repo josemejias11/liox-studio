@@ -24,11 +24,11 @@ flows do.
 Browser
   -> Next.js web app (Course Studio, player, review, analytics, APIs)
        -> PostgreSQL (courses, revisions, progress, durable jobs)
-       -> Cloudflare R2 (private course assets and source files)
+       -> local filesystem storage (private course assets and source files)
        -> job worker -> private parser service -> OpenAI and ChromaDB
 ```
 
-The browser never talks to PostgreSQL, R2, or the parser service directly —
+The browser never talks to PostgreSQL, local storage, or the parser service directly —
 everything goes through the Next.js app's API routes. The parser service is
 authoring-only and its retrieval is explicitly scoped to the requested course
 and source IDs; an empty source set never falls back to searching the whole
@@ -56,7 +56,7 @@ course corpus.
 - `analytics/` — separately password-protected dashboard reading stored
   progress/assessment data.
 - `server/` — auth (`server/auth`), background job status (`server/jobs`),
-  and R2 asset storage (`server/storage`) helpers used by API routes.
+  and local filesystem asset storage (`server/storage`) helpers used by API routes.
 - `shared/` — cross-surface UI (theme, error boundary, portable text) and
   utils.
 - `app/` — Next.js App Router routes (`studio`, `review`, `analytics`,
@@ -72,8 +72,8 @@ Key relationships to know before touching this schema:
   graph. `CourseQuiz` is separately addressable (chapter quick-checks and a
   course final quiz) because server-side grading needs direct quiz IDs.
 - `CourseSourceFile` is the course-scoped inventory/indexing lifecycle for
-  bytes that live in R2; `CourseSourceBinding` lets a course inherit an
-  immutable source identity without copying the R2 object.
+  bytes that live in local filesystem storage; `CourseSourceBinding` lets a
+  course inherit an immutable source identity without copying the file.
 - `CourseRevision` is an **immutable** learner-ready snapshot (JSON) used for
   review/approval — it freezes `CourseRevisionSource` and
   `CourseRevisionAssistantQa` copies so a later edit to the live graph or
@@ -145,7 +145,7 @@ python -m moto_parser        # dev server w/ reload, http://127.0.0.1:8000
   `COURSE_STUDIO_PASSWORD` gates authoring (`server/auth/course-studio.ts`),
   `ANALYTICS_PASSWORD` gates the analytics dashboard. Don't conflate them.
 - `.env` holds values Prisma loads directly plus non-secret local defaults;
-  `.env.local` holds the rest (API keys, tokens, R2 config). Both are
+  `.env.local` holds the rest (API keys, tokens, local storage root). Both are
   git-ignored — never commit either, and mirror new variables into
   `.env.example` / `.env.local.example` when you add config.
 - Generation and Q&A jobs always carry explicit source IDs end-to-end

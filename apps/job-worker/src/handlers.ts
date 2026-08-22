@@ -29,7 +29,7 @@ import {
 } from '@moto-ai/parser-client';
 import { NonRetryableJobError, type ClaimedJob } from '@moto-ai/jobs';
 import { AssetNotFoundError, buildScormPackage } from '@moto-ai/scorm-export';
-import { putR2Object } from '@moto-ai/storage';
+import { putObject } from '@moto-ai/storage';
 
 async function indexDocument(job: ClaimedJob): Promise<{ filename: string; chunksStored: number }> {
   const payload = DocumentIndexPayloadSchema.safeParse(job.payload);
@@ -250,7 +250,7 @@ async function scormExport(job: ClaimedJob): Promise<ScormExportResult> {
   }
 
   const r2Key = `exports/${revision.id}/${job.id}.zip`;
-  await putR2Object({ key: r2Key, bytes: built.buffer, contentType: 'application/zip' });
+  await putObject({ key: r2Key, bytes: built.buffer, contentType: 'application/zip' });
 
   const record = await prisma.courseScormExport.create({
     data: {
