@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 export const COURSE_LESSON_TYPES = [
   'content',
   'interaction',
@@ -98,3 +100,46 @@ export interface CourseGraph {
   finalQuiz: CourseGraphQuiz | null;
   chapters: CourseGraphChapter[];
 }
+
+export const CourseGraphLessonSchema = z.object({
+  id: z.string().min(1),
+  position: z.number().int().min(0),
+  lessonType: z.string().min(1),
+  headline: z.string(),
+  body: z.unknown().nullable(),
+  payload: z.unknown(),
+});
+
+export const CourseGraphQuizSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().nullable(),
+  instructions: z.string().nullable(),
+  payload: z.unknown(),
+});
+
+export const CourseGraphChapterSchema = z.object({
+  id: z.string().min(1),
+  title: z.string(),
+  position: z.number().int().min(0),
+  estimatedDuration: z.number().int().nullable(),
+  lessons: z.array(CourseGraphLessonSchema),
+  quickCheck: CourseGraphQuizSchema.nullable(),
+});
+
+export const CourseGraphSchema = z.object({
+  id: z.string().min(1),
+  slug: z.string().min(1),
+  title: z.string().min(1),
+  description: z.string().nullable(),
+  createdFromTemplateKey: z.string().nullable(),
+  createdFromTemplateVersion: z.number().int().nullable(),
+  templateChecklist: z.unknown().nullable(),
+  creationJobId: z.string().nullable(),
+  duplicatedFromCourseId: z.string().nullable(),
+  learningObjectives: z.unknown().nullable(),
+  cover: z.unknown().nullable(),
+  specifications: z.unknown().nullable(),
+  disclaimer: z.unknown().nullable(),
+  finalQuiz: CourseGraphQuizSchema.nullable(),
+  chapters: z.array(CourseGraphChapterSchema),
+});

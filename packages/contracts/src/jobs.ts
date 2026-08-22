@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { AssistantQaItemSchema } from './course-assistant';
-import type { CourseGraph } from './course-studio';
+import { CourseGraphSchema } from './course-studio';
 
 export const JobKindSchema = z.enum([
   'document_index',
@@ -52,7 +52,7 @@ export type CourseDuplicatePayload = z.infer<typeof CourseDuplicatePayloadSchema
 export const CourseDuplicateArtifactSchema = z.object({
   requestedTitle: z.string().trim().min(1).max(120),
   slugBase: z.string().trim().min(1).max(100),
-  graph: z.custom<CourseGraph>(),
+  graph: CourseGraphSchema,
   assistantQa: z.array(AssistantQaItemSchema.extend({ status: z.literal('approved') })).max(200),
   sourceIds: z.array(z.string().min(1).max(100)).max(500),
   assetUrls: z.array(z.string().url()).max(1000),
