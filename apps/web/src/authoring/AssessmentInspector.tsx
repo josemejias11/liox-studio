@@ -50,6 +50,13 @@ export function AssessmentInspector({
 
   useEffect(() => onDirtyChange?.(dirty), [dirty, onDirtyChange]);
 
+  useEffect(
+    () => () => {
+      onDirtyChange?.(false);
+    },
+    [onDirtyChange],
+  );
+
   function update(change: (current: AssessmentDraft) => AssessmentDraft): void {
     setDraft(change);
     setError(null);

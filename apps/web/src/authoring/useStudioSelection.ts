@@ -24,9 +24,10 @@ export function useStudioSelection({
 
   const confirmDiscard = useCallback((): boolean => {
     if (saving) return false;
-    if ((selection.kind !== 'course' && selection.kind !== 'cover') || !courseSettingsDirty)
-      return true;
-    if (!window.confirm('Discard unsaved course changes?')) return false;
+    if (!courseSettingsDirty) return true;
+    const changeLabel =
+      selection.kind === 'quickCheck' || selection.kind === 'finalQuiz' ? 'assessment' : 'course';
+    if (!window.confirm(`Discard unsaved ${changeLabel} changes?`)) return false;
     onDiscard();
     return true;
   }, [courseSettingsDirty, onDiscard, saving, selection.kind]);

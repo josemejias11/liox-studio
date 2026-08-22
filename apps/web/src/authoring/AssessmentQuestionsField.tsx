@@ -147,9 +147,9 @@ export function AssessmentQuestionsField({ courseId, disabled, errors, items, on
               <div className="border-border rounded-md border p-2" key={answer.clientKey}>
                 <div className="flex items-center gap-2">
                   <input
-                    aria-label={`Correct answer for question ${questionIndex + 1}`}
                     checked={answer.isCorrect}
                     disabled={disabled}
+                    id={`assessment-correct-${answer.clientKey}`}
                     name={`assessment-correct-${question.clientKey}`}
                     onChange={() =>
                       replaceQuestion(question.clientKey, (current) => ({
@@ -164,9 +164,9 @@ export function AssessmentQuestionsField({ courseId, disabled, errors, items, on
                   />
                   <label
                     className="text-xs font-medium"
-                    htmlFor={`assessment-answer-${answer.clientKey}`}
+                    htmlFor={`assessment-correct-${answer.clientKey}`}
                   >
-                    Correct answer
+                    Mark answer {answerIndex + 1} as correct
                   </label>
                   <button
                     className="text-destructive ml-auto text-xs disabled:opacity-40"
@@ -212,6 +212,12 @@ export function AssessmentQuestionsField({ courseId, disabled, errors, items, on
                     ↓
                   </button>
                 </div>
+                <label
+                  className="mt-2 block text-xs font-medium"
+                  htmlFor={`assessment-answer-${answer.clientKey}`}
+                >
+                  Answer {answerIndex + 1}
+                </label>
                 <input
                   className={lessonInputClass}
                   disabled={disabled}
@@ -226,7 +232,6 @@ export function AssessmentQuestionsField({ courseId, disabled, errors, items, on
                       ),
                     }))
                   }
-                  placeholder={`Answer ${answerIndex + 1}`}
                   value={answer.text}
                 />
                 <FieldError
@@ -235,24 +240,28 @@ export function AssessmentQuestionsField({ courseId, disabled, errors, items, on
                     `questions.${questionIndex}.answers.${answerIndex}.text`,
                   )}
                 />
-                <label className="mt-2 block text-xs font-medium">
-                  Feedback for this answer
-                  <textarea
-                    className={lessonTextareaClass}
-                    disabled={disabled}
-                    onChange={(event) =>
-                      replaceQuestion(question.clientKey, (current) => ({
-                        ...current,
-                        answers: current.answers.map((item) =>
-                          item.clientKey === answer.clientKey
-                            ? { ...item, feedback: event.target.value }
-                            : item,
-                        ),
-                      }))
-                    }
-                    value={answer.feedback}
-                  />
+                <label
+                  className="mt-2 block text-xs font-medium"
+                  htmlFor={`assessment-feedback-${answer.clientKey}`}
+                >
+                  Feedback for answer {answerIndex + 1}
                 </label>
+                <textarea
+                  className={lessonTextareaClass}
+                  disabled={disabled}
+                  id={`assessment-feedback-${answer.clientKey}`}
+                  onChange={(event) =>
+                    replaceQuestion(question.clientKey, (current) => ({
+                      ...current,
+                      answers: current.answers.map((item) =>
+                        item.clientKey === answer.clientKey
+                          ? { ...item, feedback: event.target.value }
+                          : item,
+                      ),
+                    }))
+                  }
+                  value={answer.feedback}
+                />
                 <FieldError
                   message={fieldError(
                     errors,
