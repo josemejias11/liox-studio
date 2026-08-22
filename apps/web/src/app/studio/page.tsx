@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { BookOpen, Plus } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import { COURSE_STUDIO_COOKIE, courseStudioToken } from '@/server/auth/course-studio';
+import { CourseCreationPanel } from '@/authoring/CourseCreationPanel';
 import { CourseLibrary } from '@/authoring/CourseLibrary';
 import { loadAuthoringLibrary } from '@/authoring/server/studio-loaders';
 import { createCourseAction } from './actions';
@@ -10,7 +11,7 @@ export default async function CourseStudioHome() {
   const expected = await courseStudioToken();
   const token = (await cookies()).get(COURSE_STUDIO_COOKIE)?.value;
   if (!expected || token !== expected) redirect('/studio/login');
-  const { courses, generations, sourceRevisions } = await loadAuthoringLibrary();
+  const { courses, generations, sourceRevisions, templates } = await loadAuthoringLibrary();
 
   return (
     <main className="studio-workspace bg-background text-foreground min-h-screen px-6 py-10">
@@ -25,24 +26,7 @@ export default async function CourseStudioHome() {
           </div>
           <BookOpen className="text-primary h-8 w-8" aria-hidden="true" />
         </header>
-        <section className="studio-glass mb-8 rounded-2xl p-6">
-          <h2 className="mb-4 text-lg font-semibold">Start a course</h2>
-          <form action={createCourseAction} className="flex gap-3">
-            <input
-              className="border-input bg-background flex-1 rounded-lg border px-3 py-2"
-              name="title"
-              placeholder="Course title"
-              required
-            />
-            <button
-              className="bg-primary text-primary-foreground inline-flex items-center gap-2 rounded-lg px-4 py-2 font-medium"
-              type="submit"
-            >
-              <Plus className="h-4 w-4" />
-              Create course
-            </button>
-          </form>
-        </section>
+        <CourseCreationPanel createBlankCourse={createCourseAction} templates={templates} />
         <section>
           <h2 className="mb-4 text-lg font-semibold">Your courses</h2>
           {courses.length === 0 && (

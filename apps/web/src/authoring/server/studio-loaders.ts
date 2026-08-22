@@ -9,9 +9,11 @@ import {
   listCourseTrash,
   prisma,
 } from '@moto-ai/database';
+import { listCourseTemplateSummaries } from '@/authoring/server/template-commands';
 
 export async function loadAuthoringLibrary() {
   const courses = await listAuthoringCourses();
+  const templates = listCourseTemplateSummaries();
   const [revisionRecords, generationRecords] = await Promise.all([
     prisma.courseRevision.findMany({
       where: { sources: { some: {} } },
@@ -52,7 +54,7 @@ export async function loadAuthoringLibrary() {
         ]
       : [],
   );
-  return { courses, generations, sourceRevisions: revisionRecords };
+  return { courses, generations, sourceRevisions: revisionRecords, templates };
 }
 
 export async function loadAuthoringWorkspace(courseId: string) {
