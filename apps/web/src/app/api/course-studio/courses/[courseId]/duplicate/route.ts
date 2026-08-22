@@ -33,17 +33,13 @@ export async function POST(
       error instanceof Error &&
       (error.message === 'COURSE_DUPLICATE_GROUNDING_INVALID' || error.name === 'ZodError')
     ) {
-      return jsonError(
-        'Course sources or asset references need attention before duplicating.',
-        409,
-      );
+      return jsonError('Course source grounding needs attention before duplicating.', 409);
     }
-    if (
-      error instanceof Error &&
-      (error.message === 'COURSE_DUPLICATE_ASSET_INVALID' ||
-        error.message === 'COURSE_DUPLICATE_REQUEST_CONFLICT')
-    ) {
-      return jsonError('Course duplication request conflicts with current course data.', 409);
+    if (error instanceof Error && error.message === 'COURSE_DUPLICATE_ASSET_INVALID') {
+      return jsonError('Fix or replace malformed course media before duplicating.', 409);
+    }
+    if (error instanceof Error && error.message === 'COURSE_DUPLICATE_REQUEST_CONFLICT') {
+      return jsonError('This request was already used. Start a new duplication action.', 409);
     }
     return unexpectedApiError('course-studio/course-duplicate', error);
   }

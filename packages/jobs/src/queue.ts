@@ -171,6 +171,12 @@ function duplicateRequestConflict(): never {
   throw new Error('COURSE_DUPLICATE_REQUEST_CONFLICT');
 }
 
+function duplicateRequestFingerprint(sourceCourseId: string, requestedTitle: string): string {
+  return createHash('sha256')
+    .update(JSON.stringify([sourceCourseId, requestedTitle.trim()]))
+    .digest('hex');
+}
+
 export async function findExistingCourseDuplicateJob(input: {
   requestId: string;
   sourceCourseId: string;
@@ -181,13 +187,11 @@ export async function findExistingCourseDuplicateJob(input: {
     include: { artifact: true },
   });
   if (!job) return null;
-  if (job.kind !== BackgroundJobKind.COURSE_DUPLICATE || !job.artifact) duplicateRequestConflict();
+  if (job.kind !== BackgroundJobKind.COURSE_DUPLICATE) duplicateRequestConflict();
 
   let payload: CourseDuplicatePayload;
-  let artifact: CourseDuplicateArtifact;
   try {
     payload = CourseDuplicatePayloadSchema.parse(job.payload);
-    artifact = CourseDuplicateArtifactSchema.parse(JSON.parse(job.artifact.bytes.toString('utf8')));
   } catch {
     duplicateRequestConflict();
   }
@@ -195,10 +199,20 @@ export async function findExistingCourseDuplicateJob(input: {
   if (
     payload.sourceCourseId !== input.sourceCourseId ||
     payload.destinationCourseId !== `course.duplicate.${input.requestId}` ||
-    artifact.requestedTitle !== input.requestedTitle.trim()
+    payload.requestFingerprint !==
+      duplicateRequestFingerprint(input.sourceCourseId, input.requestedTitle)
   ) {
     duplicateRequestConflict();
   }
+  if (!job.artifact) return accepted(job);
+
+  let artifact: CourseDuplicateArtifact;
+  try {
+    artifact = CourseDuplicateArtifactSchema.parse(JSON.parse(job.artifact.bytes.toString('utf8')));
+  } catch {
+    duplicateRequestConflict();
+  }
+  if (artifact.requestedTitle !== input.requestedTitle.trim()) duplicateRequestConflict();
   return accepted(job);
 }
 
@@ -211,6 +225,7 @@ export async function enqueueCourseDuplicateJob(input: {
   const payload: CourseDuplicatePayload = {
     sourceCourseId: input.sourceCourseId,
     destinationCourseId: `course.duplicate.${input.requestId}`,
+    requestFingerprint: duplicateRequestFingerprint(input.sourceCourseId, input.requestedTitle),
   };
   return enqueue(
     'course_duplicate',

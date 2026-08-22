@@ -47,6 +47,7 @@ export type CourseGenerationPayload = z.infer<typeof CourseGenerationPayloadSche
 export const CourseDuplicatePayloadSchema = z.object({
   sourceCourseId: z.string().min(1).max(100),
   destinationCourseId: z.string().min(1).max(100),
+  requestFingerprint: z.string().regex(/^[0-9a-f]{64}$/),
 });
 export type CourseDuplicatePayload = z.infer<typeof CourseDuplicatePayloadSchema>;
 
