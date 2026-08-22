@@ -1,12 +1,16 @@
 'use client';
 
 import type { CourseTemplateSummary } from '@/authoring/templates/catalog';
+import type { CreateCourseActionState } from '@/app/studio/actions';
 import { BookOpen, LoaderCircle, Sparkles } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useActionState, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface CourseCreationPanelProps {
-  createBlankCourse: (formData: FormData) => Promise<void>;
+  createBlankCourse: (
+    previousState: CreateCourseActionState,
+    formData: FormData,
+  ) => Promise<CreateCourseActionState>;
   templates: CourseTemplateSummary[];
 }
 
@@ -15,29 +19,51 @@ type SubmissionKind = 'blank' | 'comprehensive' | null;
 export function CourseCreationPanel({ createBlankCourse, templates }: CourseCreationPanelProps) {
   const router = useRouter();
   const isSubmitting = useRef(false);
+  const submissionRef = useRef<SubmissionKind>(null);
+  const blankWasPending = useRef(false);
   const [submission, setSubmission] = useState<SubmissionKind>(null);
   const [templateError, setTemplateError] = useState<string | null>(null);
+  const [blankState, submitBlankCourse, blankPending] = useActionState(createBlankCourse, {
+    error: null,
+  });
   const comprehensiveTemplate = templates.find(
     (template) => template.key === 'comprehensive-course',
   );
 
-  async function submitBlankCourse(formData: FormData) {
-    if (isSubmitting.current) return;
+  function releaseSubmission(kind: Exclude<SubmissionKind, null>) {
+    if (submissionRef.current !== kind) return;
+    submissionRef.current = null;
+    isSubmitting.current = false;
+    setSubmission(null);
+  }
+
+  useEffect(() => {
+    if (blankPending) {
+      blankWasPending.current = true;
+      return;
+    }
+    if (blankWasPending.current && blankState.error) {
+      blankWasPending.current = false;
+      releaseSubmission('blank');
+    }
+  }, [blankPending, blankState.error, submission]);
+
+  function guardBlankSubmission(event: React.FormEvent<HTMLFormElement>) {
+    if (isSubmitting.current) {
+      event.preventDefault();
+      return;
+    }
     isSubmitting.current = true;
+    submissionRef.current = 'blank';
     setSubmission('blank');
     setTemplateError(null);
-    try {
-      await createBlankCourse(formData);
-    } finally {
-      isSubmitting.current = false;
-      setSubmission(null);
-    }
   }
 
   async function submitComprehensiveCourse(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!comprehensiveTemplate || isSubmitting.current) return;
     isSubmitting.current = true;
+    submissionRef.current = 'comprehensive';
     setSubmission('comprehensive');
     setTemplateError(null);
 
@@ -56,18 +82,17 @@ export function CourseCreationPanel({ createBlankCourse, templates }: CourseCrea
       } | null;
       if (!response.ok || typeof result?.course?.id !== 'string') {
         setTemplateError('We could not create that comprehensive course. Please try again.');
+        releaseSubmission('comprehensive');
         return;
       }
       router.push(`/studio/${result.course.id}`);
     } catch {
       setTemplateError('We could not create that comprehensive course. Please try again.');
-    } finally {
-      isSubmitting.current = false;
-      setSubmission(null);
+      releaseSubmission('comprehensive');
     }
   }
 
-  const disabled = submission !== null;
+  const disabled = submission !== null || blankPending;
 
   return (
     <section
@@ -87,6 +112,7 @@ export function CourseCreationPanel({ createBlankCourse, templates }: CourseCrea
           action={submitBlankCourse}
           className="studio-glass-panel border-border rounded-xl border p-5"
           aria-busy={submission === 'blank'}
+          onSubmit={guardBlankSubmission}
         >
           <div className="flex items-start gap-3">
             <BookOpen className="text-primary mt-0.5 h-5 w-5" aria-hidden="true" />
@@ -113,11 +139,16 @@ export function CourseCreationPanel({ createBlankCourse, templates }: CourseCrea
             disabled={disabled}
             type="submit"
           >
-            {submission === 'blank' && (
+            {(submission === 'blank' || blankPending) && (
               <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
             )}
             Create blank course
           </button>
+          {blankState.error && submission !== 'blank' && (
+            <p aria-live="polite" className="text-destructive mt-3 text-sm" role="status">
+              {blankState.error}
+            </p>
+          )}
         </form>
 
         <form
@@ -134,6 +165,9 @@ export function CourseCreationPanel({ createBlankCourse, templates }: CourseCrea
               <p className="text-muted-foreground mt-1 text-sm">
                 {comprehensiveTemplate?.description ??
                   'A complete learning structure is not available right now.'}
+              </p>
+              <p className="text-muted-foreground mt-2 text-sm">
+                Includes chapter knowledge checks and a final assessment.
               </p>
             </div>
           </div>
