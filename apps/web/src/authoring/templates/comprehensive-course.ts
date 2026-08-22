@@ -1,0 +1,241 @@
+import type { CourseTemplateDefinition } from '@moto-ai/contracts';
+
+const placeholderQuestion = (key: string) => ({
+  _key: `${key}-question`,
+  questionText: 'Replace with the knowledge-check question',
+  questionType: 'single' as const,
+  answers: [
+    { _key: `${key}-answer-correct`, text: 'Replace with the correct answer', isCorrect: true },
+    { _key: `${key}-answer-other`, text: 'Replace with another answer', isCorrect: false },
+  ],
+});
+
+const changed = (id: string, entityId: string, field: string, label: string, value: unknown) => ({
+  id,
+  entityId,
+  field,
+  label,
+  rule: 'changed' as const,
+  initialFingerprint: JSON.stringify(value),
+});
+
+export const comprehensiveCourseTemplate: CourseTemplateDefinition = {
+  key: 'comprehensive-course',
+  version: 1,
+  title: 'Comprehensive course',
+  description: 'A neutral course framework with every supported learning interaction.',
+  learningObjectives: ['Describe the learner benefit'],
+  specifications: [
+    {
+      title: 'Product specifications',
+      subtitle: 'Replace with the details learners need.',
+      specGroups: [
+        {
+          groupName: 'Key details',
+          specs: [{ label: 'Replace with specification', value: 'Replace with value' }],
+        },
+      ],
+    },
+  ],
+  disclaimer: {
+    title: 'Important information',
+    category: 'general',
+    body: 'Replace with the applicable disclaimer.',
+  },
+  chapters: [
+    {
+      key: 'discover',
+      title: 'Discover the product',
+      lessons: [
+        {
+          key: 'discover-content',
+          lessonType: 'content',
+          headline: 'Replace with the course headline',
+        },
+        { key: 'discover-hotspot', lessonType: 'interaction', headline: 'Explore the product' },
+        { key: 'discover-stage', lessonType: 'stage', headline: 'See the product in context' },
+      ],
+      quickCheckKey: 'discover-check',
+      quickCheck: {
+        title: 'Chapter knowledge check',
+        instructions: 'Replace with guidance for this knowledge check.',
+        questions: [placeholderQuestion('discover-check')],
+        passingScore: 80,
+        allowRetry: true,
+        showCorrectAnswers: true,
+      },
+    },
+    {
+      key: 'experience',
+      title: 'Explain the experience',
+      lessons: [
+        { key: 'experience-split', lessonType: 'splitScreen', headline: 'Compare the experience' },
+        { key: 'experience-scroll', lessonType: 'scrollStory', headline: 'Follow the experience' },
+        { key: 'experience-canvas', lessonType: 'canvas', headline: 'Inspect the details' },
+      ],
+    },
+    {
+      key: 'recommendation',
+      title: 'Practice the recommendation',
+      lessons: [
+        {
+          key: 'recommendation-drag',
+          lessonType: 'dragDrop',
+          headline: 'Practice the recommendation',
+        },
+        {
+          key: 'recommendation-colour',
+          lessonType: 'colorSwitcher',
+          headline: 'Compare the options',
+        },
+        { key: 'recommendation-video', lessonType: 'video', headline: 'Watch the recommendation' },
+      ],
+    },
+  ],
+  finalQuizKey: 'final-assessment',
+  finalQuiz: {
+    title: 'Final assessment',
+    instructions: 'Replace with guidance for the final assessment.',
+    questions: [placeholderQuestion('final-assessment')],
+    passingScore: 80,
+    allowRetry: true,
+    showCorrectAnswers: true,
+  },
+  requirements: [
+    changed(
+      'course-description',
+      'course',
+      'description',
+      'Course description',
+      'A neutral course framework with every supported learning interaction.',
+    ),
+    changed(
+      'course-objective',
+      'course',
+      'learningObjectives.0',
+      'Learning objective',
+      'Describe the learner benefit',
+    ),
+    changed(
+      'content-headline',
+      'discover-content',
+      'headline',
+      'Content headline',
+      'Replace with the course headline',
+    ),
+    {
+      id: 'hotspot-minimum',
+      entityId: 'discover-hotspot',
+      field: 'payload.hotspots',
+      label: 'Hotspot',
+      rule: 'minimum' as const,
+      minimum: 1,
+    },
+    {
+      id: 'stage-media',
+      entityId: 'discover-stage',
+      field: 'payload.media',
+      label: 'Stage product image',
+      rule: 'media' as const,
+    },
+    {
+      id: 'stage-background',
+      entityId: 'discover-stage',
+      field: 'payload.stageBackground',
+      label: 'Stage background',
+      rule: 'media' as const,
+    },
+    {
+      id: 'scroll-media',
+      entityId: 'experience-scroll',
+      field: 'payload.media',
+      label: 'Scroll story image',
+      rule: 'media' as const,
+    },
+    {
+      id: 'canvas-media',
+      entityId: 'experience-canvas',
+      field: 'payload.media',
+      label: 'Canvas image',
+      rule: 'media' as const,
+    },
+    {
+      id: 'drag-media',
+      entityId: 'recommendation-drag',
+      field: 'payload.media',
+      label: 'Drag-and-drop image',
+      rule: 'media' as const,
+    },
+    {
+      id: 'colour-minimum',
+      entityId: 'recommendation-colour',
+      field: 'payload.colorVariants',
+      label: 'Colour variant',
+      rule: 'minimum' as const,
+      minimum: 1,
+    },
+    {
+      id: 'video-media',
+      entityId: 'recommendation-video',
+      field: 'payload.videoFile',
+      label: 'Video file',
+      rule: 'media' as const,
+    },
+    {
+      id: 'chapter-check-valid',
+      entityId: 'discover-check',
+      field: 'payload',
+      label: 'Chapter knowledge check',
+      rule: 'assessment' as const,
+    },
+    changed(
+      'chapter-check-question',
+      'discover-check',
+      'payload.questions.0.questionText',
+      'Chapter knowledge-check question',
+      'Replace with the knowledge-check question',
+    ),
+    changed(
+      'chapter-check-correct-answer',
+      'discover-check',
+      'payload.questions.0.answers.0.text',
+      'Chapter knowledge-check correct answer',
+      'Replace with the correct answer',
+    ),
+    changed(
+      'chapter-check-other-answer',
+      'discover-check',
+      'payload.questions.0.answers.1.text',
+      'Chapter knowledge-check alternate answer',
+      'Replace with another answer',
+    ),
+    {
+      id: 'final-assessment-valid',
+      entityId: 'final-assessment',
+      field: 'payload',
+      label: 'Final assessment',
+      rule: 'assessment' as const,
+    },
+    changed(
+      'final-assessment-question',
+      'final-assessment',
+      'payload.questions.0.questionText',
+      'Final assessment question',
+      'Replace with the knowledge-check question',
+    ),
+    changed(
+      'final-assessment-correct-answer',
+      'final-assessment',
+      'payload.questions.0.answers.0.text',
+      'Final assessment correct answer',
+      'Replace with the correct answer',
+    ),
+    changed(
+      'final-assessment-other-answer',
+      'final-assessment',
+      'payload.questions.0.answers.1.text',
+      'Final assessment alternate answer',
+      'Replace with another answer',
+    ),
+  ],
+};

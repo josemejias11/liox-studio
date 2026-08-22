@@ -51,6 +51,7 @@ export {
   updateCourseDetails,
   updateLesson,
 } from './course-repository';
+export { createCourseFromTemplate } from './course-template-repository';
 export {
   emptyCourseTrash,
   listCourseTrash,

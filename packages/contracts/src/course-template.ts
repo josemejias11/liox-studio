@@ -18,25 +18,58 @@ const CourseTemplateLessonSchema = z.object({
   payload: z.unknown().optional(),
 });
 
-const CourseTemplateChapterSchema = z.object({
-  key: z.string().min(1).max(120),
-  title: z.string().trim().min(1).max(2000),
-  estimatedDuration: z.number().int().min(1).max(180).nullable().optional(),
-  lessons: z.array(CourseTemplateLessonSchema).min(1).max(100),
-  quickCheck: CourseAssessmentInputSchema.optional(),
-});
+const CourseTemplateChapterSchema = z
+  .object({
+    key: z.string().min(1).max(120),
+    title: z.string().trim().min(1).max(2000),
+    estimatedDuration: z.number().int().min(1).max(180).nullable().optional(),
+    lessons: z.array(CourseTemplateLessonSchema).min(1).max(100),
+    quickCheckKey: z.string().min(1).max(120).optional(),
+    quickCheck: CourseAssessmentInputSchema.optional(),
+  })
+  .superRefine((chapter, context) => {
+    if (Boolean(chapter.quickCheck) !== Boolean(chapter.quickCheckKey)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['quickCheckKey'],
+        message: 'A chapter quick check requires a definition-local key.',
+      });
+    }
+  });
 
-export const CourseTemplateDefinitionSchema = z.object({
-  key: z.string().min(1).max(120),
-  version: z.number().int().min(1),
-  title: z.string().trim().min(1).max(120),
-  description: z.string().trim().max(2000).optional(),
-  learningObjectives: z.array(z.string().trim().min(1).max(500)).max(12).optional(),
-  cover: z.unknown().nullable().optional(),
-  chapters: z.array(CourseTemplateChapterSchema).min(1).max(100),
-  finalQuiz: CourseAssessmentInputSchema.optional(),
-});
-export type CourseTemplateDefinition = z.infer<typeof CourseTemplateDefinitionSchema>;
+const CourseTemplateSpecificationSchema = z
+  .object({
+    title: z.string().trim().min(1).max(2000),
+    subtitle: z.string().trim().max(2000).optional(),
+    heroImage: z.unknown().optional(),
+    specGroups: z
+      .array(
+        z.object({
+          groupName: z.string().trim().min(1).max(2000),
+          specs: z.array(
+            z.object({
+              label: z.string().trim().min(1).max(2000),
+              value: z.string().trim().min(1).max(2000),
+              highlight: z.boolean().optional(),
+            }),
+          ),
+        }),
+      )
+      .min(1),
+    footnotes: z.array(z.string().trim().min(1).max(2000)).optional(),
+  })
+  .passthrough();
+
+const CourseTemplateDisclaimerSchema = z
+  .object({
+    title: z.string().trim().min(1).max(2000).optional(),
+    category: z.enum(['legal', 'safety', 'regulatory', 'warranty', 'general']).optional(),
+    body: z.string().trim().min(1).max(2000),
+    disclaimers: z.array(z.string().trim().min(1).max(2000)).optional(),
+    acknowledgementRequired: z.boolean().optional(),
+    acknowledgementLabel: z.string().trim().min(1).max(2000).optional(),
+  })
+  .passthrough();
 
 export const TemplateRequirementSchema = z.discriminatedUnion('rule', [
   z.object({
@@ -70,6 +103,33 @@ export const TemplateRequirementSchema = z.discriminatedUnion('rule', [
     rule: z.literal('assessment'),
   }),
 ]);
+export type TemplateRequirement = z.infer<typeof TemplateRequirementSchema>;
+
+export const CourseTemplateDefinitionSchema = z
+  .object({
+    key: z.string().min(1).max(120),
+    version: z.number().int().min(1),
+    title: z.string().trim().min(1).max(120),
+    description: z.string().trim().max(2000).optional(),
+    learningObjectives: z.array(z.string().trim().min(1).max(500)).max(12).optional(),
+    cover: z.unknown().nullable().optional(),
+    specifications: z.array(CourseTemplateSpecificationSchema).max(100).optional(),
+    disclaimer: CourseTemplateDisclaimerSchema.nullable().optional(),
+    chapters: z.array(CourseTemplateChapterSchema).min(1).max(100),
+    finalQuizKey: z.string().min(1).max(120).optional(),
+    finalQuiz: CourseAssessmentInputSchema.optional(),
+    requirements: z.array(TemplateRequirementSchema).max(500).optional(),
+  })
+  .superRefine((definition, context) => {
+    if (Boolean(definition.finalQuiz) !== Boolean(definition.finalQuizKey)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['finalQuizKey'],
+        message: 'A final assessment requires a definition-local key.',
+      });
+    }
+  });
+export type CourseTemplateDefinition = z.infer<typeof CourseTemplateDefinitionSchema>;
 
 export const CourseTemplateChecklistSchema = z.object({
   templateKey: z.string().min(1).max(120),
