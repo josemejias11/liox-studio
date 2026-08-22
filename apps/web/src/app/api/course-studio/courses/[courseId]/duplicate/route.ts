@@ -38,6 +38,13 @@ export async function POST(
         409,
       );
     }
+    if (
+      error instanceof Error &&
+      (error.message === 'COURSE_DUPLICATE_ASSET_INVALID' ||
+        error.message === 'COURSE_DUPLICATE_REQUEST_CONFLICT')
+    ) {
+      return jsonError('Course duplication request conflicts with current course data.', 409);
+    }
     return unexpectedApiError('course-studio/course-duplicate', error);
   }
 }

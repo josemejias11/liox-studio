@@ -6,20 +6,43 @@ import {
   CourseDuplicateAssistantQaItemSchema,
   type CourseDuplicateArtifact,
 } from '@moto-ai/contracts/jobs';
+import { courseAssetUrlSchema } from '@moto-ai/contracts';
 import { collectAssetRefs } from '@moto-ai/storage';
 
 import { prisma } from './index';
 import { courseGraphSelect, toCourseGraph } from './course-repository';
 
+function compareCodeUnits(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
+}
+
 function stableJson(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
   if (value && typeof value === 'object') {
     return `{${Object.entries(value as Record<string, unknown>)
-      .sort(([left], [right]) => left.localeCompare(right))
+      .sort(([left], [right]) => compareCodeUnits(left, right))
       .map(([key, item]) => `${JSON.stringify(key)}:${stableJson(item)}`)
       .join(',')}}`;
   }
   return JSON.stringify(value);
+}
+
+function assertCanonicalCourseAssetUrls(value: unknown): void {
+  if (typeof value === 'string') {
+    if (value.startsWith('/api/course-assets/') && !courseAssetUrlSchema.safeParse(value).success) {
+      throw new Error('COURSE_DUPLICATE_ASSET_INVALID');
+    }
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) assertCanonicalCourseAssetUrls(item);
+    return;
+  }
+  if (value && typeof value === 'object') {
+    for (const item of Object.values(value as Record<string, unknown>)) {
+      assertCanonicalCourseAssetUrls(item);
+    }
+  }
 }
 
 function slugify(value: string): string {
@@ -58,22 +81,23 @@ export async function captureCourseDuplicateArtifact(
         }),
         tx.courseSourceFile.findMany({
           where: { courseId: sourceCourseId },
-          select: { id: true },
+          select: { id: true, sha256: true },
         }),
         tx.courseSourceBinding.findMany({
           where: { courseId: sourceCourseId },
-          select: { sourceFileId: true },
+          select: { sourceFile: { select: { id: true, sha256: true } } },
         }),
       ]);
       if (!course) throw new Error('COURSE_NOT_FOUND');
 
-      const sourceIds = [
-        ...new Set([
-          ...ownedSources.map((source) => source.id),
-          ...inheritedBindings.map((binding) => binding.sourceFileId),
-        ]),
-      ].sort((left, right) => left.localeCompare(right));
-      const capturedSourceIds = new Set(sourceIds);
+      const sourceIdentityById = new Map<string, string>();
+      for (const source of [
+        ...ownedSources,
+        ...inheritedBindings.map((binding) => binding.sourceFile),
+      ]) {
+        sourceIdentityById.set(source.id, source.sha256);
+      }
+      const sourceIds = [...sourceIdentityById.keys()].sort(compareCodeUnits);
       const assistantQa = assistantQaRecords.map((record) =>
         CourseDuplicateAssistantQaItemSchema.parse({
           ...record,
@@ -82,19 +106,26 @@ export async function captureCourseDuplicateArtifact(
       );
 
       for (const item of assistantQa) {
-        const referencedSourceIds = new Set([
-          ...item.sourceIds,
-          ...item.citations.map((citation) => citation.sourceId),
-        ]);
-        if ([...referencedSourceIds].some((sourceId) => !capturedSourceIds.has(sourceId))) {
+        if (
+          item.sourceIds.length !== item.sourceHashes.length ||
+          new Set(item.sourceIds).size !== item.sourceIds.length
+        ) {
+          throw new Error('COURSE_DUPLICATE_GROUNDING_INVALID');
+        }
+        for (const [index, sourceId] of item.sourceIds.entries()) {
+          if (sourceIdentityById.get(sourceId) !== item.sourceHashes[index]) {
+            throw new Error('COURSE_DUPLICATE_GROUNDING_INVALID');
+          }
+        }
+        if (item.citations.some((citation) => !item.sourceIds.includes(citation.sourceId))) {
           throw new Error('COURSE_DUPLICATE_GROUNDING_INVALID');
         }
       }
 
       const graph = toCourseGraph(course);
-      const assetUrls = [...new Set(collectAssetRefs({ graph, assistantQa }))].sort((left, right) =>
-        left.localeCompare(right),
-      );
+      const assetPayload = { graph, assistantQa };
+      assertCanonicalCourseAssetUrls(assetPayload);
+      const assetUrls = [...new Set(collectAssetRefs(assetPayload))].sort(compareCodeUnits);
       const contentHash = createHash('sha256')
         .update(
           stableJson({ graph, assistantQa, sourceIds, assetUrls, requestedTitle: normalizedTitle }),

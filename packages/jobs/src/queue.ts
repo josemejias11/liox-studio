@@ -13,6 +13,8 @@ import {
   type AiOperationPayload,
   type CourseDuplicateArtifact,
   type CourseDuplicatePayload,
+  CourseDuplicateArtifactSchema,
+  CourseDuplicatePayloadSchema,
   type CourseGenerationPayload,
   type DocumentIndexPayload,
   type JobAcceptedResponse,
@@ -97,13 +99,26 @@ async function enqueue(
   dedupeKey: string,
   artifact?: { filename: string; contentType?: string; bytes: Buffer },
   jobId?: string,
+  findExistingJob?: () => Promise<JobAcceptedResponse | null>,
 ): Promise<JobAcceptedResponse> {
   if (jobId) {
-    const existingById = await prisma.backgroundJob.findUnique({ where: { id: jobId } });
-    if (existingById) return accepted(existingById);
+    if (findExistingJob) {
+      const existingById = await findExistingJob();
+      if (existingById) return existingById;
+    } else {
+      const existingById = await prisma.backgroundJob.findUnique({ where: { id: jobId } });
+      if (existingById) return accepted(existingById);
+    }
   }
   const existing = await prisma.backgroundJob.findUnique({ where: { dedupeKey } });
-  if (existing) return accepted(existing);
+  if (existing) {
+    if (findExistingJob) {
+      const existingById = await findExistingJob();
+      if (existingById) return existingById;
+      throw new Error('COURSE_DUPLICATE_REQUEST_CONFLICT');
+    }
+    return accepted(existing);
+  }
 
   try {
     const job = await prisma.backgroundJob.create({
@@ -130,14 +145,61 @@ async function enqueue(
   } catch (error: unknown) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       if (jobId) {
-        const duplicateById = await prisma.backgroundJob.findUnique({ where: { id: jobId } });
-        if (duplicateById) return accepted(duplicateById);
+        if (findExistingJob) {
+          const duplicateById = await findExistingJob();
+          if (duplicateById) return duplicateById;
+        } else {
+          const duplicateById = await prisma.backgroundJob.findUnique({ where: { id: jobId } });
+          if (duplicateById) return accepted(duplicateById);
+        }
       }
       const duplicate = await prisma.backgroundJob.findUnique({ where: { dedupeKey } });
-      if (duplicate) return accepted(duplicate);
+      if (duplicate) {
+        if (findExistingJob) {
+          const duplicateById = await findExistingJob();
+          if (duplicateById) return duplicateById;
+          throw new Error('COURSE_DUPLICATE_REQUEST_CONFLICT');
+        }
+        return accepted(duplicate);
+      }
     }
     throw error;
   }
+}
+
+function duplicateRequestConflict(): never {
+  throw new Error('COURSE_DUPLICATE_REQUEST_CONFLICT');
+}
+
+export async function findExistingCourseDuplicateJob(input: {
+  requestId: string;
+  sourceCourseId: string;
+  requestedTitle: string;
+}): Promise<JobAcceptedResponse | null> {
+  const job = await prisma.backgroundJob.findUnique({
+    where: { id: input.requestId },
+    include: { artifact: true },
+  });
+  if (!job) return null;
+  if (job.kind !== BackgroundJobKind.COURSE_DUPLICATE || !job.artifact) duplicateRequestConflict();
+
+  let payload: CourseDuplicatePayload;
+  let artifact: CourseDuplicateArtifact;
+  try {
+    payload = CourseDuplicatePayloadSchema.parse(job.payload);
+    artifact = CourseDuplicateArtifactSchema.parse(JSON.parse(job.artifact.bytes.toString('utf8')));
+  } catch {
+    duplicateRequestConflict();
+  }
+
+  if (
+    payload.sourceCourseId !== input.sourceCourseId ||
+    payload.destinationCourseId !== `course.duplicate.${input.requestId}` ||
+    artifact.requestedTitle !== input.requestedTitle.trim()
+  ) {
+    duplicateRequestConflict();
+  }
+  return accepted(job);
 }
 
 export async function enqueueCourseDuplicateJob(input: {
@@ -160,6 +222,12 @@ export async function enqueueCourseDuplicateJob(input: {
       bytes: Buffer.from(JSON.stringify(input.artifact), 'utf8'),
     },
     input.requestId,
+    () =>
+      findExistingCourseDuplicateJob({
+        requestId: input.requestId,
+        sourceCourseId: input.sourceCourseId,
+        requestedTitle: input.requestedTitle,
+      }),
   );
 }
 
