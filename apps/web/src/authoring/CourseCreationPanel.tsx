@@ -21,10 +21,12 @@ export function CourseCreationPanel({ createBlankCourse, templates }: CourseCrea
   const isSubmitting = useRef(false);
   const submissionRef = useRef<SubmissionKind>(null);
   const blankWasPending = useRef(false);
+  const blankFailureVersionAtSubmit = useRef(0);
   const [submission, setSubmission] = useState<SubmissionKind>(null);
   const [templateError, setTemplateError] = useState<string | null>(null);
   const [blankState, submitBlankCourse, blankPending] = useActionState(createBlankCourse, {
     error: null,
+    failureVersion: 0,
   });
   const comprehensiveTemplate = templates.find(
     (template) => template.key === 'comprehensive-course',
@@ -42,11 +44,15 @@ export function CourseCreationPanel({ createBlankCourse, templates }: CourseCrea
       blankWasPending.current = true;
       return;
     }
-    if (blankWasPending.current && blankState.error) {
+    if (
+      blankWasPending.current &&
+      blankState.error &&
+      blankState.failureVersion > blankFailureVersionAtSubmit.current
+    ) {
       blankWasPending.current = false;
       releaseSubmission('blank');
     }
-  }, [blankPending, blankState.error, submission]);
+  }, [blankPending, blankState.error, blankState.failureVersion, submission]);
 
   function guardBlankSubmission(event: React.FormEvent<HTMLFormElement>) {
     if (isSubmitting.current) {
@@ -55,6 +61,7 @@ export function CourseCreationPanel({ createBlankCourse, templates }: CourseCrea
     }
     isSubmitting.current = true;
     submissionRef.current = 'blank';
+    blankFailureVersionAtSubmit.current = blankState.failureVersion;
     setSubmission('blank');
     setTemplateError(null);
   }
