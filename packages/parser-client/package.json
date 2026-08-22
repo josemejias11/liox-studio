@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@moto-ai/contracts": "0.1.0",
     "zod": "^4.4.3"
   }
 }

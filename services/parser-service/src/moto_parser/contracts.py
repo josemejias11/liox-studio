@@ -1,6 +1,6 @@
 """Pydantic contracts shared by the parser-service HTTP adapters and use cases."""
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -83,7 +83,14 @@ class QuizPayload(BaseModel):
 
 
 class StrictContract(BaseModel):
-    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+    model_config = ConfigDict(
+        extra="forbid",
+        populate_by_name=True,
+        str_strip_whitespace=True,
+    )
+
+
+RequiredText500 = Annotated[str, Field(min_length=1, max_length=500)]
 
 
 class GeneratedAssetPlaceholder(StrictContract):
@@ -108,7 +115,7 @@ class GeneratedInteractionDraft(StrictContract):
 
 class GeneratedQuizSuggestion(StrictContract):
     question: str = Field(min_length=1, max_length=1000)
-    options: list[str] = Field(min_length=2, max_length=6)
+    options: list[RequiredText500] = Field(min_length=2, max_length=6)
     suggested_correct_answer_index: int = Field(alias="suggestedCorrectAnswerIndex", ge=0)
     rationale: str = Field(min_length=1, max_length=1000)
 
@@ -152,7 +159,7 @@ class GeneratedCourseChapter(StrictContract):
 class GeneratedCourseGraph(StrictContract):
     title: str = Field(min_length=1, max_length=120)
     description: str = Field(min_length=1, max_length=2000)
-    objectives: list[str] = Field(min_length=1, max_length=12)
+    objectives: list[RequiredText500] = Field(min_length=1, max_length=12)
     chapters: list[GeneratedCourseChapter] = Field(min_length=1, max_length=12)
 
     @model_validator(mode="after")
@@ -176,5 +183,5 @@ class CourseGenerationRequest(BaseModel):
 
 class CourseGenerationResponse(BaseModel):
     graph: GeneratedCourseGraph
-    model_identifier: str
-    prompt_template_version: str
+    model_identifier: str = Field(min_length=1, max_length=300)
+    prompt_template_version: Literal["course-generation.v1"]

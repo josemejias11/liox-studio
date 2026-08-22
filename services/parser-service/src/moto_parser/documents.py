@@ -10,7 +10,7 @@ from typing import BinaryIO, cast
 
 from markitdown import MarkItDown
 
-from .rag import build_text_splitter, delete_document_chunks, replace_document_chunks
+from .retrieval import build_text_splitter, delete_document_chunks, replace_document_chunks
 from .settings import (
     ALLOWED_EXTENSIONS,
     MAX_UPLOAD_BYTES,

@@ -28,7 +28,8 @@ from .documents import (
     store_course_document,
 )
 from .generation import generate_course
-from .rag import generate_assistant_qa, generate_quiz, lifespan, runtime
+from .rag import generate_assistant_qa, generate_quiz
+from .runtime import lifespan, runtime
 from .settings import CHROMA_DIR, OPENAI_API_KEY, OPENAI_CHAT_MODEL, OPENAI_EMBEDDING_MODEL
 
 logger = logging.getLogger(__name__)
@@ -62,12 +63,16 @@ def require_internal_token(
 )
 def generate_assistant_qa_route(request: AssistantQaRequest) -> AssistantQaResponse:
     try:
-        return AssistantQaResponse(drafts=generate_assistant_qa(request.course_id, request.source_ids))
+        return AssistantQaResponse(
+            drafts=generate_assistant_qa(request.course_id, request.source_ids)
+        )
     except LookupError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
     except Exception as error:
         logger.exception("Error generating assistant Q&A for course %s", request.course_id)
-        raise HTTPException(status_code=500, detail="Internal server error generating assistant Q&A.") from error
+        raise HTTPException(
+            status_code=500, detail="Internal server error generating assistant Q&A."
+        ) from error
 
 
 @app.post(

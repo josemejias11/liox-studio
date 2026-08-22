@@ -1,4 +1,8 @@
 import { z } from 'zod';
+import {
+  ParserCourseGenerationResponseSchema,
+  type ParserCourseGenerationResponse,
+} from '@moto-ai/contracts/course-generation';
 
 function getServiceConfig() {
   const url = (process.env.PARSER_SERVICE_URL ?? 'http://localhost:8000').replace(/\/$/, '');
@@ -106,12 +110,6 @@ const ParserDeleteResponseSchema = z.object({
   source_id: z.string(),
 });
 
-const ParserCourseGenerationResponseSchema = z.object({
-  graph: z.unknown(),
-  model_identifier: z.string().min(1),
-  prompt_template_version: z.string().min(1),
-});
-
 export interface RagQuizQuestion {
   question: string;
   options: string[];
@@ -135,7 +133,7 @@ export interface RagDeleteResponse {
 }
 
 export interface RagCourseGenerationResponse {
-  graph: unknown;
+  graph: ParserCourseGenerationResponse['graph'];
   modelIdentifier: string;
   promptTemplateVersion: string;
 }

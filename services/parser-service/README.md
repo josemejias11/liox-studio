@@ -5,6 +5,8 @@ embedding, source-grounded authoring drafts, and supplemental quiz-draft
 generation. It is called by the Next.js backend and background worker;
 browsers never call it directly. OpenAI is the language-model and embedding
 provider behind this service boundary; browsers never receive the API key.
+Ollama and other local-model runtimes are not supported: this service does not
+download, start, or connect to a local model.
 
 ## Quick start
 
@@ -39,6 +41,12 @@ readiness with `curl http://127.0.0.1:8000/health`; when enabled, Swagger is at
 
 All endpoints except `/health` require `X-Internal-Token`.
 
+Pydantic models in `src/moto_parser/contracts.py` own the parser service's HTTP
+validation. The TypeScript parser client validates every untrusted HTTP
+response again; course-generation responses use the canonical schema in
+`packages/contracts`, while endpoint-specific transport responses remain local
+to the client. Keep those field names and bounds aligned when changing the API.
+
 Generation requests always carry explicit source IDs. An empty `source_ids`
 list never expands to the course corpus: retrieval returns no context. Uploads
 carry `source_id` and `sha256` multipart fields, and every Chroma chunk stores
@@ -46,8 +54,9 @@ carry `source_id` and `sha256` multipart fields, and every Chroma chunk stores
 Q&A remains a source-cited draft until a Studio author approves it; learners
 never receive parser citations or call this service.
 
-## Documentation
+## Repository documentation
 
-- [Documentation index](docs/README.md)
-- [Architecture and module ownership](docs/architecture.md)
-- [Operations, configuration, and deployment](docs/operations.md)
+The root [README](../../README.md) describes the application and runtime
+boundaries. This directory is the authoritative source for parser-service
+configuration and operation; the former parser-local documentation tree is not
+part of the repository.

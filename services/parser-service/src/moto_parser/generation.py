@@ -2,15 +2,18 @@
 
 import json
 import logging
+from typing import Literal
 
 from pydantic import ValidationError
 
 from .contracts import CourseGenerationResponse, GeneratedCourseGraph
-from .rag import format_context, response_text, retrieve_course_documents, runtime
+from .rag import response_text
+from .retrieval import format_context, retrieve_course_documents
+from .runtime import runtime
 from .settings import OPENAI_CHAT_MODEL
 
 logger = logging.getLogger(__name__)
-PROMPT_TEMPLATE_VERSION = "course-generation.v1"
+PROMPT_TEMPLATE_VERSION: Literal["course-generation.v1"] = "course-generation.v1"
 GENERATION_MAX_CONTEXT_DOCS = 40
 
 
@@ -51,9 +54,9 @@ JSON SCHEMA:
     last_error: Exception | None = None
     for attempt in range(2):
         try:
-            if runtime.quiz_llm is None:
+            if runtime.generation_model is None:
                 raise RuntimeError("The course-generation model is not initialized.")
-            raw = response_text(runtime.quiz_llm.invoke(prompt))
+            raw = response_text(runtime.generation_model.invoke(prompt))
             graph = GeneratedCourseGraph.model_validate(json.loads(raw))
             return CourseGenerationResponse(
                 graph=graph,

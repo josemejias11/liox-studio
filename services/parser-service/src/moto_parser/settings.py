@@ -41,16 +41,8 @@ def validate_course_id(value: str) -> str:
 # Relevance cutoff for cosine-space collections.
 RELEVANCE_THRESHOLD = float(os.environ.get("RELEVANCE_THRESHOLD", "0.45"))
 
-RETRIEVAL_K_CHAT = int(os.environ.get("RETRIEVAL_K_CHAT", "5"))
 RETRIEVAL_K_PER_TOPIC = 4
 QUIZ_MAX_CONTEXT_DOCS = 12
 
 CHUNK_SIZE = int(os.environ.get("CHUNK_SIZE", "1000"))
 CHUNK_OVERLAP = int(os.environ.get("CHUNK_OVERLAP", "200"))
-
-NO_MATERIALS_ANSWER = (
-    "No materials have been uploaded for this course yet, " "so I cannot answer your question."
-)
-NO_CONTEXT_ANSWER = (
-    "I do not have enough information to answer this question " "based on the course materials."
-)

@@ -29,7 +29,7 @@ export const GeneratedInteractionDraftSchema = z.strictObject({
   kind: z.enum(['callout', 'hotspot', 'stage-point', 'drag-item', 'scroll-step', 'color-variant']),
   label: requiredText(160),
   instruction: requiredText(1000),
-  feedback: requiredText(1000).optional(),
+  feedback: requiredText(1000).nullish(),
 });
 
 export const GeneratedQuizSuggestionSchema = z

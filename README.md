@@ -11,6 +11,11 @@ course. The learner-facing Course Assistant uses only author-approved Q&A
 included in a frozen revision, with deterministic local matching and fallback.
 It never requests the parser service or an AI model.
 
+Ollama and every other local-model runtime are unsupported in this repository.
+Authoring AI is directed by the project owner and, when enabled, uses the
+configured OpenAI API service; nothing in the application downloads, starts,
+or depends on a local model.
+
 ## What is implemented
 
 - **Course Studio** — password-protected course creation and editing, chapters,
