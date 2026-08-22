@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
 import { jsonError, unexpectedApiError } from '@/shared/server/http';
 import { createAuthoringReview } from '@/authoring/server/course-commands';
+import { CourseNotReadyError } from '@moto-ai/contracts';
 
 // `request.nextUrl.origin` reflects the server's own bind address, not the
 // Host the request actually arrived on — it stays "localhost:3000" even
@@ -10,7 +11,8 @@ import { createAuthoringReview } from '@/authoring/server/course-commands';
 function requestOrigin(request: NextRequest): string {
   const host = request.headers.get('x-forwarded-host') ?? request.headers.get('host');
   if (!host) return request.nextUrl.origin;
-  const protocol = request.headers.get('x-forwarded-proto') ?? request.nextUrl.protocol.replace(':', '');
+  const protocol =
+    request.headers.get('x-forwarded-proto') ?? request.nextUrl.protocol.replace(':', '');
   return `${protocol}://${host}`;
 }
 
@@ -26,6 +28,12 @@ export async function POST(
       reviewUrl: `${requestOrigin(request)}/review/${review.token}`,
     });
   } catch (error) {
+    if (error instanceof CourseNotReadyError) {
+      return NextResponse.json(
+        { error: 'Course is not ready for delivery', issues: error.issues },
+        { status: 422 },
+      );
+    }
     if (error instanceof Error && error.message === 'REVISION_NOT_FOUND') {
       return jsonError('Revision not found', 404);
     }

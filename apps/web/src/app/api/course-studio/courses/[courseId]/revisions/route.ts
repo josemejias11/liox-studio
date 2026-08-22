@@ -6,6 +6,7 @@ import {
   createAuthoringRevision,
   listAuthoringRevisions,
 } from '@/authoring/server/course-commands';
+import { CourseNotReadyError } from '@moto-ai/contracts';
 
 const schema = z.object({ notes: z.string().trim().max(2000).optional() });
 
@@ -39,6 +40,12 @@ export async function POST(
       { status: 201 },
     );
   } catch (error) {
+    if (error instanceof CourseNotReadyError) {
+      return NextResponse.json(
+        { error: 'Course is not ready for delivery', issues: error.issues },
+        { status: 422 },
+      );
+    }
     if (error instanceof Error && error.message === 'COURSE_NOT_FOUND') {
       return jsonError('Course not found', 404);
     }

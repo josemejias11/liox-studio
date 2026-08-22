@@ -33,6 +33,8 @@ import {
   OfflineAssistantPayloadSchema,
   OFFLINE_ASSISTANT_PAYLOAD_VERSION,
   type CourseAssessmentInput,
+  CourseNotReadyError,
+  validateCourseReadiness,
 } from '@moto-ai/contracts';
 import type { JobAcceptedResponse } from '@moto-ai/contracts/jobs';
 import type { CourseLessonType, LessonInput, CourseGraph } from '@moto-ai/contracts/course-studio';
@@ -183,6 +185,8 @@ export async function requestScormExport(revisionId: string): Promise<JobAccepte
   if (!revision) throw new Error('REVISION_NOT_FOUND');
 
   const graph = revision.snapshot as unknown as CourseGraph;
+  const readinessIssues = validateCourseReadiness(graph);
+  if (readinessIssues.length > 0) throw new CourseNotReadyError(readinessIssues);
   const content = toPlayerCourseContent(graph, { includeAnswerKey: true });
   if (!content) throw new Error('REVISION_CONTENT_INVALID');
 
@@ -190,10 +194,12 @@ export async function requestScormExport(revisionId: string): Promise<JobAccepte
     revision.assistantSnapshot.length > 0
       ? OfflineAssistantPayloadSchema.parse({
           version: OFFLINE_ASSISTANT_PAYLOAD_VERSION,
-          items: revision.assistantSnapshot.map(({ assistantQaId, citations: _citations, ...item }) => ({
-            id: assistantQaId,
-            ...item,
-          })),
+          items: revision.assistantSnapshot.map(
+            ({ assistantQaId, citations: _citations, ...item }) => ({
+              id: assistantQaId,
+              ...item,
+            }),
+          ),
         })
       : undefined;
 

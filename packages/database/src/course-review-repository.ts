@@ -8,6 +8,7 @@ import {
 } from '@moto-ai/contracts';
 import type { AssistantQaItem } from '@moto-ai/contracts';
 import { matchOfflineAssistant } from '@moto-ai/contracts';
+import { CourseNotReadyError, validateCourseReadiness } from '@moto-ai/contracts';
 
 interface CourseRevisionSummary {
   id: string;
@@ -120,6 +121,8 @@ export async function freezeCourseRevision(
       }
 
       const graph = toCourseGraph(course);
+      const readinessIssues = validateCourseReadiness(graph);
+      if (readinessIssues.length > 0) throw new CourseNotReadyError(readinessIssues);
       const approvedAssistant = await tx.courseAssistantQa.findMany({
         where: { courseId, status: 'APPROVED' },
         orderBy: { id: 'asc' },
@@ -185,9 +188,11 @@ export async function createCourseReview(
 ): Promise<{ reviewId: string; token: string }> {
   const revision = await prisma.courseRevision.findUnique({
     where: { id: revisionId },
-    select: { id: true },
+    select: { id: true, snapshot: true },
   });
   if (!revision) throw new Error('REVISION_NOT_FOUND');
+  const readinessIssues = validateCourseReadiness(revision.snapshot as unknown as CourseGraph);
+  if (readinessIssues.length > 0) throw new CourseNotReadyError(readinessIssues);
   const token = `${crypto.randomUUID().replaceAll('-', '')}${crypto.randomUUID().replaceAll('-', '')}`;
   const accessTokenHash = await sha256(token);
   const review = await prisma.courseReview.upsert({

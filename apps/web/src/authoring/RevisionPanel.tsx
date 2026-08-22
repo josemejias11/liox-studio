@@ -4,6 +4,11 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { Clipboard, Download, Snowflake } from 'lucide-react';
 import { fetchJson } from '@/shared/fetch-json';
 
+interface CourseReadinessIssue {
+  code: string;
+  message: string;
+}
+
 interface StudioRevision {
   id: string;
   version: number;
@@ -24,6 +29,19 @@ interface StudioFeedback {
 }
 
 type ScormExportJobStatus = 'queued' | 'running' | 'succeeded' | 'failed';
+
+async function requestJson<T>(url: string, init: RequestInit, fallbackMessage: string): Promise<T> {
+  const response = await fetch(url, init);
+  const result = (await response.json()) as T & { error?: string; issues?: CourseReadinessIssue[] };
+  if (!response.ok) {
+    const error = new Error(result.error || fallbackMessage) as Error & {
+      issues?: CourseReadinessIssue[];
+    };
+    error.issues = result.issues;
+    throw error;
+  }
+  return result;
+}
 
 interface RevisionPanelProps {
   courseId: string;
@@ -50,6 +68,7 @@ function RevisionPanelContent({
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [readinessIssues, setReadinessIssues] = useState<CourseReadinessIssue[]>([]);
   const [reviewUrl, setReviewUrl] = useState<string | null>(null);
   const [exportUrl, setExportUrl] = useState<string | null>(null);
   const latestLoadId = useRef(0);
@@ -78,6 +97,7 @@ function RevisionPanelContent({
         setReviewUrl(null);
         setExportUrl(null);
         setMessage(null);
+        setReadinessIssues([]);
       }
       setLoading(true);
       setLoadError(null);
@@ -156,7 +176,7 @@ function RevisionPanelContent({
     setBusy(true);
     setMessage('Freezing master revision…');
     try {
-      await fetchJson<{ error?: string }>(
+      await requestJson<{ error?: string; issues?: CourseReadinessIssue[] }>(
         `/api/course-studio/courses/${encodeURIComponent(courseId)}/revisions`,
         {
           method: 'POST',
@@ -166,11 +186,17 @@ function RevisionPanelContent({
         'Revision could not be created.',
       );
       if (!isCurrentCourse(generation)) return;
+      setReadinessIssues([]);
       await load();
       if (!isCurrentCourse(generation)) return;
       setMessage('Master revision frozen. Future authoring changes will not change it.');
     } catch (error) {
       if (!isCurrentCourse(generation)) return;
+      setReadinessIssues(
+        error instanceof Error && 'issues' in error
+          ? ((error as Error & { issues?: CourseReadinessIssue[] }).issues ?? [])
+          : [],
+      );
       setMessage(error instanceof Error ? error.message : 'Revision could not be created.');
     } finally {
       if (isCurrentCourse(generation)) setBusy(false);
@@ -182,19 +208,25 @@ function RevisionPanelContent({
     setBusy(true);
     setReviewUrl(null);
     try {
-      const result = await fetchJson<{ reviewUrl?: string; error?: string }>(
+      const result = await requestJson<{ reviewUrl?: string; error?: string }>(
         `/api/course-studio/revisions/${encodeURIComponent(revisionId)}/review`,
         { method: 'POST' },
         'Review link could not be created.',
       );
       if (!isCurrentCourse(generation)) return;
       if (!result.reviewUrl) throw new Error(result.error || 'Review link could not be created.');
+      setReadinessIssues([]);
       setReviewUrl(result.reviewUrl);
       setMessage('A new review link was created. Copy it now.');
       await load();
       if (!isCurrentCourse(generation)) return;
     } catch (error) {
       if (!isCurrentCourse(generation)) return;
+      setReadinessIssues(
+        error instanceof Error && 'issues' in error
+          ? ((error as Error & { issues?: CourseReadinessIssue[] }).issues ?? [])
+          : [],
+      );
       setMessage(error instanceof Error ? error.message : 'Review link could not be created.');
     } finally {
       if (isCurrentCourse(generation)) setBusy(false);
@@ -207,7 +239,7 @@ function RevisionPanelContent({
     setExportUrl(null);
     setMessage('Building SCORM package…');
     try {
-      const { jobId } = await fetchJson<{ jobId: string }>(
+      const { jobId } = await requestJson<{ jobId: string }>(
         `/api/course-studio/revisions/${encodeURIComponent(revisionId)}/scorm-export`,
         { method: 'POST' },
         'SCORM export could not be started.',
@@ -235,7 +267,11 @@ function RevisionPanelContent({
           status: ScormExportJobStatus;
           result: { exportId?: string } | null;
           errorMessage: string | null;
-        }>(`/api/jobs/${encodeURIComponent(jobId)}`, { method: 'GET' }, 'SCORM export status could not be read.');
+        }>(
+          `/api/jobs/${encodeURIComponent(jobId)}`,
+          { method: 'GET' },
+          'SCORM export status could not be read.',
+        );
         if (!isCurrentCourse(generation)) return;
         status = job.status;
         result = job.result;
@@ -243,15 +279,23 @@ function RevisionPanelContent({
       }
 
       if (timedOut) {
-        setMessage('Still building — this is taking longer than expected. Check back in a few minutes.');
+        setMessage(
+          'Still building — this is taking longer than expected. Check back in a few minutes.',
+        );
         return;
       }
 
       if (!result?.exportId) throw new Error('SCORM export finished without a result.');
+      setReadinessIssues([]);
       setExportUrl(`/api/course-studio/exports/${encodeURIComponent(result.exportId)}/download`);
       setMessage('SCORM package ready. Download it now.');
     } catch (error) {
       if (!isCurrentCourse(generation)) return;
+      setReadinessIssues(
+        error instanceof Error && 'issues' in error
+          ? ((error as Error & { issues?: CourseReadinessIssue[] }).issues ?? [])
+          : [],
+      );
       setMessage(error instanceof Error ? error.message : 'SCORM export could not be started.');
     } finally {
       if (isCurrentCourse(generation)) setBusy(false);
@@ -299,6 +343,16 @@ function RevisionPanelContent({
         </div>
       )}
       {message && <p className="text-muted-foreground mt-3 text-xs">{message}</p>}
+      {readinessIssues.length > 0 && (
+        <ul
+          className="border-destructive/30 bg-destructive/5 text-destructive mt-2 space-y-1 rounded-lg border p-2 text-xs"
+          role="alert"
+        >
+          {readinessIssues.map((item, index) => (
+            <li key={`${item.code}-${index}`}>{item.message}</li>
+          ))}
+        </ul>
+      )}
       {reviewUrl && (
         <button
           className="studio-glass-control border-primary text-primary mt-3 flex w-full items-center gap-2 rounded-lg border p-2 text-left text-xs"
