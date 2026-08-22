@@ -13,8 +13,37 @@ function assessmentPayload(input: CourseAssessmentInput): Prisma.InputJsonObject
   };
 }
 
+function assessmentData(input: CourseAssessmentInput) {
+  return {
+    title: input.title,
+    instructions: input.instructions ?? null,
+    payload: assessmentPayload(input),
+  };
+}
+
 function newId(prefix: string): string {
   return `${prefix}.${crypto.randomUUID()}`;
+}
+
+const SERIALIZABLE_RETRY_LIMIT = 3;
+
+function isSerializationConflict(error: unknown): boolean {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034';
+}
+
+async function serializableTransaction<T>(
+  operation: (tx: Prisma.TransactionClient) => Promise<T>,
+): Promise<T> {
+  for (let attempt = 1; attempt <= SERIALIZABLE_RETRY_LIMIT; attempt += 1) {
+    try {
+      return await prisma.$transaction(operation, {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      });
+    } catch (error) {
+      if (!isSerializationConflict(error) || attempt === SERIALIZABLE_RETRY_LIMIT) throw error;
+    }
+  }
+  throw new Error('SERIALIZABLE_TRANSACTION_RETRY_EXHAUSTED');
 }
 
 async function refreshedCourse(courseId: string): Promise<CourseGraph> {
@@ -40,18 +69,14 @@ export async function upsertChapterQuickCheck(
   chapterId: string,
   input: CourseAssessmentInput,
 ): Promise<CourseGraph> {
-  await prisma.$transaction(async (tx) => {
+  await serializableTransaction(async (tx) => {
     const chapter = await tx.courseChapter.findFirst({
       where: { id: chapterId, courseId },
       select: { quickCheckId: true },
     });
     if (!chapter) throw new Error('CHAPTER_NOT_FOUND');
 
-    const data = {
-      title: input.title,
-      instructions: input.instructions,
-      payload: assessmentPayload(input),
-    };
+    const data = assessmentData(input);
     if (chapter.quickCheckId) {
       await ensureQuizOwnership(tx, chapter.quickCheckId, courseId);
       await tx.courseQuiz.update({ where: { id: chapter.quickCheckId }, data });
@@ -88,18 +113,14 @@ export async function upsertFinalAssessment(
   courseId: string,
   input: CourseAssessmentInput,
 ): Promise<CourseGraph> {
-  await prisma.$transaction(async (tx) => {
+  await serializableTransaction(async (tx) => {
     const course = await tx.course.findUnique({
       where: { id: courseId },
       select: { finalQuizId: true },
     });
     if (!course) throw new Error('COURSE_NOT_FOUND');
 
-    const data = {
-      title: input.title,
-      instructions: input.instructions,
-      payload: assessmentPayload(input),
-    };
+    const data = assessmentData(input);
     if (course.finalQuizId) {
       await ensureQuizOwnership(tx, course.finalQuizId, courseId);
       await tx.courseQuiz.update({ where: { id: course.finalQuizId }, data });
