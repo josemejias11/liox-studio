@@ -3,6 +3,17 @@ import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
 import { jsonError, unexpectedApiError } from '@/shared/server/http';
 import { createAuthoringReview } from '@/authoring/server/course-commands';
 
+// `request.nextUrl.origin` reflects the server's own bind address, not the
+// Host the request actually arrived on — it stays "localhost:3000" even
+// behind a reverse proxy or tunnel (VS Code port forwarding, etc.), which
+// forward the real host/protocol via these headers instead.
+function requestOrigin(request: NextRequest): string {
+  const host = request.headers.get('x-forwarded-host') ?? request.headers.get('host');
+  if (!host) return request.nextUrl.origin;
+  const protocol = request.headers.get('x-forwarded-proto') ?? request.nextUrl.protocol.replace(':', '');
+  return `${protocol}://${host}`;
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ revisionId: string }> },
@@ -12,7 +23,7 @@ export async function POST(
     const review = await createAuthoringReview((await params).revisionId);
     return NextResponse.json({
       reviewId: review.reviewId,
-      reviewUrl: `${request.nextUrl.origin}/review/${review.token}`,
+      reviewUrl: `${requestOrigin(request)}/review/${review.token}`,
     });
   } catch (error) {
     if (error instanceof Error && error.message === 'REVISION_NOT_FOUND') {
