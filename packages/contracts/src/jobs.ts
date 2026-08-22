@@ -44,12 +44,35 @@ export const CourseGenerationPayloadSchema = z.object({
 });
 export type CourseGenerationPayload = z.infer<typeof CourseGenerationPayloadSchema>;
 
-export const CourseDuplicatePayloadSchema = z.object({
+const CourseDuplicatePayloadBaseSchema = z.object({
   sourceCourseId: z.string().min(1).max(100),
   destinationCourseId: z.string().min(1).max(100),
+});
+
+export const CourseDuplicateLegacyPayloadSchema = CourseDuplicatePayloadBaseSchema.strict();
+export type CourseDuplicateLegacyPayload = z.infer<typeof CourseDuplicateLegacyPayloadSchema>;
+
+export const CourseDuplicateCurrentPayloadSchema = CourseDuplicatePayloadBaseSchema.extend({
+  requestedTitle: z
+    .string()
+    .min(1)
+    .max(120)
+    .refine((value) => value === value.trim(), 'Expected a normalized requested title.'),
   requestFingerprint: z.string().regex(/^[0-9a-f]{64}$/),
 });
+export type CourseDuplicateCurrentPayload = z.infer<typeof CourseDuplicateCurrentPayloadSchema>;
+
+export const CourseDuplicatePayloadSchema = z.union([
+  CourseDuplicateCurrentPayloadSchema,
+  CourseDuplicateLegacyPayloadSchema,
+]);
 export type CourseDuplicatePayload = z.infer<typeof CourseDuplicatePayloadSchema>;
+
+export function isCurrentCourseDuplicatePayload(
+  payload: CourseDuplicatePayload,
+): payload is CourseDuplicateCurrentPayload {
+  return 'requestedTitle' in payload && 'requestFingerprint' in payload;
+}
 
 export const CourseDuplicateAssistantQaItemSchema = AssistantQaItemSchema.extend({
   status: z.literal('approved'),

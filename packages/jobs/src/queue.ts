@@ -12,9 +12,11 @@ import { prisma } from '@moto-ai/database';
 import {
   type AiOperationPayload,
   type CourseDuplicateArtifact,
+  type CourseDuplicateCurrentPayload,
   type CourseDuplicatePayload,
   CourseDuplicateArtifactSchema,
   CourseDuplicatePayloadSchema,
+  isCurrentCourseDuplicatePayload,
   type CourseGenerationPayload,
   type DocumentIndexPayload,
   type JobAcceptedResponse,
@@ -198,13 +200,27 @@ export async function findExistingCourseDuplicateJob(input: {
 
   if (
     payload.sourceCourseId !== input.sourceCourseId ||
-    payload.destinationCourseId !== `course.duplicate.${input.requestId}` ||
-    payload.requestFingerprint !==
-      duplicateRequestFingerprint(input.sourceCourseId, input.requestedTitle)
+    payload.destinationCourseId !== `course.duplicate.${input.requestId}`
   ) {
     duplicateRequestConflict();
   }
-  if (!job.artifact) return accepted(job);
+
+  const normalizedTitle = input.requestedTitle.trim();
+  if (isCurrentCourseDuplicatePayload(payload)) {
+    if (
+      payload.requestedTitle !== normalizedTitle ||
+      payload.requestFingerprint !==
+        duplicateRequestFingerprint(input.sourceCourseId, normalizedTitle)
+    ) {
+      duplicateRequestConflict();
+    }
+    if (!job.artifact) {
+      if (job.status !== BackgroundJobStatus.SUCCEEDED) duplicateRequestConflict();
+      return accepted(job);
+    }
+  } else if (!job.artifact) {
+    duplicateRequestConflict();
+  }
 
   let artifact: CourseDuplicateArtifact;
   try {
@@ -212,7 +228,23 @@ export async function findExistingCourseDuplicateJob(input: {
   } catch {
     duplicateRequestConflict();
   }
-  if (artifact.requestedTitle !== input.requestedTitle.trim()) duplicateRequestConflict();
+  if (artifact.requestedTitle !== normalizedTitle) duplicateRequestConflict();
+
+  if (!isCurrentCourseDuplicatePayload(payload)) {
+    const currentPayload: CourseDuplicateCurrentPayload = {
+      sourceCourseId: payload.sourceCourseId,
+      destinationCourseId: payload.destinationCourseId,
+      requestedTitle: artifact.requestedTitle,
+      requestFingerprint: duplicateRequestFingerprint(
+        payload.sourceCourseId,
+        artifact.requestedTitle,
+      ),
+    };
+    await prisma.backgroundJob.update({
+      where: { id: job.id },
+      data: { payload: jsonValue(currentPayload) },
+    });
+  }
   return accepted(job);
 }
 
@@ -225,7 +257,11 @@ export async function enqueueCourseDuplicateJob(input: {
   const payload: CourseDuplicatePayload = {
     sourceCourseId: input.sourceCourseId,
     destinationCourseId: `course.duplicate.${input.requestId}`,
-    requestFingerprint: duplicateRequestFingerprint(input.sourceCourseId, input.requestedTitle),
+    requestedTitle: input.requestedTitle.trim(),
+    requestFingerprint: duplicateRequestFingerprint(
+      input.sourceCourseId,
+      input.requestedTitle.trim(),
+    ),
   };
   return enqueue(
     'course_duplicate',
