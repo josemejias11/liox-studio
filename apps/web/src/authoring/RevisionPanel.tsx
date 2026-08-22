@@ -245,6 +245,7 @@ function RevisionPanelContent({
         'SCORM export could not be started.',
       );
       if (!isCurrentCourse(generation)) return;
+      setReadinessIssues([]);
 
       let status: ScormExportJobStatus = 'queued';
       let result: { exportId?: string } | null = null;

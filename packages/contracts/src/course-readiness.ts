@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { CourseAssessmentInputSchema, type CourseAssessmentInput } from './course-assessment';
-import type { CourseGraph, CourseGraphQuiz } from './course-studio';
+import { COURSE_LESSON_TYPES, type CourseGraph, type CourseGraphQuiz } from './course-studio';
 import { CourseImageReferenceSchema } from './course-assets';
 import { CourseTemplateChecklistSchema } from './course-template';
 
@@ -70,7 +70,10 @@ function stableJson(value: unknown): string {
 }
 
 function fieldValue(value: unknown, field: string): unknown {
-  return field.split('.').reduce<unknown>((current, key) => object(current)[key], value);
+  return field.split('.').reduce<unknown>((current, key) => {
+    if (Array.isArray(current)) return /^\d+$/.test(key) ? current[Number(key)] : undefined;
+    return object(current)[key];
+  }, value);
 }
 
 function cueTargets(lesson: CourseGraph['chapters'][number]['lessons'][number]): Set<string> {
@@ -135,8 +138,8 @@ function validateAssessment(
   if (parsed.success) return;
   for (const validationIssue of parsed.error.issues) {
     const question = validationIssue.path.findIndex((part) => part === 'questions');
-    const suffix =
-      question === -1 ? '' : ` -> Question ${Number(validationIssue.path[question + 1]) + 1}`;
+    const questionIndex = question === -1 ? undefined : validationIssue.path[question + 1];
+    const suffix = typeof questionIndex === 'number' ? ` -> Question ${questionIndex + 1}` : '';
     issues.push(
       issue(
         'invalid_assessment',
@@ -213,7 +216,17 @@ export function validateCourseReadiness(course: CourseGraph): CourseReadinessIss
     for (const lesson of chapter.lessons) {
       const location = path(chapterPath, lesson.headline || `Lesson ${lesson.position + 1}`);
       const payload = object(lesson.payload);
-      if (lesson.lessonType === 'quiz') {
+      if (
+        !COURSE_LESSON_TYPES.includes(lesson.lessonType as (typeof COURSE_LESSON_TYPES)[number])
+      ) {
+        issues.push(
+          issue(
+            'unsupported_lesson',
+            `${location} -> This lesson type is not supported.`,
+            lesson.id,
+          ),
+        );
+      } else if (lesson.lessonType === 'quiz') {
         issues.push(
           issue(
             'unsupported_lesson',
