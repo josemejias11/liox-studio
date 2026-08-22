@@ -192,6 +192,13 @@ function LessonInspectorEditor({
             <AssetField
               accept="image/*"
               disabled={locked}
+              label="Product image"
+              onUpload={(file) => void uploadAsset(file, 'media')}
+              value={draft.media}
+            />
+            <AssetField
+              accept="image/*"
+              disabled={locked}
               label="Stage background"
               onUpload={(file) => void uploadAsset(file, 'stageBackground')}
               value={draft.stageBackground}

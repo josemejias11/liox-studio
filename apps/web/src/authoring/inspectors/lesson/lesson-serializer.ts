@@ -94,6 +94,7 @@ export function serializeLessonDraft(draft: LessonDraft): LessonInput {
     set('coveredFeatures', serializeCoveredFeatures(draft));
   }
   if (draft.lessonType === 'stage') {
+    set('media', imagePayload(draft.media));
     set('stageBackground', imagePayload(draft.stageBackground));
     set('enableCompletionAnimation', draft.enableCompletionAnimation || undefined);
     set('completionTransition', draft.completionTransition);
