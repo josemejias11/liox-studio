@@ -19,10 +19,15 @@ async function processOneJob(): Promise<boolean> {
   const job = await claimNextJob();
   if (!job) return false;
 
-  await refreshLease(
-    job,
-    job.kind === 'DOCUMENT_INDEX' ? 'indexing document' : 'generating AI response',
-  );
+  const initialProgress =
+    job.kind === 'DOCUMENT_INDEX'
+      ? 'indexing document'
+      : job.kind === 'SCORM_EXPORT'
+        ? 'building SCORM package'
+        : job.kind === 'COURSE_DUPLICATE'
+          ? 'preparing course duplication'
+          : 'generating AI response';
+  await refreshLease(job, initialProgress);
 
   const leaseRefresh = setInterval(() => {
     void refreshLease(job).catch((error) => {

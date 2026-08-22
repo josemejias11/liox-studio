@@ -52,7 +52,11 @@ export {
   updateLesson,
 } from './course-repository';
 export { createCourseFromTemplate } from './course-template-repository';
-export { captureCourseDuplicateArtifact } from './course-duplication-repository';
+export {
+  captureCourseDuplicateArtifact,
+  findCourseCreatedByJob,
+  persistDuplicatedCourse,
+} from './course-duplication-repository';
 export {
   emptyCourseTrash,
   listCourseTrash,

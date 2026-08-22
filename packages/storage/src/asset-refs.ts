@@ -30,3 +30,17 @@ export function r2KeyFor(assetUrl: string): string | null {
   const match = assetUrl.match(ASSET_URL_PATTERN);
   return match ? decodeURIComponent(match[1]) : null;
 }
+
+export function rewriteAssetUrls(payload: unknown, urlMap: Map<string, string>): unknown {
+  if (typeof payload === 'string') return urlMap.get(payload) ?? payload;
+  if (Array.isArray(payload)) return payload.map((item) => rewriteAssetUrls(item, urlMap));
+  if (payload && typeof payload === 'object') {
+    return Object.fromEntries(
+      Object.entries(payload as Record<string, unknown>).map(([key, value]) => [
+        key,
+        rewriteAssetUrls(value, urlMap),
+      ]),
+    );
+  }
+  return payload;
+}

@@ -2,8 +2,11 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { GeneratedCourseGraphSchema } from '@moto-ai/contracts/course-generation';
+import { courseAssetUrlSchema } from '@moto-ai/contracts';
 import {
   AssistantQaGenerationPayloadSchema,
+  CourseDuplicateArtifactSchema,
+  CourseDuplicatePayloadSchema,
   CourseGenerationPayloadSchema,
   DocumentIndexPayloadSchema,
   ScormExportArtifactSchema,
@@ -13,11 +16,13 @@ import {
 import {
   getCourseGeneration,
   getCourseSource,
+  findCourseCreatedByJob,
   markCourseGenerationFailed,
   markCourseGenerationRunning,
   markSourceFailed,
   markSourceIndexed,
   persistGeneratedCourse,
+  persistDuplicatedCourse,
   prisma,
   replaceCourseAssistantQaDrafts,
 } from '@moto-ai/database';
@@ -27,9 +32,16 @@ import {
   RagServiceError,
   uploadCourseDocument,
 } from '@moto-ai/parser-client';
-import { NonRetryableJobError, type ClaimedJob } from '@moto-ai/jobs';
+import { NonRetryableJobError, refreshLease, type ClaimedJob } from '@moto-ai/jobs';
 import { AssetNotFoundError, buildScormPackage } from '@moto-ai/scorm-export';
-import { putObject } from '@moto-ai/storage';
+import {
+  collectAssetRefs,
+  copyCourseAssetRefs,
+  CourseAssetCopyError,
+  deleteObject,
+  plannedCourseAssetDestinationKeys,
+  putObject,
+} from '@moto-ai/storage';
 
 async function indexDocument(job: ClaimedJob): Promise<{ filename: string; chunksStored: number }> {
   const payload = DocumentIndexPayloadSchema.safeParse(job.payload);
@@ -265,6 +277,152 @@ async function scormExport(job: ClaimedJob): Promise<ScormExportResult> {
   return { exportId: record.id, byteSize: built.byteSize, sha256: built.sha256 };
 }
 
+function compareCodeUnits(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
+}
+
+function stableJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => compareCodeUnits(left, right))
+      .map(([key, item]) => `${JSON.stringify(key)}:${stableJson(item)}`)
+      .join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function duplicateArtifactHash(artifact: {
+  graph: unknown;
+  assistantQa: unknown;
+  sourceIds: string[];
+  assetUrls: string[];
+  requestedTitle: string;
+}): string {
+  return createHash('sha256')
+    .update(
+      stableJson({
+        graph: artifact.graph,
+        assistantQa: artifact.assistantQa,
+        sourceIds: artifact.sourceIds,
+        assetUrls: artifact.assetUrls,
+        requestedTitle: artifact.requestedTitle,
+      }),
+    )
+    .digest('hex');
+}
+
+function assertCanonicalCourseAssetUrls(value: unknown): void {
+  if (typeof value === 'string') {
+    if (value.startsWith('/api/course-assets/') && !courseAssetUrlSchema.safeParse(value).success) {
+      throw new NonRetryableJobError(
+        'The queued course copy is corrupted. Start the duplication again.',
+      );
+    }
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) assertCanonicalCourseAssetUrls(item);
+    return;
+  }
+  if (value && typeof value === 'object') {
+    for (const item of Object.values(value as Record<string, unknown>)) {
+      assertCanonicalCourseAssetUrls(item);
+    }
+  }
+}
+
+async function duplicateCourse(job: ClaimedJob): Promise<{ courseId: string }> {
+  const payload = CourseDuplicatePayloadSchema.safeParse(job.payload);
+  if (!payload.success || !job.artifact) {
+    throw new NonRetryableJobError(
+      'The queued duplication request is invalid. Start the duplication again.',
+    );
+  }
+  let parsedArtifact: unknown;
+  try {
+    parsedArtifact = JSON.parse(job.artifact.bytes.toString('utf8'));
+  } catch {
+    throw new NonRetryableJobError(
+      'The queued course copy is corrupted. Start the duplication again.',
+    );
+  }
+  const artifact = CourseDuplicateArtifactSchema.safeParse(parsedArtifact);
+  const expectedAssetUrls = artifact.success
+    ? [
+        ...new Set(
+          collectAssetRefs({ graph: artifact.data.graph, assistantQa: artifact.data.assistantQa }),
+        ),
+      ].sort(compareCodeUnits)
+    : [];
+  if (artifact.success)
+    assertCanonicalCourseAssetUrls({
+      graph: artifact.data.graph,
+      assistantQa: artifact.data.assistantQa,
+    });
+  if (
+    !artifact.success ||
+    artifact.data.requestedTitle !== payload.data.requestedTitle ||
+    artifact.data.graph.id !== payload.data.sourceCourseId ||
+    stableJson(artifact.data.assetUrls) !== stableJson(expectedAssetUrls) ||
+    duplicateArtifactHash(artifact.data) !== artifact.data.contentHash
+  ) {
+    throw new NonRetryableJobError(
+      'The queued course copy is corrupted. Start the duplication again.',
+    );
+  }
+
+  const existing = await findCourseCreatedByJob(job.id);
+  if (existing) return existing;
+
+  let destinationKeys: string[];
+  try {
+    destinationKeys = plannedCourseAssetDestinationKeys({
+      destinationCourseId: payload.data.destinationCourseId,
+      sourceUrls: artifact.data.assetUrls,
+    });
+  } catch (error) {
+    if (error instanceof CourseAssetCopyError) throw new NonRetryableJobError(error.message);
+    throw error;
+  }
+
+  try {
+    await refreshLease(job, 'copying media');
+    const copied = await copyCourseAssetRefs({
+      destinationCourseId: payload.data.destinationCourseId,
+      sourceUrls: artifact.data.assetUrls,
+    });
+    await refreshLease(job, 'writing course');
+    return await persistDuplicatedCourse({
+      jobId: job.id,
+      sourceCourseId: payload.data.sourceCourseId,
+      destinationCourseId: payload.data.destinationCourseId,
+      requestedTitle: payload.data.requestedTitle,
+      artifact: artifact.data,
+      urlMap: copied.urlMap,
+      assets: copied.assets,
+    });
+  } catch (error) {
+    const committed = await findCourseCreatedByJob(job.id);
+    const retryable = isRetryableJobError(error);
+    if (!committed && (!retryable || job.attempts >= job.maxAttempts)) {
+      await Promise.all(destinationKeys.map((key) => deleteObject(key).catch(() => undefined)));
+    }
+    if (error instanceof CourseAssetCopyError) throw new NonRetryableJobError(error.message);
+    if (
+      error instanceof Error &&
+      (error.message === 'COURSE_DUPLICATE_GROUNDING_INVALID' ||
+        error.message === 'COURSE_DUPLICATE_GRAPH_INVALID')
+    ) {
+      throw new NonRetryableJobError(
+        'The queued course copy is invalid. Start the duplication again.',
+      );
+    }
+    if (committed) return committed;
+    throw error;
+  }
+}
+
 function playerBundleRoot(): string {
   const configured = process.env.SCORM_PLAYER_BUNDLE_PATH;
   if (configured) return configured;
@@ -276,6 +434,7 @@ function playerBundleRoot(): string {
 export async function executeJob(job: ClaimedJob): Promise<unknown> {
   if (job.kind === 'DOCUMENT_INDEX') return indexDocument(job);
   if (job.kind === 'SCORM_EXPORT') return scormExport(job);
+  if (job.kind === 'COURSE_DUPLICATE') return duplicateCourse(job);
 
   if (AssistantQaGenerationPayloadSchema.safeParse(job.payload).success)
     return generateAssistantQa(job);
