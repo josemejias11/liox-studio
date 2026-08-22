@@ -1,11 +1,24 @@
 import { z } from 'zod';
 
+function isCanonicalCourseAssetUrl(value: string): boolean {
+  if (!/^\/api\/course-assets\/courses\/[^/?#]+\/[^/?#]+$/.test(value)) return false;
+  const segments = value.split('/').slice(4);
+  return segments.every((segment) => {
+    try {
+      const decoded = decodeURIComponent(segment);
+      return (
+        decoded !== '.' && decoded !== '..' && !decoded.includes('/') && !decoded.includes('\\')
+      );
+    } catch {
+      return false;
+    }
+  });
+}
+
 export const courseAssetUrlSchema = z
   .string()
   .refine(
-    (value) =>
-      z.string().url().safeParse(value).success ||
-      /^\/api\/course-assets\/(?:[^/?#]+\/)*[^/?#]+(?:\?[^#]*)?$/.test(value),
+    (value) => z.string().url().safeParse(value).success || isCanonicalCourseAssetUrl(value),
     'Expected an absolute URL or a course asset URL.',
   );
 
