@@ -54,6 +54,27 @@ interface ObjectMetadata {
   contentType?: string;
 }
 
+export class LocalStorageMetadataError extends Error {
+  constructor() {
+    super('Stored object metadata is invalid.');
+    this.name = 'LocalStorageMetadataError';
+  }
+}
+
+function parseObjectMetadata(value: unknown): ObjectMetadata {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new LocalStorageMetadataError();
+  }
+  const contentType = (value as Record<string, unknown>).contentType;
+  if (
+    contentType !== undefined &&
+    (typeof contentType !== 'string' || !contentType.trim() || contentType.length > 255)
+  ) {
+    throw new LocalStorageMetadataError();
+  }
+  return contentType === undefined ? {} : { contentType };
+}
+
 export async function getObject(key: string): Promise<LocalStorageObject> {
   const objectPath = resolvePath(key);
 
@@ -67,8 +88,14 @@ export async function getObject(key: string): Promise<LocalStorageObject> {
 
   let contentType: string | undefined;
   try {
-    const meta = JSON.parse(await readFile(metaPath(objectPath), 'utf8')) as ObjectMetadata;
-    contentType = meta.contentType;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(await readFile(metaPath(objectPath), 'utf8'));
+    } catch (error) {
+      if (error instanceof SyntaxError) throw new LocalStorageMetadataError();
+      throw error;
+    }
+    contentType = parseObjectMetadata(parsed).contentType;
   } catch (error) {
     if (!isErrnoException(error, 'ENOENT')) throw error;
   }

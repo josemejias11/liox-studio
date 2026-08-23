@@ -67,6 +67,7 @@ export const CourseDuplicateCurrentPayloadSchema = CourseDuplicatePayloadBaseSch
     .max(120)
     .refine((value) => value === value.trim(), 'Expected a normalized requested title.'),
   requestFingerprint: z.string().regex(/^[0-9a-f]{64}$/),
+  reconciliationRequired: z.boolean().optional(),
 }).strict();
 export type CourseDuplicateCurrentPayload = z.infer<typeof CourseDuplicateCurrentPayloadSchema>;
 

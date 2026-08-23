@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import { getObject, putObject } from './local-client';
+import { getObject, LocalStorageMetadataError, putObject } from './local-client';
 import { r2KeyFor } from './asset-refs';
 
 export interface CopiedCourseAsset {
@@ -36,7 +36,39 @@ function destinationKey(
 ): { key: string; filename: string } {
   const filename = safeFilename(decodeURIComponent(sourceKey.split('/').at(-1) ?? 'asset'));
   const hash = createHash('sha256').update(sourceKey).digest('hex');
-  return { key: `courses/${destinationCourseId}/duplicated/${hash}-${filename}`, filename };
+  return { key: `courses/${destinationCourseId}/${hash}-${filename}`, filename };
+}
+
+function sourceKeyFor(assetUrl: string): string {
+  try {
+    const sourceKey = r2KeyFor(assetUrl);
+    if (
+      !sourceKey ||
+      !sourceKey.startsWith('courses/') ||
+      sourceKey.split('/').some((segment) => !segment || segment === '.' || segment === '..')
+    ) {
+      throw new CourseAssetCopyError(
+        'A referenced course asset is invalid. Duplicate the course again.',
+      );
+    }
+    return sourceKey;
+  } catch (error) {
+    if (error instanceof CourseAssetCopyError) throw error;
+    throw new CourseAssetCopyError(
+      'A referenced course asset is invalid. Duplicate the course again.',
+    );
+  }
+}
+
+function malformedObjectError(error: unknown): boolean {
+  if (error instanceof SyntaxError || error instanceof URIError) return true;
+  if (!(error instanceof Error)) return false;
+  const errno = error as NodeJS.ErrnoException;
+  return (
+    error.name === 'NotFound' ||
+    errno.code === 'ENOENT' ||
+    error.message.startsWith('Invalid storage key:')
+  );
 }
 
 export function plannedCourseAssetDestinationKeys(input: {
@@ -44,13 +76,7 @@ export function plannedCourseAssetDestinationKeys(input: {
   sourceUrls: Iterable<string>;
 }): string[] {
   return [...new Set(input.sourceUrls)].sort().map((sourceUrl) => {
-    const sourceKey = r2KeyFor(sourceUrl);
-    if (!sourceKey || !sourceKey.startsWith('courses/')) {
-      throw new CourseAssetCopyError(
-        'A referenced course asset is invalid. Duplicate the course again.',
-      );
-    }
-    return destinationKey(input.destinationCourseId, sourceKey).key;
+    return destinationKey(input.destinationCourseId, sourceKeyFor(sourceUrl)).key;
   });
 }
 
@@ -68,12 +94,7 @@ export async function copyCourseAssetRefs(input: {
   const sourceUrls = [...new Set(input.sourceUrls)].sort();
 
   const planned = sourceUrls.map((sourceUrl) => {
-    const sourceKey = r2KeyFor(sourceUrl);
-    if (!sourceKey || !sourceKey.startsWith('courses/')) {
-      throw new CourseAssetCopyError(
-        'A referenced course asset is invalid. Duplicate the course again.',
-      );
-    }
+    const sourceKey = sourceKeyFor(sourceUrl);
     return {
       sourceUrl,
       sourceKey,
@@ -89,7 +110,12 @@ export async function copyCourseAssetRefs(input: {
       if (
         contentLength === undefined ||
         !Number.isSafeInteger(contentLength) ||
-        contentLength < 0
+        contentLength < 0 ||
+        contentLength !== bytes.byteLength ||
+        (source.ContentType !== undefined &&
+          (typeof source.ContentType !== 'string' ||
+            !source.ContentType.trim() ||
+            source.ContentType.length > 255))
       ) {
         throw new CourseAssetCopyError(
           'A referenced course asset is invalid. Duplicate the course again.',
@@ -109,7 +135,13 @@ export async function copyCourseAssetRefs(input: {
       if (error instanceof CourseAssetCopyError) {
         throw new CourseAssetCopyError(error.message, destinationKeys);
       }
-      if (error instanceof Error && error.name === 'NotFound') {
+      if (error instanceof LocalStorageMetadataError) {
+        throw new CourseAssetCopyError(
+          'A referenced course asset is invalid. Duplicate the course again.',
+          destinationKeys,
+        );
+      }
+      if (malformedObjectError(error)) {
         throw new CourseAssetCopyError(
           'A referenced course asset is missing. Duplicate the course again.',
           destinationKeys,

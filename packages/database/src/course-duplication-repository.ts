@@ -83,8 +83,11 @@ function remapTemplateChecklist(value: unknown, entityIds: Map<string, string>):
 }
 
 function duplicateSlug(slugBase: string, destinationCourseId: string): string {
-  const suffix = createHash('sha256').update(destinationCourseId).digest('hex').slice(0, 12);
-  return `${slugify(slugBase).slice(0, 67)}-${suffix}`;
+  const prefix = 'course.duplicate.';
+  const requestId = destinationCourseId.startsWith(prefix)
+    ? destinationCourseId.slice(prefix.length)
+    : destinationCourseId;
+  return `${slugify(slugBase).slice(0, 63)}-${requestId}`;
 }
 
 export async function findCourseCreatedByJob(jobId: string): Promise<CourseDuplicateResult | null> {

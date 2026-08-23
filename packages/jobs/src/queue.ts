@@ -88,6 +88,42 @@ export class NonRetryableJobError extends Error {
   }
 }
 
+/**
+ * Signals that side effects may have completed but their durable state could
+ * not be reconciled. This retry path preserves a processing attempt so a
+ * later claim can safely recover rather than terminally failing uncertain work.
+ */
+export class RetryableJobStateError extends Error {
+  constructor() {
+    super('Background state reconciliation is pending.');
+    this.name = 'RetryableJobStateError';
+  }
+}
+
+export async function updateCourseDuplicateReconciliationMarker(input: {
+  job: ClaimedJob;
+  payload: CourseDuplicateCurrentPayload;
+  reconciliationRequired: boolean;
+}): Promise<void> {
+  const updated = await prisma.backgroundJob.updateMany({
+    where: {
+      id: input.job.id,
+      kind: BackgroundJobKind.COURSE_DUPLICATE,
+      status: BackgroundJobStatus.RUNNING,
+      leaseToken: input.job.leaseToken,
+    },
+    data: {
+      payload: jsonValue({
+        ...input.payload,
+        reconciliationRequired: input.reconciliationRequired,
+      }),
+    },
+  });
+  if (updated.count !== 1) {
+    throw new Error('Could not update duplication reconciliation state.');
+  }
+}
+
 function jsonValue(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
 }
@@ -268,7 +304,7 @@ export async function findExistingCourseDuplicateJob(input: {
 
   const normalized = normalizeCourseDuplicatePayload(job.payload, job.artifact.bytes);
   if (!normalized) duplicateRequestConflict();
-  const { payload, artifact, legacy } = normalized;
+  const { payload, artifact } = normalized;
   if (
     payload.sourceCourseId !== input.sourceCourseId ||
     payload.destinationCourseId !== `course.duplicate.${input.requestId}` ||
@@ -280,12 +316,6 @@ export async function findExistingCourseDuplicateJob(input: {
   }
   if (artifact.requestedTitle !== normalizedTitle) duplicateRequestConflict();
 
-  if (legacy) {
-    await prisma.backgroundJob.update({
-      where: { id: job.id },
-      data: { payload: jsonValue(payload) },
-    });
-  }
   return accepted(job);
 }
 
@@ -492,6 +522,13 @@ export async function refreshLease(job: ClaimedJob, progress?: string): Promise<
 }
 
 export async function completeJob(job: ClaimedJob, result: unknown): Promise<void> {
+  const duplicatePayload =
+    job.kind === BackgroundJobKind.COURSE_DUPLICATE
+      ? CourseDuplicatePayloadSchema.safeParse(job.payload)
+      : null;
+  if (duplicatePayload && !duplicatePayload.success) {
+    throw new Error('Could not finalize duplication reconciliation state.');
+  }
   await prisma.$transaction(async (tx) => {
     const completed = await tx.backgroundJob.updateMany({
       where: { id: job.id, status: BackgroundJobStatus.RUNNING, leaseToken: job.leaseToken },
@@ -504,10 +541,20 @@ export async function completeJob(job: ClaimedJob, result: unknown): Promise<voi
         leaseToken: null,
         leaseExpiresAt: null,
         errorMessage: null,
+        ...(duplicatePayload?.success
+          ? {
+              payload: jsonValue({
+                ...duplicatePayload.data,
+                reconciliationRequired: false,
+              }),
+            }
+          : {}),
       },
     });
     if (completed.count === 1) {
       await tx.jobArtifact.deleteMany({ where: { jobId: job.id } });
+    } else if (job.kind === BackgroundJobKind.COURSE_DUPLICATE) {
+      throw new RetryableJobStateError();
     }
   });
 }
@@ -517,23 +564,37 @@ export async function retryOrFailJob(
   error: unknown,
   retryable: boolean,
 ): Promise<void> {
+  const stateRetry = error instanceof RetryableJobStateError;
+  const duplicateStatePayload =
+    stateRetry && job.kind === BackgroundJobKind.COURSE_DUPLICATE
+      ? CourseDuplicatePayloadSchema.safeParse(job.payload)
+      : null;
   const safeMessage =
     error instanceof NonRetryableJobError ||
     (error instanceof Error && error.name === 'RagServiceError')
       ? error.message
       : 'Background processing failed. Please try again.';
-  const shouldRetry = retryable && job.attempts < job.maxAttempts;
-  const retryDelayMs = 2 ** Math.max(job.attempts - 1, 0) * 5_000;
+  const shouldRetry = stateRetry || (retryable && job.attempts < job.maxAttempts);
+  const retryDelayMs = stateRetry ? 30_000 : 2 ** Math.max(job.attempts - 1, 0) * 5_000;
 
   await prisma.backgroundJob.updateMany({
     where: { id: job.id, status: BackgroundJobStatus.RUNNING, leaseToken: job.leaseToken },
     data: shouldRetry
       ? {
           status: BackgroundJobStatus.QUEUED,
-          progress: 'retrying',
+          progress: stateRetry ? 'reconciling' : 'retrying',
           runAfter: new Date(Date.now() + retryDelayMs),
           leaseToken: null,
           leaseExpiresAt: null,
+          ...(stateRetry ? { attempts: { decrement: 1 } } : {}),
+          ...(duplicateStatePayload?.success
+            ? {
+                payload: jsonValue({
+                  ...duplicateStatePayload.data,
+                  reconciliationRequired: true,
+                }),
+              }
+            : {}),
           errorMessage: safeMessage,
         }
       : {

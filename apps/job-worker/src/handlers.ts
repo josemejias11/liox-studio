@@ -32,7 +32,13 @@ import {
   RagServiceError,
   uploadCourseDocument,
 } from '@moto-ai/parser-client';
-import { NonRetryableJobError, refreshLease, type ClaimedJob } from '@moto-ai/jobs';
+import {
+  NonRetryableJobError,
+  refreshLease,
+  RetryableJobStateError,
+  type ClaimedJob,
+  updateCourseDuplicateReconciliationMarker,
+} from '@moto-ai/jobs';
 import { AssetNotFoundError, buildScormPackage } from '@moto-ai/scorm-export';
 import {
   collectAssetRefs,
@@ -312,6 +318,47 @@ function duplicateArtifactHash(artifact: {
     .digest('hex');
 }
 
+function slugify(value: string): string {
+  return (
+    value
+      .toLowerCase()
+      .normalize('NFKD')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 80) || 'untitled-course'
+  );
+}
+
+function duplicateRequestFingerprint(sourceCourseId: string, requestedTitle: string): string {
+  return createHash('sha256')
+    .update(JSON.stringify([sourceCourseId, requestedTitle.trim()]))
+    .digest('hex');
+}
+
+function expectedDuplicateCourseId(jobId: string): string {
+  return `course.duplicate.${jobId}`;
+}
+
+function validateExistingDuplicate(
+  existing: { courseId: string } | null,
+  expectedCourseId: string,
+): { courseId: string } | null {
+  if (!existing) return null;
+  if (existing.courseId !== expectedCourseId) {
+    throw new NonRetryableJobError(
+      'The duplicated course identity is invalid. Start the duplication again.',
+    );
+  }
+  return existing;
+}
+
+async function cleanupDestinationKeys(destinationKeys: string[]): Promise<void> {
+  const results = await Promise.allSettled(destinationKeys.map((key) => deleteObject(key)));
+  if (results.some((result) => result.status === 'rejected')) {
+    throw new RetryableJobStateError();
+  }
+}
+
 function assertCanonicalCourseAssetUrls(value: unknown): void {
   if (typeof value === 'string') {
     if (value.startsWith('/api/course-assets/') && !courseAssetUrlSchema.safeParse(value).success) {
@@ -339,6 +386,7 @@ async function duplicateCourse(job: ClaimedJob): Promise<{ courseId: string }> {
       'The queued duplication request is invalid. Start the duplication again.',
     );
   }
+  let sideEffectsMayExist = payload.data.reconciliationRequired === true;
   let parsedArtifact: unknown;
   try {
     parsedArtifact = JSON.parse(job.artifact.bytes.toString('utf8'));
@@ -362,7 +410,11 @@ async function duplicateCourse(job: ClaimedJob): Promise<{ courseId: string }> {
     });
   if (
     !artifact.success ||
+    payload.data.destinationCourseId !== expectedDuplicateCourseId(job.id) ||
+    payload.data.requestFingerprint !==
+      duplicateRequestFingerprint(payload.data.sourceCourseId, payload.data.requestedTitle) ||
     artifact.data.requestedTitle !== payload.data.requestedTitle ||
+    artifact.data.slugBase !== slugify(payload.data.requestedTitle) ||
     artifact.data.graph.id !== payload.data.sourceCourseId ||
     stableJson(artifact.data.assetUrls) !== stableJson(expectedAssetUrls) ||
     duplicateArtifactHash(artifact.data) !== artifact.data.contentHash
@@ -372,7 +424,15 @@ async function duplicateCourse(job: ClaimedJob): Promise<{ courseId: string }> {
     );
   }
 
-  const existing = await findCourseCreatedByJob(job.id);
+  const expectedCourseId = expectedDuplicateCourseId(job.id);
+  let recovered: Awaited<ReturnType<typeof findCourseCreatedByJob>>;
+  try {
+    recovered = await findCourseCreatedByJob(job.id);
+  } catch (error) {
+    if (sideEffectsMayExist) throw new RetryableJobStateError();
+    throw error;
+  }
+  const existing = validateExistingDuplicate(recovered, expectedCourseId);
   if (existing) return existing;
 
   let destinationKeys: string[];
@@ -388,6 +448,12 @@ async function duplicateCourse(job: ClaimedJob): Promise<{ courseId: string }> {
 
   try {
     await refreshLease(job, 'copying media');
+    await updateCourseDuplicateReconciliationMarker({
+      job,
+      payload: payload.data,
+      reconciliationRequired: true,
+    });
+    sideEffectsMayExist = true;
     const copied = await copyCourseAssetRefs({
       destinationCourseId: payload.data.destinationCourseId,
       sourceUrls: artifact.data.assetUrls,
@@ -403,23 +469,40 @@ async function duplicateCourse(job: ClaimedJob): Promise<{ courseId: string }> {
       assets: copied.assets,
     });
   } catch (error) {
-    const committed = await findCourseCreatedByJob(job.id);
-    const retryable = isRetryableJobError(error);
-    if (!committed && (!retryable || job.attempts >= job.maxAttempts)) {
-      await Promise.all(destinationKeys.map((key) => deleteObject(key).catch(() => undefined)));
+    let recovered: Awaited<ReturnType<typeof findCourseCreatedByJob>>;
+    try {
+      recovered = await findCourseCreatedByJob(job.id);
+    } catch (recoveryError) {
+      if (sideEffectsMayExist) throw new RetryableJobStateError();
+      throw recoveryError;
     }
-    if (error instanceof CourseAssetCopyError) throw new NonRetryableJobError(error.message);
-    if (
-      error instanceof Error &&
-      (error.message === 'COURSE_DUPLICATE_GROUNDING_INVALID' ||
-        error.message === 'COURSE_DUPLICATE_GRAPH_INVALID')
-    ) {
-      throw new NonRetryableJobError(
-        'The queued course copy is invalid. Start the duplication again.',
-      );
-    }
+    const committed = validateExistingDuplicate(recovered, expectedCourseId);
     if (committed) return committed;
-    throw error;
+
+    const normalizedError =
+      error instanceof CourseAssetCopyError
+        ? new NonRetryableJobError(error.message)
+        : error instanceof Error &&
+            (error.message === 'COURSE_DUPLICATE_GROUNDING_INVALID' ||
+              error.message === 'COURSE_DUPLICATE_GRAPH_INVALID')
+          ? new NonRetryableJobError(
+              'The queued course copy is invalid. Start the duplication again.',
+            )
+          : error;
+    const retryable = isRetryableJobError(normalizedError);
+    if (!retryable || job.attempts >= job.maxAttempts) {
+      await cleanupDestinationKeys(destinationKeys);
+      try {
+        await updateCourseDuplicateReconciliationMarker({
+          job,
+          payload: payload.data,
+          reconciliationRequired: false,
+        });
+      } catch {
+        throw new RetryableJobStateError();
+      }
+    }
+    throw normalizedError;
   }
 }
 

@@ -5,6 +5,7 @@ import {
   cleanupExpiredJobs,
   completeJob,
   refreshLease,
+  RetryableJobStateError,
   retryOrFailJob,
 } from '@moto-ai/jobs';
 
@@ -37,7 +38,14 @@ async function processOneJob(): Promise<boolean> {
 
   try {
     const result = await executeJob(job);
-    await completeJob(job, result);
+    try {
+      await completeJob(job, result);
+    } catch (error) {
+      if (job.kind === 'COURSE_DUPLICATE' && !(error instanceof RetryableJobStateError)) {
+        throw new RetryableJobStateError();
+      }
+      throw error;
+    }
   } catch (error: unknown) {
     console.error(`[jobs] ${job.id} failed:`, error);
     await retryOrFailJob(job, error, isRetryableJobError(error));
