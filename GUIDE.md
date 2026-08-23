@@ -124,11 +124,14 @@ row after all the chapters. Both use the same guided editor:
   choice question instead.
 
 Correct-answer feedback and pass/fail behavior are visible in the author
-preview, but the correct-answer key itself is never sent to a reviewer or a
-learner — only the authenticated authoring surface and server-side grading
-ever see it. Removing an assessment (the Remove action in its inspector)
-deletes the attached `CourseQuiz` row entirely; the outline selection falls
-back to the chapter or the course rather than leaving a dead panel open.
+preview, but the correct-answer key itself is never sent through review or
+the live app to a learner — only the authenticated authoring surface and
+server-side grading see it there. The one exception is a SCORM export,
+which intentionally bundles the full answer key for LMS-side grading; see
+"Exporting for an LMS (SCORM)" below. Removing an assessment (the Remove
+action in its inspector) deletes the attached `CourseQuiz` row entirely; the
+outline selection falls back to the chapter or the course rather than
+leaving a dead panel open.
 
 ### Setting both Product Stage images
 
