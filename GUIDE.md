@@ -54,9 +54,23 @@ exists and is writable before uploading anything.
 
 ## Authoring a course
 
-From the course library (`/studio`), create a course and fill in its title,
-description, learning objectives, cover image, specifications, and legal
-disclaimer. Then build it out:
+### Starting a course: blank or comprehensive
+
+From the course library (`/studio`), you choose between two creation paths:
+
+- **Blank course** — an empty course with just a title. Build the chapter and
+  lesson structure yourself from nothing.
+- **Comprehensive course** — instantiates the built-in `comprehensive-course`
+  template: three chapters covering all nine lesson types, a chapter
+  knowledge check, and a final assessment, already wired together. Every
+  piece of copy is a neutral placeholder (things like "Replace with the
+  course headline" or "Replace with specification"), there is no media
+  attached to any lesson yet, and there is no moto/g87 content anywhere in
+  it — it's a generic scaffold, not a copy of the demo course.
+
+Either way, fill in the course's title, description, learning objectives,
+cover image, specifications, and legal disclaimer once you're inside the
+course workspace. Then build it out:
 
 - **Chapters** — ordered, each with an estimated duration.
 - **Lessons** — each chapter holds a sequence of lessons. Nine lesson types
@@ -64,14 +78,122 @@ disclaimer. Then build it out:
   (hotspots on an image), `interaction`, `splitScreen`, `scrollStory`,
   `canvas` (hotspot inspection), `dragDrop`, `colorSwitcher`, and `video`.
   Lessons can be reordered, duplicated, soft-deleted (trash), and restored.
-- **Quizzes** — an optional quick-check per chapter, plus one final
-  course-level assessment. These carry the correct answers server-side only;
-  the player never receives them.
+  There's no `Quiz` lesson type in the lesson picker anymore — see
+  "Chapter and final assessments" below for how quizzes work now. If a course
+  still has an old inline quiz lesson from before this change, it opens as a
+  read-only "legacy inline quiz" notice; remove it (or replace it with a
+  chapter/final assessment) before you can freeze a new revision.
 - **Media** — upload images/video directly in a lesson; they land in local
   storage and are served back through `/api/course-assets/...`.
 
 Everything here is live and editable — nothing is "published" to a learner
 or reviewer until you explicitly freeze a revision (below).
+
+### Resolving a template's placeholders
+
+A course created from the Comprehensive template tracks a checklist of
+specific fields you need to touch before the course is considered "ready" —
+things like the course description, each lesson's headline, the Stage's two
+images, the drag-and-drop image, at least one colour variant, and the
+chapter/final assessment copy and answers. You don't see a separate
+checklist UI: instead, if you try to freeze a revision, create/replace a
+review link, or export SCORM while placeholders are still unresolved, the
+request is rejected and the panel shows the specific list of what's still
+outstanding (for example, "Course description" or "Stage product image").
+Edit the flagged field with real content or a real upload and the
+corresponding item drops off the list. This checklist only applies to
+courses created from a template — a blank course has no placeholder
+requirements, though it still has to satisfy the same general readiness
+rules described next.
+
+### Chapter and final assessments
+
+Each chapter can have one optional **knowledge check**, and the course can
+have one optional **final assessment**. Open a chapter in the outline and
+look for an "Add knowledge check" row after its lessons (or "Chapter
+knowledge check" if one already exists); the final assessment has its own
+row after all the chapters. Both use the same guided editor:
+
+- Title, instructions, passing score, whether learners can retry, and
+  whether correct answers are revealed after submission.
+- One or more questions, each with an optional image, an explanation, and
+  two to eight answers. Exactly one answer per question is marked correct —
+  selecting a different one automatically clears the previous selection, so
+  you can never save a question with zero or multiple correct answers.
+  There's no true/false question type as such; author a two-answer single-
+  choice question instead.
+
+Correct-answer feedback and pass/fail behavior are visible in the author
+preview, but the correct-answer key itself is never sent to a reviewer or a
+learner — only the authenticated authoring surface and server-side grading
+ever see it. Removing an assessment (the Remove action in its inspector)
+deletes the attached `CourseQuiz` row entirely; the outline selection falls
+back to the chapter or the course rather than leaving a dead panel open.
+
+### Setting both Product Stage images
+
+The Product Stage lesson type now has two independent image fields, both
+always visible in its inspector:
+
+- **Product image** — the foreground item on the stage (this is the
+  lesson's `media` field).
+- **Stage background** — the backdrop behind it.
+
+Upload each separately. Both are required for a Stage lesson to pass
+readiness (see below) — a Stage with only one image set will block freezing,
+review, and SCORM export until the other is added too.
+
+### Course readiness: what blocks freeze, review, and export
+
+Before a course can be frozen into a revision, before a review link can be
+created or replaced, and before a SCORM export can be requested, Course
+Studio runs the same readiness check against the course graph. If it fails,
+you get back a list of specific issues instead of the action completing —
+common ones you'll see in practice:
+
+- a lesson still using the removed inline `Quiz` type;
+- a lesson type missing media its player rendering needs (for example, a
+  Stage lesson missing its background, a video lesson with no file, or a
+  colour switcher with zero variants);
+- a chapter check or final assessment that isn't valid (for example, a
+  question with no correct answer marked);
+- for template-created courses, an unresolved placeholder checklist item
+  (see "Resolving a template's placeholders" above).
+
+Fix what's listed and retry the same action — there's no separate "run
+readiness check" button, the freeze/review/export actions themselves are the
+check.
+
+### Duplicating a course
+
+Every course card in the library (`/studio`) has a **Duplicate course**
+action. Click it, confirm or edit the suggested title (defaults to
+`<course title> copy`), and Course Studio queues a background duplication
+job and shows its progress inline. When it finishes, you're taken straight
+to the new course's workspace.
+
+Duplication copies:
+
+- the full chapter/lesson graph, including chapter knowledge checks and the
+  final assessment;
+- every piece of media referenced by the graph, into a brand-new storage
+  location scoped to the destination course — editing or deleting an image
+  in the copy can never touch the source course's media, and vice versa;
+  and
+- already-approved Course Assistant Q&A, along with its underlying source
+  bindings and citations, so the copy's assistant keeps working without
+  re-running the parser or OpenAI at all.
+
+Duplication does **not** copy: revisions, review links, review feedback,
+learner progress or sessions, quiz attempts, analytics data, background
+jobs, AI course generations, or SCORM exports. The copy starts as a fresh,
+unfrozen, unreviewed draft — you freeze and review it independently, same
+as any other course.
+
+The source course is never modified by a duplication request, whether it
+succeeds, fails, or is retried. If the same duplication job is reprocessed
+(for example, after a worker restart), it resolves to the same destination
+course and the same media — it will not create a second copy.
 
 ## Source documents and AI assistance
 

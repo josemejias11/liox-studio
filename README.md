@@ -16,20 +16,25 @@ configured OpenAI API service.
 
 ## Product status
 
-| Capability                          | Status          | Notes                                                                                                                   |
-| ----------------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Course Studio authoring             | Implemented     | Password-protected course, chapter, lesson, assessment, media, source, revision, and trash workflows                    |
-| Author preview                      | Implemented     | Uses the same Moto Player components as review and SCORM delivery                                                       |
-| Frozen review links                 | Implemented     | Capability-token access to one immutable revision, with contextual feedback                                             |
-| Source indexing                     | Implemented     | PDF, PPTX, DOCX, and XLSX sources are processed asynchronously by the parser service                                    |
-| Course Assistant drafting           | Implemented     | Source-cited Q&A drafts require explicit author approval                                                                |
-| AI course drafting                  | Implemented     | Creates a new editable course from a frozen revision and its exact source set                                           |
-| Deterministic Course Assistant      | Implemented     | Frozen approved Q&A is matched locally; learners never call OpenAI or the parser                                        |
-| SCORM 1.2 export                    | Implemented     | Produces a standalone package with player assets, course media, answer keys, bookmarks, score, and completion reporting |
-| Analytics dashboard                 | Implemented     | Displays stored session, hotspot, quiz, and lesson-engagement data                                                      |
-| Supplemental parser quiz generation | Boundary only   | The parser endpoint and typed client exist, but no web workflow or worker handler is registered                         |
-| Public `/course/[slug]` delivery    | Not implemented | There is no public learner page or browser-verified public progress flow yet                                            |
-| Multi-user accounts and RBAC        | Not implemented | Studio and analytics currently use separate shared passwords                                                            |
+| Capability                          | Status          | Notes                                                                                                                                                                                             |
+| ----------------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Course Studio authoring             | Implemented     | Password-protected course, chapter, lesson, assessment, media, source, revision, and trash workflows                                                                                              |
+| Author preview                      | Implemented     | Uses the same Moto Player components as review and SCORM delivery                                                                                                                                 |
+| Structural assessments              | Implemented     | Dedicated `CourseQuiz`-backed chapter quick checks and one course final assessment, authored through a shared guided editor; the inline `Quiz` lesson type is no longer offered for new lessons   |
+| Product Stage authoring parity      | Implemented     | The Stage lesson inspector exposes both the foreground product image and the stage background as independent, always-visible fields                                                               |
+| Course readiness gates              | Implemented     | A shared validator blocks freezing a revision, creating/replacing a review link, and requesting a SCORM export until the course graph and its assessments pass readiness checks                   |
+| Comprehensive course template       | Implemented     | A versioned, code-owned neutral template instantiates a full nine-lesson-type outline with a chapter check and final assessment and no product-specific media or grounding                        |
+| Exact course duplication            | Implemented     | A durable background job deep-copies a course's graph, media, assessments, and approved Course Assistant Q&A into an independent destination course without invoking the parser service or OpenAI |
+| Frozen review links                 | Implemented     | Capability-token access to one immutable revision, with contextual feedback                                                                                                                       |
+| Source indexing                     | Implemented     | PDF, PPTX, DOCX, and XLSX sources are processed asynchronously by the parser service                                                                                                              |
+| Course Assistant drafting           | Implemented     | Source-cited Q&A drafts require explicit author approval                                                                                                                                          |
+| AI course drafting                  | Implemented     | Creates a new editable course from a frozen revision and its exact source set                                                                                                                     |
+| Deterministic Course Assistant      | Implemented     | Frozen approved Q&A is matched locally; learners never call OpenAI or the parser                                                                                                                  |
+| SCORM 1.2 export                    | Implemented     | Produces a standalone package with player assets, course media, answer keys, bookmarks, score, and completion reporting                                                                           |
+| Analytics dashboard                 | Implemented     | Displays stored session, hotspot, quiz, and lesson-engagement data                                                                                                                                |
+| Supplemental parser quiz generation | Boundary only   | The parser endpoint and typed client exist, but no web workflow or worker handler is registered                                                                                                   |
+| Public `/course/[slug]` delivery    | Not implemented | There is no public learner page or browser-verified public progress flow yet                                                                                                                      |
+| Multi-user accounts and RBAC        | Not implemented | Studio and analytics currently use separate shared passwords                                                                                                                                      |
 
 ## Learning and authoring lifecycle
 
@@ -57,18 +62,31 @@ but are not exposed as generative learner behavior.
 
 ### Course Studio
 
-- Course library and course creation.
+- Course library with an explicit choice between creating a **Blank course**
+  and creating a **Comprehensive course** from the code-owned template
+  catalog.
 - Course title, slug, description, learning objectives, cover, thumbnail,
   specifications, and disclaimer editing.
 - Ordered chapters with estimated duration.
 - Lesson creation, editing, duplication, reordering, soft deletion, restoration,
-  and permanent trash removal.
+  and permanent trash removal. The `Quiz` lesson type is no longer offered in
+  the new-lesson picker; any pre-existing inline quiz lesson renders as a
+  read-only "legacy inline quiz" notice instead of an editable one.
 - Portable Text editing that preserves unrecognized content metadata.
-- Course-level final assessments and chapter quick checks.
+- Course-level final assessments and chapter quick checks, authored through a
+  shared guided assessment editor (title, instructions, passing score, retry,
+  answer reveal, and single-correct-answer questions with per-answer
+  feedback).
+- The Product Stage lesson exposes both a foreground **Product image** and an
+  independent **Stage background** field.
 - Media uploads stored in local filesystem storage and delivered through
   the web application.
 - Source-library upload, indexing status, retry, and deletion workflows.
-- Revision history, review-link creation, review feedback, and SCORM export.
+- Revision history, review-link creation, review feedback, and SCORM export,
+  all gated behind course readiness validation (see "Course readiness gates"
+  below).
+- Exact course duplication into an independent destination course (see
+  "Course templates and duplication" below).
 
 ### Moto Player
 
@@ -95,13 +113,84 @@ The parser can extract and index documents, propose source-cited Course
 Assistant Q&A, create an editable course graph, and expose a supplemental quiz
 draft endpoint for future authoring integration.
 
+### Course templates and duplication
+
+Two independent, separately implemented creation paths exist from the course
+library:
+
+- **Blank course** creates a minimal course with no chapters or lessons.
+- **Comprehensive course** instantiates a versioned, code-owned template
+  (`apps/web/src/authoring/templates/`, currently `comprehensive-course.v1`)
+  in a single transaction. The template covers all nine supported visual
+  lesson types plus a chapter knowledge check and a final assessment, using
+  entirely neutral placeholder copy (for example, "Replace with the course
+  headline") with no media references and no moto g87 or other
+  product-specific names, URLs, source IDs, Q&A, or citations. A course
+  created from a template carries a concrete `templateChecklist` of
+  destination-entity requirements — unresolved placeholder text, missing
+  required media, and unedited assessment copy are readiness failures until
+  the author changes them (see "Course readiness gates" below). Moto g87's
+  own seed script (`scripts/seed-moto-g87-course.ts`) is never imported or
+  executed by template code; moto g87 remains a maintenance demo, not a
+  template source.
+
+**Exact course duplication** is a separate action, available from each course
+card in the library ("Duplicate course"). It captures a consistent snapshot of
+the live source course (graph, chapter/final assessments, approved Course
+Assistant Q&A with its source bindings and citations, and referenced asset
+URLs), enqueues a durable `course_duplicate` background job
+(`BackgroundJobKind.COURSE_DUPLICATE`), and the job worker then:
+
+- deep-copies the course graph, chapters, lessons, and assessments into a new,
+  independently editable course;
+- copies every referenced media object into a destination-course-prefixed
+  storage path, so editing or deleting the copy's media can never affect the
+  source course's media;
+- reuses the source course's immutable `CourseSourceBinding` rows for
+  duplicated grounding rather than copying or re-indexing source bytes, and
+  copies only already-approved Course Assistant Q&A — no call to the parser
+  service or OpenAI happens during duplication; and
+- is idempotent by `creationJobId`: retrying the same duplication job
+  resolves to the same destination course and the same destination media
+  keys rather than creating a second copy.
+
+Duplication intentionally does **not** copy revisions, review links, review
+feedback, learner progress or sessions, quiz attempts, analytics data,
+background jobs, AI course generations, or SCORM exports — only the live,
+editable authoring state and its already-approved grounding are duplicated.
+The source course itself is never mutated by a duplication request or by its
+worker execution.
+
+### Course readiness gates
+
+A shared `validateCourseReadiness(course: CourseGraph)` validator
+(`packages/contracts/src/course-readiness.ts`) runs before three delivery
+actions: freezing the live course into a revision, creating or replacing a
+review link, and requesting a SCORM export. Each of those requests returns
+HTTP 422 with `{ error, issues }` on failure instead of proceeding, and
+`RevisionPanel.tsx` renders the returned issue list inline. Readiness issue
+codes include `unsupported_lesson` (a legacy inline quiz lesson is still
+present), `required_media` (a lesson type is missing media its player
+rendering requires, including both Stage images), `invalid_assessment` (a
+chapter check or final assessment does not have exactly one correct answer
+per question, or otherwise fails assessment validation), `invalid_drag_drop`
+and `invalid_learning_cue` (structural validation for those lesson payloads),
+and `template_placeholder` (a template-created course still has an unresolved
+checklist requirement). Review and SCORM requests re-validate the frozen
+`CourseRevision.snapshot` itself, so a direct API call cannot bypass the live
+freeze gate.
+
 ### Frozen revisions and review
 
 A frozen revision records an immutable course graph, a monotonically increasing
 version, exact source IDs and SHA-256 hashes, approved Course Assistant Q&A, and
 optional author notes. Creating a review URL rotates a high-entropy token; only
 its SHA-256 is stored. Reviewers see the frozen snapshot and can attach feedback
-to a lesson or deterministic assistant interaction.
+to a lesson or deterministic assistant interaction. Chapter and final
+assessment payloads sent to review and (once a public delivery surface
+exists) learner clients never include `isCorrect`, per-answer feedback, or
+explanations; only server-side grading and the authenticated author preview
+receive the full answer-key projection.
 
 ### SCORM export
 
@@ -193,33 +282,33 @@ token and OpenAI key must never be exposed to browser code.
 | `packages/jobs`           | Enqueueing, deduplication, leases, retries, cleanup, and public job status                                                       |
 | `packages/parser-client`  | Authenticated parser requests, timeouts, error normalization, and response validation                                            |
 | `packages/scorm-export`   | Standalone browser bundle, SCORM bridge, manifest, asset rewriting, and ZIP creation                                             |
-| `packages/storage`        | Local filesystem object storage operations                                                                                      |
+| `packages/storage`        | Local filesystem object storage operations                                                                                       |
 | `services/parser-service` | Document extraction, embeddings, Chroma retrieval, and OpenAI-backed authoring drafts                                            |
 
 ## Data ownership
 
-| System          | Data                                                                                                                                                                           |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| PostgreSQL      | Editable course graph, trash, source metadata, frozen revisions, review tokens and feedback, approved Q&A, learner sessions, progress, quiz attempts, jobs, and export records |
-| Local filesystem storage | Course media, immutable source bytes, and generated SCORM ZIPs                                                                                                       |
-| ChromaDB        | Source chunks and OpenAI embeddings scoped by course and source identity                                                                                                       |
-| OpenAI          | On-demand embedding and authoring-generation requests sent by the private parser service                                                                                       |
-| Browser storage | Preview state and the future learner session identifier; preview does not persist server-side progress                                                                         |
-| LMS             | SCORM bookmark, score, lesson status, session time, and completion state for exported packages                                                                                 |
+| System                   | Data                                                                                                                                                                           |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| PostgreSQL               | Editable course graph, trash, source metadata, frozen revisions, review tokens and feedback, approved Q&A, learner sessions, progress, quiz attempts, jobs, and export records |
+| Local filesystem storage | Course media, immutable source bytes, and generated SCORM ZIPs                                                                                                                 |
+| ChromaDB                 | Source chunks and OpenAI embeddings scoped by course and source identity                                                                                                       |
+| OpenAI                   | On-demand embedding and authoring-generation requests sent by the private parser service                                                                                       |
+| Browser storage          | Preview state and the future learner session identifier; preview does not persist server-side progress                                                                         |
+| LMS                      | SCORM bookmark, score, lesson status, session time, and completion state for exported packages                                                                                 |
 
 ## Runtime processes
 
 Moto AI is not one process. Local development and production require
 independently supervised services.
 
-| Process        | Command                      | Required for                                                      |
-| -------------- | ---------------------------- | ----------------------------------------------------------------- |
-| Next.js web    | `npm run dev` or `npm start` | Studio, preview, review, analytics, HTTP APIs, downloads          |
-| Job worker     | `npm run jobs:worker`        | Source indexing, Q&A drafting, AI course drafting, SCORM export   |
-| Parser service | `python -m moto_parser`      | Document indexing and optional OpenAI-backed authoring operations |
-| PostgreSQL     | Platform-specific            | Application state, revisions, progress, and durable jobs          |
-| ChromaDB       | Embedded in parser service   | Persistent source embeddings and retrieval                        |
-| Local filesystem storage | Local disk, shared by web app and worker | Media, source bytes, and export artifacts             |
+| Process                  | Command                                  | Required for                                                                        |
+| ------------------------ | ---------------------------------------- | ----------------------------------------------------------------------------------- |
+| Next.js web              | `npm run dev` or `npm start`             | Studio, preview, review, analytics, HTTP APIs, downloads                            |
+| Job worker               | `npm run jobs:worker`                    | Source indexing, Q&A drafting, AI course drafting, SCORM export, course duplication |
+| Parser service           | `python -m moto_parser`                  | Document indexing and optional OpenAI-backed authoring operations                   |
+| PostgreSQL               | Platform-specific                        | Application state, revisions, progress, and durable jobs                            |
+| ChromaDB                 | Embedded in parser service               | Persistent source embeddings and retrieval                                          |
+| Local filesystem storage | Local disk, shared by web app and worker | Media, source bytes, and export artifacts                                           |
 
 If the worker or parser is stopped, queued background operations remain pending;
 ordinary non-background Studio and review features can continue as long as their
@@ -378,8 +467,11 @@ Registered handlers currently cover:
 
 - document indexing;
 - Course Assistant Q&A draft generation;
-- editable course generation; and
-- SCORM export.
+- editable course generation;
+- SCORM export; and
+- exact course duplication (`BackgroundJobKind.COURSE_DUPLICATE`, public job
+  kind `course_duplicate`), which copies media, graph, and assessment data
+  without calling the parser service or OpenAI.
 
 ### Terminal 3: web application
 
@@ -424,15 +516,15 @@ changing files, run Prettier directly with `--check` and an explicit path.
 
 The Next.js application owns these API families:
 
-| API family                      | Purpose                                                                               | Access model                                                  |
-| ------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `/api/course-studio/*`          | Authoring CRUD, assets, sources, Q&A, revisions, generation, review creation, exports | Course Studio password session                                |
-| `/api/course-assets/*`          | Local-storage-backed media delivery                                                   | Asset URL capability                                          |
-| `/api/reviews/[token]/feedback` | Feedback against one frozen review                                                    | Review-link token                                             |
-| `/api/jobs/[id]`                | Browser polling for asynchronous work                                                 | Job identifier                                                |
-| `/api/progress`                 | Session progress read/write                                                           | Browser session identifier; public learner flow is unfinished |
-| `/api/quiz/grade`               | Server-side authored or generated quiz grading                                        | Quiz identity; public learner flow is unfinished              |
-| `/api/analytics/*`              | Analytics login and weak-topic calculation                                            | Internal analytics surface                                    |
+| API family                      | Purpose                                                                                                                                                              | Access model                                                  |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `/api/course-studio/*`          | Authoring CRUD, assets, sources, Q&A, chapter/final assessments, template-based course creation, course duplication, revisions, generation, review creation, exports | Course Studio password session                                |
+| `/api/course-assets/*`          | Local-storage-backed media delivery                                                                                                                                  | Asset URL capability                                          |
+| `/api/reviews/[token]/feedback` | Feedback against one frozen review                                                                                                                                   | Review-link token                                             |
+| `/api/jobs/[id]`                | Browser polling for asynchronous work                                                                                                                                | Job identifier                                                |
+| `/api/progress`                 | Session progress read/write                                                                                                                                          | Browser session identifier; public learner flow is unfinished |
+| `/api/quiz/grade`               | Server-side authored or generated quiz grading                                                                                                                       | Quiz identity; public learner flow is unfinished              |
+| `/api/analytics/*`              | Analytics login and weak-topic calculation                                                                                                                           | Internal analytics surface                                    |
 
 The parser service owns:
 
@@ -583,6 +675,14 @@ Deploy the runtimes independently even when they share one repository.
 5. Deploy or restart the worker.
 6. Deploy the web application.
 7. Perform the manual acceptance checklist.
+
+The database migration must land before the worker or web app is restarted:
+the `Course` table's template/duplication columns and the
+`COURSE_DUPLICATE` background-job kind are additive, but a worker or web
+process running against the pre-migration schema cannot read or write them.
+Deploy in migration → worker → web order; deploying the web application
+before the worker is restarted on a compatible schema leaves duplication
+requests queued until the worker catches up, rather than failing.
 
 ## Troubleshooting
 
