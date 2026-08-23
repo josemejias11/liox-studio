@@ -178,7 +178,8 @@ and `invalid_learning_cue` (structural validation for those lesson payloads),
 and `template_placeholder` (a template-created course still has an unresolved
 checklist requirement). Review and SCORM requests re-validate the frozen
 `CourseRevision.snapshot` itself, so a direct API call cannot bypass the live
-freeze gate.
+freeze gate. See GUIDE.md's "Course readiness" section for the
+plain-language, author-facing view of these same issue codes.
 
 ### Frozen revisions and review
 
@@ -682,7 +683,11 @@ the `Course` table's template/duplication columns and the
 process running against the pre-migration schema cannot read or write them.
 Deploy in migration → worker → web order; deploying the web application
 before the worker is restarted on a compatible schema leaves duplication
-requests queued until the worker catches up, rather than failing.
+requests queued until the worker catches up, rather than failing. Deploying
+the web app before the migration lands is worse than that: `studio-loaders.ts`
+queries `BackgroundJobKind.COURSE_DUPLICATE` unconditionally on every
+`/studio` page load, so Postgres rejects the unknown enum literal and the
+entire course library page fails to load, not just duplication.
 
 ## Troubleshooting
 

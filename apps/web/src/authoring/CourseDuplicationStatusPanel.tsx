@@ -3,6 +3,7 @@
 import { CourseDuplicateResultSchema } from '@moto-ai/contracts/jobs';
 import type { JobStatusResponse } from '@moto-ai/contracts/jobs';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Copy, LoaderCircle } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import type { CourseDuplicationJobSummary } from './server/studio-loaders';
@@ -77,28 +78,45 @@ export function CourseDuplicationStatusPanel({
         Course duplication requests
       </h2>
       <div className="mt-4 space-y-2">
-        {jobs.map((job) => (
-          <article className="studio-glass-panel border-border rounded-xl border p-4" key={job.id}>
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium">{job.requestedTitle}</p>
-                <p className="text-muted-foreground mt-1 text-xs">
-                  {job.progress ? `${job.progress} · ` : ''}
-                  {job.status}
-                </p>
+        {jobs.map((job) => {
+          const succeededResult =
+            job.status === 'succeeded'
+              ? CourseDuplicateResultSchema.safeParse(job.result)
+              : undefined;
+          return (
+            <article
+              className="studio-glass-panel border-border rounded-xl border p-4"
+              key={job.id}
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{job.requestedTitle}</p>
+                  <p className="text-muted-foreground mt-1 text-xs">
+                    {job.progress ? `${job.progress} · ` : ''}
+                    {job.status}
+                  </p>
+                </div>
+                {(job.status === 'queued' || job.status === 'running') && (
+                  <LoaderCircle
+                    className="text-primary h-4 w-4 animate-spin"
+                    aria-label="Duplication in progress"
+                  />
+                )}
+                {succeededResult?.success && (
+                  <Link
+                    className="bg-primary text-primary-foreground rounded-lg px-3 py-1.5 text-xs font-semibold"
+                    href={`/studio/${succeededResult.data.courseId}`}
+                  >
+                    Open course
+                  </Link>
+                )}
               </div>
-              {(job.status === 'queued' || job.status === 'running') && (
-                <LoaderCircle
-                  className="text-primary h-4 w-4 animate-spin"
-                  aria-label="Duplication in progress"
-                />
+              {job.status === 'failed' && job.errorMessage && (
+                <p className="text-destructive mt-2 text-xs">{job.errorMessage}</p>
               )}
-            </div>
-            {job.status === 'failed' && job.errorMessage && (
-              <p className="text-destructive mt-2 text-xs">{job.errorMessage}</p>
-            )}
-          </article>
-        ))}
+            </article>
+          );
+        })}
       </div>
     </section>
   );

@@ -93,9 +93,9 @@ or reviewer until you explicitly freeze a revision (below).
 
 A course created from the Comprehensive template tracks a checklist of
 specific fields you need to touch before the course is considered "ready" —
-things like the course description, each lesson's headline, the Stage's two
-images, the drag-and-drop image, at least one colour variant, and the
-chapter/final assessment copy and answers. You don't see a separate
+things like the course description, the content lesson's headline, the
+Stage's two images, the drag-and-drop image, at least one colour variant, and
+the chapter/final assessment copy and answers. You don't see a separate
 checklist UI: instead, if you try to freeze a revision, create/replace a
 review link, or export SCORM while placeholders are still unresolved, the
 request is rejected and the panel shows the specific list of what's still
@@ -123,15 +123,25 @@ row after all the chapters. Both use the same guided editor:
   There's no true/false question type as such; author a two-answer single-
   choice question instead.
 
-Correct-answer feedback and pass/fail behavior are visible in the author
-preview, but the correct-answer key itself is never sent through review or
-the live app to a learner — only the authenticated authoring surface and
-server-side grading see it there. The one exception is a SCORM export,
-which intentionally bundles the full answer key for LMS-side grading; see
+Pass/fail feedback is visible in the author preview after you submit a
+question, but only as a generic message ("Correct answer." / "Incorrect.
+The highlighted option is the correct answer.") — your own written
+per-answer feedback and per-question explanation text are never shown in
+preview, so don't read a plain pass/fail result as preview being broken.
+The correct-answer key itself is never sent through review or the live app
+to a learner — only the authenticated authoring surface and server-side
+grading see it there. The one exception is a SCORM export, which
+intentionally bundles the full answer key for LMS-side grading; see
 "Exporting for an LMS (SCORM)" below. Removing an assessment (the Remove
 action in its inspector) deletes the attached `CourseQuiz` row entirely; the
 outline selection falls back to the chapter or the course rather than
 leaving a dead panel open.
+
+A review link renders the chapter and final assessment screens too, but
+reviewers can't actually submit or get graded on them there — the answer
+key is stripped from review payloads by design, so every click just shows
+an unhelpful message. Use the author preview if you need to check how an
+assessment actually behaves when answered.
 
 ### Setting both Product Stage images
 
@@ -165,7 +175,8 @@ common ones you'll see in practice:
 
 Fix what's listed and retry the same action — there's no separate "run
 readiness check" button, the freeze/review/export actions themselves are the
-check.
+check. See README.md's "Course readiness gates" section for the underlying
+issue codes behind each of these symptoms.
 
 ### Duplicating a course
 
