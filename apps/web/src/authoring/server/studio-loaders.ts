@@ -1,5 +1,8 @@
 import type { CourseGenerationSummary } from '@moto-ai/contracts/course-generation';
+import { CourseDuplicateCurrentPayloadSchema, JobStatusSchema } from '@moto-ai/contracts/jobs';
+import type { JobStatus } from '@moto-ai/contracts/jobs';
 import {
+  BackgroundJobKind,
   getAuthoringCourse,
   buildOfflineAssistantPayload,
   getCourseGeneration,
@@ -11,10 +14,22 @@ import {
 } from '@moto-ai/database';
 import { listCourseTemplateSummaries } from '@/authoring/server/template-commands';
 
+export interface CourseDuplicationJobSummary {
+  id: string;
+  status: JobStatus;
+  progress: string | null;
+  result: unknown;
+  errorMessage: string | null;
+  sourceCourseId: string;
+  requestedTitle: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export async function loadAuthoringLibrary() {
   const courses = await listAuthoringCourses();
   const templates = listCourseTemplateSummaries();
-  const [revisionRecords, generationRecords] = await Promise.all([
+  const [revisionRecords, generationRecords, duplicationJobRecords] = await Promise.all([
     prisma.courseRevision.findMany({
       where: { sources: { some: {} } },
       orderBy: { createdAt: 'desc' },
@@ -29,6 +44,21 @@ export async function loadAuthoringLibrary() {
       orderBy: { createdAt: 'desc' },
       take: 20,
       select: { id: true },
+    }),
+    prisma.backgroundJob.findMany({
+      where: { kind: BackgroundJobKind.COURSE_DUPLICATE },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+      select: {
+        id: true,
+        status: true,
+        progress: true,
+        result: true,
+        errorMessage: true,
+        payload: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     }),
   ]);
   const generationDetails = await Promise.all(
@@ -54,7 +84,25 @@ export async function loadAuthoringLibrary() {
         ]
       : [],
   );
-  return { courses, generations, sourceRevisions: revisionRecords, templates };
+  const duplicationJobs: CourseDuplicationJobSummary[] = duplicationJobRecords.flatMap((job) => {
+    const payload = CourseDuplicateCurrentPayloadSchema.safeParse(job.payload);
+    const status = JobStatusSchema.safeParse(job.status.toLowerCase());
+    if (!payload.success || !status.success) return [];
+    return [
+      {
+        id: job.id,
+        status: status.data,
+        progress: job.progress,
+        result: job.result,
+        errorMessage: job.errorMessage,
+        sourceCourseId: payload.data.sourceCourseId,
+        requestedTitle: payload.data.requestedTitle,
+        createdAt: job.createdAt.toISOString(),
+        updatedAt: job.updatedAt.toISOString(),
+      },
+    ];
+  });
+  return { courses, generations, sourceRevisions: revisionRecords, templates, duplicationJobs };
 }
 
 export async function loadAuthoringWorkspace(courseId: string) {

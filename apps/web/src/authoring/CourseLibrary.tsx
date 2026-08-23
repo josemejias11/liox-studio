@@ -1,14 +1,18 @@
 'use client';
 
 import type { CourseGenerationSummary } from '@moto-ai/contracts/course-generation';
+import type { JobAcceptedResponse } from '@moto-ai/contracts/jobs';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { BookOpen, Sparkles, X } from 'lucide-react';
+import { BookOpen, Copy, Sparkles, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
+import { fetchJson } from '@/shared/fetch-json';
+import { CourseDuplicationStatusPanel } from './CourseDuplicationStatusPanel';
 import { CreateWithAiDialog, type GenerationSourceRevision } from './CreateWithAiDialog';
 import { GenerationStatusPanel } from './GenerationStatusPanel';
 import { RevisionPanel } from './RevisionPanel';
+import type { CourseDuplicationJobSummary } from './server/studio-loaders';
 
 export interface CourseLibraryItem {
   id: string;
@@ -28,6 +32,7 @@ interface CourseLibraryProps {
   courses: CourseLibraryItem[];
   generations: CourseGenerationSummary[];
   sourceRevisions: GenerationSourceRevision[];
+  duplicationJobs: CourseDuplicationJobSummary[];
 }
 
 function courseLibraryImageUrl(cover: unknown): string | undefined {
@@ -49,10 +54,19 @@ export function CourseLibrary({
   courses,
   generations: initialGenerations,
   sourceRevisions,
+  duplicationJobs: initialDuplicationJobs,
 }: CourseLibraryProps) {
   const router = useRouter();
   const [selectedCourse, setSelectedCourse] = useState<CourseLibraryItem | null>(null);
   const [generations, setGenerations] = useState(initialGenerations);
+  const [duplicationJobs, setDuplicationJobs] = useState(initialDuplicationJobs);
+  const [duplicatingCourseIds, setDuplicatingCourseIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
+  const [duplicationError, setDuplicationError] = useState<{
+    courseId: string;
+    message: string;
+  } | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [retryFrom, setRetryFrom] = useState<CourseGenerationSummary | undefined>();
   const firstImageIndex = courses.findIndex((course) => courseLibraryImageUrl(course.cover));
@@ -73,6 +87,51 @@ export function CourseLibrary({
     },
     [router],
   );
+
+  async function duplicateCourse(course: CourseLibraryItem) {
+    const title = window.prompt('New course title', `${course.title} copy`);
+    if (!title || !title.trim()) return;
+    const requestId = crypto.randomUUID();
+    setDuplicationError(null);
+    setDuplicatingCourseIds((current) => new Set(current).add(course.id));
+    try {
+      const job = await fetchJson<JobAcceptedResponse>(
+        `/api/course-studio/courses/${encodeURIComponent(course.id)}/duplicate`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ requestId, title: title.trim() }),
+        },
+        'Course could not be duplicated.',
+      );
+      const now = new Date().toISOString();
+      setDuplicationJobs((current) => [
+        {
+          id: job.jobId,
+          status: 'queued',
+          progress: null,
+          result: null,
+          errorMessage: null,
+          sourceCourseId: course.id,
+          requestedTitle: title.trim(),
+          createdAt: now,
+          updatedAt: now,
+        },
+        ...current,
+      ]);
+    } catch (caught) {
+      setDuplicationError({
+        courseId: course.id,
+        message: caught instanceof Error ? caught.message : 'Course could not be duplicated.',
+      });
+    } finally {
+      setDuplicatingCourseIds((current) => {
+        const next = new Set(current);
+        next.delete(course.id);
+        return next;
+      });
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -107,6 +166,7 @@ export function CourseLibrary({
           setDialogOpen(true);
         }}
       />
+      <CourseDuplicationStatusPanel jobs={duplicationJobs} onUpdate={setDuplicationJobs} />
       <div className="grid gap-3 sm:grid-cols-2">
         {courses.map((course, index) => {
           const imageUrl = courseLibraryImageUrl(course.cover);
@@ -166,7 +226,19 @@ export function CourseLibrary({
                   >
                     Review master
                   </button>
+                  <button
+                    className="border-border hover:border-primary hover:text-primary inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium disabled:opacity-50"
+                    disabled={duplicatingCourseIds.has(course.id)}
+                    onClick={() => duplicateCourse(course)}
+                    type="button"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    Duplicate course
+                  </button>
                 </div>
+                {duplicationError?.courseId === course.id && (
+                  <p className="text-destructive mt-2 text-xs">{duplicationError.message}</p>
+                )}
               </div>
             </article>
           );

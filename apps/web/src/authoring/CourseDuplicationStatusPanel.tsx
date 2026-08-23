@@ -1,0 +1,105 @@
+'use client';
+
+import { CourseDuplicateResultSchema } from '@moto-ai/contracts/jobs';
+import type { JobStatusResponse } from '@moto-ai/contracts/jobs';
+import { useRouter } from 'next/navigation';
+import { Copy, LoaderCircle } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import type { CourseDuplicationJobSummary } from './server/studio-loaders';
+
+interface CourseDuplicationStatusPanelProps {
+  jobs: CourseDuplicationJobSummary[];
+  onUpdate: (jobs: CourseDuplicationJobSummary[]) => void;
+}
+
+export function CourseDuplicationStatusPanel({
+  jobs,
+  onUpdate,
+}: CourseDuplicationStatusPanelProps) {
+  const router = useRouter();
+  const jobsRef = useRef(jobs);
+  const hasActive = jobs.some((job) => job.status === 'queued' || job.status === 'running');
+
+  useEffect(() => {
+    jobsRef.current = jobs;
+  }, [jobs]);
+
+  useEffect(() => {
+    if (!hasActive) return;
+    const interval = window.setInterval(async () => {
+      const active = jobsRef.current.filter(
+        (job) => job.status === 'queued' || job.status === 'running',
+      );
+      if (active.length === 0) return;
+
+      const updates = await Promise.all(
+        active.map(async (job) => {
+          const response = await fetch(`/api/jobs/${encodeURIComponent(job.id)}`, {
+            cache: 'no-store',
+          });
+          if (!response.ok) return null;
+          return (await response.json()) as JobStatusResponse;
+        }),
+      );
+
+      const next = jobsRef.current.map((job) => {
+        const update = updates.find((candidate) => candidate?.id === job.id);
+        if (!update) return job;
+        return {
+          ...job,
+          status: update.status,
+          progress: update.progress,
+          result: update.result,
+          errorMessage: update.errorMessage,
+          updatedAt: update.updatedAt,
+        };
+      });
+      onUpdate(next);
+
+      const succeeded = updates.find((update) => update?.status === 'succeeded');
+      if (!succeeded) return;
+      const parsed = CourseDuplicateResultSchema.safeParse(succeeded.result);
+      if (!parsed.success) return;
+      router.refresh();
+      router.push(`/studio/${parsed.data.courseId}`);
+    }, 2000);
+    return () => window.clearInterval(interval);
+  }, [hasActive, onUpdate, router]);
+
+  if (jobs.length === 0) return null;
+  return (
+    <section
+      className="studio-glass mb-8 rounded-2xl p-5"
+      aria-labelledby="duplication-status-heading"
+    >
+      <h2 className="flex items-center gap-2 text-lg font-semibold" id="duplication-status-heading">
+        <Copy className="text-primary h-4 w-4" />
+        Course duplication requests
+      </h2>
+      <div className="mt-4 space-y-2">
+        {jobs.map((job) => (
+          <article className="studio-glass-panel border-border rounded-xl border p-4" key={job.id}>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{job.requestedTitle}</p>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {job.progress ? `${job.progress} · ` : ''}
+                  {job.status}
+                </p>
+              </div>
+              {(job.status === 'queued' || job.status === 'running') && (
+                <LoaderCircle
+                  className="text-primary h-4 w-4 animate-spin"
+                  aria-label="Duplication in progress"
+                />
+              )}
+            </div>
+            {job.status === 'failed' && job.errorMessage && (
+              <p className="text-destructive mt-2 text-xs">{job.errorMessage}</p>
+            )}
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}

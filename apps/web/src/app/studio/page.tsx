@@ -11,7 +11,8 @@ export default async function CourseStudioHome() {
   const expected = await courseStudioToken();
   const token = (await cookies()).get(COURSE_STUDIO_COOKIE)?.value;
   if (!expected || token !== expected) redirect('/studio/login');
-  const { courses, generations, sourceRevisions, templates } = await loadAuthoringLibrary();
+  const { courses, generations, sourceRevisions, templates, duplicationJobs } =
+    await loadAuthoringLibrary();
 
   return (
     <main className="studio-workspace bg-background text-foreground min-h-screen px-6 py-10">
@@ -48,6 +49,7 @@ export default async function CourseStudioHome() {
               version: revision.version,
               sourceCount: revision._count.sources,
             }))}
+            duplicationJobs={duplicationJobs}
           />
         </section>
       </div>
