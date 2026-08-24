@@ -19,6 +19,9 @@ export async function POST(req: NextRequest) {
     if (!key) {
       return jsonError('Quiz not found', 404);
     }
+    if (body.action === 'submit' && body.source === 'course' && key.courseId !== body.courseId) {
+      return jsonError('This quiz does not belong to the specified course', 400);
+    }
 
     if (body.action === 'question') {
       const question = key.questions[body.questionIndex];

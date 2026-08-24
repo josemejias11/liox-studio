@@ -54,6 +54,7 @@ const courseGradingSchema = z.object({
 interface AnswerKey {
   questions: GradableQuestion[];
   passingScore: number;
+  courseId: string | null;
 }
 
 export async function loadQuizAnswerKey(
@@ -78,12 +79,13 @@ export async function loadQuizAnswerKey(
         explanation: question.explanation,
       })),
       passingScore: DEFAULT_PASSING_SCORE,
+      courseId: null,
     };
   }
 
   const record = await prisma.courseQuiz.findUnique({
     where: { id: quizId },
-    select: { payload: true },
+    select: { payload: true, courseId: true },
   });
   if (!record) return null;
   const parsed = courseGradingSchema.safeParse(record.payload);
@@ -103,6 +105,7 @@ export async function loadQuizAnswerKey(
       };
     }),
     passingScore: parsed.data.passingScore ?? DEFAULT_PASSING_SCORE,
+    courseId: record.courseId,
   };
 }
 
