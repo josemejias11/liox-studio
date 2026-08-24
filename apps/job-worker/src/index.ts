@@ -60,7 +60,11 @@ async function main(): Promise<void> {
   while (true) {
     const processed = await processOneJob();
     if (Date.now() >= cleanupAt) {
-      await cleanupExpiredJobs();
+      try {
+        await cleanupExpiredJobs();
+      } catch (error) {
+        console.error('[jobs] cleanup failed (continuing):', error);
+      }
       cleanupAt = Date.now() + 60 * 60 * 1000;
     }
     if (!processed) await sleep(POLL_INTERVAL_MS);
