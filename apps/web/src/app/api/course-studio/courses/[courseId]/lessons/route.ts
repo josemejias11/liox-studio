@@ -28,19 +28,31 @@ function lessonError(error: unknown) {
   if (error instanceof Error && error.message === 'LESSON_NOT_FOUND') {
     return jsonError('Lesson not found', 404);
   }
+  if (error instanceof Error && error.message === 'CHAPTER_NOT_FOUND') {
+    return jsonError('Chapter not found', 404);
+  }
   if (error instanceof Error && error.message === 'FINAL_LESSON') {
     return jsonError('A chapter must keep at least one screen', 409);
   }
   return unexpectedApiError('course-studio/lessons', error);
 }
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ courseId: string }> },
+): Promise<NextResponse> {
   if (!(await isCourseStudioAuthorized(request))) return jsonError('Unauthorized', 401);
   const body = await readJson(request, createSchema);
   if (!body.success) return body.response;
   try {
     return NextResponse.json(
-      { course: await createAuthoringLesson(body.data.chapterId, body.data.lessonType) },
+      {
+        course: await createAuthoringLesson(
+          (await params).courseId,
+          body.data.chapterId,
+          body.data.lessonType,
+        ),
+      },
       { status: 201 },
     );
   } catch (error) {
@@ -48,13 +60,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 }
 
-export async function PATCH(request: NextRequest): Promise<NextResponse> {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ courseId: string }> },
+): Promise<NextResponse> {
   if (!(await isCourseStudioAuthorized(request))) return jsonError('Unauthorized', 401);
   const body = await readJson(request, updateSchema);
   if (!body.success) return body.response;
   const { lessonId, ...input } = body.data;
   try {
-    return NextResponse.json({ course: await updateAuthoringLesson(lessonId, input) });
+    return NextResponse.json({
+      course: await updateAuthoringLesson((await params).courseId, lessonId, input),
+    });
   } catch (error) {
     return lessonError(error);
   }
