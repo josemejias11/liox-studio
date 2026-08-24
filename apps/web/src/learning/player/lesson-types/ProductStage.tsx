@@ -524,7 +524,8 @@ export function ProductStage({
         videoAspectRatio={activePanel?.videoAspectRatio}
         x={activePanel?.x}
         y={activePanel?.y}
-        mode="popover"
+        mode="sidebar"
+        sidebarPlacement="workbench"
         courseId={courseId}
         preview={preview}
         resolveLinkedLayer={resolveLinkedLayer}

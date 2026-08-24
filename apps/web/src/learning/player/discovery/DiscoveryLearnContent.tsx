@@ -45,7 +45,7 @@ export function DiscoveryLearnContent({
       ) : null}
 
       {body && (
-        <div className="prose prose-sm prose-invert max-w-none text-[16px] leading-relaxed text-slate-200">
+        <div className="prose prose-sm dark:prose-invert text-foreground max-w-none text-[16px] leading-relaxed">
           {typeof body === 'string' ? (
             body
           ) : (

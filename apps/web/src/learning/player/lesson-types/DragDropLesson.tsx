@@ -18,15 +18,12 @@ interface DesktopDragState {
   text: string;
   x: number;
   y: number;
-  offsetX: number;
-  offsetY: number;
-  width: number;
   status: 'dragging' | 'dropping';
-  dropLeft?: number;
-  dropTop?: number;
+  dropX?: number;
+  dropY?: number;
 }
 
-const DROP_ANIMATION_DURATION_MS = 180;
+const DROP_ANIMATION_DURATION_MS = 260;
 
 export default function DragDropLesson({ lesson, isCompleted, onComplete }: DragDropLessonProps) {
   const { headline, body, dropZones = [], chips = [], media } = lesson;
@@ -111,8 +108,8 @@ export default function DragDropLesson({ lesson, isCompleted, onComplete }: Drag
           ? {
               ...drag,
               status: 'dropping',
-              dropLeft: rect.left + (rect.width - drag.width) / 2,
-              dropTop: rect.top + (rect.height - 44) / 2,
+              dropX: rect.left + rect.width / 2,
+              dropY: rect.top + rect.height / 2,
             }
           : drag,
       );
@@ -135,7 +132,6 @@ export default function DragDropLesson({ lesson, isCompleted, onComplete }: Drag
   ) => {
     if (usesTouchInteraction || event.button !== 0) return;
 
-    const rect = event.currentTarget.getBoundingClientRect();
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
     setDesktopDrag({
@@ -143,9 +139,6 @@ export default function DragDropLesson({ lesson, isCompleted, onComplete }: Drag
       text,
       x: event.clientX,
       y: event.clientY,
-      offsetX: event.clientX - rect.left,
-      offsetY: event.clientY - rect.top,
-      width: rect.width,
       status: 'dragging',
     });
   };
@@ -369,29 +362,39 @@ export default function DragDropLesson({ lesson, isCompleted, onComplete }: Drag
         createPortal(
           <motion.div
             aria-hidden="true"
-            className="border-border/50 bg-card pointer-events-none fixed z-[100] flex min-h-[44px] items-center justify-center rounded-lg border px-4 py-2 font-medium shadow-xl"
-            initial={{ opacity: 0, scale: 0.96 }}
+            className="pointer-events-none fixed z-[100] flex min-h-[44px] w-max max-w-[min(85vw,22rem)] items-center justify-center rounded-lg border border-white/15 bg-[#1a1b35]/95 px-4 py-2 text-center font-medium text-white shadow-[0_16px_40px_rgba(0,0,0,0.45)] backdrop-blur-md"
+            initial={{
+              left: desktopDrag.x,
+              top: desktopDrag.y,
+              opacity: 0,
+              scale: 0.9,
+              x: '-50%',
+              y: '-50%',
+            }}
             animate={
               desktopDrag.status === 'dropping'
                 ? {
-                    left: desktopDrag.dropLeft,
-                    top: desktopDrag.dropTop,
+                    left: desktopDrag.dropX,
+                    top: desktopDrag.dropY,
                     opacity: 0,
-                    scale: 0.8,
+                    scale: 0.05,
+                    x: '-50%',
+                    y: '-50%',
                   }
                 : {
-                    left: desktopDrag.x - desktopDrag.offsetX,
-                    top: desktopDrag.y - desktopDrag.offsetY,
+                    left: desktopDrag.x,
+                    top: desktopDrag.y,
                     opacity: 1,
-                    scale: 1.03,
+                    scale: 1.05,
+                    x: '-50%',
+                    y: '-50%',
                   }
             }
             transition={
               desktopDrag.status === 'dropping'
-                ? { duration: DROP_ANIMATION_DURATION_MS / 1000, ease: 'easeOut' }
+                ? { duration: DROP_ANIMATION_DURATION_MS / 1000, ease: 'easeIn' }
                 : { duration: 0.08, ease: 'linear' }
             }
-            style={{ width: desktopDrag.width }}
           >
             {desktopDrag.text}
           </motion.div>,

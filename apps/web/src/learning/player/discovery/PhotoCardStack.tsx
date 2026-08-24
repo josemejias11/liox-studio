@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { titleFromFilename } from '@/shared/utils';
 import type { CoursePhoto } from '@/shared/contracts/player-course';
 
 interface PhotoCardStackProps {
@@ -69,30 +68,22 @@ export function PhotoCardStack({ photos = [], autoScrollInterval = 3500 }: Photo
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          {validPhotos.map((p, i) => {
-            const title = titleFromFilename(p.asset?.originalFilename);
-            return (
-              <div key={i} className="flex w-full shrink-0 flex-col items-center gap-3 pb-1">
-                <div className="relative flex w-full max-w-[480px] items-center justify-center">
-                  <Image
-                    src={p.asset!.url!}
-                    alt={title || `Product photo ${i + 1}`}
-                    width={800}
-                    height={800}
-                    className="pointer-events-none block h-auto max-h-[50vh] w-full object-contain drop-shadow-xl"
-                    draggable={false}
-                    loading={i === 0 ? 'eager' : 'lazy'}
-                    priority={i === 0}
-                  />
-                </div>
-                {title && (
-                  <p className="text-muted-foreground px-4 text-center text-[12px] leading-relaxed font-medium tracking-wide">
-                    {title}
-                  </p>
-                )}
+          {validPhotos.map((p, i) => (
+            <div key={i} className="flex w-full shrink-0 flex-col items-center gap-3 pb-1">
+              <div className="relative flex w-full max-w-[480px] items-center justify-center">
+                <Image
+                  src={p.asset!.url!}
+                  alt={`Product photo ${i + 1}`}
+                  width={800}
+                  height={800}
+                  className="pointer-events-none block h-auto max-h-[50vh] w-full object-contain drop-shadow-xl"
+                  draggable={false}
+                  loading={i === 0 ? 'eager' : 'lazy'}
+                  priority={i === 0}
+                />
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </div>
       {!isSingle && (

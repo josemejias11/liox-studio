@@ -22,6 +22,8 @@ interface ScrollStoryLessonProps {
 
 const BASE_TOP_PX = 16;
 const STACK_STEP_PX = 12;
+const CHAPTER_TRANSITION_GAP = '70vh';
+const CHAPTER_COMPLETE_THRESHOLD = 0.98;
 const SCROLL_STORY_PORTABLE_TEXT_COMPONENTS = {
   marks: { layerLink: InlineDiscoveryCueMark, ...supMark },
 };
@@ -45,6 +47,19 @@ export default function ScrollStoryLesson({
 
   const [activeChapter, setActiveChapter] = useState(0);
   const [showCompletionOverlay, setShowCompletionOverlay] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    setViewportHeight(container.clientHeight);
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) setViewportHeight(entry.contentRect.height);
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
 
   const hasChapterImages = scrollChapters.some((c) => c.image?.asset?.url);
   const resolveLinkedLayer: InlineDiscoveryCueResolver = (linkedLayer) => {
@@ -61,7 +76,7 @@ export default function ScrollStoryLesson({
 
   useEffect(() => {
     const unsub = scrollYProgress.on('change', (v) => {
-      if (v > 0.85 && !isCompleted) onComplete();
+      if (v >= CHAPTER_COMPLETE_THRESHOLD && !isCompleted) onComplete();
       setActiveChapter(Math.min(chaptersCount - 1, Math.floor(v * chaptersCount)));
     });
     return () => unsub();
@@ -116,7 +131,7 @@ export default function ScrollStoryLesson({
           {showCompletionOverlay && (
             <motion.div
               className="absolute inset-x-0 top-0 flex flex-col items-center justify-center bg-[#18191d]/85 backdrop-blur-sm"
-              style={{ height: '100vh' }}
+              style={{ height: viewportHeight ? `${viewportHeight}px` : '100%' }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -163,11 +178,14 @@ export default function ScrollStoryLesson({
             style={{
               top: `${BASE_TOP_PX + i * STACK_STEP_PX}px`,
               zIndex: i + 1,
-              marginBottom: i < lastIndex ? '50vh' : 0,
+              marginBottom: i < lastIndex ? CHAPTER_TRANSITION_GAP : 0,
             }}
           >
             {chapter.image?.asset?.url && (
-              <div className="relative mb-6 aspect-video w-full overflow-hidden rounded-2xl">
+              <div
+                className="relative mb-6 aspect-video w-full overflow-hidden rounded-2xl"
+                style={{ maxHeight: '34vh' }}
+              >
                 <Image
                   src={chapter.image.asset.url}
                   alt={chapter.heading}

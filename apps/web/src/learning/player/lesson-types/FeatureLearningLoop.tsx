@@ -78,7 +78,7 @@ function FeatureLearningLoopCard({
       role="dialog"
       aria-modal="true"
       aria-labelledby={headingId}
-      className="absolute right-10 bottom-28 z-30 flex max-h-[calc(100%-10rem)] w-[30rem] flex-col overflow-hidden rounded-[1.5rem] border border-white/15 bg-[#111225]/95 text-white shadow-[0_24px_80px_rgba(0,0,0,0.42)] backdrop-blur-2xl"
+      className="dark absolute top-6 right-6 bottom-6 z-30 flex w-[min(30rem,calc(100%-3rem))] flex-col overflow-hidden rounded-[1.5rem] border border-white/15 bg-[#111225]/95 text-white shadow-[0_24px_80px_rgba(0,0,0,0.42)] backdrop-blur-2xl"
     >
       <header className="flex shrink-0 items-start justify-between gap-4 border-b border-white/10 px-6 pt-5 pb-4">
         <div className="min-w-0">
@@ -132,7 +132,7 @@ function FeatureLearningLoopCard({
         })}
       </div>
 
-      <div className="overflow-y-auto px-6 py-5">
+      <div className="flex-1 overflow-y-auto px-6 py-5">
         <div
           className="animate-in fade-in-0 slide-in-from-bottom-1 duration-200 motion-reduce:animate-none"
           key={step}
@@ -150,14 +150,6 @@ function FeatureLearningLoopCard({
                   What do you notice about how it helps the product work for the person using it?
                 </p>
               </div>
-              <button
-                ref={primaryActionRef}
-                type="button"
-                onClick={() => setStep('insight')}
-                className="min-h-11 rounded-xl bg-[#8c7df0] px-5 text-sm font-semibold text-[#111225] transition-colors duration-200 hover:bg-[#aaa0f5] focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#111225] motion-reduce:transition-none"
-              >
-                Reveal insight
-              </button>
             </div>
           )}
 
@@ -174,14 +166,6 @@ function FeatureLearningLoopCard({
                 videoAspectRatio={videoAspectRatio}
                 resolveLinkedLayer={resolveLinkedLayer}
               />
-              <button
-                ref={primaryActionRef}
-                type="button"
-                onClick={() => setStep('demonstrate')}
-                className="min-h-11 rounded-xl bg-[#8c7df0] px-5 text-sm font-semibold text-[#111225] transition-colors duration-200 hover:bg-[#aaa0f5] focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#111225] motion-reduce:transition-none"
-              >
-                Continue
-              </button>
             </div>
           )}
 
@@ -196,26 +180,53 @@ function FeatureLearningLoopCard({
                   time?
                 </p>
               </div>
-              <div className="grid gap-3">
-                <button
-                  ref={primaryActionRef}
-                  type="button"
-                  onClick={onAskTutor}
-                  className="min-h-11 rounded-xl bg-[#8c7df0] px-5 text-sm font-semibold text-[#111225] transition-colors duration-200 hover:bg-[#aaa0f5] focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#111225] motion-reduce:transition-none"
-                >
-                  Ask the AI tutor
-                </button>
-                <button
-                  type="button"
-                  onClick={closeAndRestoreFocus}
-                  className="min-h-11 rounded-xl border border-white/20 px-5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#111225] motion-reduce:transition-none"
-                >
-                  Keep exploring
-                </button>
-              </div>
             </div>
           )}
         </div>
+      </div>
+
+      <div className="shrink-0 border-t border-white/10 px-6 py-4">
+        {step === 'notice' && (
+          <button
+            ref={primaryActionRef}
+            type="button"
+            onClick={() => setStep('insight')}
+            className="min-h-11 w-full rounded-xl bg-[#8c7df0] px-5 text-sm font-semibold text-[#111225] transition-colors duration-200 hover:bg-[#aaa0f5] focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#111225] motion-reduce:transition-none"
+          >
+            Reveal insight
+          </button>
+        )}
+
+        {step === 'insight' && (
+          <button
+            ref={primaryActionRef}
+            type="button"
+            onClick={() => setStep('demonstrate')}
+            className="min-h-11 w-full rounded-xl bg-[#8c7df0] px-5 text-sm font-semibold text-[#111225] transition-colors duration-200 hover:bg-[#aaa0f5] focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#111225] motion-reduce:transition-none"
+          >
+            Continue
+          </button>
+        )}
+
+        {step === 'demonstrate' && (
+          <div className="grid gap-3">
+            <button
+              ref={primaryActionRef}
+              type="button"
+              onClick={onAskTutor}
+              className="min-h-11 rounded-xl bg-[#8c7df0] px-5 text-sm font-semibold text-[#111225] transition-colors duration-200 hover:bg-[#aaa0f5] focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#111225] motion-reduce:transition-none"
+            >
+              Ask the AI tutor
+            </button>
+            <button
+              type="button"
+              onClick={closeAndRestoreFocus}
+              className="min-h-11 rounded-xl border border-white/20 px-5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#111225] motion-reduce:transition-none"
+            >
+              Keep exploring
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );

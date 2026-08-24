@@ -13,12 +13,6 @@ export function getSemanticWidthClass(width?: string): string {
   }
 }
 
-export function titleFromFilename(filename?: string): string {
-  if (!filename) return '';
-  const name = filename.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
-  return name.charAt(0).toUpperCase() + name.slice(1);
-}
-
 const CSS_ASPECT_RATIOS: Record<string, string> = {
   '16:9': '16 / 9',
   '1:1': '1 / 1',

@@ -43,9 +43,7 @@ const assetSources = {
   stargazer: '2026_VENICE_BASIC PACK_STARGAZER_PDP HERO.png',
   alaskanBlue: '2026_VENICE_BASIC PACK_ALASKAN BLUE_PDP HERO.png',
   malaga: '2026_VENICE_BASIC PACK_MALAGA_PDP HERO.png',
-  smartConnect: '2026_Venice_MarketingScreens_SmartConnect.png',
   gestureMenu: '2026_Venice_MarketingScreens_Gesture Menu.png',
-  circleToSearch: '2026_Venice_MarketingScreens_Google_Circle-to-Search.png',
   performance: 'png/2026_Venice_Advanced Pack_Performance.png',
   resistance: 'png/2026_Venice_Advance Pack_Resistance.png',
   portraitSample: 'on-device/rear-cam/portrait-mode/IMG_20250821_115911022_PORTRAIT.jpg',
@@ -53,7 +51,6 @@ const assetSources = {
   nightVisionSample: 'on-device/rear-cam/night-vision/IMG_20250821_190421481.jpg',
   photoBoothSample: 'on-device/front-cam/photobooth/IMG_20250821_180026836.jpg',
   slowMotion: 'on-device/rear-cam/slow-motion-video/VID_20250821_140928589.mp4',
-  dualCapture: 'on-device/rear-cam/dual-capture-video/VID_20250821_184901989.mp4',
 } as const;
 
 type AssetName = keyof typeof assetSources;
@@ -381,24 +378,6 @@ function chapterDefinitions(assets: Record<AssetName, StoredAsset>): ChapterDefi
     ),
   ];
 
-  const everydayFeatures = [
-    feature(
-      'battery',
-      '7000mAh battery',
-      'Typical capacity; LATAM battery life is up to 56 hours under the stated mixed-use test conditions.',
-    ),
-    feature(
-      'display',
-      '6.72-inch FHD+ 120Hz display',
-      'LCD display with up to 1050 nits high brightness mode and Water Touch.',
-    ),
-    feature(
-      'performance',
-      'Snapdragon 6s Gen 4',
-      '4nm mobile platform with UFS 3.1 storage options; memory availability varies by market.',
-    ),
-  ];
-
   const cameraQuiz = quickCheck(
     'Capture and create check',
     'Choose the shopper-ready camera answer based on the moto g87 LATAM specification.',
@@ -497,23 +476,6 @@ function chapterDefinitions(assets: Record<AssetName, StoredAsset>): ChapterDefi
           body: 'Use the supplied camera samples to ask what the shopper wants to capture, then connect the need to a relevant mode or lens.',
           payload: {
             media: assetRef(assets.portraitSample),
-            coveredFeatures: [
-              feature(
-                'portrait',
-                'Portrait',
-                'Use portrait mode when a subject should stand out with a more deliberate look.',
-              ),
-              feature(
-                'night-vision',
-                'Night Vision',
-                'Night Vision is a supplied shooting mode; availability is specified for the 8GB RAM build only.',
-              ),
-              feature(
-                'ultrawide',
-                'Ultra-wide',
-                'Use the 119.5° ultra-wide lens when the story needs more of the scene.',
-              ),
-            ],
             hotspots: [
               hotspot(
                 'interaction-night',
@@ -534,18 +496,6 @@ function chapterDefinitions(assets: Record<AssetName, StoredAsset>): ChapterDefi
           payload: {
             media: assetRef(assets.portraitSample),
             splitReverseLayout: true,
-            coveredFeatures: [
-              feature(
-                'magic-eraser',
-                'Magic Eraser',
-                'Google Photos editing includes Magic Eraser among the listed tools.',
-              ),
-              feature(
-                'photo-unblur',
-                'Photo Unblur',
-                'Google Photos editing lists Photo Unblur; outcomes depend on the image and software experience.',
-              ),
-            ],
           },
         },
       ],
@@ -560,7 +510,6 @@ function chapterDefinitions(assets: Record<AssetName, StoredAsset>): ChapterDefi
           body: 'Build the recommendation around everyday confidence: battery capacity, a smooth display, and capable performance all work together.',
           payload: {
             media: assetRef(assets.performance),
-            coveredFeatures: everydayFeatures,
             scrollChapters: [
               {
                 heading: 'Power through the plan',
@@ -583,7 +532,7 @@ function chapterDefinitions(assets: Record<AssetName, StoredAsset>): ChapterDefi
               {
                 heading: 'Stay in the flow',
                 body: 'The Qualcomm Snapdragon 6s Gen 4 mobile platform is built on 4nm. Storage, memory, and RAM Boost options vary by market and configuration.',
-                image: assetRef(assets.gestureMenu),
+                image: assetRef(assets.resistance),
                 targetScale: 1.12,
                 targetRotation: 2,
                 targetX: -3,
