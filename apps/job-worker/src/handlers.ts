@@ -39,7 +39,7 @@ import {
   type ClaimedJob,
   updateCourseDuplicateReconciliationMarker,
 } from '@moto-ai/jobs';
-import { AssetNotFoundError, buildScormPackage } from '@moto-ai/scorm-export';
+import { AssetNotFoundError, ExportTooLargeError, buildScormPackage } from '@moto-ai/scorm-export';
 import {
   collectAssetRefs,
   copyCourseAssetRefs,
@@ -274,6 +274,11 @@ async function scormExport(job: ClaimedJob): Promise<ScormExportResult> {
     if (error instanceof AssetNotFoundError) {
       throw new NonRetryableJobError(
         "One of this course's images or videos is missing from storage. Re-upload it, freeze a new revision, and export again.",
+      );
+    }
+    if (error instanceof ExportTooLargeError) {
+      throw new NonRetryableJobError(
+        'This course has too much media to export as a single SCORM package right now. Contact an administrator.',
       );
     }
     throw error;
