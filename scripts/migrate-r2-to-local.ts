@@ -129,9 +129,7 @@ async function migrateRow(client: S3Client, row: MigrationRow): Promise<RowResul
     const bytes = Buffer.from(await response.Body.transformToByteArray());
 
     if (row.byteSize !== null && bytes.byteLength !== row.byteSize) {
-      throw new Error(
-        `byte size mismatch: expected ${row.byteSize}, got ${bytes.byteLength}`,
-      );
+      throw new Error(`byte size mismatch: expected ${row.byteSize}, got ${bytes.byteLength}`);
     }
     if (row.sha256) {
       const sha256 = createHash('sha256').update(bytes).digest('hex');
@@ -151,7 +149,11 @@ async function migrateRow(client: S3Client, row: MigrationRow): Promise<RowResul
 
     return { row, status: 'migrated' };
   } catch (error) {
-    return { row, status: 'failed', detail: error instanceof Error ? error.message : String(error) };
+    return {
+      row,
+      status: 'failed',
+      detail: error instanceof Error ? error.message : String(error),
+    };
   }
 }
 
@@ -164,14 +166,18 @@ async function main(): Promise<void> {
   }
 
   const rows = await loadRows();
-  console.log(`Found ${rows.length} object(s) referenced across CourseAsset, CourseSourceFile, and CourseScormExport.`);
+  console.log(
+    `Found ${rows.length} object(s) referenced across CourseAsset, CourseSourceFile, and CourseScormExport.`,
+  );
 
   const client = createR2Client();
   const results: RowResult[] = [];
   for (const row of rows) {
     const result = await migrateRow(client, row);
     results.push(result);
-    console.log(`${result.status.padEnd(24)} ${row.table.padEnd(18)} ${row.r2Key}${result.detail ? ` — ${result.detail}` : ''}`);
+    console.log(
+      `${result.status.padEnd(24)} ${row.table.padEnd(18)} ${row.r2Key}${result.detail ? ` — ${result.detail}` : ''}`,
+    );
   }
 
   const migrated = results.filter((r) => r.status === 'migrated');
@@ -182,7 +188,9 @@ async function main(): Promise<void> {
   console.log('');
   console.log('--- Summary ---');
   console.log(`Total objects:        ${results.length}`);
-  console.log(`Migrated now:         ${migrated.length} (${bytesTransferred.toLocaleString()} bytes)`);
+  console.log(
+    `Migrated now:         ${migrated.length} (${bytesTransferred.toLocaleString()} bytes)`,
+  );
   console.log(`Already present:      ${skipped.length}`);
   console.log(`Failed:               ${failed.length}`);
 

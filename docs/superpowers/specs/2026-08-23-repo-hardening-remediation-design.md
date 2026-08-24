@@ -43,7 +43,7 @@ drop the security items.
   automated JS/TS test files (typecheck, lint, build, direct DB inspection,
   and browser acceptance instead — this repo has no configured JS/TS test
   runner and adding one is out of scope here); the Python parser service
-  *does* have an established `python -m unittest discover -s tests`
+  _does_ have an established `python -m unittest discover -s tests`
   convention (documented in this repo's `CLAUDE.md`) and TDD is used for
   its one fix in this plan.
 
@@ -216,7 +216,7 @@ dropped.
 ### Task 9 — Session cookie hardening and login rate limiting
 
 Course Studio's cookie is `sha256(COURSE_STUDIO_PASSWORD)` with no expiry;
-analytics' cookie is the *literal plaintext* `ANALYTICS_PASSWORD`. Neither
+analytics' cookie is the _literal plaintext_ `ANALYTICS_PASSWORD`. Neither
 login endpoint has any rate limiting. Fix: sign both cookies with HMAC
 using a server-only secret plus an embedded expiry, verified on every
 authorized-request check instead of a bare string/hash compare; add a

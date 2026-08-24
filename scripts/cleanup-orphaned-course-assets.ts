@@ -36,7 +36,12 @@ async function collectUsedKeys(): Promise<Set<string>> {
     },
   });
   for (const course of courses) {
-    addFromPayloads([course.cover, course.specifications, course.disclaimer, course.learningObjectives]);
+    addFromPayloads([
+      course.cover,
+      course.specifications,
+      course.disclaimer,
+      course.learningObjectives,
+    ]);
     for (const chapter of course.chapters) {
       for (const lesson of chapter.lessons) addFromPayloads([lesson.body, lesson.payload]);
     }
@@ -67,7 +72,9 @@ async function main(): Promise<void> {
 
   const orphaned = assets.filter((asset) => !usedKeys.has(asset.r2Key));
 
-  console.log(`Checked ${assets.length} CourseAsset row(s); ${usedKeys.size} distinct key(s) in use.`);
+  console.log(
+    `Checked ${assets.length} CourseAsset row(s); ${usedKeys.size} distinct key(s) in use.`,
+  );
   console.log(`Found ${orphaned.length} orphaned asset(s).`);
   console.log('');
 
@@ -83,7 +90,9 @@ async function main(): Promise<void> {
 
   if (!shouldDelete) {
     console.log('');
-    console.log('Dry run only — no files or rows were deleted. Re-run with --delete to remove them.');
+    console.log(
+      'Dry run only — no files or rows were deleted. Re-run with --delete to remove them.',
+    );
     return;
   }
 
