@@ -138,7 +138,11 @@ export async function listAuthoringRevisions(courseId: string) {
 }
 
 export async function createAuthoringRevision(courseId: string, notes?: string) {
-  const revision = await freezeCourseRevision(courseId, notes);
+  const revision = await freezeCourseRevision(
+    courseId,
+    notes,
+    (graph) => toPlayerCourseContent(graph, { includeAnswerKey: true }) !== null,
+  );
   return { ...revision, sourceIds: await listFrozenRevisionSourceIds(courseId, revision.id) };
 }
 
