@@ -1,19 +1,35 @@
+import { cookies } from 'next/headers';
 import type { NextRequest } from 'next/server';
+import { createSignedSessionToken, verifySignedSessionToken } from './session-token';
 
 export const COURSE_STUDIO_COOKIE = 'course_studio_token';
+const PURPOSE = 'course-studio';
 
-async function sha256(value: string): Promise<string> {
-  const bytes = new TextEncoder().encode(value);
-  const digest = await crypto.subtle.digest('SHA-256', bytes);
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+export function verifyCourseStudioPassword(password: string): boolean {
+  const expected = process.env.COURSE_STUDIO_PASSWORD;
+  return !!expected && password === expected;
 }
 
-export async function courseStudioToken(): Promise<string | null> {
-  const password = process.env.COURSE_STUDIO_PASSWORD;
-  return password ? sha256(password) : null;
+export function issueCourseStudioSessionToken(): string | null {
+  const secret = process.env.AUTH_SESSION_SECRET;
+  if (!secret) {
+    console.error('AUTH_SESSION_SECRET is not set — sessions cannot be issued.');
+    return null;
+  }
+  if (!process.env.COURSE_STUDIO_PASSWORD) return null;
+  return createSignedSessionToken(PURPOSE, secret);
+}
+
+function verifyToken(token: string | undefined): boolean {
+  const secret = process.env.AUTH_SESSION_SECRET;
+  return !!secret && verifySignedSessionToken(token, PURPOSE, secret);
 }
 
 export async function isCourseStudioAuthorized(request: NextRequest): Promise<boolean> {
-  const expected = await courseStudioToken();
-  return !!expected && request.cookies.get(COURSE_STUDIO_COOKIE)?.value === expected;
+  return verifyToken(request.cookies.get(COURSE_STUDIO_COOKIE)?.value);
+}
+
+export async function isCourseStudioSessionValid(): Promise<boolean> {
+  const store = await cookies();
+  return verifyToken(store.get(COURSE_STUDIO_COOKIE)?.value);
 }

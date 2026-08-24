@@ -1,8 +1,7 @@
 'use server';
 
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { COURSE_STUDIO_COOKIE, courseStudioToken } from '@/server/auth/course-studio';
+import { isCourseStudioSessionValid } from '@/server/auth/course-studio';
 import { createAuthoringCourse } from '@/authoring/server/course-commands';
 
 export interface CreateCourseActionState {
@@ -14,9 +13,7 @@ export async function createCourseAction(
   previousState: CreateCourseActionState,
   formData: FormData,
 ): Promise<CreateCourseActionState> {
-  const expected = await courseStudioToken();
-  const token = (await cookies()).get(COURSE_STUDIO_COOKIE)?.value;
-  if (!expected || token !== expected) redirect('/studio/login');
+  if (!(await isCourseStudioSessionValid())) redirect('/studio/login');
   const title = formData.get('title');
   if (typeof title !== 'string' || !title.trim()) {
     return {
