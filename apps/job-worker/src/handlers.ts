@@ -216,6 +216,18 @@ async function scormExport(job: ClaimedJob): Promise<ScormExportResult> {
     throw new NonRetryableJobError('The frozen revision no longer exists. Trigger a new export.');
   }
 
+  const existingExport = await prisma.courseScormExport.findUnique({
+    where: { jobId: job.id },
+    select: { id: true, byteSize: true, sha256: true },
+  });
+  if (existingExport) {
+    return {
+      exportId: existingExport.id,
+      byteSize: existingExport.byteSize,
+      sha256: existingExport.sha256,
+    };
+  }
+
   let parsedArtifact: unknown;
   try {
     parsedArtifact = JSON.parse(job.artifact.bytes.toString('utf8'));
