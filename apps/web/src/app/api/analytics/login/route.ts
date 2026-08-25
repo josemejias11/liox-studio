@@ -20,7 +20,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
   const token = issueAnalyticsSessionToken();
   if (!token) {
-    return NextResponse.redirect(new URL('/analytics/login?error=1', req.url), { status: 303 });
+    return NextResponse.redirect(new URL('/analytics/login?error=config', req.url), {
+      status: 303,
+    });
   }
   const cookieStore = await cookies();
   cookieStore.set('analytics_token', token, {
@@ -28,7 +30,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 60 * 60 * 24 * 7,
+    maxAge: 60 * 60 * 8,
   });
 
   return NextResponse.redirect(new URL('/analytics', req.url), { status: 303 });

@@ -153,7 +153,8 @@ export function CourseQuizPlayer({
           source: quiz.source,
           quizId: quiz.quizId,
           answers,
-          ...(sessionId && courseId ? { sessionId, courseId } : {}),
+          ...(courseId ? { courseId } : {}),
+          ...(sessionId ? { sessionId } : {}),
         }),
       });
       if (!res.ok) throw new Error(`Submit request failed (${res.status})`);

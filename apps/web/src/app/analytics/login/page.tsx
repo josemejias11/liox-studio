@@ -7,6 +7,7 @@ interface LoginPageProps {
 export default async function AnalyticsLoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
   const hasError = params.error === '1';
+  const hasConfigError = params.error === 'config';
 
   return (
     <div className="bg-background text-foreground flex min-h-screen flex-col items-center justify-center px-4">
@@ -29,6 +30,15 @@ export default async function AnalyticsLoginPage({ searchParams }: LoginPageProp
               role="alert"
             >
               Incorrect password. Please try again.
+            </div>
+          )}
+
+          {hasConfigError && (
+            <div
+              className="border-destructive/30 bg-destructive/10 text-destructive mb-4 rounded-lg border px-4 py-3 text-sm"
+              role="alert"
+            >
+              Server misconfiguration — contact an administrator.
             </div>
           )}
 

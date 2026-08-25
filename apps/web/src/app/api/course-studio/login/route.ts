@@ -21,7 +21,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const token = issueCourseStudioSessionToken();
   if (!token) {
-    return NextResponse.redirect(new URL('/studio/login?error=1', request.url), { status: 303 });
+    return NextResponse.redirect(new URL('/studio/login?error=config', request.url), {
+      status: 303,
+    });
   }
 
   const response = NextResponse.redirect(new URL('/studio', request.url), { status: 303 });
