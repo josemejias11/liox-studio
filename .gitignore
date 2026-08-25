@@ -15,6 +15,10 @@ services/parser-service/chroma_db/
 # Local browser-inspection artifacts
 .playwright-mcp/
 
+# Agent-managed git worktrees (linked working trees, not submodules —
+# never meant to be tracked as a gitlink)
+.claude/worktrees/
+
 # Package build output
 packages/scorm-export/dist/
 

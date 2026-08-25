@@ -1,4 +1,4 @@
-make a plan to work on# TypeScript monorepo cleanup
+# TypeScript monorepo cleanup
 
 Date: 2026-08-20
 Status: Approved, ready for implementation plan
