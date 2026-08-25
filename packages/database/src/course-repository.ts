@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { BackgroundJobKind, Prisma } from '@prisma/client';
 import type {
   ChapterInput,
   CourseGraph,
@@ -169,6 +169,56 @@ export async function getAuthoringCourse(courseId: string): Promise<CourseGraph 
     select: courseGraphSelect,
   });
   return course ? toCourseGraph(course) : null;
+}
+
+export class CourseDeleteBlockedError extends Error {
+  constructor() {
+    super('COURSE_DELETE_BLOCKED');
+    this.name = 'CourseDeleteBlockedError';
+  }
+}
+
+export interface DeletedCourseSourceFile {
+  id: string;
+  r2Key: string;
+}
+
+// A course's own revisions can be Restrict-blocked from deletion if one was
+// used as the sourceRevisionId for generating a *different* course (that FK
+// is intentionally non-nullable — see CourseGeneration's schema comment).
+// createdCourseId (this course being the *output* of a generation) is safe
+// to detach: it only records provenance, so we null it rather than block.
+export async function deleteCourse(courseId: string): Promise<DeletedCourseSourceFile[]> {
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: { sourceFiles: { select: { id: true, r2Key: true } } },
+  });
+  if (!course) throw new Error('COURSE_NOT_FOUND');
+
+  try {
+    await prisma.$transaction([
+      prisma.courseGeneration.updateMany({
+        where: { createdCourseId: courseId },
+        data: { createdCourseId: null },
+      }),
+      // The duplication panel links out to this course by id; once it's gone that
+      // link would 404, so drop the now-stale request instead of leaving it behind.
+      prisma.backgroundJob.deleteMany({
+        where: {
+          kind: BackgroundJobKind.COURSE_DUPLICATE,
+          payload: { path: ['destinationCourseId'], equals: courseId },
+        },
+      }),
+      prisma.course.delete({ where: { id: courseId } }),
+    ]);
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+      throw new CourseDeleteBlockedError();
+    }
+    throw error;
+  }
+
+  return course.sourceFiles;
 }
 
 export async function createCourseTemplate(title: string): Promise<CourseGraph> {

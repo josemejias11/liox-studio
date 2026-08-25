@@ -65,7 +65,7 @@ export function CourseOutline({
     >
       <div className="border-border border-b p-4">
         <button
-          className={`w-full rounded-lg px-3 py-2 text-left text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${selected(selection, 'course', course.id) ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+          className={`w-full rounded-lg border px-3 py-2 text-left text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${selected(selection, 'course', course.id) ? 'bg-primary/10 text-primary border-primary/30' : 'hover:border-primary/40 border-transparent'}`}
           disabled={disabled}
           onClick={() => onSelect({ kind: 'course', id: course.id })}
           type="button"
@@ -75,7 +75,7 @@ export function CourseOutline({
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
         <button
-          className={`studio-glass-control border-border mb-3 flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${selected(selection, 'cover', course.id) ? 'bg-primary text-primary-foreground' : 'hover:border-primary/50 hover:bg-muted'}`}
+          className={`mb-3 flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${selected(selection, 'cover', course.id) ? 'bg-primary/10 text-primary border-primary/30' : 'studio-glass-control border-border hover:border-primary/50'}`}
           disabled={disabled}
           onClick={() => onSelect({ kind: 'cover', id: course.id })}
           type="button"
@@ -90,7 +90,7 @@ export function CourseOutline({
           >
             <div className="flex items-center gap-1 p-2">
               <button
-                className={`min-w-0 flex-1 rounded-md px-2 py-2 text-left text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50 ${selected(selection, 'chapter', chapter.id) ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`}
+                className={`min-w-0 flex-1 rounded-md border px-2 py-2 text-left text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50 ${selected(selection, 'chapter', chapter.id) ? 'bg-primary/10 text-primary border-primary/30' : 'hover:border-primary/40 border-transparent'}`}
                 disabled={disabled}
                 onClick={() => onSelect({ kind: 'chapter', id: chapter.id })}
                 type="button"
@@ -129,7 +129,7 @@ export function CourseOutline({
               {chapter.lessons.map((lesson) => (
                 <div className="group flex items-center gap-1" key={lesson.id}>
                   <button
-                    className={`min-w-0 flex-1 rounded-md px-2 py-2 text-left text-xs disabled:cursor-not-allowed disabled:opacity-50 ${selected(selection, 'lesson', lesson.id) ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+                    className={`min-w-0 flex-1 rounded-md border px-2 py-2 text-left text-xs disabled:cursor-not-allowed disabled:opacity-50 ${selected(selection, 'lesson', lesson.id) ? 'bg-primary/10 text-primary border-primary/30' : 'hover:border-primary/40 border-transparent'}`}
                     disabled={disabled}
                     onClick={() => onSelect({ kind: 'lesson', id: lesson.id })}
                     type="button"
@@ -198,7 +198,7 @@ export function CourseOutline({
                 ))}
               </select>
               <button
-                className={`mt-2 min-h-11 w-full rounded-md px-2 py-2 text-left text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50 ${selected(selection, 'quickCheck', chapter.id) ? 'bg-primary text-primary-foreground' : 'border-border hover:border-primary hover:text-primary border border-dashed'}`}
+                className={`mt-2 min-h-11 w-full rounded-md px-2 py-2 text-left text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50 ${selected(selection, 'quickCheck', chapter.id) ? 'bg-primary/10 text-primary border-primary/30 border' : 'border-border hover:border-primary hover:text-primary border border-dashed'}`}
                 disabled={disabled}
                 onClick={() => onSelect({ kind: 'quickCheck', id: chapter.id })}
                 type="button"
@@ -209,7 +209,7 @@ export function CourseOutline({
           </section>
         ))}
         <button
-          className={`border-border mb-3 min-h-11 w-full rounded-lg border border-dashed px-3 py-2 text-left text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${selected(selection, 'finalQuiz', course.id) ? 'bg-primary text-primary-foreground' : 'hover:border-primary hover:text-primary'}`}
+          className={`border-border mb-3 min-h-11 w-full rounded-lg border border-dashed px-3 py-2 text-left text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${selected(selection, 'finalQuiz', course.id) ? 'bg-primary/10 text-primary border-primary/30' : 'hover:border-primary hover:text-primary'}`}
           disabled={disabled}
           onClick={() => onSelect({ kind: 'finalQuiz', id: course.id })}
           type="button"

@@ -54,6 +54,7 @@ export default function MotoViewer({
   onCourseComplete,
   initialView,
   bypassNavigationLocks = false,
+  skipChapterIntroForInitialSection = true,
 }: {
   course: CourseContent;
   sections: CourseSection[];
@@ -72,6 +73,11 @@ export default function MotoViewer({
   onCourseComplete?: () => void;
   initialView?: 'cover';
   bypassNavigationLocks?: boolean;
+  // Selecting a specific lesson via initialSectionKey should jump straight to its
+  // content; selecting a chapter as a whole (author preview passes its first lesson
+  // as initialSectionKey too) should still show that chapter's intro. Callers that
+  // want the latter pass false.
+  skipChapterIntroForInitialSection?: boolean;
 }) {
   const flow = useMemo(
     () => deriveCourseFlow(sections, course.chapters ?? [], course.finalQuiz),
@@ -99,11 +105,14 @@ export default function MotoViewer({
     nextLocked,
     currentSectionIndex,
     navigateToSectionUnrestricted: navigateToPreviewSection,
-    dismissChapterIntro: dismissPreviewChapterIntro,
     restart,
     restoreComplete,
   } = nav;
   const restoredResumeKeyRef = useRef<string | null>(null);
+  // Keyed on both the target lesson and skipChapterIntoForInitialSection: the same
+  // lesson id can arrive here from a direct lesson selection (skip the intro) or
+  // from selecting its chapter (show the intro) — those must be treated as distinct
+  // targets so switching between the two re-runs the navigation below.
   const appliedInitialSectionKeyRef = useRef<string | undefined>(undefined);
   const appliedInitialViewRef = useRef<'cover' | undefined>(undefined);
   // Set right before a navigation dispatch that originates from this component's own
@@ -131,7 +140,7 @@ export default function MotoViewer({
     const sectionIndex = Number(savedResume);
     if (Number.isInteger(sectionIndex) && sectionIndex >= 0 && sectionIndex < flow.items.length) {
       suppressNextLessonChangeRef.current = true;
-      navigateToPreviewSection(sectionIndex);
+      navigateToPreviewSection(sectionIndex, true);
     }
   }, [flow.items.length, navigateToPreviewSection, preview, restoreComplete, resumeKey, sessionId]);
 
@@ -149,15 +158,20 @@ export default function MotoViewer({
       appliedInitialSectionKeyRef.current = undefined;
       return;
     }
-    if (appliedInitialSectionKeyRef.current === initialSectionKey) return;
+    const appliedKey = `${initialSectionKey}:${skipChapterIntroForInitialSection}`;
+    if (appliedInitialSectionKeyRef.current === appliedKey) return;
 
     const target = flow.items.find(
       (item) => item.kind === 'lesson' && item.key === initialSectionKey,
     );
     if (!target) return;
 
-    appliedInitialSectionKeyRef.current = initialSectionKey;
-    const alreadyShowingTarget = phase.phase === 'chapter' && currentSectionIndex === target.index;
+    appliedInitialSectionKeyRef.current = appliedKey;
+    const introMatchesTarget = skipChapterIntroForInitialSection
+      ? !showChapterIntro
+      : showChapterIntro;
+    const alreadyShowingTarget =
+      phase.phase === 'chapter' && currentSectionIndex === target.index && introMatchesTarget;
     if (!alreadyShowingTarget) {
       // The onLessonChange effect below runs in this same commit and would
       // otherwise report the pre-dispatch (stale) lesson back to the parent,
@@ -166,16 +180,15 @@ export default function MotoViewer({
       // that one stale report; the effect fires again with the real target
       // once this dispatch's render lands.
       suppressNextLessonChangeRef.current = true;
-      navigateToPreviewSection(target.index);
+      navigateToPreviewSection(target.index, skipChapterIntroForInitialSection);
     }
-    if (showChapterIntro) dismissPreviewChapterIntro();
   }, [
     currentSectionIndex,
-    dismissPreviewChapterIntro,
     flow.items,
     initialSectionKey,
     navigateToPreviewSection,
     phase.phase,
+    skipChapterIntroForInitialSection,
     showChapterIntro,
   ]);
   const currentLesson =

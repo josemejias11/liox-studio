@@ -458,6 +458,30 @@ export async function getJobStatus(id: string): Promise<JobStatusResponse | null
   };
 }
 
+export class JobDeleteBlockedError extends Error {
+  constructor() {
+    super('JOB_DELETE_BLOCKED');
+    this.name = 'JobDeleteBlockedError';
+  }
+}
+
+// Scoped to course-duplication requests only: that's the one job kind the
+// Studio library surfaces as a dismissible list. Terminal-only, matching the
+// same completed-jobs shape cleanupExpiredJobs already deletes on retention.
+export async function deleteCourseDuplicateJob(jobId: string): Promise<void> {
+  const job = await prisma.backgroundJob.findUnique({
+    where: { id: jobId },
+    select: { kind: true, status: true },
+  });
+  if (!job || job.kind !== BackgroundJobKind.COURSE_DUPLICATE) {
+    throw new Error('JOB_NOT_FOUND');
+  }
+  if (job.status !== BackgroundJobStatus.SUCCEEDED && job.status !== BackgroundJobStatus.FAILED) {
+    throw new JobDeleteBlockedError();
+  }
+  await prisma.backgroundJob.delete({ where: { id: jobId } });
+}
+
 export async function claimNextJob(): Promise<ClaimedJob | null> {
   const now = new Date();
   const leaseToken = randomUUID();

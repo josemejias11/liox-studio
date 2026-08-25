@@ -1,11 +1,11 @@
 'use client';
 
 import type { CourseGenerationSummary } from '@moto-ai/contracts/course-generation';
-import type { JobAcceptedResponse } from '@moto-ai/contracts/jobs';
+import { CourseDuplicateResultSchema, type JobAcceptedResponse } from '@moto-ai/contracts/jobs';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { BookOpen, Copy, Sparkles, X } from 'lucide-react';
+import { BookOpen, Copy, Sparkles, Trash2, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { fetchJson } from '@/shared/fetch-json';
 import { CourseDuplicationStatusPanel } from './CourseDuplicationStatusPanel';
@@ -67,6 +67,10 @@ export function CourseLibrary({
     courseId: string;
     message: string;
   } | null>(null);
+  const [deletingCourseIds, setDeletingCourseIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [deleteError, setDeleteError] = useState<{ courseId: string; message: string } | null>(
+    null,
+  );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [retryFrom, setRetryFrom] = useState<CourseGenerationSummary | undefined>();
   const firstImageIndex = courses.findIndex((course) => courseLibraryImageUrl(course.cover));
@@ -133,6 +137,47 @@ export function CourseLibrary({
     }
   }
 
+  async function deleteCourse(course: CourseLibraryItem) {
+    if (
+      !window.confirm(
+        `Permanently delete "${course.title}"? This removes its chapters, screens, source files, and revisions, and cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    setDeleteError(null);
+    setDeletingCourseIds((current) => new Set(current).add(course.id));
+    try {
+      const response = await fetch(`/api/course-studio/courses/${encodeURIComponent(course.id)}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        const result = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(result?.error || 'Course could not be deleted.');
+      }
+      if (selectedCourse?.id === course.id) setSelectedCourse(null);
+      setDuplicationJobs((current) =>
+        current.filter((job) => {
+          if (job.status !== 'succeeded') return true;
+          const result = CourseDuplicateResultSchema.safeParse(job.result);
+          return !(result.success && result.data.courseId === course.id);
+        }),
+      );
+      router.refresh();
+    } catch (caught) {
+      setDeleteError({
+        courseId: course.id,
+        message: caught instanceof Error ? caught.message : 'Course could not be deleted.',
+      });
+    } finally {
+      setDeletingCourseIds((current) => {
+        const next = new Set(current);
+        next.delete(course.id);
+        return next;
+      });
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -140,7 +185,7 @@ export function CourseLibrary({
           AI drafts use only the source files captured by a frozen revision.
         </p>
         <button
-          className="border-primary text-primary hover:bg-primary/5 inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold disabled:opacity-50"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-50"
           disabled={sourceRevisions.length === 0}
           onClick={() => {
             setRetryFrom(undefined);
@@ -174,7 +219,7 @@ export function CourseLibrary({
 
           return (
             <article
-              className={`studio-glass-panel overflow-hidden rounded-xl border transition-colors ${
+              className={`studio-glass-panel flex h-full flex-col overflow-hidden rounded-xl border transition-colors ${
                 isSelected ? 'studio-glass-selected' : 'hover:border-primary'
               }`}
               key={course.id}
@@ -195,7 +240,7 @@ export function CourseLibrary({
                   </div>
                 )}
               </div>
-              <div className="p-5">
+              <div className="flex flex-1 flex-col p-5">
                 <h3 className="font-semibold">{course.title}</h3>
                 <p className="text-muted-foreground mt-1 text-sm">
                   {course.description || 'No description yet.'}
@@ -210,35 +255,49 @@ export function CourseLibrary({
                     </p>
                   </div>
                 )}
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Link
-                    className="border-border hover:border-primary hover:text-primary inline-flex items-center rounded-lg border px-3 py-2 text-sm font-medium"
-                    href={`/studio/${course.id}`}
-                  >
-                    Open authoring
-                  </Link>
-                  <button
-                    aria-controls="course-review-panel"
-                    aria-pressed={isSelected}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium"
-                    onClick={() => setSelectedCourse(course)}
-                    type="button"
-                  >
-                    Review master
-                  </button>
-                  <button
-                    className="border-border hover:border-primary hover:text-primary inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium disabled:opacity-50"
-                    disabled={duplicatingCourseIds.has(course.id)}
-                    onClick={() => duplicateCourse(course)}
-                    type="button"
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                    Duplicate course
-                  </button>
+                <div className="mt-auto pt-4">
+                  <div className="flex flex-wrap justify-center gap-2">
+                    <Link
+                      className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium"
+                      href={`/studio/${course.id}`}
+                    >
+                      Open authoring
+                    </Link>
+                    <button
+                      aria-controls="course-review-panel"
+                      aria-pressed={isSelected}
+                      className="border-border hover:border-primary hover:text-primary inline-flex items-center rounded-lg border px-3 py-2 text-sm font-medium"
+                      onClick={() => setSelectedCourse(course)}
+                      type="button"
+                    >
+                      Review master
+                    </button>
+                    <button
+                      className="border-border hover:border-primary hover:text-primary inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium disabled:opacity-50"
+                      disabled={duplicatingCourseIds.has(course.id)}
+                      onClick={() => duplicateCourse(course)}
+                      type="button"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      Duplicate course
+                    </button>
+                    <button
+                      aria-label={`Delete ${course.title}`}
+                      className="text-destructive hover:bg-destructive/10 border-border inline-flex items-center rounded-lg border p-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={deletingCourseIds.has(course.id)}
+                      onClick={() => void deleteCourse(course)}
+                      type="button"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  {duplicationError?.courseId === course.id && (
+                    <p className="text-destructive mt-2 text-xs">{duplicationError.message}</p>
+                  )}
+                  {deleteError?.courseId === course.id && (
+                    <p className="text-destructive mt-2 text-xs">{deleteError.message}</p>
+                  )}
                 </div>
-                {duplicationError?.courseId === course.id && (
-                  <p className="text-destructive mt-2 text-xs">{duplicationError.message}</p>
-                )}
               </div>
             </article>
           );

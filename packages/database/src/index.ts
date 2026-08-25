@@ -42,7 +42,9 @@ export {
   createChapter,
   createCourseTemplate,
   createLesson,
+  CourseDeleteBlockedError,
   deleteChapter,
+  deleteCourse,
   duplicateLesson,
   getAuthoringCourse,
   listAuthoringCourses,
@@ -51,6 +53,7 @@ export {
   updateCourseDetails,
   updateLesson,
 } from './course-repository';
+export type { DeletedCourseSourceFile } from './course-repository';
 export { createCourseFromTemplate } from './course-template-repository';
 export {
   captureCourseDuplicateArtifact,

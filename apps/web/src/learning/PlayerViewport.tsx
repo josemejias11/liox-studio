@@ -20,6 +20,7 @@ export function PlayerViewport({
   onLessonChange,
   initialView,
   bypassNavigationLocks = false,
+  skipChapterIntroForInitialSection = true,
 }: {
   content: NormalizedCourseContent;
   selectedLessonId?: string;
@@ -35,6 +36,7 @@ export function PlayerViewport({
   onLessonChange?: (lessonId: string) => void;
   initialView?: 'cover';
   bypassNavigationLocks?: boolean;
+  skipChapterIntroForInitialSection?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0);
@@ -91,6 +93,7 @@ export function PlayerViewport({
             initialView={initialView}
             bypassNavigationLocks={bypassNavigationLocks}
             imageSizes={imageSizes}
+            skipChapterIntroForInitialSection={skipChapterIntroForInitialSection}
           />
         </div>
       </div>

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Expand, Minimize2 } from 'lucide-react';
+import { ThemeToggle } from '@/shared/theme';
 
 export function StudioToolbar({
   title,
@@ -52,6 +53,7 @@ export function StudioToolbar({
           )}
         </div>
       </div>
+      <ThemeToggle />
       <button
         className="studio-glass-control hover:border-primary hover:text-primary inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm"
         onClick={onToggleFocus}

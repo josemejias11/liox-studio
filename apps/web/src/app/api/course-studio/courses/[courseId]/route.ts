@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
 import { courseSettingsPatchSchema } from '@/shared/contracts/course-settings';
 import { jsonError, unexpectedApiError } from '@/shared/server/http';
-import { updateAuthoringCourse } from '@/authoring/server/course-commands';
+import {
+  CourseDeleteBlockedError,
+  deleteAuthoringCourse,
+  updateAuthoringCourse,
+} from '@/authoring/server/course-commands';
 
 function invalidCourseSettings(
   issues: Array<{ path: PropertyKey[]; message: string }>,
@@ -38,6 +42,28 @@ export async function PATCH(
   } catch (error) {
     if (error instanceof Error && error.message === 'COURSE_NOT_FOUND') {
       return jsonError('Course not found', 404);
+    }
+    return unexpectedApiError('course-studio/course', error);
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ courseId: string }> },
+): Promise<NextResponse> {
+  if (!(await isCourseStudioAuthorized(request))) return jsonError('Unauthorized', 401);
+  try {
+    await deleteAuthoringCourse((await params).courseId);
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'COURSE_NOT_FOUND') {
+      return jsonError('Course not found', 404);
+    }
+    if (error instanceof CourseDeleteBlockedError) {
+      return jsonError(
+        'This course cannot be deleted because a revision of it was used to generate another course.',
+        409,
+      );
     }
     return unexpectedApiError('course-studio/course', error);
   }

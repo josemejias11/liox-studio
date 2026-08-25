@@ -89,7 +89,19 @@ export function CourseStudioWorkspace({
     setStudioSelection,
   });
   const { desktopGridStyle, outline, tools, workspaceRef } = useStudioPanelLayout();
-  const selectedLessonId = selection.kind === 'lesson' ? selection.id : undefined;
+  // Selecting a chapter has no lesson of its own to preview — jump the live canvas
+  // to that chapter's first screen so the selection is actually reflected there,
+  // the same way selecting a lesson or the course cover already is.
+  const selectedChapterFirstLessonId =
+    selection.kind === 'chapter'
+      ? course.chapters.find((chapter) => chapter.id === selection.id)?.lessons[0]?.id
+      : undefined;
+  const selectedLessonId =
+    selection.kind === 'lesson' ? selection.id : selectedChapterFirstLessonId;
+  // A chapter selection targets the same lesson id as selecting that lesson directly,
+  // but the two must render differently: a lesson selection jumps straight to its
+  // content, a chapter selection should show that chapter's intro screen.
+  const skipChapterIntroForInitialSection = selection.kind !== 'chapter';
   const showCover = selection.kind === 'cover';
   const selectRef = useRef(select);
   const courseChaptersRef = useRef(course.chapters);
@@ -134,6 +146,7 @@ export function CourseStudioWorkspace({
               onLessonChange={selectPreviewLesson}
               selectedLessonId={selectedLessonId}
               initialView={showCover ? 'cover' : undefined}
+              skipChapterIntroForInitialSection={skipChapterIntroForInitialSection}
             />
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-white/70">
@@ -204,6 +217,7 @@ export function CourseStudioWorkspace({
                   onLessonChange={selectPreviewLesson}
                   selectedLessonId={selectedLessonId}
                   initialView={showCover ? 'cover' : undefined}
+                  skipChapterIntroForInitialSection={skipChapterIntroForInitialSection}
                 />
               ) : (
                 <div className="border-destructive/30 bg-card text-destructive flex aspect-video items-center justify-center rounded-xl border p-8 text-center text-sm">

@@ -4,6 +4,7 @@ import { isCourseStudioSessionValid } from '@/server/auth/course-studio';
 import { CourseCreationPanel } from '@/authoring/CourseCreationPanel';
 import { CourseLibrary } from '@/authoring/CourseLibrary';
 import { loadAuthoringLibrary } from '@/authoring/server/studio-loaders';
+import { ThemeToggle } from '@/shared/theme';
 import { createCourseAction } from './actions';
 
 export default async function CourseStudioHome() {
@@ -22,14 +23,16 @@ export default async function CourseStudioHome() {
               master revision for review.
             </p>
           </div>
-          <BookOpen className="text-primary h-8 w-8" aria-hidden="true" />
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <BookOpen className="text-primary h-8 w-8" aria-hidden="true" />
+          </div>
         </header>
-        <CourseCreationPanel createBlankCourse={createCourseAction} templates={templates} />
-        <section>
+        <section className="mb-8">
           <h2 className="mb-4 text-lg font-semibold">Your courses</h2>
           {courses.length === 0 && (
             <p className="text-muted-foreground mb-4">
-              No courses yet. Create the first one above.
+              No courses yet. Create the first one below.
             </p>
           )}
           <CourseLibrary
@@ -49,6 +52,11 @@ export default async function CourseStudioHome() {
             duplicationJobs={duplicationJobs}
           />
         </section>
+        <CourseCreationPanel
+          createBlankCourse={createCourseAction}
+          templates={templates}
+          defaultOpen={courses.length === 0}
+        />
       </div>
     </main>
   );

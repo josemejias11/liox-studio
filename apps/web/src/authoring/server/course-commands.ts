@@ -3,7 +3,9 @@ import {
   createCourseReview,
   createCourseTemplate,
   createLesson,
+  CourseDeleteBlockedError,
   deleteChapter,
+  deleteCourse,
   duplicateLesson,
   emptyCourseTrash,
   freezeCourseRevision,
@@ -29,6 +31,7 @@ import {
   type CourseTrashItem,
 } from '@moto-ai/database';
 import { enqueueScormExportJob } from '@moto-ai/jobs';
+import { deleteCourseDocument } from '@moto-ai/parser-client';
 import {
   OfflineAssistantPayloadSchema,
   OFFLINE_ASSISTANT_PAYLOAD_VERSION,
@@ -39,13 +42,31 @@ import {
 import type { JobAcceptedResponse } from '@moto-ai/contracts/jobs';
 import type { CourseLessonType, LessonInput, CourseGraph } from '@moto-ai/contracts/course-studio';
 import { toPlayerCourseContent } from '@/learning/course-player-adapter';
+import { deleteCourseAsset } from '@/server/storage/course-assets';
 
 function serializeCourseTrashItem(item: CourseTrashItem) {
   return { ...item, deletedAt: item.deletedAt.toISOString() };
 }
 
+export { CourseDeleteBlockedError };
+
 export function createAuthoringCourse(title: string) {
   return createCourseTemplate(title);
+}
+
+export async function deleteAuthoringCourse(courseId: string): Promise<void> {
+  const sourceFiles = await deleteCourse(courseId);
+  const cleanup = await Promise.allSettled(
+    sourceFiles.flatMap((source) => [
+      deleteCourseAsset(source.r2Key),
+      deleteCourseDocument(courseId, source.id),
+    ]),
+  );
+  for (const result of cleanup) {
+    if (result.status === 'rejected') {
+      console.error('[course-studio/courses] course delete cleanup failed:', result.reason);
+    }
+  }
 }
 
 export function updateAuthoringCourse(courseId: string, input: unknown) {

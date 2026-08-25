@@ -25,7 +25,12 @@ export interface CourseNavState {
 export type CourseNavAction =
   | { type: 'NEXT'; visited?: Record<string, Set<string>> }
   | { type: 'PREV' }
-  | { type: 'GO_TO_SECTION'; index: number; visited?: Record<string, Set<string>> }
+  | {
+      type: 'GO_TO_SECTION';
+      index: number;
+      visited?: Record<string, Set<string>>;
+      skipChapterIntro?: boolean;
+    }
   | { type: 'RESTORE_COMPLETE' }
   | { type: 'QUIZ_DONE' }
   | { type: 'CHAPTER_QUIZ_DONE'; chapterIndex: number }
@@ -277,6 +282,7 @@ function reduceGoToSection(
   state: CourseNavState,
   index: number,
   visited?: Record<string, Set<string>>,
+  skipChapterIntro = false,
 ): CourseNavState {
   const structure = flow.structure;
   const item = getFlowItemByIndex(flow, index);
@@ -289,10 +295,13 @@ function reduceGoToSection(
   }
 
   const navDirection: 1 | -1 = isForward ? 1 : -1;
+  // Resume-from-storage and an author-preview jump to a specific screen both mean
+  // "silently show exactly this screen" — never the chapter-intro interstitial that
+  // learner-driven forward progression (goNext, a real nav-map click) intentionally shows.
   const jump = (next: CoursePhase, intro = false): CourseNavState => ({
     phase: next,
     navDirection,
-    showChapterIntro: intro,
+    showChapterIntro: skipChapterIntro ? false : intro,
   });
 
   switch (item.kind) {
@@ -339,7 +348,7 @@ function courseNavigationReducer(
     case 'PREV':
       return reducePrev(structure, state);
     case 'GO_TO_SECTION':
-      return reduceGoToSection(flow, state, action.index, action.visited);
+      return reduceGoToSection(flow, state, action.index, action.visited, action.skipChapterIntro);
     case 'RESTORE_COMPLETE':
       return {
         phase: { phase: 'complete' },
@@ -415,7 +424,8 @@ export function useCourseNavigation(
     [bypassNavigationLocks, visited],
   );
   const navigateToSectionUnrestricted = useCallback(
-    (index: number) => dispatch({ type: 'GO_TO_SECTION', index }),
+    (index: number, skipChapterIntro?: boolean) =>
+      dispatch({ type: 'GO_TO_SECTION', index, skipChapterIntro }),
     [],
   );
   const restoreComplete = useCallback(() => dispatch({ type: 'RESTORE_COMPLETE' }), []);
