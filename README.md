@@ -761,8 +761,7 @@ before external production exposure:
 - make parser source replacement atomic and bind retrieval to frozen hashes;
 - align relative course-asset URLs with Course Settings validation;
 - bind progress and quiz persistence to a legitimate learner session and course;
-- add course ownership and recurring orphan cleanup for course assets (a
-  one-time cleanup script exists today; see `scripts/cleanup-orphaned-course-assets.ts`); and
+- add course ownership and recurring orphan cleanup for course assets; and
 - update production dependencies reported by `npm audit` before release.
 
 ## Development principles
