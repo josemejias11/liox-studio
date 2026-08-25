@@ -28,11 +28,23 @@ export default async function CourseStudioHome() {
             <BookOpen className="text-primary h-8 w-8" aria-hidden="true" />
           </div>
         </header>
-        <section className="mb-8">
-          <h2 className="mb-4 text-lg font-semibold">Your courses</h2>
+        <CourseCreationPanel
+          createBlankCourse={createCourseAction}
+          templates={templates}
+          defaultOpen={courses.length === 0}
+          generations={generations}
+          sourceRevisions={sourceRevisions.map((revision) => ({
+            id: revision.id,
+            courseTitle: revision.course.title,
+            version: revision.version,
+            sourceCount: revision._count.sources,
+          }))}
+        />
+        <section>
+          <h2 className="mb-4 text-lg font-semibold">Courses Library</h2>
           {courses.length === 0 && (
             <p className="text-muted-foreground mb-4">
-              No courses yet. Create the first one below.
+              No courses yet. Create the first one above.
             </p>
           )}
           <CourseLibrary
@@ -42,21 +54,9 @@ export default async function CourseStudioHome() {
                 ? { ...course.generatedBy, createdAt: course.generatedBy.createdAt.toISOString() }
                 : null,
             }))}
-            generations={generations}
-            sourceRevisions={sourceRevisions.map((revision) => ({
-              id: revision.id,
-              courseTitle: revision.course.title,
-              version: revision.version,
-              sourceCount: revision._count.sources,
-            }))}
             duplicationJobs={duplicationJobs}
           />
         </section>
-        <CourseCreationPanel
-          createBlankCourse={createCourseAction}
-          templates={templates}
-          defaultOpen={courses.length === 0}
-        />
       </div>
     </main>
   );

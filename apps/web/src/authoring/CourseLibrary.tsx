@@ -1,16 +1,13 @@
 'use client';
 
-import type { CourseGenerationSummary } from '@moto-ai/contracts/course-generation';
 import { CourseDuplicateResultSchema, type JobAcceptedResponse } from '@moto-ai/contracts/jobs';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { BookOpen, Copy, Sparkles, Trash2, X } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { BookOpen, Copy, Trash2, X } from 'lucide-react';
+import { useState } from 'react';
 import { fetchJson } from '@/shared/fetch-json';
 import { CourseDuplicationStatusPanel } from './CourseDuplicationStatusPanel';
-import { CreateWithAiDialog, type GenerationSourceRevision } from './CreateWithAiDialog';
-import { GenerationStatusPanel } from './GenerationStatusPanel';
 import { RevisionPanel } from './RevisionPanel';
 import type { CourseDuplicationJobSummary } from './server/studio-loaders';
 
@@ -30,8 +27,6 @@ export interface CourseLibraryItem {
 
 interface CourseLibraryProps {
   courses: CourseLibraryItem[];
-  generations: CourseGenerationSummary[];
-  sourceRevisions: GenerationSourceRevision[];
   duplicationJobs: CourseDuplicationJobSummary[];
 }
 
@@ -52,13 +47,10 @@ function courseLibraryImageUrl(cover: unknown): string | undefined {
 
 export function CourseLibrary({
   courses,
-  generations: initialGenerations,
-  sourceRevisions,
   duplicationJobs: initialDuplicationJobs,
 }: CourseLibraryProps) {
   const router = useRouter();
   const [selectedCourse, setSelectedCourse] = useState<CourseLibraryItem | null>(null);
-  const [generations, setGenerations] = useState(initialGenerations);
   const [duplicationJobs, setDuplicationJobs] = useState(initialDuplicationJobs);
   const [duplicatingCourseIds, setDuplicatingCourseIds] = useState<ReadonlySet<string>>(
     () => new Set(),
@@ -71,26 +63,10 @@ export function CourseLibrary({
   const [deleteError, setDeleteError] = useState<{ courseId: string; message: string } | null>(
     null,
   );
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [retryFrom, setRetryFrom] = useState<CourseGenerationSummary | undefined>();
   const firstImageIndex = courses.findIndex((course) => courseLibraryImageUrl(course.cover));
   const reviewCourse = selectedCourse
     ? (courses.find((course) => course.id === selectedCourse.id) ?? null)
     : null;
-  const refreshGenerations = useCallback(
-    (next: CourseGenerationSummary[]) => {
-      setGenerations((current) => {
-        const completed = next.some(
-          (generation) =>
-            generation.status === 'succeeded' &&
-            !current.some((old) => old.id === generation.id && old.status === 'succeeded'),
-        );
-        if (completed) router.refresh();
-        return next;
-      });
-    },
-    [router],
-  );
 
   async function duplicateCourse(course: CourseLibraryItem) {
     const title = window.prompt('New course title', `${course.title} copy`);
@@ -180,37 +156,6 @@ export function CourseLibrary({
 
   return (
     <div className="space-y-4">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-muted-foreground text-sm">
-          AI drafts use only the source files captured by a frozen revision.
-        </p>
-        <button
-          className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-50"
-          disabled={sourceRevisions.length === 0}
-          onClick={() => {
-            setRetryFrom(undefined);
-            setDialogOpen(true);
-          }}
-          type="button"
-        >
-          <Sparkles className="h-4 w-4" />
-          Create with AI
-        </button>
-      </div>
-      {sourceRevisions.length === 0 && (
-        <p className="border-border text-muted-foreground mb-6 rounded-lg border p-3 text-sm">
-          Freeze a course revision with at least one indexed source before generating a grounded
-          draft.
-        </p>
-      )}
-      <GenerationStatusPanel
-        generations={generations}
-        onRefresh={refreshGenerations}
-        onRetry={(generation) => {
-          setRetryFrom(generation);
-          setDialogOpen(true);
-        }}
-      />
       <CourseDuplicationStatusPanel jobs={duplicationJobs} onUpdate={setDuplicationJobs} />
       <div className="grid gap-3 sm:grid-cols-2">
         {courses.map((course, index) => {
@@ -337,16 +282,6 @@ export function CourseLibrary({
             initialRevisions={[]}
           />
         </section>
-      )}
-      {dialogOpen && (
-        <CreateWithAiDialog
-          key={retryFrom?.id ?? 'fresh'}
-          open
-          revisions={sourceRevisions}
-          retryFrom={retryFrom}
-          onClose={() => setDialogOpen(false)}
-          onCreated={(generation) => setGenerations((current) => [generation, ...current])}
-        />
       )}
     </div>
   );
