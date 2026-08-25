@@ -19,8 +19,7 @@ export default async function CourseStudioHome() {
           <div>
             <h1 className="text-3xl font-semibold">Course Studio</h1>
             <p className="text-muted-foreground mt-2">
-              Create and revise learning experiences, then use the author preview or share a frozen
-              master revision for review.
+              Create and review e-learning experiences, using the authoring tool or sharing a master revision for client review.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -41,7 +40,7 @@ export default async function CourseStudioHome() {
           }))}
         />
         <section>
-          <h2 className="mb-4 text-lg font-semibold">Courses Library</h2>
+          <h2 className="mb-4 text-lg font-semibold">Course Library</h2>
           {courses.length === 0 && (
             <p className="text-muted-foreground mb-4">
               No courses yet. Create the first one above.

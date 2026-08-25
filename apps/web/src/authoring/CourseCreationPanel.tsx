@@ -144,7 +144,7 @@ export function CourseCreationPanel({
               Create a course
             </h2>
             <p className="text-muted-foreground mt-1 text-sm">
-              Begin with an open canvas, a complete learning structure, or a grounded AI draft.
+              Begin with an open canvas, a complete learning structure or a AI denerated draft.
             </p>
           </div>
           {collapsible && (

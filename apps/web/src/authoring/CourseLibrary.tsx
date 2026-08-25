@@ -261,8 +261,7 @@ export function CourseLibrary({
                 Prepare {reviewCourse.title} for master review
               </h3>
               <p className="text-muted-foreground mt-1 text-sm">
-                Freeze an immutable master revision, then create a review link. Future authoring
-                changes stay separate.
+                Freeze a master revision and generate a review link. Subsequent authoring modifications will remain distinct.
               </p>
             </div>
             <button

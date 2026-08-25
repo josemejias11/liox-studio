@@ -309,7 +309,7 @@ function RevisionPanelContent({
         <div>
           <h2 className="text-sm font-semibold">Master review</h2>
           <p className="text-muted-foreground text-[11px]">
-            Freeze the current authoring graph as a master revision before creating a review link.
+            Freeze the current authoring version as a master revision before creating a review link.
           </p>
         </div>
         <button
