@@ -169,7 +169,7 @@ export function CourseLibrary({
               }`}
               key={course.id}
             >
-              <div className="bg-muted relative aspect-[16/9] w-full overflow-hidden">
+              <div className="bg-muted relative aspect-video w-full overflow-hidden">
                 {imageUrl ? (
                   <Image
                     alt={course.title}
