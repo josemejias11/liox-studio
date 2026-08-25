@@ -615,6 +615,8 @@ export async function cleanupExpiredJobs(): Promise<void> {
     where: {
       status: { in: [BackgroundJobStatus.SUCCEEDED, BackgroundJobStatus.FAILED] },
       completedAt: { lt: cutoff },
+      generation: null,
+      scormExport: null,
     },
   });
 }

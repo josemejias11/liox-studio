@@ -9,7 +9,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ exportId: string }> },
 ) {
-  if (!(await isCourseStudioAuthorized(request))) return new Response('Unauthorized', { status: 401 });
+  if (!(await isCourseStudioAuthorized(request)))
+    return new Response('Unauthorized', { status: 401 });
 
   const { exportId } = await params;
   const record = await prisma.courseScormExport.findUnique({ where: { id: exportId } });

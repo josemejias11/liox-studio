@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
 import { uploadAuthoringAsset } from '@/authoring/server/asset-commands';
+import { detectAssetSignature } from '@/server/storage/asset-signatures';
 
 export const runtime = 'nodejs';
 
@@ -34,12 +35,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const signature = detectAssetSignature(bytes);
+  if (!signature) {
+    return NextResponse.json(
+      { error: 'Only JPEG, PNG, GIF, WebP images or MP4/WebM video are accepted' },
+      { status: 400 },
+    );
+  }
+
   try {
     const asset = await uploadAuthoringAsset({
       courseId,
       filename: file.name,
-      contentType: file.type || undefined,
-      bytes: new Uint8Array(await file.arrayBuffer()),
+      contentType: signature.contentType,
+      bytes,
     });
     return NextResponse.json({ asset }, { status: 201 });
   } catch (error) {

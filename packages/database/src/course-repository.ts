@@ -44,21 +44,24 @@ async function requireGraph(courseId: string): Promise<CourseGraph> {
   return graph;
 }
 
-async function courseIdForChapter(chapterId: string): Promise<string> {
+async function courseIdForChapter(chapterId: string, expectedCourseId: string): Promise<string> {
   const chapter = await prisma.courseChapter.findUnique({
     where: { id: chapterId },
     select: { courseId: true },
   });
-  if (!chapter) throw new Error('CHAPTER_NOT_FOUND');
+  if (!chapter || chapter.courseId !== expectedCourseId) throw new Error('CHAPTER_NOT_FOUND');
   return chapter.courseId;
 }
 
-async function lessonLocation(lessonId: string): Promise<{ courseId: string; chapterId: string }> {
+async function lessonLocation(
+  lessonId: string,
+  expectedCourseId: string,
+): Promise<{ courseId: string; chapterId: string }> {
   const lesson = await prisma.courseLesson.findUnique({
     where: { id: lessonId },
     select: { chapterId: true, chapter: { select: { courseId: true } } },
   });
-  if (!lesson) throw new Error('LESSON_NOT_FOUND');
+  if (!lesson || lesson.chapter.courseId !== expectedCourseId) throw new Error('LESSON_NOT_FOUND');
   return { courseId: lesson.chapter.courseId, chapterId: lesson.chapterId };
 }
 
@@ -253,14 +256,18 @@ export async function createChapter(
   return requireGraph(courseId);
 }
 
-export async function updateChapter(chapterId: string, input: ChapterInput): Promise<CourseGraph> {
-  const courseId = await courseIdForChapter(chapterId);
+export async function updateChapter(
+  chapterId: string,
+  courseId: string,
+  input: ChapterInput,
+): Promise<CourseGraph> {
+  await courseIdForChapter(chapterId, courseId);
   await prisma.courseChapter.update({ where: { id: chapterId }, data: input });
   return requireGraph(courseId);
 }
 
-export async function deleteChapter(chapterId: string): Promise<CourseGraph> {
-  const courseId = await courseIdForChapter(chapterId);
+export async function deleteChapter(chapterId: string, courseId: string): Promise<CourseGraph> {
+  await courseIdForChapter(chapterId, courseId);
   await prisma.$transaction(async (tx) => {
     const chapters = await tx.courseChapter.findMany({
       where: { courseId },
@@ -279,9 +286,10 @@ export async function deleteChapter(chapterId: string): Promise<CourseGraph> {
 
 export async function createLesson(
   chapterId: string,
+  courseId: string,
   lessonType: CourseLessonType,
 ): Promise<CourseGraph> {
-  const courseId = await courseIdForChapter(chapterId);
+  await courseIdForChapter(chapterId, courseId);
   await prisma.$transaction(async (tx) => {
     const position = await tx.courseLesson.count({ where: { chapterId } });
     await tx.courseLesson.create({
@@ -298,8 +306,12 @@ export async function createLesson(
   return requireGraph(courseId);
 }
 
-export async function updateLesson(lessonId: string, input: LessonInput): Promise<CourseGraph> {
-  const { courseId } = await lessonLocation(lessonId);
+export async function updateLesson(
+  lessonId: string,
+  courseId: string,
+  input: LessonInput,
+): Promise<CourseGraph> {
+  await lessonLocation(lessonId, courseId);
   await prisma.courseLesson.update({
     where: { id: lessonId },
     data: {
@@ -313,8 +325,8 @@ export async function updateLesson(lessonId: string, input: LessonInput): Promis
   return requireGraph(courseId);
 }
 
-export async function duplicateLesson(lessonId: string): Promise<CourseGraph> {
-  const { courseId, chapterId } = await lessonLocation(lessonId);
+export async function duplicateLesson(lessonId: string, courseId: string): Promise<CourseGraph> {
+  const { chapterId } = await lessonLocation(lessonId, courseId);
   await prisma.$transaction(async (tx) => {
     const source = await tx.courseLesson.findUniqueOrThrow({ where: { id: lessonId } });
     const siblings = await tx.courseLesson.findMany({
@@ -372,9 +384,9 @@ export async function reorderCourseItem(
 
     const lesson = await tx.courseLesson.findUnique({
       where: { id: input.id },
-      select: { chapterId: true },
+      select: { chapterId: true, chapter: { select: { courseId: true } } },
     });
-    if (!lesson) throw new Error('LESSON_NOT_FOUND');
+    if (!lesson || lesson.chapter.courseId !== courseId) throw new Error('LESSON_NOT_FOUND');
     const items = await tx.courseLesson.findMany({
       where: { chapterId: lesson.chapterId },
       orderBy: { position: 'asc' },

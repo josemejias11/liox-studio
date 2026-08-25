@@ -1,6 +1,9 @@
 # Local dependency installs
 **/node_modules/
 
+# macOS Finder metadata
+**/.DS_Store
+
 # Generated framework and Python cache state
 **/.next/
 apps/web/next-env.d.ts
@@ -14,6 +17,10 @@ services/parser-service/chroma_db/
 
 # Local browser-inspection artifacts
 .playwright-mcp/
+
+# Agent-managed git worktrees (linked working trees, not submodules —
+# never meant to be tracked as a gitlink)
+.claude/worktrees/
 
 # Package build output
 packages/scorm-export/dist/

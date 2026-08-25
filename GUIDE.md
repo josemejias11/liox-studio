@@ -137,11 +137,15 @@ action in its inspector) deletes the attached `CourseQuiz` row entirely; the
 outline selection falls back to the chapter or the course rather than
 leaving a dead panel open.
 
-A review link renders the chapter and final assessment screens too, but
-reviewers can't actually submit or get graded on them there — the answer
-key is stripped from review payloads by design, so every click just shows
-an unhelpful message. Use the author preview if you need to check how an
-assessment actually behaves when answered.
+A review link renders the chapter and final assessment screens too, but by
+design it's a content-and-feedback surface, not a grading one — the answer
+key is stripped from review payloads, so a reviewer can look at a question
+but can't submit an answer and get graded on it there. That's intentional:
+grading and course completion belong to actual course delivery (today,
+that's the exported SCORM package), where the final assessment's passing
+score gates completion — 80% by default if you don't set one explicitly.
+Use the author preview if you need to check how an assessment behaves when
+answered.
 
 ### Setting both Product Stage images
 

@@ -52,6 +52,12 @@ export async function POST(
     if (error instanceof Error && error.message === 'COURSE_SOURCES_NOT_INDEXED') {
       return jsonError('All course sources must finish indexing before freezing a revision', 409);
     }
+    if (error instanceof Error && error.message === 'COURSE_GRAPH_INVALID') {
+      return jsonError(
+        'This course has an invalid screen or field that cannot be frozen. Check recent edits and try again.',
+        422,
+      );
+    }
     return unexpectedApiError('course-studio/revisions', error);
   }
 }

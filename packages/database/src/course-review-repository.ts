@@ -10,6 +10,19 @@ import type { AssistantQaItem } from '@moto-ai/contracts';
 import { matchOfflineAssistant } from '@moto-ai/contracts';
 import { CourseNotReadyError, validateCourseReadiness } from '@moto-ai/contracts';
 
+/**
+ * Validates the full canonical player-content shape (the same
+ * `toPlayerCourseContent` schema `requestScormExport` already runs against
+ * before enqueuing SCORM export work), not just the specific readiness
+ * rules checked by `validateCourseReadiness`. Injected by the caller
+ * (`apps/web`) rather than imported directly here: this package is also
+ * loaded by `apps/job-worker` (via the `@moto-ai/database` barrel export),
+ * and the canonical schema lives under `apps/web/src` behind a
+ * Next.js-only `@/*` path alias that neither resolves nor should be reached
+ * from the job worker's plain Node runtime.
+ */
+export type CourseGraphShapeValidator = (graph: CourseGraph) => unknown;
+
 interface CourseRevisionSummary {
   id: string;
   version: number;
@@ -88,7 +101,8 @@ export async function listCourseRevisions(courseId: string): Promise<CourseRevis
 
 export async function freezeCourseRevision(
   courseId: string,
-  notes?: string,
+  notes: string | undefined,
+  validateGraphShape: CourseGraphShapeValidator,
 ): Promise<CourseRevisionSummary> {
   const revision = await prisma.$transaction(
     async (tx) => {
@@ -123,6 +137,9 @@ export async function freezeCourseRevision(
       const graph = toCourseGraph(course);
       const readinessIssues = validateCourseReadiness(graph);
       if (readinessIssues.length > 0) throw new CourseNotReadyError(readinessIssues);
+      if (!validateGraphShape(graph)) {
+        throw new Error('COURSE_GRAPH_INVALID');
+      }
       const approvedAssistant = await tx.courseAssistantQa.findMany({
         where: { courseId, status: 'APPROVED' },
         orderBy: { id: 'asc' },

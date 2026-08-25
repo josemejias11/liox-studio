@@ -57,22 +57,27 @@ export function createAuthoringChapter(courseId: string, input: { title: string 
 }
 
 export function updateAuthoringChapter(
+  courseId: string,
   chapterId: string,
   input: { title?: string; estimatedDuration?: number | null },
 ) {
-  return updateChapter(chapterId, input);
+  return updateChapter(chapterId, courseId, input);
 }
 
-export function deleteAuthoringChapter(chapterId: string) {
-  return deleteChapter(chapterId);
+export function deleteAuthoringChapter(courseId: string, chapterId: string) {
+  return deleteChapter(chapterId, courseId);
 }
 
-export function createAuthoringLesson(chapterId: string, lessonType: CourseLessonType) {
-  return createLesson(chapterId, lessonType);
+export function createAuthoringLesson(
+  courseId: string,
+  chapterId: string,
+  lessonType: CourseLessonType,
+) {
+  return createLesson(chapterId, courseId, lessonType);
 }
 
-export function updateAuthoringLesson(lessonId: string, input: LessonInput) {
-  return updateLesson(lessonId, input);
+export function updateAuthoringLesson(courseId: string, lessonId: string, input: LessonInput) {
+  return updateLesson(lessonId, courseId, input);
 }
 
 export function upsertAuthoringChapterQuickCheck(
@@ -104,7 +109,7 @@ export async function deleteOrDuplicateAuthoringLesson({
   lessonId: string;
   action: 'delete' | 'duplicate';
 }) {
-  if (action === 'duplicate') return { course: await duplicateLesson(lessonId) };
+  if (action === 'duplicate') return { course: await duplicateLesson(lessonId, courseId) };
 
   const course = await getAuthoringCourse(courseId);
   const lessonExists = course?.chapters.some((chapter) =>
@@ -138,7 +143,11 @@ export async function listAuthoringRevisions(courseId: string) {
 }
 
 export async function createAuthoringRevision(courseId: string, notes?: string) {
-  const revision = await freezeCourseRevision(courseId, notes);
+  const revision = await freezeCourseRevision(
+    courseId,
+    notes,
+    (graph) => toPlayerCourseContent(graph, { includeAnswerKey: true }) !== null,
+  );
   return { ...revision, sourceIds: await listFrozenRevisionSourceIds(courseId, revision.id) };
 }
 

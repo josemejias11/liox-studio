@@ -30,6 +30,14 @@ export default async function CourseStudioLoginPage({ searchParams }: CourseStud
               Incorrect password. Please try again.
             </p>
           )}
+          {error === 'config' && (
+            <p
+              className="border-destructive/30 bg-destructive/10 text-destructive mb-4 rounded-lg border px-4 py-3 text-sm"
+              role="alert"
+            >
+              Server misconfiguration — contact an administrator.
+            </p>
+          )}
           <form method="POST" action="/api/course-studio/login" className="flex flex-col gap-4">
             <label className="flex flex-col gap-1.5 text-xs font-medium tracking-wide uppercase">
               Password

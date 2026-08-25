@@ -63,6 +63,16 @@ const nextConfig: NextConfig = {
         source: '/((?!_next/static|_next/image|favicon.ico).*)',
         headers: [...COMMON_HEADERS, { key: 'Content-Security-Policy', value: MAIN_CSP }],
       },
+      {
+        // Delivered course assets (images/video) get a stricter, path-specific
+        // CSP than the rest of the app: `sandbox` blocks script execution and
+        // top-level navigation from this endpoint's responses even if a future
+        // format is added to the upload allowlist without equally careful
+        // signature verification. This entry must come after the catch-all
+        // above so it wins for this path.
+        source: '/api/course-assets/:path*',
+        headers: [...COMMON_HEADERS, { key: 'Content-Security-Policy', value: 'sandbox' }],
+      },
     ];
   },
 };
