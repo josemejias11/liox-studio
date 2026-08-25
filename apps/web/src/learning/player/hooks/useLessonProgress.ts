@@ -49,7 +49,7 @@ function readPreviewProgress(storageKey?: string): ProgressData {
   }
 }
 
-export function useLessonProgress(sessionId: string, persist: boolean = true, courseId?: string) {
+export function useLessonProgress(sessionId: string, persist: boolean = true, courseId: string) {
   const previewStorageKey =
     !persist && courseId ? `${PREVIEW_PROGRESS_KEY_PREFIX}${courseId}` : undefined;
   const [previewData, setPreviewData] = useState<ProgressData>(() =>
@@ -108,7 +108,7 @@ export function useLessonProgress(sessionId: string, persist: boolean = true, co
       type: 'lesson',
       sessionId,
       lessonId: lessonKey,
-      ...(courseId ? { courseId } : {}),
+      courseId,
       visitedHotspots,
       completed: isCompleted,
     };

@@ -17,9 +17,7 @@ export function buildImsManifest(input: {
   const { title, scoIdentifier, masteryScore, entryHref, fileHrefs } = input;
   const orgId = `${scoIdentifier}_ORG`;
   const resourceId = `${scoIdentifier}_RES`;
-  const fileTags = fileHrefs
-    .map((href) => `      <file href="${escapeXml(href)}" />`)
-    .join('\n');
+  const fileTags = fileHrefs.map((href) => `      <file href="${escapeXml(href)}" />`).join('\n');
 
   return `<?xml version="1.0" encoding="utf-8"?>
 <manifest identifier="${escapeXml(scoIdentifier)}" version="1.0" xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2" xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.imsproject.org/xsd/imscp_rootv1p1p2 imscp_rootv1p1p2.xsd http://www.imsglobal.org/xsd/imsmd_rootv1p2p1 imsmd_rootv1p2p1.xsd http://www.adlnet.org/xsd/adlcp_rootv1p2 adlcp_rootv1p2.xsd">

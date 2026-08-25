@@ -16,9 +16,15 @@ export async function GET(_request: Request, { params }: { params: Promise<{ key
     const object = await getCourseAsset(segments.join('/'));
     if (!object.Body) return new Response('Asset not found', { status: 404 });
 
+    // Content-Security-Policy for this route is set path-specifically in
+    // next.config.ts's headers() (sandbox) rather than here — next.config.ts
+    // headers() wins over a Route Handler header for the same key, so setting
+    // it here as well would just be a second, easily-drifting source of truth.
     const headers = new Headers({
       'Cache-Control': 'public, max-age=31536000, immutable',
       'Content-Type': object.ContentType ?? 'application/octet-stream',
+      'Content-Disposition': 'inline',
+      'X-Content-Type-Options': 'nosniff',
     });
     if (object.ContentLength !== undefined) {
       headers.set('Content-Length', String(object.ContentLength));

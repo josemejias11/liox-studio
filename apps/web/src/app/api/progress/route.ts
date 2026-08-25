@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ProgressRequestSchema } from '@/shared/contracts/api';
 import {
+  LessonCourseMismatchError,
   loadSessionProgress,
   recordHotspots,
   recordLessonView,
@@ -40,6 +41,9 @@ export async function POST(req: NextRequest) {
     }
     return jsonError('unknown type', 400);
   } catch (error: unknown) {
+    if (error instanceof LessonCourseMismatchError) {
+      return jsonError('This lesson does not belong to the specified course', 400);
+    }
     return unexpectedApiError('api/progress POST', error);
   }
 }

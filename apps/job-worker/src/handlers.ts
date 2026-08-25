@@ -39,7 +39,7 @@ import {
   type ClaimedJob,
   updateCourseDuplicateReconciliationMarker,
 } from '@moto-ai/jobs';
-import { AssetNotFoundError, buildScormPackage } from '@moto-ai/scorm-export';
+import { AssetNotFoundError, ExportTooLargeError, buildScormPackage } from '@moto-ai/scorm-export';
 import {
   collectAssetRefs,
   copyCourseAssetRefs,
@@ -216,6 +216,18 @@ async function scormExport(job: ClaimedJob): Promise<ScormExportResult> {
     throw new NonRetryableJobError('The frozen revision no longer exists. Trigger a new export.');
   }
 
+  const existingExport = await prisma.courseScormExport.findUnique({
+    where: { jobId: job.id },
+    select: { id: true, byteSize: true, sha256: true },
+  });
+  if (existingExport) {
+    return {
+      exportId: existingExport.id,
+      byteSize: existingExport.byteSize,
+      sha256: existingExport.sha256,
+    };
+  }
+
   let parsedArtifact: unknown;
   try {
     parsedArtifact = JSON.parse(job.artifact.bytes.toString('utf8'));
@@ -262,6 +274,11 @@ async function scormExport(job: ClaimedJob): Promise<ScormExportResult> {
     if (error instanceof AssetNotFoundError) {
       throw new NonRetryableJobError(
         "One of this course's images or videos is missing from storage. Re-upload it, freeze a new revision, and export again.",
+      );
+    }
+    if (error instanceof ExportTooLargeError) {
+      throw new NonRetryableJobError(
+        'This course has too much media to export as a single SCORM package right now. Contact an administrator.',
       );
     }
     throw error;

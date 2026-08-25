@@ -1,6 +1,5 @@
 import { notFound, redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
-import { COURSE_STUDIO_COOKIE, courseStudioToken } from '@/server/auth/course-studio';
+import { isCourseStudioSessionValid } from '@/server/auth/course-studio';
 import { CourseStudioWorkspace } from '@/authoring/CourseStudioWorkspace';
 import { loadAuthoringWorkspace } from '@/authoring/server/studio-loaders';
 
@@ -9,9 +8,7 @@ export default async function CourseWorkspace({
 }: {
   params: Promise<{ courseId: string }>;
 }) {
-  const expected = await courseStudioToken();
-  const token = (await cookies()).get(COURSE_STUDIO_COOKIE)?.value;
-  if (!expected || token !== expected) redirect('/studio/login');
+  if (!(await isCourseStudioSessionValid())) redirect('/studio/login');
   const courseId = (await params).courseId;
   const { course, sources, trash, revisions, assistant } = await loadAuthoringWorkspace(courseId);
   if (!course) notFound();

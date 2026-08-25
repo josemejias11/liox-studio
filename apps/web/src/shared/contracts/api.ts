@@ -7,7 +7,7 @@ const LessonProgressSchema = z.object({
   type: z.literal('lesson'),
   sessionId: z.string().uuid('Invalid session ID format'),
   lessonId: z.string().min(1).max(100),
-  courseId: z.string().min(1).max(100).optional(),
+  courseId: z.string().min(1).max(100),
   visitedHotspots: z.array(z.string().max(200)).max(50).optional(),
   completed: z.boolean().optional(),
 });

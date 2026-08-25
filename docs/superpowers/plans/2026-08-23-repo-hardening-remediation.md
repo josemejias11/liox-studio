@@ -92,31 +92,31 @@ A job with a retained `CourseGeneration` or `CourseScormExport` row is now exclu
 In `apps/job-worker/src/index.ts`, find the main loop (around line 60-67):
 
 ```ts
-  while (true) {
-    const processed = await processOneJob();
-    if (Date.now() >= cleanupAt) {
-      await cleanupExpiredJobs();
-      cleanupAt = Date.now() + 60 * 60 * 1000;
-    }
-    if (!processed) await sleep(POLL_INTERVAL_MS);
+while (true) {
+  const processed = await processOneJob();
+  if (Date.now() >= cleanupAt) {
+    await cleanupExpiredJobs();
+    cleanupAt = Date.now() + 60 * 60 * 1000;
   }
+  if (!processed) await sleep(POLL_INTERVAL_MS);
+}
 ```
 
-Replace the cleanup call with a caught one, as defense in depth against any *other* future cleanup failure mode:
+Replace the cleanup call with a caught one, as defense in depth against any _other_ future cleanup failure mode:
 
 ```ts
-  while (true) {
-    const processed = await processOneJob();
-    if (Date.now() >= cleanupAt) {
-      try {
-        await cleanupExpiredJobs();
-      } catch (error) {
-        console.error('[jobs] cleanup failed (continuing):', error);
-      }
-      cleanupAt = Date.now() + 60 * 60 * 1000;
+while (true) {
+  const processed = await processOneJob();
+  if (Date.now() >= cleanupAt) {
+    try {
+      await cleanupExpiredJobs();
+    } catch (error) {
+      console.error('[jobs] cleanup failed (continuing):', error);
     }
-    if (!processed) await sleep(POLL_INTERVAL_MS);
+    cleanupAt = Date.now() + 60 * 60 * 1000;
   }
+  if (!processed) await sleep(POLL_INTERVAL_MS);
+}
 ```
 
 - [ ] **Step 3: Verify**
@@ -155,17 +155,17 @@ git commit -m "fix: exclude retained jobs from cleanup and survive cleanup failu
 In `apps/job-worker/src/handlers.ts`, find `scormExport()` (around line 202). Immediately after the existing payload/artifact/revision validation (before the player-bundle read and `buildScormPackage()` call), add an idempotency check mirroring the pattern already used for `COURSE_DUPLICATE` (`findCourseCreatedByJob` in `packages/database/src/course-duplication-repository.ts:93-99`):
 
 ```ts
-  const existingExport = await prisma.courseScormExport.findUnique({
-    where: { jobId: job.id },
-    select: { id: true, byteSize: true, sha256: true },
-  });
-  if (existingExport) {
-    return {
-      exportId: existingExport.id,
-      byteSize: existingExport.byteSize,
-      sha256: existingExport.sha256,
-    };
-  }
+const existingExport = await prisma.courseScormExport.findUnique({
+  where: { jobId: job.id },
+  select: { id: true, byteSize: true, sha256: true },
+});
+if (existingExport) {
+  return {
+    exportId: existingExport.id,
+    byteSize: existingExport.byteSize,
+    sha256: existingExport.sha256,
+  };
+}
 ```
 
 Place this after the `revision` lookup/validation and before the player-bundle file reads, so a retry after a crash between the successful `courseScormExport.create()` and the queue's `completeJob()` commit skips re-downloading the player bundle, rebuilding the ZIP, and re-uploading it entirely — not just the database write. The export's storage key (`exports/${revision.id}/${job.id}.zip`) is already deterministic per `job.id`, so even if a retry somehow reached the upload step again, it would overwrite the same key with identical bytes; this early return just avoids the redundant work and closes the actual failure mode (the unique-constraint throw on `.create()`).
@@ -429,11 +429,14 @@ const SIGNATURES: AssetSignature[] = [
   {
     extension: '.webm',
     contentType: 'video/webm',
-    matches: (b) => b.length >= 4 && b[0] === 0x1a && b[1] === 0x45 && b[2] === 0xdf && b[3] === 0xa3,
+    matches: (b) =>
+      b.length >= 4 && b[0] === 0x1a && b[1] === 0x45 && b[2] === 0xdf && b[3] === 0xa3,
   },
 ];
 
-export function detectAssetSignature(bytes: Uint8Array): { extension: string; contentType: string } | null {
+export function detectAssetSignature(
+  bytes: Uint8Array,
+): { extension: string; contentType: string } | null {
   const match = SIGNATURES.find((signature) => signature.matches(bytes));
   return match ? { extension: match.extension, contentType: match.contentType } : null;
 }
@@ -499,22 +502,22 @@ import { detectAssetSignature } from '@/server/storage/asset-signatures';
 In `apps/web/src/app/api/course-assets/[...key]/route.ts`, find the headers construction:
 
 ```ts
-    const headers = new Headers({
-      'Cache-Control': 'public, max-age=31536000, immutable',
-      'Content-Type': object.ContentType ?? 'application/octet-stream',
-    });
+const headers = new Headers({
+  'Cache-Control': 'public, max-age=31536000, immutable',
+  'Content-Type': object.ContentType ?? 'application/octet-stream',
+});
 ```
 
 Replace with:
 
 ```ts
-    const headers = new Headers({
-      'Cache-Control': 'public, max-age=31536000, immutable',
-      'Content-Type': object.ContentType ?? 'application/octet-stream',
-      'Content-Disposition': 'inline',
-      'X-Content-Type-Options': 'nosniff',
-      'Content-Security-Policy': "sandbox",
-    });
+const headers = new Headers({
+  'Cache-Control': 'public, max-age=31536000, immutable',
+  'Content-Type': object.ContentType ?? 'application/octet-stream',
+  'Content-Disposition': 'inline',
+  'X-Content-Type-Options': 'nosniff',
+  'Content-Security-Policy': 'sandbox',
+});
 ```
 
 `X-Content-Type-Options: nosniff` stops the browser from re-sniffing a stored content-type into something more dangerous than what Step 2 already verified server-side; `Content-Security-Policy: sandbox` on the response prevents any content served from this endpoint from executing script or navigating top-level, even in the event a future format gets added to the allowlist without equally careful signature verification. Both are harmless for the actual image/video responses this endpoint serves.
@@ -555,20 +558,20 @@ git commit -m "fix: verify asset upload signatures and harden delivery headers"
 In `packages/database/src/course-review-repository.ts`, find `freezeCourseRevision` (around line 89-124). After the existing readiness check:
 
 ```ts
-      const graph = toCourseGraph(course);
-      const readinessIssues = validateCourseReadiness(graph);
-      if (readinessIssues.length > 0) throw new CourseNotReadyError(readinessIssues);
+const graph = toCourseGraph(course);
+const readinessIssues = validateCourseReadiness(graph);
+if (readinessIssues.length > 0) throw new CourseNotReadyError(readinessIssues);
 ```
 
 add a canonical-schema parse before proceeding to build the revision snapshot:
 
 ```ts
-      const graph = toCourseGraph(course);
-      const readinessIssues = validateCourseReadiness(graph);
-      if (readinessIssues.length > 0) throw new CourseNotReadyError(readinessIssues);
-      if (!toPlayerCourseContent(graph, { includeAnswerKey: true })) {
-        throw new Error('COURSE_GRAPH_INVALID');
-      }
+const graph = toCourseGraph(course);
+const readinessIssues = validateCourseReadiness(graph);
+if (readinessIssues.length > 0) throw new CourseNotReadyError(readinessIssues);
+if (!toPlayerCourseContent(graph, { includeAnswerKey: true })) {
+  throw new Error('COURSE_GRAPH_INVALID');
+}
 ```
 
 Import it the same way `requestScormExport` already does in `apps/web/src/authoring/server/course-commands.ts:41,190`:
@@ -604,12 +607,12 @@ In `apps/web/src/app/api/course-studio/courses/[courseId]/revisions/route.ts`, t
 Add one more branch, alongside the `COURSE_SOURCES_NOT_INDEXED` check and before the final `unexpectedApiError` fallback:
 
 ```ts
-    if (error instanceof Error && error.message === 'COURSE_GRAPH_INVALID') {
-      return jsonError(
-        'This course has an invalid screen or field that cannot be frozen. Check recent edits and try again.',
-        422,
-      );
-    }
+if (error instanceof Error && error.message === 'COURSE_GRAPH_INVALID') {
+  return jsonError(
+    'This course has an invalid screen or field that cannot be frozen. Check recent edits and try again.',
+    422,
+  );
+}
 ```
 
 - [ ] **Step 3: Verify**
@@ -789,21 +792,21 @@ export async function duplicateLesson(lessonId: string, courseId: string): Promi
 In the same file, find `reorderCourseItem`'s lesson branch (around line 372-394):
 
 ```ts
-    const lesson = await tx.courseLesson.findUnique({
-      where: { id: input.id },
-      select: { chapterId: true },
-    });
-    if (!lesson) throw new Error('LESSON_NOT_FOUND');
+const lesson = await tx.courseLesson.findUnique({
+  where: { id: input.id },
+  select: { chapterId: true },
+});
+if (!lesson) throw new Error('LESSON_NOT_FOUND');
 ```
 
 becomes:
 
 ```ts
-    const lesson = await tx.courseLesson.findUnique({
-      where: { id: input.id },
-      select: { chapterId: true, chapter: { select: { courseId: true } } },
-    });
-    if (!lesson || lesson.chapter.courseId !== courseId) throw new Error('LESSON_NOT_FOUND');
+const lesson = await tx.courseLesson.findUnique({
+  where: { id: input.id },
+  select: { chapterId: true, chapter: { select: { courseId: true } } },
+});
+if (!lesson || lesson.chapter.courseId !== courseId) throw new Error('LESSON_NOT_FOUND');
 ```
 
 The chapter branch above it already scopes its `findMany` by `{ courseId }`, so a mismatched chapter ID already silently no-ops via `index < 0` — no change needed there.
@@ -864,13 +867,13 @@ export function updateAuthoringLesson(courseId: string, lessonId: string, input:
 And in `deleteOrDuplicateAuthoringLesson` (around line 98-121), pass `courseId` into the duplicate branch too, closing the same gap there:
 
 ```ts
-  if (action === 'duplicate') return { course: await duplicateLesson(lessonId) };
+if (action === 'duplicate') return { course: await duplicateLesson(lessonId) };
 ```
 
 becomes:
 
 ```ts
-  if (action === 'duplicate') return { course: await duplicateLesson(lessonId, courseId) };
+if (action === 'duplicate') return { course: await duplicateLesson(lessonId, courseId) };
 ```
 
 - [ ] **Step 5: Read `courseId` in the two route files**
@@ -1057,21 +1060,21 @@ Import `LessonCourseMismatchError` from `@/learning/server/progress-store` and `
 In `apps/web/src/learning/server/quiz-grading.ts`, find `loadQuizAnswerKey`'s course-quiz branch (around line 82-95):
 
 ```ts
-  const record = await prisma.courseQuiz.findUnique({
-    where: { id: quizId },
-    select: { payload: true },
-  });
-  if (!record) return null;
+const record = await prisma.courseQuiz.findUnique({
+  where: { id: quizId },
+  select: { payload: true },
+});
+if (!record) return null;
 ```
 
 becomes:
 
 ```ts
-  const record = await prisma.courseQuiz.findUnique({
-    where: { id: quizId },
-    select: { payload: true, courseId: true },
-  });
-  if (!record) return null;
+const record = await prisma.courseQuiz.findUnique({
+  where: { id: quizId },
+  select: { payload: true, courseId: true },
+});
+if (!record) return null;
 ```
 
 Change the function's return type to include `courseId` (add it to the `AnswerKey` interface above), and include it in both return branches (`source === 'ai'` returns a synthetic/no-owning-course answer key already — leave that branch's shape decision to whatever's simplest given the interface change, e.g. `courseId: null` for the AI-quiz branch since that path has no `CourseQuiz.courseId` to check against, and skip the ownership check in the route for that `source`).
@@ -1091,22 +1094,22 @@ export const SubmitQuizRequestSchema = z.object({
 In `apps/web/src/app/api/quiz/grade/route.ts`, after `loadQuizAnswerKey` resolves and before grading:
 
 ```ts
-    const key = await loadQuizAnswerKey(body.source, body.quizId);
-    if (!key) {
-      return jsonError('Quiz not found', 404);
-    }
+const key = await loadQuizAnswerKey(body.source, body.quizId);
+if (!key) {
+  return jsonError('Quiz not found', 404);
+}
 ```
 
 becomes:
 
 ```ts
-    const key = await loadQuizAnswerKey(body.source, body.quizId);
-    if (!key) {
-      return jsonError('Quiz not found', 404);
-    }
-    if (body.action === 'submit' && body.source === 'course' && key.courseId !== body.courseId) {
-      return jsonError('This quiz does not belong to the specified course', 400);
-    }
+const key = await loadQuizAnswerKey(body.source, body.quizId);
+if (!key) {
+  return jsonError('Quiz not found', 404);
+}
+if (body.action === 'submit' && body.source === 'course' && key.courseId !== body.courseId) {
+  return jsonError('This quiz does not belong to the specified course', 400);
+}
 ```
 
 **Scope note, not a gap to close silently:** the `question` action (single-question preview grading, used by the author-preview player) has no `courseId` in its schema and is therefore not covered by this check — it's unauthenticated and returns per-question correctness for any `quizId`/`questionIndex` regardless of course today, and continues to after this task. Closing that fully means either adding `courseId` to `GradeQuestionRequestSchema` (a wire-format change touching the author-preview player's call site too) or the signed learner-capability system this plan's spec explicitly excludes as a non-goal (there's no public learner delivery surface yet to justify building one for). Leaving it open here is a deliberate, stated scope boundary, not an oversight.
@@ -1120,7 +1123,7 @@ npm run lint
 git diff --check
 ```
 
-With the app running: open author preview for a course and confirm hotspot/lesson-view progress recording and quiz grading still work exactly as before (preview doesn't persist progress, but it exercises the same code paths for grading — confirm no console errors). Directly `curl` `/api/quiz/grade` with a real `quizId` but a `courseId` belonging to a *different* course and confirm it now returns 400 instead of grading against the wrong course's answer key.
+With the app running: open author preview for a course and confirm hotspot/lesson-view progress recording and quiz grading still work exactly as before (preview doesn't persist progress, but it exercises the same code paths for grading — confirm no console errors). Directly `curl` `/api/quiz/grade` with a real `quizId` but a `courseId` belonging to a _different_ course and confirm it now returns 400 instead of grading against the wrong course's answer key.
 
 - [ ] **Step 5: Commit**
 
@@ -1151,7 +1154,9 @@ const MAX_EXPORT_ASSET_BYTES = 500 * 1024 * 1024; // 500 MB, matches this app's 
 
 export class ExportTooLargeError extends Error {
   constructor(public readonly totalBytes: number) {
-    super(`Course media totals ${totalBytes} bytes, exceeding the ${MAX_EXPORT_ASSET_BYTES}-byte export limit`);
+    super(
+      `Course media totals ${totalBytes} bytes, exceeding the ${MAX_EXPORT_ASSET_BYTES}-byte export limit`,
+    );
     this.name = 'ExportTooLargeError';
   }
 }
@@ -1160,28 +1165,28 @@ export class ExportTooLargeError extends Error {
 In `buildScormPackage`, before the `for (const assetUrl of assetUrls)` download loop, add a size pre-check pass using each object's metadata (not its body) via a lightweight head-style call — check whether `@moto-ai/storage`'s `getObject` result exposes `ContentLength` without requiring the body to be read (it does, per `LocalStorageObject.ContentLength` in `packages/storage/src/local-client.ts`); since there's no separate head-only call, do the size accounting inline as part of the existing download loop instead of a separate pass, failing fast the moment the running total crosses the ceiling rather than after downloading everything:
 
 ```ts
-  const assetUrls = collectAssetRefs(input.content);
-  const urlMap = new Map<string, string>();
-  const assetFiles: Record<string, Buffer> = {};
-  let totalAssetBytes = 0;
+const assetUrls = collectAssetRefs(input.content);
+const urlMap = new Map<string, string>();
+const assetFiles: Record<string, Buffer> = {};
+let totalAssetBytes = 0;
 
-  for (const assetUrl of assetUrls) {
-    const r2Key = r2KeyFor(assetUrl);
-    if (!r2Key) continue;
-    const relativePath = `assets/${r2Key.split('/').slice(1).join('/')}`;
-    urlMap.set(assetUrl, relativePath);
-    let object: Awaited<ReturnType<typeof getObject>>;
-    try {
-      object = await getObject(r2Key);
-    } catch (error) {
-      if (isNotFoundError(error)) throw new AssetNotFoundError(r2Key);
-      throw error;
-    }
-    if (!object.Body) throw new AssetNotFoundError(r2Key);
-    totalAssetBytes += object.ContentLength ?? 0;
-    if (totalAssetBytes > MAX_EXPORT_ASSET_BYTES) throw new ExportTooLargeError(totalAssetBytes);
-    assetFiles[relativePath] = await streamToBuffer(object.Body);
+for (const assetUrl of assetUrls) {
+  const r2Key = r2KeyFor(assetUrl);
+  if (!r2Key) continue;
+  const relativePath = `assets/${r2Key.split('/').slice(1).join('/')}`;
+  urlMap.set(assetUrl, relativePath);
+  let object: Awaited<ReturnType<typeof getObject>>;
+  try {
+    object = await getObject(r2Key);
+  } catch (error) {
+    if (isNotFoundError(error)) throw new AssetNotFoundError(r2Key);
+    throw error;
   }
+  if (!object.Body) throw new AssetNotFoundError(r2Key);
+  totalAssetBytes += object.ContentLength ?? 0;
+  if (totalAssetBytes > MAX_EXPORT_ASSET_BYTES) throw new ExportTooLargeError(totalAssetBytes);
+  assetFiles[relativePath] = await streamToBuffer(object.Body);
+}
 ```
 
 This fails as soon as the running total crosses the ceiling rather than continuing to download the rest of a huge course's media first — not a full pre-flight check, but it bounds the worst case to one ceiling's worth of already-downloaded bytes plus whatever single asset pushed it over, not the entire course.
@@ -1212,52 +1217,52 @@ In the same file, find the `archiver` promise (around line 92-108):
 Replace with a temp-file-backed write stream, importing `createWriteStream`, `mkdtemp`, `readFile`, `rm` from `node:fs`/`node:fs/promises`, `tmpdir` from `node:os`, and `path` (already imported):
 
 ```ts
-  const tempDir = await mkdtemp(path.join(tmpdir(), 'scorm-export-'));
-  const tempZipPath = path.join(tempDir, 'package.zip');
+const tempDir = await mkdtemp(path.join(tmpdir(), 'scorm-export-'));
+const tempZipPath = path.join(tempDir, 'package.zip');
 
-  try {
-    await new Promise<void>((resolve, reject) => {
-      const archive = archiver('zip', { zlib: { level: 9 } });
-      const output = createWriteStream(tempZipPath);
-      archive.pipe(output);
-      archive.on('warning', (warning) => {
-        if (warning.code !== 'ENOENT') reject(warning);
-      });
-      archive.on('error', reject);
-      output.on('error', reject);
-      output.on('close', resolve);
-
-      archive.append(manifest, { name: 'imsmanifest.xml' });
-      for (const filename of XSD_FILES) {
-        archive.file(path.join(STATIC_DIR, filename), { name: filename });
-      }
-      for (const [relativePath, buffer] of Object.entries(input.playerBundle)) {
-        archive.append(buffer, { name: relativePath });
-      }
-      for (const [relativePath, buffer] of Object.entries(assetFiles)) {
-        archive.append(buffer, { name: relativePath });
-      }
-      archive.append(
-        `<?xml version="1.0" encoding="utf-8"?><meta><project title="${input.title.replace(/[<>&"']/g, '')}" datepublished="${new Date().toISOString()}" /></meta>`,
-        { name: 'meta.xml' },
-      );
-      archive.append(
-        `<!doctype html>\n<html><head><meta charset="utf-8" /><title>${input.title.replace(/[<>&]/g, '')}</title><meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'"><link rel="stylesheet" href="player.css" /></head><body><div id="app"></div><script id="course-data" type="application/json">${coursePayload.replace(/</g, '\\u003c')}</script><script src="player.js"></script></body></html>\n`,
-        { name: entryHref },
-      );
-
-      void archive.finalize();
+try {
+  await new Promise<void>((resolve, reject) => {
+    const archive = archiver('zip', { zlib: { level: 9 } });
+    const output = createWriteStream(tempZipPath);
+    archive.pipe(output);
+    archive.on('warning', (warning) => {
+      if (warning.code !== 'ENOENT') reject(warning);
     });
+    archive.on('error', reject);
+    output.on('error', reject);
+    output.on('close', resolve);
 
-    const buffer = await readFile(tempZipPath);
-    return {
-      buffer,
-      byteSize: buffer.byteLength,
-      sha256: createHash('sha256').update(buffer).digest('hex'),
-    };
-  } finally {
-    await rm(tempDir, { recursive: true, force: true });
-  }
+    archive.append(manifest, { name: 'imsmanifest.xml' });
+    for (const filename of XSD_FILES) {
+      archive.file(path.join(STATIC_DIR, filename), { name: filename });
+    }
+    for (const [relativePath, buffer] of Object.entries(input.playerBundle)) {
+      archive.append(buffer, { name: relativePath });
+    }
+    for (const [relativePath, buffer] of Object.entries(assetFiles)) {
+      archive.append(buffer, { name: relativePath });
+    }
+    archive.append(
+      `<?xml version="1.0" encoding="utf-8"?><meta><project title="${input.title.replace(/[<>&"']/g, '')}" datepublished="${new Date().toISOString()}" /></meta>`,
+      { name: 'meta.xml' },
+    );
+    archive.append(
+      `<!doctype html>\n<html><head><meta charset="utf-8" /><title>${input.title.replace(/[<>&]/g, '')}</title><meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'"><link rel="stylesheet" href="player.css" /></head><body><div id="app"></div><script id="course-data" type="application/json">${coursePayload.replace(/</g, '\\u003c')}</script><script src="player.js"></script></body></html>\n`,
+      { name: entryHref },
+    );
+
+    void archive.finalize();
+  });
+
+  const buffer = await readFile(tempZipPath);
+  return {
+    buffer,
+    byteSize: buffer.byteLength,
+    sha256: createHash('sha256').update(buffer).digest('hex'),
+  };
+} finally {
+  await rm(tempDir, { recursive: true, force: true });
+}
 ```
 
 This removes the `chunks: Buffer[]` accumulation and its `Buffer.concat` doubling at the moment of finalization — the archive is written straight to disk as it's built. The function still reads the finished ZIP back into one `Buffer` at the end, because its return contract (and `putObject`'s existing `bytes: Uint8Array` parameter in `apps/job-worker/src/handlers.ts`) is buffer-based; eliminating that final read would require changing `putObject`'s signature everywhere it's called, which is out of scope here. Per-asset streaming (never fully buffering `assetFiles` either) is the same kind of larger, cross-cutting change and is explicitly not attempted in this task.
@@ -1640,7 +1645,10 @@ becomes:
 ```ts
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { isAnalyticsPasswordValid, issueAnalyticsSessionToken } from '@/analytics/server/analytics-auth';
+import {
+  isAnalyticsPasswordValid,
+  issueAnalyticsSessionToken,
+} from '@/analytics/server/analytics-auth';
 import { checkRateLimit } from '@/server/auth/rate-limit';
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -1801,7 +1809,7 @@ source venv/bin/activate
 python -m unittest tests.test_retrieval -v
 ```
 
-Expected: `test_delete_failure_fails_closed` FAILS — the current implementation catches the `RuntimeError`, logs a warning, and proceeds to call `add_texts` anyway, so `assertRaises(RuntimeError)` never triggers and `add_texts.assert_not_called()` fails because it *was* called. `test_successful_delete_still_adds_new_chunks` should already PASS (it describes today's non-failure behavior too).
+Expected: `test_delete_failure_fails_closed` FAILS — the current implementation catches the `RuntimeError`, logs a warning, and proceeds to call `add_texts` anyway, so `assertRaises(RuntimeError)` never triggers and `add_texts.assert_not_called()` fails because it _was_ called. `test_successful_delete_still_adds_new_chunks` should already PASS (it describes today's non-failure behavior too).
 
 - [ ] **Step 3: Fail closed instead of swallowing the delete error**
 

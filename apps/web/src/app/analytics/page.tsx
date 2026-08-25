@@ -1,19 +1,14 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
 import { Bot, Users, Zap, Trophy, BookOpen, ArrowLeft } from 'lucide-react';
+import { isAnalyticsSessionValid } from '@/analytics/server/analytics-auth';
 import { getAnalyticsData } from '@/analytics/server/analytics.service';
 import React from 'react';
 
 export const dynamic = 'force-dynamic';
 
 async function requireAuth(): Promise<void> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('analytics_token')?.value;
-  const expected = process.env.ANALYTICS_PASSWORD;
-  if (!expected || token !== expected) {
-    redirect('/analytics/login');
-  }
+  if (!(await isAnalyticsSessionValid())) redirect('/analytics/login');
 }
 
 function relativeTime(date: Date): string {

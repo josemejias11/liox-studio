@@ -62,6 +62,12 @@ export type ProgressStoreDb = {
   hotspotVisit: {
     findMany(args: { where: { sessionId: string; layerId: string } }): Promise<HotspotVisitRow[]>;
   };
+  courseLesson: {
+    findUnique(args: {
+      where: { id: string };
+      select: { chapter: { select: { courseId: true } } };
+    }): Promise<{ chapter: { courseId: string } } | null>;
+  };
   $transaction<T>(callback: (tx: ProgressStoreTx) => Promise<T>): Promise<T>;
 };
 
@@ -75,17 +81,36 @@ type LessonProgressMap = Record<string, LessonProgressState>;
 type RecordLessonViewInput = {
   sessionId: string;
   lessonId: string;
-  courseId?: string;
+  courseId: string;
 };
 
 type RecordHotspotsInput = {
   sessionId: string;
   lessonId: string;
-  courseId?: string;
+  courseId: string;
   visitedHotspots?: string[];
   completed?: boolean;
   recordView?: boolean;
 };
+
+export class LessonCourseMismatchError extends Error {
+  constructor() {
+    super('LESSON_COURSE_MISMATCH');
+    this.name = 'LessonCourseMismatchError';
+  }
+}
+
+async function verifyLessonBelongsToCourse(
+  db: ProgressStoreDb,
+  lessonId: string,
+  courseId: string,
+): Promise<void> {
+  const lesson = await db.courseLesson.findUnique({
+    where: { id: lessonId },
+    select: { chapter: { select: { courseId: true } } },
+  });
+  if (!lesson || lesson.chapter.courseId !== courseId) throw new LessonCourseMismatchError();
+}
 
 const defaultDb: ProgressStoreDb = prisma;
 
@@ -118,24 +143,26 @@ export async function recordLessonView(
   input: RecordLessonViewInput,
   db: ProgressStoreDb = defaultDb,
 ) {
+  await verifyLessonBelongsToCourse(db, input.lessonId, input.courseId);
   await db.$transaction(async (tx) => {
     await upsertSession(tx, input.sessionId);
     await tx.lessonProgress.upsert({
       where: { sessionId_lessonId: { sessionId: input.sessionId, lessonId: input.lessonId } },
       update: {
-        courseId: input.courseId ?? '',
+        courseId: input.courseId,
         viewCount: { increment: 1 },
       },
       create: {
         sessionId: input.sessionId,
         lessonId: input.lessonId,
-        courseId: input.courseId ?? '',
+        courseId: input.courseId,
       },
     });
   });
 }
 
 export async function recordHotspots(input: RecordHotspotsInput, db: ProgressStoreDb = defaultDb) {
+  await verifyLessonBelongsToCourse(db, input.lessonId, input.courseId);
   await db.$transaction(async (tx) => {
     await upsertSession(tx, input.sessionId);
 
@@ -143,13 +170,13 @@ export async function recordHotspots(input: RecordHotspotsInput, db: ProgressSto
       where: { sessionId_lessonId: { sessionId: input.sessionId, lessonId: input.lessonId } },
       update: {
         completed: input.completed ?? false,
-        ...(input.courseId ? { courseId: input.courseId } : {}),
+        courseId: input.courseId,
         ...(input.recordView ? { viewCount: { increment: 1 } } : {}),
       },
       create: {
         sessionId: input.sessionId,
         lessonId: input.lessonId,
-        courseId: input.courseId ?? '',
+        courseId: input.courseId,
         completed: input.completed ?? false,
       },
     });

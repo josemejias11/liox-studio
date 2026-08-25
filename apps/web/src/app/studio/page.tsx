@@ -1,16 +1,13 @@
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
 import { BookOpen } from 'lucide-react';
-import { COURSE_STUDIO_COOKIE, courseStudioToken } from '@/server/auth/course-studio';
+import { isCourseStudioSessionValid } from '@/server/auth/course-studio';
 import { CourseCreationPanel } from '@/authoring/CourseCreationPanel';
 import { CourseLibrary } from '@/authoring/CourseLibrary';
 import { loadAuthoringLibrary } from '@/authoring/server/studio-loaders';
 import { createCourseAction } from './actions';
 
 export default async function CourseStudioHome() {
-  const expected = await courseStudioToken();
-  const token = (await cookies()).get(COURSE_STUDIO_COOKIE)?.value;
-  if (!expected || token !== expected) redirect('/studio/login');
+  if (!(await isCourseStudioSessionValid())) redirect('/studio/login');
   const { courses, generations, sourceRevisions, templates, duplicationJobs } =
     await loadAuthoringLibrary();
 

@@ -38,7 +38,10 @@ await build({
 
 const cssEntry = path.join(root, 'src', 'player-bundle', 'styles.css');
 const cssSource = await readFile(cssEntry, 'utf8');
-const result = await postcss([tailwindcss()]).process(cssSource, { from: cssEntry, to: path.join(outDir, 'player.css') });
+const result = await postcss([tailwindcss()]).process(cssSource, {
+  from: cssEntry,
+  to: path.join(outDir, 'player.css'),
+});
 await writeFile(path.join(outDir, 'player.css'), result.css);
 
 const fontsSource = path.join(root, 'src', 'player-bundle', 'fonts');

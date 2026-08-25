@@ -1,4 +1,7 @@
+import { createWriteStream } from 'node:fs';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import archiver from 'archiver';
@@ -14,6 +17,17 @@ export class AssetNotFoundError extends Error {
   constructor(public readonly r2Key: string) {
     super(`Asset not found in storage: ${r2Key}`);
     this.name = 'AssetNotFoundError';
+  }
+}
+
+const MAX_EXPORT_ASSET_BYTES = 500 * 1024 * 1024; // 500 MB, matches this app's course-media scale today
+
+export class ExportTooLargeError extends Error {
+  constructor(public readonly totalBytes: number) {
+    super(
+      `Course media totals ${totalBytes} bytes, exceeding the ${MAX_EXPORT_ASSET_BYTES}-byte export limit`,
+    );
+    this.name = 'ExportTooLargeError';
   }
 }
 
@@ -42,7 +56,9 @@ export interface ScormPackageInput {
   playerBundle: Record<string, Buffer>;
 }
 
-async function streamToBuffer(stream: { transformToByteArray(): Promise<Uint8Array> }): Promise<Buffer> {
+async function streamToBuffer(stream: {
+  transformToByteArray(): Promise<Uint8Array>;
+}): Promise<Buffer> {
   return Buffer.from(await stream.transformToByteArray());
 }
 
@@ -54,6 +70,7 @@ export async function buildScormPackage(input: ScormPackageInput): Promise<{
   const assetUrls = collectAssetRefs(input.content);
   const urlMap = new Map<string, string>();
   const assetFiles: Record<string, Buffer> = {};
+  let totalAssetBytes = 0;
 
   for (const assetUrl of assetUrls) {
     const r2Key = r2KeyFor(assetUrl);
@@ -68,12 +85,19 @@ export async function buildScormPackage(input: ScormPackageInput): Promise<{
       throw error;
     }
     if (!object.Body) throw new AssetNotFoundError(r2Key);
+    totalAssetBytes += object.ContentLength ?? 0;
+    if (totalAssetBytes > MAX_EXPORT_ASSET_BYTES) throw new ExportTooLargeError(totalAssetBytes);
     assetFiles[relativePath] = await streamToBuffer(object.Body);
   }
 
   const rewrittenContent = rewriteAssetUrls(input.content, urlMap);
-  const rewrittenAssistant = input.assistant ? rewriteAssetUrls(input.assistant, urlMap) : undefined;
-  const coursePayload = JSON.stringify({ content: rewrittenContent, assistant: rewrittenAssistant ?? null });
+  const rewrittenAssistant = input.assistant
+    ? rewriteAssetUrls(input.assistant, urlMap)
+    : undefined;
+  const coursePayload = JSON.stringify({
+    content: rewrittenContent,
+    assistant: rewrittenAssistant ?? null,
+  });
 
   const entryHref = 'index_lms.html';
   const fileHrefs = [
@@ -90,42 +114,50 @@ export async function buildScormPackage(input: ScormPackageInput): Promise<{
     fileHrefs: [entryHref, ...fileHrefs],
   });
 
-  return new Promise((resolve, reject) => {
-    const archive = archiver('zip', { zlib: { level: 9 } });
-    const chunks: Buffer[] = [];
-    archive.on('data', (chunk) => chunks.push(chunk));
-    archive.on('warning', (warning) => {
-      if (warning.code !== 'ENOENT') reject(warning);
-    });
-    archive.on('error', reject);
-    archive.on('end', () => {
-      const buffer = Buffer.concat(chunks);
-      resolve({
-        buffer,
-        byteSize: buffer.byteLength,
-        sha256: createHash('sha256').update(buffer).digest('hex'),
+  const tempDir = await mkdtemp(path.join(tmpdir(), 'scorm-export-'));
+  const tempZipPath = path.join(tempDir, 'package.zip');
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const archive = archiver('zip', { zlib: { level: 9 } });
+      const output = createWriteStream(tempZipPath);
+      archive.pipe(output);
+      archive.on('warning', (warning) => {
+        if (warning.code !== 'ENOENT') reject(warning);
       });
+      archive.on('error', reject);
+      output.on('error', reject);
+      output.on('close', resolve);
+
+      archive.append(manifest, { name: 'imsmanifest.xml' });
+      for (const filename of XSD_FILES) {
+        archive.file(path.join(STATIC_DIR, filename), { name: filename });
+      }
+      for (const [relativePath, buffer] of Object.entries(input.playerBundle)) {
+        archive.append(buffer, { name: relativePath });
+      }
+      for (const [relativePath, buffer] of Object.entries(assetFiles)) {
+        archive.append(buffer, { name: relativePath });
+      }
+      archive.append(
+        `<?xml version="1.0" encoding="utf-8"?><meta><project title="${input.title.replace(/[<>&"']/g, '')}" datepublished="${new Date().toISOString()}" /></meta>`,
+        { name: 'meta.xml' },
+      );
+      archive.append(
+        `<!doctype html>\n<html><head><meta charset="utf-8" /><title>${input.title.replace(/[<>&]/g, '')}</title><meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'"><link rel="stylesheet" href="player.css" /></head><body><div id="app"></div><script id="course-data" type="application/json">${coursePayload.replace(/</g, '\\u003c')}</script><script src="player.js"></script></body></html>\n`,
+        { name: entryHref },
+      );
+
+      void archive.finalize();
     });
 
-    archive.append(manifest, { name: 'imsmanifest.xml' });
-    for (const filename of XSD_FILES) {
-      archive.file(path.join(STATIC_DIR, filename), { name: filename });
-    }
-    for (const [relativePath, buffer] of Object.entries(input.playerBundle)) {
-      archive.append(buffer, { name: relativePath });
-    }
-    for (const [relativePath, buffer] of Object.entries(assetFiles)) {
-      archive.append(buffer, { name: relativePath });
-    }
-    archive.append(
-      `<?xml version="1.0" encoding="utf-8"?><meta><project title="${input.title.replace(/[<>&"']/g, '')}" datepublished="${new Date().toISOString()}" /></meta>`,
-      { name: 'meta.xml' },
-    );
-    archive.append(
-      `<!doctype html>\n<html><head><meta charset="utf-8" /><title>${input.title.replace(/[<>&]/g, '')}</title><meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'"><link rel="stylesheet" href="player.css" /></head><body><div id="app"></div><script id="course-data" type="application/json">${coursePayload.replace(/</g, '\\u003c')}</script><script src="player.js"></script></body></html>\n`,
-      { name: entryHref },
-    );
-
-    void archive.finalize();
-  });
+    const buffer = await readFile(tempZipPath);
+    return {
+      buffer,
+      byteSize: buffer.byteLength,
+      sha256: createHash('sha256').update(buffer).digest('hex'),
+    };
+  } finally {
+    await rm(tempDir, { recursive: true, force: true });
+  }
 }

@@ -63,7 +63,7 @@ export const SubmitQuizRequestSchema = z.object({
   ...gradeIdentity,
   answers: z.array(z.number().int().min(0).max(7)).min(1).max(20),
   sessionId: z.string().uuid().optional(),
-  courseId: z.string().min(1).max(100).optional(),
+  courseId: z.string().min(1).max(100),
 });
 
 export const QuizGradeRequestSchema = z.discriminatedUnion('action', [

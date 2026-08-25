@@ -404,12 +404,13 @@ Copy `.env.example` to `.env`.
 
 Copy `.env.local.example` to `.env.local`.
 
-| Variable                 | Required              | Purpose                                              |
-| ------------------------ | --------------------- | ---------------------------------------------------- |
-| `COURSE_STUDIO_PASSWORD` | Yes                   | Shared internal authoring password                   |
-| `ANALYTICS_PASSWORD`     | For analytics         | Separate shared dashboard password                   |
-| `PARSER_SERVICE_TOKEN`   | For parser operations | Internal bearer token shared with the parser service |
-| `LOCAL_STORAGE_ROOT`     | For storage           | Absolute path to the shared local storage directory  |
+| Variable                 | Required              | Purpose                                                                                                                                           |
+| ------------------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `COURSE_STUDIO_PASSWORD` | Yes                   | Shared internal authoring password                                                                                                                |
+| `ANALYTICS_PASSWORD`     | For analytics         | Separate shared dashboard password                                                                                                                |
+| `AUTH_SESSION_SECRET`    | Yes                   | Signs Course Studio and analytics session cookies; 32+ random bytes, e.g. `openssl rand -hex 32`. Rotating it invalidates every existing session. |
+| `PARSER_SERVICE_TOKEN`   | For parser operations | Internal bearer token shared with the parser service                                                                                              |
+| `LOCAL_STORAGE_ROOT`     | For storage           | Absolute path to the shared local storage directory                                                                                               |
 
 The root workspace runner loads `.env.local` before `.env` for the web app and
 job worker.
@@ -713,6 +714,14 @@ service and listener before changing application queries. Confirm both
 - Use Python 3.11 or later and the parser's virtual environment.
 - If port 8000 is occupied, set `PARSER_PORT` to an available port at or above
   1024 and update `PARSER_SERVICE_URL` accordingly.
+
+### Login rejects the correct password
+
+Check that `AUTH_SESSION_SECRET` is set. An unset secret makes both logins
+fail closed even when the password is correct; the login page shows a
+distinct "Server misconfiguration" message (`?error=config`) for this case,
+but it is still worth confirming the variable is set and checking the server
+log for the `AUTH_SESSION_SECRET is not set` message.
 
 ### SCORM export reports missing configuration
 

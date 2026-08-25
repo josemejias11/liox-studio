@@ -43,24 +43,34 @@ export async function POST(
   }
 }
 
-export async function PATCH(request: NextRequest): Promise<NextResponse> {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ courseId: string }> },
+): Promise<NextResponse> {
   if (!(await isCourseStudioAuthorized(request))) return jsonError('Unauthorized', 401);
   const body = await readJson(request, updateSchema);
   if (!body.success) return body.response;
   const { chapterId, ...input } = body.data;
   try {
-    return NextResponse.json({ course: await updateAuthoringChapter(chapterId, input) });
+    return NextResponse.json({
+      course: await updateAuthoringChapter((await params).courseId, chapterId, input),
+    });
   } catch (error) {
     return chapterError(error);
   }
 }
 
-export async function DELETE(request: NextRequest): Promise<NextResponse> {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ courseId: string }> },
+): Promise<NextResponse> {
   if (!(await isCourseStudioAuthorized(request))) return jsonError('Unauthorized', 401);
   const body = await readJson(request, deleteSchema);
   if (!body.success) return body.response;
   try {
-    return NextResponse.json({ course: await deleteAuthoringChapter(body.data.chapterId) });
+    return NextResponse.json({
+      course: await deleteAuthoringChapter((await params).courseId, body.data.chapterId),
+    });
   } catch (error) {
     return chapterError(error);
   }

@@ -96,17 +96,14 @@ def replace_document_chunks(
     chunks: list[str],
 ) -> int:
     vectorstore = get_vectorstore(course_id)
-    try:
-        vectorstore._collection.delete(  # noqa: SLF001
-            where={
-                "$and": [
-                    {"course_id": course_id},
-                    {"source_id": source_id},
-                ]
-            }
-        )
-    except Exception:
-        logger.warning("Could not delete previous chunks for source %s", source_id, exc_info=True)
+    vectorstore._collection.delete(  # noqa: SLF001
+        where={
+            "$and": [
+                {"course_id": course_id},
+                {"source_id": source_id},
+            ]
+        }
+    )
     vectorstore.add_texts(
         texts=chunks,
         metadatas=[

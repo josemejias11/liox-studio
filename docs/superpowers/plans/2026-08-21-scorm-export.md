@@ -46,6 +46,7 @@ JSON, fetch+embed its referenced assets, build the manifest, zip it. No code mov
 ### Task 1: Extract R2 access into `packages/storage`
 
 **Files:**
+
 - Create: `packages/storage/package.json`, `packages/storage/tsconfig.json`, `packages/storage/src/index.ts`,
   `packages/storage/src/r2-client.ts`
 - Modify: `apps/web/src/server/storage/course-assets.ts:1-93` (full current content already read)
@@ -53,6 +54,7 @@ JSON, fetch+embed its referenced assets, build the manifest, zip it. No code mov
 - Modify: `tsconfig.base.json`'s consuming workspaces — no change needed, each package already extends it directly.
 
 **Interfaces:**
+
 - Produces: `createR2Client(): S3Client` (config read from env internally, throws the same descriptive error as
   today if unset), `getR2Object(key: string): Promise<GetObjectCommandOutput>`,
   `putR2Object(input: { key: string; bytes: Uint8Array; contentType?: string }): Promise<void>`,
@@ -62,6 +64,7 @@ JSON, fetch+embed its referenced assets, build the manifest, zip it. No code mov
 - [ ] **Step 1: Create the package scaffold**
 
 `packages/storage/package.json`:
+
 ```json
 {
   "name": "@moto-ai/storage",
@@ -260,9 +263,11 @@ EOF
 ### Task 2: Schema — `SCORM_EXPORT` job kind and `CourseScormExport` model
 
 **Files:**
+
 - Modify: `packages/database/prisma/schema.prisma`
 
 **Interfaces:**
+
 - Produces: `enum BackgroundJobKind` gains `SCORM_EXPORT`; new `model CourseScormExport` with a unique `jobId`
   (mirrors `CourseGeneration`'s relation to `BackgroundJob`) and a `revisionId` relation to `CourseRevision`.
 - Consumes (Task 3, 10, 11): the new enum value and model, from `@moto-ai/database`.
@@ -270,6 +275,7 @@ EOF
 - [ ] **Step 1: Add the enum value**
 
 Change:
+
 ```prisma
 enum BackgroundJobKind {
   DOCUMENT_INDEX
@@ -277,7 +283,9 @@ enum BackgroundJobKind {
   AI_OPERATION
 }
 ```
+
 to:
+
 ```prisma
 enum BackgroundJobKind {
   DOCUMENT_INDEX
@@ -290,6 +298,7 @@ enum BackgroundJobKind {
 - [ ] **Step 2: Add the relation field to `BackgroundJob`**
 
 In the `model BackgroundJob { ... }` block, add a line alongside the existing `generation CourseGeneration?`:
+
 ```prisma
   generation     CourseGeneration?
   scormExport    CourseScormExport?
@@ -298,6 +307,7 @@ In the `model BackgroundJob { ... }` block, add a line alongside the existing `g
 - [ ] **Step 3: Add the relation field to `CourseRevision`**
 
 In the `model CourseRevision { ... }` block (has `generations CourseGeneration[]` today), add:
+
 ```prisma
   generations CourseGeneration[]
   scormExports CourseScormExport[]
@@ -306,6 +316,7 @@ In the `model CourseRevision { ... }` block (has `generations CourseGeneration[]
 - [ ] **Step 4: Add the new model**
 
 Place directly after the `CourseGeneration` model (same section of the file), mirroring its structure:
+
 ```prisma
 // Durable record of one SCORM export artifact for a frozen revision. Kept
 // separate from the BackgroundJob row itself, same pattern as CourseGeneration,
@@ -354,9 +365,11 @@ EOF
 ### Task 3: Contracts — job payload/result schemas
 
 **Files:**
+
 - Modify: `packages/contracts/src/jobs.ts:1-9` (the `JobKindSchema` and imports section)
 
 **Interfaces:**
+
 - Produces: `ScormExportPayloadSchema`, `ScormExportResultSchema`, `ScormExportPayload`, `ScormExportResult` types,
   `'scorm_export'` added to `JobKindSchema`.
 - Consumes (Task 10, 11): job-worker's handler and apps/web's enqueue function both import these.
@@ -364,6 +377,7 @@ EOF
 - [ ] **Step 1: Extend `JobKindSchema`**
 
 Change:
+
 ```ts
 export const JobKindSchema = z.enum([
   'document_index',
@@ -372,7 +386,9 @@ export const JobKindSchema = z.enum([
   'ai_operation',
 ]);
 ```
+
 to:
+
 ```ts
 export const JobKindSchema = z.enum([
   'document_index',
@@ -424,6 +440,7 @@ EOF
 ### Task 4: New package `packages/scorm-export` — manifest builder + static SCORM schemas
 
 **Files:**
+
 - Create: `packages/scorm-export/package.json`, `packages/scorm-export/tsconfig.json`,
   `packages/scorm-export/src/index.ts`, `packages/scorm-export/src/manifest.ts`
 - Create (static, copied from the reference export): `packages/scorm-export/static/adlcp_rootv1p2.xsd`,
@@ -431,12 +448,14 @@ EOF
   `packages/scorm-export/static/ims_xml.xsd`
 
 **Interfaces:**
+
 - Produces: `buildImsManifest(input: { title: string; scoIdentifier: string; masteryScore: number }): string`.
 - Consumes (Task 6): the zip orchestrator calls this and bundles the static XSDs alongside its output.
 
 - [ ] **Step 1: Package scaffold**
 
 `packages/scorm-export/package.json`:
+
 ```json
 {
   "name": "@moto-ai/scorm-export",
@@ -458,6 +477,7 @@ EOF
   }
 }
 ```
+
 `tsconfig.json`: copy the exact shape used by `packages/database/tsconfig.json` (extends
 `../../tsconfig.base.json`), pointed at this package's own `src`.
 
@@ -474,6 +494,7 @@ unzip -p "/Users/josemejias/Downloads/2026_STARSHIP_TRAINING_ELEARNING_LMS_MASTE
 unzip -p "/Users/josemejias/Downloads/2026_STARSHIP_TRAINING_ELEARNING_LMS_MASTER_EN.zip" imsmd_rootv1p2p1.xsd > imsmd_rootv1p2p1.xsd
 unzip -p "/Users/josemejias/Downloads/2026_STARSHIP_TRAINING_ELEARNING_LMS_MASTER_EN.zip" ims_xml.xsd > ims_xml.xsd
 ```
+
 Verify each file is non-empty and starts with `<?xml` before committing.
 
 - [ ] **Step 3: `packages/scorm-export/src/manifest.ts`**
@@ -503,9 +524,7 @@ export function buildImsManifest(input: {
   const { title, scoIdentifier, masteryScore, entryHref, fileHrefs } = input;
   const orgId = `${scoIdentifier}_ORG`;
   const resourceId = `${scoIdentifier}_RES`;
-  const fileTags = fileHrefs
-    .map((href) => `      <file href="${escapeXml(href)}" />`)
-    .join('\n');
+  const fileTags = fileHrefs.map((href) => `      <file href="${escapeXml(href)}" />`).join('\n');
 
   return `<?xml version="1.0" encoding="utf-8"?>
 <manifest identifier="${escapeXml(scoIdentifier)}" version="1.0" xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2" xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.imsproject.org/xsd/imscp_rootv1p1p2 imscp_rootv1p1p2.xsd http://www.imsglobal.org/xsd/imsmd_rootv1p2p1 imsmd_rootv1p2p1.xsd http://www.adlnet.org/xsd/adlcp_rootv1p2 adlcp_rootv1p2.xsd">
@@ -563,10 +582,12 @@ EOF
 ### Task 5: Asset collection and URL rewriting
 
 **Files:**
+
 - Create: `packages/scorm-export/src/assets.ts`
 - Modify: `packages/scorm-export/src/index.ts`
 
 **Interfaces:**
+
 - Produces: `collectAssetRefs(payload: unknown): string[]`, `rewriteAssetUrls(payload: unknown, urlMap: Map<string, string>): unknown`.
 - Consumes (Task 10): the job-worker handler calls both when assembling the export.
 
@@ -660,10 +681,12 @@ EOF
 ### Task 6: Zip orchestrator
 
 **Files:**
+
 - Create: `packages/scorm-export/src/build-package.ts`
 - Modify: `packages/scorm-export/src/index.ts`
 
 **Interfaces:**
+
 - Consumes: `buildImsManifest` (Task 4), `collectAssetRefs`/`rewriteAssetUrls`/`r2KeyFor` (Task 5), `getR2Object`
   from `@moto-ai/storage` (Task 1).
 - Produces: `buildScormPackage(input): Promise<{ buffer: Buffer; byteSize: number; sha256: string }>` — the
@@ -702,7 +725,9 @@ export interface ScormPackageInput {
   playerBundle: Record<string, Buffer>;
 }
 
-async function streamToBuffer(stream: { transformToByteArray(): Promise<Uint8Array> }): Promise<Buffer> {
+async function streamToBuffer(stream: {
+  transformToByteArray(): Promise<Uint8Array>;
+}): Promise<Buffer> {
   return Buffer.from(await stream.transformToByteArray());
 }
 
@@ -726,8 +751,13 @@ export async function buildScormPackage(input: ScormPackageInput): Promise<{
   }
 
   const rewrittenContent = rewriteAssetUrls(input.content, urlMap);
-  const rewrittenAssistant = input.assistant ? rewriteAssetUrls(input.assistant, urlMap) : undefined;
-  const coursePayload = JSON.stringify({ content: rewrittenContent, assistant: rewrittenAssistant ?? null });
+  const rewrittenAssistant = input.assistant
+    ? rewriteAssetUrls(input.assistant, urlMap)
+    : undefined;
+  const coursePayload = JSON.stringify({
+    content: rewrittenContent,
+    assistant: rewrittenAssistant ?? null,
+  });
 
   const entryHref = 'index_lms.html';
   const fileHrefs = [
@@ -822,9 +852,11 @@ EOF
 ### Task 7: SCORM 1.2 API bridge
 
 **Files:**
+
 - Create: `packages/scorm-export/src/player-bundle/scorm-api.ts`
 
 **Interfaces:**
+
 - Produces: `class ScormBridge` with `connect()`, `isConnected`, `getBookmark()`, `setBookmark(lessonKey)`,
   `getSuspendData()`, `setSuspendData(data)`, `reportInProgress()`,
   `reportQuizResult({score, total, passed})`, `reportComplete()`, `finish()`.
@@ -995,11 +1027,13 @@ EOF
 ### Task 8: Standalone player bundle (esbuild entry point + build script)
 
 **Files:**
+
 - Create: `packages/scorm-export/src/player-bundle/entry.tsx`,
   `packages/scorm-export/src/player-bundle/styles.css`, `packages/scorm-export/scripts/build-player.mjs`
 - Modify: `packages/scorm-export/package.json` (add `build` script + React/esbuild/PostCSS deps)
 
 **Interfaces:**
+
 - Consumes: `MotoViewer` from `apps/web/src/learning/player/MotoViewer.tsx` (imported by relative path across
   the workspace — see Step 1 for how esbuild resolves the `@/` alias apps/web code uses internally), `ScormBridge`
   (Task 7).
@@ -1020,6 +1054,7 @@ Read `apps/web/src/app/globals.css` in full and copy it here **verbatim** (all `
 bundle renders with the identical Motorola brand theme as the live app — do not re-author the theme tokens from
 memory. After the copied content, add one line so Tailwind's v4 automatic content-scanning also covers the
 player component tree (which lives outside this package's own directory):
+
 ```css
 @source '../../../../apps/web/src';
 ```
@@ -1116,7 +1151,10 @@ await build({
 
 const cssEntry = path.join(root, 'src', 'player-bundle', 'styles.css');
 const cssSource = await readFile(cssEntry, 'utf8');
-const result = await postcss([tailwindcss()]).process(cssSource, { from: cssEntry, to: path.join(outDir, 'player.css') });
+const result = await postcss([tailwindcss()]).process(cssSource, {
+  from: cssEntry,
+  to: path.join(outDir, 'player.css'),
+});
 await writeFile(path.join(outDir, 'player.css'), result.css);
 
 console.log('Built packages/scorm-export/dist/player.js and player.css');
@@ -1171,12 +1209,14 @@ EOF
 ### Task 9: `MotoViewer` completion-signal props (additive only)
 
 **Files:**
+
 - Modify: `apps/web/src/learning/player/MotoViewer.tsx`
 - Modify: `apps/web/src/learning/player/CoursePhaseScreen.tsx`
 
 **Interfaces:**
+
 - Produces: two new optional `MotoViewer` props, `onFinalQuizResult?: (result: { score: number; total: number;
-  passed: boolean }) => void` and `onCourseComplete?: () => void`.
+passed: boolean }) => void` and `onCourseComplete?: () => void`.
 - Consumes (Task 8): the player-bundle entry point wires both to the `ScormBridge`.
 
 **No existing caller passes these props** (`CourseStudioWorkspace.tsx`, `ReviewPlayer.tsx` via `PlayerViewport`) —
@@ -1192,6 +1232,7 @@ rather than trusting any numbers cited elsewhere in this plan.
 
 In the destructured props and the type annotation, add `onFinalQuizResult` and `onCourseComplete` alongside the
 existing `onLessonChange`/`onAssistantAnswer` props (same optional-callback shape):
+
 ```ts
 onFinalQuizResult?: (result: { score: number; total: number; passed: boolean }) => void;
 onCourseComplete?: () => void;
@@ -1251,10 +1292,12 @@ EOF
 ### Task 10: Job-worker handler
 
 **Files:**
+
 - Modify: `apps/job-worker/src/handlers.ts`
 - Modify: `apps/job-worker/package.json` (add `@moto-ai/scorm-export` dependency)
 
 **Interfaces:**
+
 - Consumes: `ScormExportPayloadSchema` (Task 3), `buildScormPackage` (Task 6), `putR2Object` (Task 1), Prisma
   client (`prisma.courseRevision.findUnique`, `prisma.courseScormExport.create` — direct Prisma access from
   job-worker is already an established pattern, see `generateCourse`'s `prisma.courseRevision.findUnique` call
@@ -1270,7 +1313,9 @@ converted from `CourseGraph` to player-ready shape by `apps/web` — see Task 11
 Add near the other handler functions in `apps/job-worker/src/handlers.ts`:
 
 ```ts
-async function scormExport(job: ClaimedJob): Promise<import('@moto-ai/contracts/jobs').ScormExportResult> {
+async function scormExport(
+  job: ClaimedJob,
+): Promise<import('@moto-ai/contracts/jobs').ScormExportResult> {
   const payload = ScormExportPayloadSchema.safeParse(job.payload);
   if (!payload.success) {
     throw new NonRetryableJobError('The queued export request is invalid. Trigger a new export.');
@@ -1345,6 +1390,7 @@ from '@moto-ai/storage';`.
 The current dispatch checks `kind === 'document_index'` then falls through to payload-shape sniffing for the
 `AI_OPERATION`-overloaded kinds. `SCORM_EXPORT` is a first-class enum value (Task 2), so it doesn't need
 sniffing — add an explicit branch. Change:
+
 ```ts
 export async function executeJob(job: ClaimedJob): Promise<unknown> {
   const kind: JobKind =
@@ -1361,7 +1407,9 @@ export async function executeJob(job: ClaimedJob): Promise<unknown> {
   throw new NonRetryableJobError('This AI operation is not registered with the worker.');
 }
 ```
+
 to:
+
 ```ts
 export async function executeJob(job: ClaimedJob): Promise<unknown> {
   if (job.kind === 'DOCUMENT_INDEX') return indexDocument(job);
@@ -1373,6 +1421,7 @@ export async function executeJob(job: ClaimedJob): Promise<unknown> {
   throw new NonRetryableJobError('This AI operation is not registered with the worker.');
 }
 ```
+
 (This also simplifies away the unused `kind` variable's `QUIZ_GENERATE`/`ai_operation` ternary, which was dead
 weight — both branches of that ternary resolved to `'ai_operation'` and `kind` was only ever compared against
 `'document_index'`. Confirm via `grep -n "\bkind\b" apps/job-worker/src/handlers.ts` after this edit that `kind`
@@ -1409,19 +1458,22 @@ EOF
 ### Task 11: Enqueue function + apps/web server command (builds the content JSON)
 
 **Files:**
+
 - Modify: `packages/jobs/src/queue.ts`
 - Modify: `apps/web/src/authoring/server/course-commands.ts`
 
 **Interfaces:**
+
 - Produces: `enqueueScormExportJob(input: { revisionId: string; content: unknown; assistant: unknown;
-  masteryScore: number }): Promise<JobAcceptedResponse>` in `packages/jobs`; `requestScormExport(revisionId:
-  string): Promise<JobAcceptedResponse>` in `apps/web`'s server commands (the piece that actually builds the
+masteryScore: number }): Promise<JobAcceptedResponse>` in `packages/jobs`; `requestScormExport(revisionId:
+string): Promise<JobAcceptedResponse>` in `apps/web`'s server commands (the piece that actually builds the
   content JSON via `toPlayerCourseContent`).
 - Consumes (Task 12): the new POST API route calls `requestScormExport`.
 
 - [ ] **Step 1: Add `enqueueScormExportJob` to `packages/jobs/src/queue.ts`**
 
 Add `SCORM_EXPORT` to the `databaseKind`/`publicKind` maps:
+
 ```ts
 const databaseKind: Record<JobKind, BackgroundJobKind> = {
   document_index: BackgroundJobKind.DOCUMENT_INDEX,
@@ -1438,7 +1490,9 @@ const publicKind: Record<BackgroundJobKind, Exclude<JobKind, 'course_generate'>>
   SCORM_EXPORT: 'scorm_export',
 };
 ```
+
 Add the enqueue function, following `enqueueDocumentIndexJob`'s artifact-carrying pattern exactly:
+
 ```ts
 export async function enqueueScormExportJob(input: {
   revisionId: string;
@@ -1447,18 +1501,28 @@ export async function enqueueScormExportJob(input: {
   masteryScore: number;
 }): Promise<JobAcceptedResponse> {
   const bytes = Buffer.from(
-    JSON.stringify({ content: input.content, assistant: input.assistant, masteryScore: input.masteryScore }),
+    JSON.stringify({
+      content: input.content,
+      assistant: input.assistant,
+      masteryScore: input.masteryScore,
+    }),
     'utf8',
   );
-  return enqueue('scorm_export', { revisionId: input.revisionId }, `scorm-export:${input.revisionId}:${bytes.length}`, {
-    filename: 'course-content.json',
-    contentType: 'application/json',
-    bytes,
-  });
+  return enqueue(
+    'scorm_export',
+    { revisionId: input.revisionId },
+    `scorm-export:${input.revisionId}:${bytes.length}`,
+    {
+      filename: 'course-content.json',
+      contentType: 'application/json',
+      bytes,
+    },
+  );
 }
 ```
+
 Note the dedupe key intentionally includes `bytes.length`, not a content hash — re-exporting the exact same
-frozen revision should be idempotent against the *queue* (avoid piling up duplicate in-flight jobs for rapid
+frozen revision should be idempotent against the _queue_ (avoid piling up duplicate in-flight jobs for rapid
 double-clicks), but a byte-length-only key is a weak dedupe; if two different revisions' content happened to
 serialize to the exact same byte length this would incorrectly dedupe them together. Use a proper content hash
 instead: `createHash('sha256').update(bytes).digest('hex')` (import `createHash` from `node:crypto`) as part of
@@ -1541,10 +1605,12 @@ EOF
 ### Task 12: API routes
 
 **Files:**
+
 - Create: `apps/web/src/app/api/course-studio/revisions/[revisionId]/scorm-export/route.ts`
 - Create: `apps/web/src/app/api/course-studio/exports/[exportId]/download/route.ts`
 
 **Interfaces:**
+
 - Consumes: `requestScormExport` (Task 11), `getR2Object` from `@moto-ai/storage` (Task 1), `prisma` for the
   download route's `CourseScormExport` lookup.
 
@@ -1572,7 +1638,10 @@ export async function POST(
       return jsonError('Revision not found', 404);
     }
     if (error instanceof Error && error.message === 'REVISION_CONTENT_INVALID') {
-      return jsonError('This revision contains invalid player content and cannot be exported.', 422);
+      return jsonError(
+        'This revision contains invalid player content and cannot be exported.',
+        422,
+      );
     }
     return unexpectedApiError('course-studio/scorm-export', error);
   }
@@ -1596,7 +1665,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ exportId: string }> },
 ) {
-  if (!(await isCourseStudioAuthorized(request))) return new Response('Unauthorized', { status: 401 });
+  if (!(await isCourseStudioAuthorized(request)))
+    return new Response('Unauthorized', { status: 401 });
 
   const { exportId } = await params;
   const record = await prisma.courseScormExport.findUnique({ where: { id: exportId } });
@@ -1647,14 +1717,17 @@ EOF
 ### Task 13: `RevisionPanel` UI
 
 **Files:**
+
 - Modify: `apps/web/src/authoring/RevisionPanel.tsx`
 
 **Interfaces:**
+
 - Consumes: the two new API routes (Task 12), `GET /api/jobs/[id]` (existing, unchanged).
 
 - [ ] **Step 1: Add export state**
 
 Alongside the existing `busy`/`message`/`reviewUrl` state, add:
+
 ```ts
 const [exportUrl, setExportUrl] = useState<string | null>(null);
 ```
@@ -1687,7 +1760,11 @@ async function exportScorm(revisionId: string) {
         status: typeof status;
         result: { exportId?: string } | null;
         errorMessage: string | null;
-      }>(`/api/jobs/${encodeURIComponent(jobId)}`, { method: 'GET' }, 'SCORM export status could not be read.');
+      }>(
+        `/api/jobs/${encodeURIComponent(jobId)}`,
+        { method: 'GET' },
+        'SCORM export status could not be read.',
+      );
       if (!isCurrentCourse(generation)) return;
       status = job.status;
       result = job.result;
@@ -1724,18 +1801,22 @@ next to the existing "Create review link"/"Replace review link" button, followin
 ```
 
 Below the existing `reviewUrl` download-link block, add an analogous one for `exportUrl`:
+
 ```tsx
-{exportUrl && (
-  <a
-    className="studio-glass-control border-primary text-primary mt-3 flex w-full items-center gap-2 rounded-lg border p-2 text-left text-xs"
-    href={exportUrl}
-    download
-  >
-    <Clipboard className="h-4 w-4 shrink-0" />
-    <span className="truncate">Download SCORM package</span>
-  </a>
-)}
+{
+  exportUrl && (
+    <a
+      className="studio-glass-control border-primary text-primary mt-3 flex w-full items-center gap-2 rounded-lg border p-2 text-left text-xs"
+      href={exportUrl}
+      download
+    >
+      <Clipboard className="h-4 w-4 shrink-0" />
+      <span className="truncate">Download SCORM package</span>
+    </a>
+  );
+}
 ```
+
 (Reuses the already-imported `Clipboard` icon for visual consistency; swap for a more literal download icon from
 `lucide-react` if one is already imported elsewhere in this file — check the current import list first.)
 
@@ -1767,6 +1848,7 @@ EOF
 ### Task 14: Deploy wiring — job-worker build step
 
 **Files:**
+
 - Modify: `apps/job-worker/package.json`
 - Modify: root `package.json` (if a root `build` orchestration step should cover this — check current root
   `build` script content first; it currently only builds `apps/web`)
@@ -1777,9 +1859,11 @@ EOF
 - [ ] **Step 1: Add a `build` script to `apps/job-worker/package.json`**
 
 `apps/job-worker` currently has no `build` script (only `dev`/`typecheck`). Add:
+
 ```json
 "build": "npm run build --workspace=@moto-ai/scorm-export"
 ```
+
 (Confirm `packages/scorm-export/package.json`'s `build` script — added in Task 8 — is what actually runs; adjust
 the workspace-invocation syntax to match how this monorepo's `npm run` scripts already invoke cross-workspace
 commands, e.g. check `scripts/run-workspace.mjs`'s usage pattern first and follow the same convention rather than

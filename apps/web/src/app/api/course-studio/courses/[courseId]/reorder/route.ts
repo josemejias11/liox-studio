@@ -10,6 +10,13 @@ const schema = z.object({
   direction: z.enum(['up', 'down']),
 });
 
+function reorderError(error: unknown) {
+  if (error instanceof Error && error.message === 'LESSON_NOT_FOUND') {
+    return jsonError('Lesson not found', 404);
+  }
+  return unexpectedApiError('course-studio/reorder', error);
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ courseId: string }> },
@@ -22,6 +29,6 @@ export async function POST(
       course: await reorderAuthoringCourseItem((await params).courseId, body.data),
     });
   } catch (error) {
-    return unexpectedApiError('course-studio/reorder', error);
+    return reorderError(error);
   }
 }
