@@ -129,10 +129,7 @@ library:
   created from a template carries a concrete `templateChecklist` of
   destination-entity requirements — unresolved placeholder text, missing
   required media, and unedited assessment copy are readiness failures until
-  the author changes them (see "Course readiness gates" below). Moto g87's
-  own seed script (`scripts/seed-moto-g87-course.ts`) is never imported or
-  executed by template code; moto g87 remains a maintenance demo, not a
-  template source.
+  the author changes them (see "Course readiness gates" below).
 
 **Exact course duplication** is a separate action, available from each course
 card in the library ("Duplicate course"). It captures a consistent snapshot of
@@ -264,8 +261,7 @@ token and OpenAI key must never be exposed to browser code.
 ├── services/
 │   └── parser-service/         Native Python FastAPI, OpenAI, and Chroma service
 ├── scripts/
-│   ├── run-workspace.mjs       Root environment loading and workspace delegation
-│   └── seed-moto-g87-course.ts Development course seeding utility
+│   └── run-workspace.mjs       Root environment loading and workspace delegation
 ├── docs/superpowers/           Historical implementation plans and design records
 ├── .env.example                Database and non-secret service configuration
 ├── .env.local.example          Local passwords, tokens, and local storage root
