@@ -59,6 +59,7 @@ model Course {
   cover                      Json?
   specifications             Json?
   disclaimer                 Json?
+  theme                      String                @default("moto-theme")
   finalQuizId                String?               @unique
   chapters                   CourseChapter[]
   quizzes                    CourseQuiz[]          @relation("CourseQuizzes")

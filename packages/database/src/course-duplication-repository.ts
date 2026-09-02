@@ -174,6 +174,7 @@ export async function persistDuplicatedCourse(input: {
           cover: jsonValue(graph.cover),
           specifications: jsonValue(graph.specifications),
           disclaimer: jsonValue(graph.disclaimer),
+          theme: graph.theme,
           createdFromTemplateKey: graph.createdFromTemplateKey ?? null,
           createdFromTemplateVersion: graph.createdFromTemplateVersion ?? null,
           templateChecklist: jsonValue(remapTemplateChecklist(graph.templateChecklist, entityIds)),

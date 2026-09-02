@@ -17,6 +17,7 @@ export interface CourseDetailsInput {
   cover?: Prisma.InputJsonValue | null;
   specifications?: Prisma.InputJsonValue | null;
   disclaimer?: Prisma.InputJsonValue | null;
+  theme?: string;
 }
 
 function slugify(value: string): string {
@@ -79,6 +80,7 @@ export const courseGraphSelect = Prisma.validator<Prisma.CourseSelect>()({
   cover: true,
   specifications: true,
   disclaimer: true,
+  theme: true,
   finalQuiz: {
     select: { id: true, title: true, instructions: true, payload: true },
   },
@@ -271,6 +273,7 @@ export async function updateCourseDetails(
         ? { learningObjectives: jsonValue(input.learningObjectives) }
         : {}),
       ...(input.cover !== undefined ? { cover: jsonValue(input.cover) } : {}),
+      ...(input.theme !== undefined ? { theme: input.theme } : {}),
       ...(input.specifications !== undefined
         ? { specifications: jsonValue(input.specifications) }
         : {}),

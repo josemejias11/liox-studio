@@ -8,6 +8,7 @@
     "./course-assets": "./src/course-assets.ts",
     "./course-generation": "./src/course-generation.ts",
     "./course-studio": "./src/course-studio.ts",
+    "./course-themes": "./src/course-themes.ts",
     "./jobs": "./src/jobs.ts",
     "./quiz": "./src/quiz.ts"
   },

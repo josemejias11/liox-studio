@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { courseThemeSchema } from './course-themes';
+
 type CourseGraphJsonValue =
   | null
   | boolean
@@ -116,6 +118,7 @@ export interface CourseGraph {
   cover: unknown | null;
   specifications: unknown | null;
   disclaimer: unknown | null;
+  theme: string;
   finalQuiz: CourseGraphQuiz | null;
   chapters: CourseGraphChapter[];
 }
@@ -159,6 +162,7 @@ export const CourseGraphSchema = z.object({
   cover: CourseGraphJsonValueSchema,
   specifications: CourseGraphJsonValueSchema,
   disclaimer: CourseGraphJsonValueSchema,
+  theme: courseThemeSchema,
   finalQuiz: CourseGraphQuizSchema.nullable(),
   chapters: z.array(CourseGraphChapterSchema),
 });

@@ -5,5 +5,6 @@ export * from './course-generation';
 export * from './course-readiness';
 export * from './course-studio';
 export * from './course-template';
+export * from './course-themes';
 export * from './jobs';
 export * from './quiz';
