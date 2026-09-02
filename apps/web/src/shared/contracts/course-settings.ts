@@ -1,10 +1,11 @@
 import { z } from 'zod';
 
 import { CourseImageReferenceSchema } from '@moto-ai/contracts/course-assets';
+import { courseThemeSchema, DEFAULT_COURSE_THEME } from '@moto-ai/contracts/course-themes';
 
 export type JsonObject = Record<string, unknown>;
 
-const coverButtonColorSchema = z.enum(['moto-indigo', 'moto-frost', 'moto-pearl']);
+const coverButtonColorSchema = z.enum(['primary', 'secondary', 'tertiary']);
 export const disclaimerCategorySchema = z.enum([
   'legal',
   'safety',
@@ -66,6 +67,7 @@ export const courseSettingsInputSchema = z
     description: z.string().max(2000).nullable(),
     learningObjectives: z.array(z.string().trim().min(1, 'Objective cannot be empty.')),
     cover: courseCoverSchema.nullable(),
+    theme: courseThemeSchema.default(DEFAULT_COURSE_THEME),
     specifications: z.array(courseSpecificationSchema),
     disclaimer: courseDisclaimerSchema.nullable(),
   })
