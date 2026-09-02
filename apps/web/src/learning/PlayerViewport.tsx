@@ -1,7 +1,7 @@
 'use client';
 
 import { useLayoutEffect, useRef, useState } from 'react';
-import MotoViewer from '@/learning/player/MotoViewer';
+import CoursePlayer from '@/learning/player/CoursePlayer';
 import type { NormalizedCourseContent } from '@/learning/course-content';
 import type { RevisionIdentity } from '@/shared/contracts/api';
 import type { OfflineAssistantPayload } from '@lb-studio/contracts';
@@ -81,7 +81,7 @@ export function PlayerViewport({
             transformOrigin: 'top left',
           }}
         >
-          <MotoViewer
+          <CoursePlayer
             course={content.course}
             initialSectionKey={selectedLessonId}
             sections={content.sections}

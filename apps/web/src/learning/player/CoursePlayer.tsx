@@ -40,7 +40,7 @@ const slideVariants = {
 const COURSE_RESUME_KEY_PREFIX = 'mototutor_course_resume:';
 const PREVIEW_RESUME_KEY_PREFIX = 'mototutor_preview_resume:';
 
-export default function MotoViewer({
+export default function CoursePlayer({
   course,
   sections,
   preview = false,
