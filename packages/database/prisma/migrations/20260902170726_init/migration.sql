@@ -11,7 +11,10 @@ CREATE TYPE "CourseSourceIndexStatus" AS ENUM ('PENDING', 'INDEXED', 'FAILED', '
 CREATE TYPE "CourseGenerationStatus" AS ENUM ('QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED');
 
 -- CreateEnum
-CREATE TYPE "BackgroundJobKind" AS ENUM ('DOCUMENT_INDEX', 'QUIZ_GENERATE', 'AI_OPERATION');
+CREATE TYPE "CourseAssistantQaStatus" AS ENUM ('DRAFT', 'APPROVED');
+
+-- CreateEnum
+CREATE TYPE "BackgroundJobKind" AS ENUM ('DOCUMENT_INDEX', 'QUIZ_GENERATE', 'AI_OPERATION', 'SCORM_EXPORT', 'COURSE_DUPLICATE');
 
 -- CreateEnum
 CREATE TYPE "BackgroundJobStatus" AS ENUM ('QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED');
@@ -22,10 +25,16 @@ CREATE TABLE "Course" (
     "slug" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "description" TEXT,
+    "createdFromTemplateKey" TEXT,
+    "createdFromTemplateVersion" INTEGER,
+    "templateChecklist" JSONB,
+    "creationJobId" TEXT,
+    "duplicatedFromCourseId" TEXT,
     "learningObjectives" JSONB,
     "cover" JSONB,
     "specifications" JSONB,
     "disclaimer" JSONB,
+    "finalQuizId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -149,6 +158,35 @@ CREATE TABLE "CourseRevision" (
 );
 
 -- CreateTable
+CREATE TABLE "CourseAssistantQa" (
+    "id" TEXT NOT NULL,
+    "courseId" TEXT NOT NULL,
+    "questionVariants" JSONB NOT NULL,
+    "matchingKeywords" JSONB NOT NULL,
+    "approvedAnswer" TEXT NOT NULL,
+    "citations" JSONB NOT NULL,
+    "status" "CourseAssistantQaStatus" NOT NULL DEFAULT 'DRAFT',
+    "sourceIds" JSONB NOT NULL,
+    "sourceHashes" JSONB NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "CourseAssistantQa_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CourseRevisionAssistantQa" (
+    "revisionId" TEXT NOT NULL,
+    "assistantQaId" TEXT NOT NULL,
+    "questionVariants" JSONB NOT NULL,
+    "matchingKeywords" JSONB NOT NULL,
+    "approvedAnswer" TEXT NOT NULL,
+    "citations" JSONB NOT NULL,
+
+    CONSTRAINT "CourseRevisionAssistantQa_pkey" PRIMARY KEY ("revisionId","assistantQaId")
+);
+
+-- CreateTable
 CREATE TABLE "CourseRevisionSource" (
     "revisionId" TEXT NOT NULL,
     "sourceFileId" TEXT NOT NULL,
@@ -176,6 +214,19 @@ CREATE TABLE "CourseGeneration" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "CourseGeneration_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CourseScormExport" (
+    "id" TEXT NOT NULL,
+    "revisionId" TEXT NOT NULL,
+    "jobId" TEXT NOT NULL,
+    "r2Key" TEXT NOT NULL,
+    "byteSize" INTEGER NOT NULL,
+    "sha256" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "CourseScormExport_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -299,6 +350,12 @@ CREATE TABLE "JobArtifact" (
 CREATE UNIQUE INDEX "Course_slug_key" ON "Course"("slug");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Course_creationJobId_key" ON "Course"("creationJobId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Course_finalQuizId_key" ON "Course"("finalQuizId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "CourseChapter_quickCheckId_key" ON "CourseChapter"("quickCheckId");
 
 -- CreateIndex
@@ -347,6 +404,9 @@ CREATE UNIQUE INDEX "CourseRevision_courseId_version_key" ON "CourseRevision"("c
 CREATE UNIQUE INDEX "CourseRevision_courseId_sourceHash_key" ON "CourseRevision"("courseId", "sourceHash");
 
 -- CreateIndex
+CREATE INDEX "CourseAssistantQa_courseId_status_updatedAt_idx" ON "CourseAssistantQa"("courseId", "status", "updatedAt");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "CourseGeneration_jobId_key" ON "CourseGeneration"("jobId");
 
 -- CreateIndex
@@ -357,6 +417,12 @@ CREATE INDEX "CourseGeneration_sourceRevisionId_createdAt_idx" ON "CourseGenerat
 
 -- CreateIndex
 CREATE INDEX "CourseGeneration_status_createdAt_idx" ON "CourseGeneration"("status", "createdAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "CourseScormExport_jobId_key" ON "CourseScormExport"("jobId");
+
+-- CreateIndex
+CREATE INDEX "CourseScormExport_revisionId_createdAt_idx" ON "CourseScormExport"("revisionId", "createdAt");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "CourseReview_revisionId_key" ON "CourseReview"("revisionId");
@@ -404,6 +470,9 @@ CREATE INDEX "BackgroundJob_completedAt_idx" ON "BackgroundJob"("completedAt");
 CREATE UNIQUE INDEX "JobArtifact_jobId_key" ON "JobArtifact"("jobId");
 
 -- AddForeignKey
+ALTER TABLE "Course" ADD CONSTRAINT "Course_finalQuizId_fkey" FOREIGN KEY ("finalQuizId") REFERENCES "CourseQuiz"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "CourseChapter" ADD CONSTRAINT "CourseChapter_courseId_fkey" FOREIGN KEY ("courseId") REFERENCES "Course"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -431,6 +500,12 @@ ALTER TABLE "CourseSourceBinding" ADD CONSTRAINT "CourseSourceBinding_sourceFile
 ALTER TABLE "CourseRevision" ADD CONSTRAINT "CourseRevision_courseId_fkey" FOREIGN KEY ("courseId") REFERENCES "Course"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "CourseAssistantQa" ADD CONSTRAINT "CourseAssistantQa_courseId_fkey" FOREIGN KEY ("courseId") REFERENCES "Course"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CourseRevisionAssistantQa" ADD CONSTRAINT "CourseRevisionAssistantQa_revisionId_fkey" FOREIGN KEY ("revisionId") REFERENCES "CourseRevision"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "CourseRevisionSource" ADD CONSTRAINT "CourseRevisionSource_revisionId_fkey" FOREIGN KEY ("revisionId") REFERENCES "CourseRevision"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -444,6 +519,12 @@ ALTER TABLE "CourseGeneration" ADD CONSTRAINT "CourseGeneration_sourceRevisionId
 
 -- AddForeignKey
 ALTER TABLE "CourseGeneration" ADD CONSTRAINT "CourseGeneration_createdCourseId_fkey" FOREIGN KEY ("createdCourseId") REFERENCES "Course"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CourseScormExport" ADD CONSTRAINT "CourseScormExport_revisionId_fkey" FOREIGN KEY ("revisionId") REFERENCES "CourseRevision"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CourseScormExport" ADD CONSTRAINT "CourseScormExport_jobId_fkey" FOREIGN KEY ("jobId") REFERENCES "BackgroundJob"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "CourseReview" ADD CONSTRAINT "CourseReview_revisionId_fkey" FOREIGN KEY ("revisionId") REFERENCES "CourseRevision"("id") ON DELETE CASCADE ON UPDATE CASCADE;
