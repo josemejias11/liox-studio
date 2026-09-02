@@ -70,6 +70,7 @@ function rawCourse(course: CourseGraph, includeAnswerKey: boolean) {
     coverHeadline: cover.coverHeadline,
     coverButtonText: cover.coverButtonText,
     coverButtonColor: cover.coverButtonColor,
+    theme: course.theme,
     chapters: course.chapters.map((chapter) => ({
       _id: chapter.id,
       title: chapter.title,

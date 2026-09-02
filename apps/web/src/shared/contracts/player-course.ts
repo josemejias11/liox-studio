@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { PortableTextBlock } from '@portabletext/types';
 import { ALL_LESSON_TYPES } from '@/shared/contracts/lesson-types';
+import { courseThemeSchema, DEFAULT_COURSE_THEME } from '@moto-ai/contracts/course-themes';
 
 export function toPlainText(value: unknown): string {
   if (typeof value === 'string') return value;
@@ -220,6 +221,7 @@ export const courseSchema = z.object({
   coverHeadline: opt(z.string()),
   coverButtonText: opt(z.string()),
   coverButtonColor: opt(z.string()),
+  theme: courseThemeSchema.catch(DEFAULT_COURSE_THEME),
   learningObjectives: opt(z.array(z.string())),
   chapters: opt(z.array(chapterSchema)),
   finalQuiz: opt(quizDocSchema),

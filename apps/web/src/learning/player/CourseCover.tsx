@@ -3,6 +3,11 @@
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
+import {
+  COURSE_THEMES,
+  DEFAULT_COURSE_THEME,
+  type CourseTheme,
+} from '@moto-ai/contracts/course-themes';
 
 interface CourseCoverProps {
   title: string;
@@ -10,6 +15,7 @@ interface CourseCoverProps {
   coverImage?: string;
   buttonText?: string;
   buttonColor?: string;
+  theme?: CourseTheme;
   learningObjectives?: string[];
   imageSizes?: string;
   onStart: () => void;
@@ -21,17 +27,17 @@ export function CourseCover({
   coverImage,
   buttonText = 'Start Course',
   buttonColor,
+  theme = DEFAULT_COURSE_THEME,
   learningObjectives,
   imageSizes = '100vw',
   onStart,
 }: CourseCoverProps) {
   const finalHeadline = coverHeadline || title;
-  let btnClass = 'bg-white text-black hover:bg-white/90';
-  if (buttonColor === 'moto-indigo' || buttonColor?.toLowerCase() === '#685bc7') {
-    btnClass = 'bg-accent text-white hover:bg-accent/90';
-  } else if (buttonColor === 'moto-frost')
-    btnClass = 'bg-background text-foreground hover:bg-background/90';
-  else if (buttonColor === 'moto-pearl') btnClass = 'bg-card text-foreground hover:bg-card/90';
+  const themeColors = COURSE_THEMES[theme].buttonColors;
+  const btnClass =
+    buttonColor === 'primary' || buttonColor === 'secondary' || buttonColor === 'tertiary'
+      ? themeColors[buttonColor]
+      : 'bg-white text-black hover:bg-white/90';
 
   return (
     <div className="dark absolute inset-0 h-full w-full overflow-hidden bg-black">

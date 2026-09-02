@@ -105,6 +105,7 @@ export function CoursePhaseScreen({
           coverImage={coverImage}
           buttonText={course.coverButtonText}
           buttonColor={course.coverButtonColor}
+          theme={course.theme}
           learningObjectives={course.learningObjectives}
           imageSizes={imageSizes}
           onStart={goNext}
