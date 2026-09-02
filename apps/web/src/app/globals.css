@@ -1,6 +1,9 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
+/* packages/contracts (course-themes.ts) has its own Tailwind utility class strings for theme
+   button colors, but Tailwind's automatic content detection doesn't scan outside this app, so
+   this explicit @source is required or those classes silently never generate any CSS. */
 @source '../../../../packages/contracts/src';
 
 @font-face {

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { courseThemeSchema } from './course-themes';
+import { courseThemeSchema, DEFAULT_COURSE_THEME } from './course-themes';
 
 type CourseGraphJsonValue =
   | null
@@ -162,7 +162,7 @@ export const CourseGraphSchema = z.object({
   cover: CourseGraphJsonValueSchema,
   specifications: CourseGraphJsonValueSchema,
   disclaimer: CourseGraphJsonValueSchema,
-  theme: courseThemeSchema,
+  theme: courseThemeSchema.catch(DEFAULT_COURSE_THEME),
   finalQuiz: CourseGraphQuizSchema.nullable(),
   chapters: z.array(CourseGraphChapterSchema),
 });

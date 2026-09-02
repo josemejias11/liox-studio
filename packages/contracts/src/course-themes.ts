@@ -14,6 +14,11 @@ export interface ThemeTokens {
   buttonColors: ThemeButtonColors;
 }
 
+// buttonColors below are raw Tailwind utility class strings, not just labels/tokens. They only
+// generate real CSS because apps/web/src/app/globals.css has an explicit @source directive
+// pointing at this package's src directory — Tailwind v4 doesn't scan outside apps/web on its
+// own. Moving this registry or renaming globals.css without updating that @source will silently
+// break theme button colors.
 export const COURSE_THEMES: Record<CourseTheme, ThemeTokens> = {
   'moto-theme': {
     label: 'Motorola',

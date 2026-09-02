@@ -277,9 +277,9 @@ export function CourseInspector({
         />
 
         <fieldset className="studio-glass-control border-border space-y-4 rounded-xl border p-3">
-          <legend className="px-1 text-sm font-semibold">Theme</legend>
+          <legend className="px-1 text-sm font-semibold">Cover theme</legend>
           <label className="block text-xs font-medium" htmlFor="course-theme">
-            Client theme
+            Client palette
             <select
               className={inputClass}
               disabled={locked}
