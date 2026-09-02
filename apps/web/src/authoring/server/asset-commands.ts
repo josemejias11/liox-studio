@@ -1,4 +1,4 @@
-import { prisma } from '@moto-ai/database';
+import { prisma } from '@lb-studio/database';
 import { deleteCourseAsset, putCourseAsset } from '@/server/storage/course-assets';
 
 export async function uploadAuthoringAsset({

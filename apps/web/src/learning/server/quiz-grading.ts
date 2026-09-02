@@ -1,10 +1,10 @@
-import { prisma } from '@moto-ai/database';
+import { prisma } from '@lb-studio/database';
 import {
   ServerAiQuizSchema,
   type QuestionResult,
   type QuizSource,
   type SubmitQuizResponse,
-} from '@moto-ai/contracts/quiz';
+} from '@lb-studio/contracts/quiz';
 import { z } from 'zod';
 
 export interface GradableQuestion {

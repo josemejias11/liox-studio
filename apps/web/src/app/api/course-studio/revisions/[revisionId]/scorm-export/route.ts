@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
 import { jsonError, unexpectedApiError } from '@/shared/server/http';
 import { requestScormExport } from '@/authoring/server/course-commands';
-import { CourseNotReadyError } from '@moto-ai/contracts';
+import { CourseNotReadyError } from '@lb-studio/contracts';
 
 export async function POST(
   request: NextRequest,

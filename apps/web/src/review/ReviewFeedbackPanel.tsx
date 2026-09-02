@@ -16,7 +16,7 @@ export function ReviewFeedbackPanel({
   selectedLessonId?: string;
   onSelectLesson: (lessonId?: string) => void;
   assistantContext?: { question: string; matchedQaId: string | null; answer: string };
-  assistantReferences: import('@moto-ai/contracts').AssistantQaItem[];
+  assistantReferences: import('@lb-studio/contracts').AssistantQaItem[];
 }) {
   const [authorName, setAuthorName] = useState('');
   const [message, setMessage] = useState('');

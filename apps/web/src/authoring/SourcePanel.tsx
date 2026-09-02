@@ -1,6 +1,6 @@
 'use client';
 
-import type { CourseSourceFile } from '@moto-ai/contracts/course-studio';
+import type { CourseSourceFile } from '@lb-studio/contracts/course-studio';
 import { FileText, LoaderCircle, RefreshCw, Trash2, Upload, XCircle } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 

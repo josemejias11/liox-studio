@@ -1,5 +1,5 @@
 {
-  "name": "moto-ai",
+  "name": "lionbridge-course-studio",
   "version": "0.1.0",
   "private": true,
   "workspaces": [
@@ -7,10 +7,10 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "node scripts/run-workspace.mjs @moto-ai/web dev",
-    "jobs:worker": "node scripts/run-workspace.mjs @moto-ai/job-worker dev",
-    "build": "npm run db:migrate && node scripts/run-workspace.mjs @moto-ai/web build",
-    "start": "node scripts/run-workspace.mjs @moto-ai/web start",
+    "dev": "node scripts/run-workspace.mjs @lb-studio/web dev",
+    "jobs:worker": "node scripts/run-workspace.mjs @lb-studio/job-worker dev",
+    "build": "npm run db:migrate && node scripts/run-workspace.mjs @lb-studio/web build",
+    "start": "node scripts/run-workspace.mjs @lb-studio/web start",
     "lint": "eslint apps packages scripts",
     "format": "prettier --write .",
     "typecheck": "npm run typecheck --workspaces --if-present",

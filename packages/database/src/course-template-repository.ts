@@ -3,8 +3,8 @@ import type {
   CourseTemplateChecklist,
   CourseTemplateDefinition,
   TemplateRequirement,
-} from '@moto-ai/contracts';
-import type { CourseGraph } from '@moto-ai/contracts/course-studio';
+} from '@lb-studio/contracts';
+import type { CourseGraph } from '@lb-studio/contracts/course-studio';
 import { prisma } from './index';
 import { getAuthoringCourse } from './course-repository';
 

@@ -1,6 +1,6 @@
 'use client';
 
-import type { CourseGenerationSummary } from '@moto-ai/contracts/course-generation';
+import type { CourseGenerationSummary } from '@lb-studio/contracts/course-generation';
 import type { CourseTemplateSummary } from '@/authoring/templates/catalog';
 import type { CreateCourseActionState } from '@/app/studio/actions';
 import { BookOpen, ChevronDown, ChevronRight, LoaderCircle, Sparkles } from 'lucide-react';

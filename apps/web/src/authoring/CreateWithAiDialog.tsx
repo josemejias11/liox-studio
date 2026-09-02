@@ -1,6 +1,6 @@
 'use client';
 
-import type { CourseGenerationSummary } from '@moto-ai/contracts/course-generation';
+import type { CourseGenerationSummary } from '@lb-studio/contracts/course-generation';
 import { Sparkles, X } from 'lucide-react';
 import { useState } from 'react';
 

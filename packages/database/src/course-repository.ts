@@ -4,10 +4,10 @@ import type {
   CourseGraph,
   CourseLessonType,
   LessonInput,
-} from '@moto-ai/contracts/course-studio';
+} from '@lb-studio/contracts/course-studio';
 import { prisma } from './index';
 
-export type { CourseGraph } from '@moto-ai/contracts/course-studio';
+export type { CourseGraph } from '@lb-studio/contracts/course-studio';
 
 export interface CourseDetailsInput {
   title?: string;

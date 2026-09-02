@@ -1,5 +1,5 @@
 {
-  "name": "@moto-ai/storage",
+  "name": "@lb-studio/storage",
   "version": "0.1.0",
   "private": true,
   "type": "module",

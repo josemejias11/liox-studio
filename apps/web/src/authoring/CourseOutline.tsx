@@ -1,6 +1,6 @@
 'use client';
 
-import type { CourseGraph, CourseLessonType } from '@moto-ai/contracts/course-studio';
+import type { CourseGraph, CourseLessonType } from '@lb-studio/contracts/course-studio';
 import { ChevronDown, ChevronUp, Copy, PanelTop, Plus, Trash2 } from 'lucide-react';
 import type { CourseInspectorSaveState } from './inspectors/CourseInspector';
 import { TrashPanel } from './TrashPanel';

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
 import { jsonError, unexpectedApiError } from '@/shared/server/http';
 import { createAuthoringReview } from '@/authoring/server/course-commands';
-import { CourseNotReadyError } from '@moto-ai/contracts';
+import { CourseNotReadyError } from '@lb-studio/contracts';
 
 // `request.nextUrl.origin` reflects the server's own bind address, not the
 // Host the request actually arrived on — it stays "localhost:3000" even

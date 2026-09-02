@@ -1,4 +1,4 @@
-import type { CourseLessonType, CourseGraph } from '@moto-ai/contracts/course-studio';
+import type { CourseLessonType, CourseGraph } from '@lb-studio/contracts/course-studio';
 import { toPlainText } from '@/shared/contracts/player-course';
 import {
   booleanField,

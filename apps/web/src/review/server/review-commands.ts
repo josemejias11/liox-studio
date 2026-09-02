@@ -1,4 +1,4 @@
-import { createReviewFeedback } from '@moto-ai/database';
+import { createReviewFeedback } from '@lb-studio/database';
 
 export function createCourseReviewFeedback(
   token: string,

@@ -1,5 +1,5 @@
 {
-  "name": "@moto-ai/database",
+  "name": "@lb-studio/database",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,8 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@moto-ai/contracts": "0.1.0",
-    "@moto-ai/storage": "0.1.0",
+    "@lb-studio/contracts": "0.1.0",
+    "@lb-studio/storage": "0.1.0",
     "@prisma/client": "^5.22.0"
   }
 }

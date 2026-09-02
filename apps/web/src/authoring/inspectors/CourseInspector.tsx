@@ -1,7 +1,7 @@
 'use client';
 
-import type { CourseGraph } from '@moto-ai/contracts/course-studio';
-import { COURSE_THEMES, type CourseTheme } from '@moto-ai/contracts/course-themes';
+import type { CourseGraph } from '@lb-studio/contracts/course-studio';
+import { COURSE_THEMES, type CourseTheme } from '@lb-studio/contracts/course-themes';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   courseSettingsInputSchema,

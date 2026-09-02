@@ -1,4 +1,4 @@
-import { CourseTemplateDefinitionSchema, type CourseTemplateDefinition } from '@moto-ai/contracts';
+import { CourseTemplateDefinitionSchema, type CourseTemplateDefinition } from '@lb-studio/contracts';
 import { comprehensiveCourseTemplate } from './comprehensive-course';
 
 export interface CourseTemplateSummary {

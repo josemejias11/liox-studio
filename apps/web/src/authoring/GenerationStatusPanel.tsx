@@ -1,6 +1,6 @@
 'use client';
 
-import type { CourseGenerationSummary } from '@moto-ai/contracts/course-generation';
+import type { CourseGenerationSummary } from '@lb-studio/contracts/course-generation';
 import Link from 'next/link';
 import { LoaderCircle, RefreshCw, Sparkles } from 'lucide-react';
 import { useEffect } from 'react';

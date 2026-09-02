@@ -1,4 +1,4 @@
-import { prisma } from '@moto-ai/database';
+import { prisma } from '@lb-studio/database';
 
 export type LessonEngagementRow = { lessonId: string; viewCount: number };
 

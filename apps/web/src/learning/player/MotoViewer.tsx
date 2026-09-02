@@ -9,7 +9,7 @@ import { getChapterLessons } from '@/learning/course-structure';
 import { deriveCourseFlow } from '@/learning/course-flow';
 import type { CourseSection, CourseContent } from '@/shared/contracts/player-course';
 import type { RevisionIdentity } from '@/shared/contracts/api';
-import type { OfflineAssistantPayload } from '@moto-ai/contracts';
+import type { OfflineAssistantPayload } from '@lb-studio/contracts';
 import { useCourseSession } from './hooks/useCourseSession';
 import { CoursePhaseScreen, getCoursePhaseSlideKey } from './CoursePhaseScreen';
 import { ErrorBoundary } from '@/shared/ErrorBoundary';

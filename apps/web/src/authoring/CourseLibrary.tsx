@@ -1,6 +1,6 @@
 'use client';
 
-import { CourseDuplicateResultSchema, type JobAcceptedResponse } from '@moto-ai/contracts/jobs';
+import { CourseDuplicateResultSchema, type JobAcceptedResponse } from '@lb-studio/contracts/jobs';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

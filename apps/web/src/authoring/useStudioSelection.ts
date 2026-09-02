@@ -1,6 +1,6 @@
 'use client';
 
-import type { CourseGraph } from '@moto-ai/contracts/course-studio';
+import type { CourseGraph } from '@lb-studio/contracts/course-studio';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { StudioSelection } from './studio-types';
 

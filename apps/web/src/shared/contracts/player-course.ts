@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { PortableTextBlock } from '@portabletext/types';
 import { ALL_LESSON_TYPES } from '@/shared/contracts/lesson-types';
-import { courseThemeSchema, DEFAULT_COURSE_THEME } from '@moto-ai/contracts/course-themes';
+import { courseThemeSchema, DEFAULT_COURSE_THEME } from '@lb-studio/contracts/course-themes';
 
 export function toPlainText(value: unknown): string {
   if (typeof value === 'string') return value;

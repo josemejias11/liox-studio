@@ -1,6 +1,6 @@
-import type { CourseGenerationSummary } from '@moto-ai/contracts/course-generation';
-import { CourseDuplicateCurrentPayloadSchema, JobStatusSchema } from '@moto-ai/contracts/jobs';
-import type { JobStatus } from '@moto-ai/contracts/jobs';
+import type { CourseGenerationSummary } from '@lb-studio/contracts/course-generation';
+import { CourseDuplicateCurrentPayloadSchema, JobStatusSchema } from '@lb-studio/contracts/jobs';
+import type { JobStatus } from '@lb-studio/contracts/jobs';
 import {
   BackgroundJobKind,
   getAuthoringCourse,
@@ -11,7 +11,7 @@ import {
   listCourseSources,
   listCourseTrash,
   prisma,
-} from '@moto-ai/database';
+} from '@lb-studio/database';
 import { listCourseTemplateSummaries } from '@/authoring/server/template-commands';
 
 export interface CourseDuplicationJobSummary {

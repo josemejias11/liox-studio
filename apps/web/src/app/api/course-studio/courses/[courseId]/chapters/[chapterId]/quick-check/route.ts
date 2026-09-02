@@ -1,4 +1,4 @@
-import { CourseAssessmentInputSchema } from '@moto-ai/contracts';
+import { CourseAssessmentInputSchema } from '@lb-studio/contracts';
 import { NextRequest, NextResponse } from 'next/server';
 import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
 import { jsonError, readJson, unexpectedApiError } from '@/shared/server/http';

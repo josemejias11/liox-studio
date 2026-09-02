@@ -1,6 +1,6 @@
-import { captureCourseDuplicateArtifact } from '@moto-ai/database';
-import { enqueueCourseDuplicateJob, findExistingCourseDuplicateJob } from '@moto-ai/jobs';
-import type { JobAcceptedResponse } from '@moto-ai/contracts/jobs';
+import { captureCourseDuplicateArtifact } from '@lb-studio/database';
+import { enqueueCourseDuplicateJob, findExistingCourseDuplicateJob } from '@lb-studio/jobs';
+import type { JobAcceptedResponse } from '@lb-studio/contracts/jobs';
 
 export async function requestAuthoringCourseDuplication(input: {
   requestId: string;

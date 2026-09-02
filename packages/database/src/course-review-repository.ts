@@ -5,10 +5,10 @@ import {
   OfflineAssistantPayloadSchema,
   OFFLINE_ASSISTANT_PAYLOAD_VERSION,
   type OfflineAssistantPayload,
-} from '@moto-ai/contracts';
-import type { AssistantQaItem } from '@moto-ai/contracts';
-import { matchOfflineAssistant } from '@moto-ai/contracts';
-import { CourseNotReadyError, validateCourseReadiness } from '@moto-ai/contracts';
+} from '@lb-studio/contracts';
+import type { AssistantQaItem } from '@lb-studio/contracts';
+import { matchOfflineAssistant } from '@lb-studio/contracts';
+import { CourseNotReadyError, validateCourseReadiness } from '@lb-studio/contracts';
 
 /**
  * Validates the full canonical player-content shape (the same
@@ -16,7 +16,7 @@ import { CourseNotReadyError, validateCourseReadiness } from '@moto-ai/contracts
  * before enqueuing SCORM export work), not just the specific readiness
  * rules checked by `validateCourseReadiness`. Injected by the caller
  * (`apps/web`) rather than imported directly here: this package is also
- * loaded by `apps/job-worker` (via the `@moto-ai/database` barrel export),
+ * loaded by `apps/job-worker` (via the `@lb-studio/database` barrel export),
  * and the canonical schema lives under `apps/web/src` behind a
  * Next.js-only `@/*` path alias that neither resolves nor should be reached
  * from the job worker's plain Node runtime.

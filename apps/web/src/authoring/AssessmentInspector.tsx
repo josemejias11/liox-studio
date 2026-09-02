@@ -1,7 +1,7 @@
 'use client';
 
-import type { CourseAssessmentInput } from '@moto-ai/contracts';
-import type { CourseGraphQuiz } from '@moto-ai/contracts/course-studio';
+import type { CourseAssessmentInput } from '@lb-studio/contracts';
+import type { CourseGraphQuiz } from '@lb-studio/contracts/course-studio';
 import { useEffect, useMemo, useState } from 'react';
 import {
   assessmentDraft,

@@ -1,4 +1,4 @@
-import { getReviewByToken } from '@moto-ai/database';
+import { getReviewByToken } from '@lb-studio/database';
 import { toPlayerCourseContent } from '@/learning/course-player-adapter';
 
 export async function loadReviewPlayer(token: string) {

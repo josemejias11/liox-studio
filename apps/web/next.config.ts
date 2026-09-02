@@ -52,10 +52,10 @@ const COMMON_HEADERS = [
 
 const nextConfig: NextConfig = {
   transpilePackages: [
-    '@moto-ai/contracts',
-    '@moto-ai/database',
-    '@moto-ai/jobs',
-    '@moto-ai/parser-client',
+    '@lb-studio/contracts',
+    '@lb-studio/database',
+    '@lb-studio/jobs',
+    '@lb-studio/parser-client',
   ],
   async headers() {
     return [

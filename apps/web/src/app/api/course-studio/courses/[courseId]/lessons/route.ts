@@ -1,4 +1,4 @@
-import { COURSE_LESSON_TYPES } from '@moto-ai/contracts/course-studio';
+import { COURSE_LESSON_TYPES } from '@lb-studio/contracts/course-studio';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { isCourseStudioAuthorized } from '@/server/auth/course-studio';

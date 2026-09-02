@@ -10,7 +10,7 @@ import {
   QuestionResultSchema,
   SubmitQuizResponseSchema,
   type ClientQuiz,
-} from '@moto-ai/contracts/quiz';
+} from '@lb-studio/contracts/quiz';
 import { createQuizSessionState, quizSessionReducer } from '@/learning/quiz-session';
 import type { AuthoredQuiz } from '@/shared/contracts/player-course';
 import { CourseFinalAssessmentCard } from './CourseFinalAssessmentCard';

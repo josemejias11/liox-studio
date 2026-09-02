@@ -1,4 +1,4 @@
-import { prisma } from '@moto-ai/database';
+import { prisma } from '@lb-studio/database';
 import { executeJob, isRetryableJobError } from './handlers';
 import {
   claimNextJob,
@@ -7,7 +7,7 @@ import {
   refreshLease,
   RetryableJobStateError,
   retryOrFailJob,
-} from '@moto-ai/jobs';
+} from '@lb-studio/jobs';
 
 const POLL_INTERVAL_MS = Number(process.env.JOB_WORKER_POLL_INTERVAL_MS ?? 1_000);
 const LEASE_REFRESH_INTERVAL_MS = 30_000;

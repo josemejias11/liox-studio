@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { QuizGradeRequestSchema } from '@moto-ai/contracts/quiz';
+import { QuizGradeRequestSchema } from '@lb-studio/contracts/quiz';
 import {
   CourseConfigurationError,
   gradeQuestion,

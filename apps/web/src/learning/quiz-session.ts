@@ -1,4 +1,4 @@
-import type { QuestionResult, SubmitQuizResponse } from '@moto-ai/contracts/quiz';
+import type { QuestionResult, SubmitQuizResponse } from '@lb-studio/contracts/quiz';
 
 type QuizSessionPhase = 'answering' | 'revealed' | 'submitting' | 'complete';
 

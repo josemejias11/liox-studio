@@ -1,7 +1,7 @@
 'use client';
 
-import type { ChapterInput, CourseGraph, CourseSourceFile } from '@moto-ai/contracts/course-studio';
-import type { OfflineAssistantPayload } from '@moto-ai/contracts';
+import type { ChapterInput, CourseGraph, CourseSourceFile } from '@lb-studio/contracts/course-studio';
+import type { OfflineAssistantPayload } from '@lb-studio/contracts';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toPlayerCourseContent } from '@/learning/course-player-adapter';
 import { PlayerViewport } from '@/learning/PlayerViewport';

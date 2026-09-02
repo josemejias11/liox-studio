@@ -29,18 +29,18 @@ import {
   upsertFinalAssessment,
   type CourseDetailsInput,
   type CourseTrashItem,
-} from '@moto-ai/database';
-import { enqueueScormExportJob } from '@moto-ai/jobs';
-import { deleteCourseDocument } from '@moto-ai/parser-client';
+} from '@lb-studio/database';
+import { enqueueScormExportJob } from '@lb-studio/jobs';
+import { deleteCourseDocument } from '@lb-studio/parser-client';
 import {
   OfflineAssistantPayloadSchema,
   OFFLINE_ASSISTANT_PAYLOAD_VERSION,
   type CourseAssessmentInput,
   CourseNotReadyError,
   validateCourseReadiness,
-} from '@moto-ai/contracts';
-import type { JobAcceptedResponse } from '@moto-ai/contracts/jobs';
-import type { CourseLessonType, LessonInput, CourseGraph } from '@moto-ai/contracts/course-studio';
+} from '@lb-studio/contracts';
+import type { JobAcceptedResponse } from '@lb-studio/contracts/jobs';
+import type { CourseLessonType, LessonInput, CourseGraph } from '@lb-studio/contracts/course-studio';
 import { toPlayerCourseContent } from '@/learning/course-player-adapter';
 import { deleteCourseAsset } from '@/server/storage/course-assets';
 

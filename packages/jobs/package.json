@@ -1,5 +1,5 @@
 {
-  "name": "@moto-ai/jobs",
+  "name": "@lb-studio/jobs",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@moto-ai/contracts": "0.1.0",
-    "@moto-ai/database": "0.1.0"
+    "@lb-studio/contracts": "0.1.0",
+    "@lb-studio/database": "0.1.0"
   }
 }

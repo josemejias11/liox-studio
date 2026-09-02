@@ -4,7 +4,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import MotoViewer from '@/learning/player/MotoViewer';
 import type { NormalizedCourseContent } from '@/learning/course-content';
 import type { RevisionIdentity } from '@/shared/contracts/api';
-import type { OfflineAssistantPayload } from '@moto-ai/contracts';
+import type { OfflineAssistantPayload } from '@lb-studio/contracts';
 
 const PLAYER_WIDTH = 1440;
 const PLAYER_HEIGHT = 810;

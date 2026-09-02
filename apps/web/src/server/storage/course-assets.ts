@@ -1,5 +1,5 @@
-import { getObject, putObject, deleteObject } from '@moto-ai/storage';
-import type { CourseAssetRef } from '@moto-ai/contracts/course-assets';
+import { getObject, putObject, deleteObject } from '@lb-studio/storage';
+import type { CourseAssetRef } from '@lb-studio/contracts/course-assets';
 
 export interface CourseAssetUpload {
   courseId: string;

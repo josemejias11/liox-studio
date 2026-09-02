@@ -1,4 +1,4 @@
-import type { CourseTemplateDefinition } from '@moto-ai/contracts';
+import type { CourseTemplateDefinition } from '@lb-studio/contracts';
 
 const placeholderQuestion = (key: string) => ({
   _key: `${key}-question`,

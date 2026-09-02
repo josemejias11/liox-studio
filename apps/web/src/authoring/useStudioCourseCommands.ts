@@ -5,8 +5,8 @@ import type {
   CourseGraph,
   CourseLessonType,
   LessonInput,
-} from '@moto-ai/contracts/course-studio';
-import type { CourseAssessmentInput } from '@moto-ai/contracts';
+} from '@lb-studio/contracts/course-studio';
+import type { CourseAssessmentInput } from '@lb-studio/contracts';
 import { useState } from 'react';
 import type { CourseSettingsInput } from '@/shared/contracts/course-settings';
 import { studioClient } from './studio-client';

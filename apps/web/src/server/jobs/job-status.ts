@@ -1,5 +1,5 @@
-import { JobStatusResponseSchema } from '@moto-ai/contracts/jobs';
-import { getJobStatus } from '@moto-ai/jobs';
+import { JobStatusResponseSchema } from '@lb-studio/contracts/jobs';
+import { getJobStatus } from '@lb-studio/jobs';
 
 export async function getClientSafeJobStatus(id: string) {
   const job = await getJobStatus(id);

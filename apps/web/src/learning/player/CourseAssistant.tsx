@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { MessageCircle, Send, X } from 'lucide-react';
-import { matchOfflineAssistant, type OfflineAssistantPayload } from '@moto-ai/contracts';
+import { matchOfflineAssistant, type OfflineAssistantPayload } from '@lb-studio/contracts';
 
 export function CourseAssistant({
   payload,

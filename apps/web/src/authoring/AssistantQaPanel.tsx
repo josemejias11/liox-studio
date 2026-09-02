@@ -1,7 +1,7 @@
 'use client';
 
-import type { AssistantQaItem } from '@moto-ai/contracts';
-import type { CourseSourceFile } from '@moto-ai/contracts/course-studio';
+import type { AssistantQaItem } from '@lb-studio/contracts';
+import type { CourseSourceFile } from '@lb-studio/contracts/course-studio';
 import { useCallback, useEffect, useState } from 'react';
 import { fetchJson } from '@/shared/fetch-json';
 

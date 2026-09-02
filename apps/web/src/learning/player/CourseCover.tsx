@@ -7,7 +7,7 @@ import {
   COURSE_THEMES,
   DEFAULT_COURSE_THEME,
   type CourseTheme,
-} from '@moto-ai/contracts/course-themes';
+} from '@lb-studio/contracts/course-themes';
 
 interface CourseCoverProps {
   title: string;

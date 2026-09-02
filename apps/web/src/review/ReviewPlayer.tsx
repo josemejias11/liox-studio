@@ -19,8 +19,8 @@ export function ReviewPlayer({
   version: number;
   content: NormalizedCourseContent;
   lessons: Array<{ id: string; label: string }>;
-  assistant: import('@moto-ai/contracts').OfflineAssistantPayload;
-  assistantReferences: import('@moto-ai/contracts').AssistantQaItem[];
+  assistant: import('@lb-studio/contracts').OfflineAssistantPayload;
+  assistantReferences: import('@lb-studio/contracts').AssistantQaItem[];
 }) {
   const [selectedLessonId, setSelectedLessonId] = useState<string | undefined>();
   const [assistantContext, setAssistantContext] = useState<

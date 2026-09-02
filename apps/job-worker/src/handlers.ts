@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { GeneratedCourseGraphSchema } from '@moto-ai/contracts/course-generation';
-import { courseAssetUrlSchema } from '@moto-ai/contracts';
+import { GeneratedCourseGraphSchema } from '@lb-studio/contracts/course-generation';
+import { courseAssetUrlSchema } from '@lb-studio/contracts';
 import {
   AssistantQaGenerationPayloadSchema,
   CourseDuplicateArtifactSchema,
@@ -12,7 +12,7 @@ import {
   ScormExportArtifactSchema,
   ScormExportPayloadSchema,
   type ScormExportResult,
-} from '@moto-ai/contracts/jobs';
+} from '@lb-studio/contracts/jobs';
 import {
   getCourseGeneration,
   getCourseSource,
@@ -25,21 +25,21 @@ import {
   persistDuplicatedCourse,
   prisma,
   replaceCourseAssistantQaDrafts,
-} from '@moto-ai/database';
+} from '@lb-studio/database';
 import {
   generateCourseDraft,
   generateAssistantQaDrafts,
   RagServiceError,
   uploadCourseDocument,
-} from '@moto-ai/parser-client';
+} from '@lb-studio/parser-client';
 import {
   NonRetryableJobError,
   refreshLease,
   RetryableJobStateError,
   type ClaimedJob,
   updateCourseDuplicateReconciliationMarker,
-} from '@moto-ai/jobs';
-import { AssetNotFoundError, ExportTooLargeError, buildScormPackage } from '@moto-ai/scorm-export';
+} from '@lb-studio/jobs';
+import { AssetNotFoundError, ExportTooLargeError, buildScormPackage } from '@lb-studio/scorm-export';
 import {
   collectAssetRefs,
   copyCourseAssetRefs,
@@ -47,7 +47,7 @@ import {
   deleteObject,
   plannedCourseAssetDestinationKeys,
   putObject,
-} from '@moto-ai/storage';
+} from '@lb-studio/storage';
 
 async function indexDocument(job: ClaimedJob): Promise<{ filename: string; chunksStored: number }> {
   const payload = DocumentIndexPayloadSchema.safeParse(job.payload);

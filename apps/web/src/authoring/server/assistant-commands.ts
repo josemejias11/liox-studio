@@ -3,9 +3,9 @@ import {
   listCourseAssistantQa,
   prisma,
   updateCourseAssistantQa,
-} from '@moto-ai/database';
-import { enqueueAssistantQaGenerationJob } from '@moto-ai/jobs';
-import type { AssistantQaItem } from '@moto-ai/contracts';
+} from '@lb-studio/database';
+import { enqueueAssistantQaGenerationJob } from '@lb-studio/jobs';
+import type { AssistantQaItem } from '@lb-studio/contracts';
 
 export function listAuthoringAssistantQa(courseId: string) {
   return listCourseAssistantQa(courseId);

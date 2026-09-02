@@ -5,7 +5,7 @@ import {
   OFFLINE_ASSISTANT_PAYLOAD_VERSION,
   type AssistantQaItem,
   type OfflineAssistantPayload,
-} from '@moto-ai/contracts';
+} from '@lb-studio/contracts';
 import { prisma } from './index';
 
 function parseItem(value: unknown): AssistantQaItem {

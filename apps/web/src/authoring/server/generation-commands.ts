@@ -1,9 +1,9 @@
 import {
   COURSE_GENERATION_PROMPT_VERSION,
   type CourseGenerationSummary,
-} from '@moto-ai/contracts/course-generation';
-import { getCourseGeneration, prisma } from '@moto-ai/database';
-import { enqueueCourseGenerationJob } from '@moto-ai/jobs';
+} from '@lb-studio/contracts/course-generation';
+import { getCourseGeneration, prisma } from '@lb-studio/database';
+import { enqueueCourseGenerationJob } from '@lb-studio/jobs';
 
 function toCourseGenerationSummary(
   generation: Awaited<ReturnType<typeof getCourseGeneration>>,

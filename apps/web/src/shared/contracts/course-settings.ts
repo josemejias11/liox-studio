@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { CourseImageReferenceSchema } from '@moto-ai/contracts/course-assets';
-import { courseThemeSchema, DEFAULT_COURSE_THEME } from '@moto-ai/contracts/course-themes';
+import { CourseImageReferenceSchema } from '@lb-studio/contracts/course-assets';
+import { courseThemeSchema, DEFAULT_COURSE_THEME } from '@lb-studio/contracts/course-themes';
 
 export type JsonObject = Record<string, unknown>;
 

@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
-import { prisma } from '@moto-ai/database';
-import { getObject } from '@moto-ai/storage';
+import { prisma } from '@lb-studio/database';
+import { getObject } from '@lb-studio/storage';
 import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
 
 export const dynamic = 'force-dynamic';

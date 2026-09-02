@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import type { GeneratedCourseGraph } from '@moto-ai/contracts/course-generation';
+import type { GeneratedCourseGraph } from '@lb-studio/contracts/course-generation';
 import { prisma } from './index';
 
 type CourseGenerationStatus = 'queued' | 'running' | 'succeeded' | 'failed';

@@ -1,4 +1,4 @@
-import type { LessonInput } from '@moto-ai/contracts/course-studio';
+import type { LessonInput } from '@lb-studio/contracts/course-studio';
 import {
   imagePayload,
   mergeRow,

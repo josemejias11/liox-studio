@@ -1,7 +1,7 @@
 'use client';
 
-import { CourseDuplicateResultSchema } from '@moto-ai/contracts/jobs';
-import type { JobStatusResponse } from '@moto-ai/contracts/jobs';
+import { CourseDuplicateResultSchema } from '@lb-studio/contracts/jobs';
+import type { JobStatusResponse } from '@lb-studio/contracts/jobs';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Copy, LoaderCircle, X } from 'lucide-react';

@@ -6,7 +6,7 @@ import {
   createAuthoringRevision,
   listAuthoringRevisions,
 } from '@/authoring/server/course-commands';
-import { CourseNotReadyError } from '@moto-ai/contracts';
+import { CourseNotReadyError } from '@lb-studio/contracts';
 
 const schema = z.object({ notes: z.string().trim().max(2000).optional() });
 

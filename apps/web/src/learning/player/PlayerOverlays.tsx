@@ -4,7 +4,7 @@ import { CompletionBurst } from './CompletionBurst';
 import { CourseAssistant } from './CourseAssistant';
 import type { CourseFlow } from '@/learning/course-flow';
 import type { LessonSection } from '@/shared/contracts/player-course';
-import type { OfflineAssistantPayload } from '@moto-ai/contracts';
+import type { OfflineAssistantPayload } from '@lb-studio/contracts';
 import type { CoursePhase } from './hooks/useCourseNavigation';
 import { NavMap } from './NavMap';
 

@@ -7,8 +7,8 @@ import {
   getCourseGeneration,
   Prisma,
   type BackgroundJob,
-} from '@moto-ai/database';
-import { prisma } from '@moto-ai/database';
+} from '@lb-studio/database';
+import { prisma } from '@lb-studio/database';
 import {
   type AiOperationPayload,
   type CourseDuplicateArtifact,
@@ -25,7 +25,7 @@ import {
   type JobStatus,
   type JobStatusResponse,
   type AssistantQaGenerationPayload,
-} from '@moto-ai/contracts/jobs';
+} from '@lb-studio/contracts/jobs';
 
 const DEFAULT_MAX_ATTEMPTS = 3;
 const LEASE_MS = 10 * 60 * 1000;

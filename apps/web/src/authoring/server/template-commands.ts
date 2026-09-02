@@ -1,4 +1,4 @@
-import { createCourseFromTemplate } from '@moto-ai/database';
+import { createCourseFromTemplate } from '@lb-studio/database';
 import { getCourseTemplate, listCourseTemplateSummaries } from '@/authoring/templates/catalog';
 
 export { listCourseTemplateSummaries };

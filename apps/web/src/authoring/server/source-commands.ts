@@ -8,9 +8,9 @@ import {
   markSourceFailed,
   prisma,
   retryCourseSourceIndex,
-} from '@moto-ai/database';
-import { enqueueDocumentIndexJob } from '@moto-ai/jobs';
-import { deleteCourseDocument, RagServiceError } from '@moto-ai/parser-client';
+} from '@lb-studio/database';
+import { enqueueDocumentIndexJob } from '@lb-studio/jobs';
+import { deleteCourseDocument, RagServiceError } from '@lb-studio/parser-client';
 import { deleteCourseAsset, getCourseAsset, putCourseAsset } from '@/server/storage/course-assets';
 
 export async function uploadAuthoringSource({

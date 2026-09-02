@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import archiver from 'archiver';
-import { getObject } from '@moto-ai/storage';
+import { getObject } from '@lb-studio/storage';
 import { buildImsManifest } from './manifest';
 import { collectAssetRefs, rewriteAssetUrls, r2KeyFor } from './assets';
 

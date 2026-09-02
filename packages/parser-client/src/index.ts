@@ -2,7 +2,7 @@ import { z } from 'zod';
 import {
   ParserCourseGenerationResponseSchema,
   type ParserCourseGenerationResponse,
-} from '@moto-ai/contracts/course-generation';
+} from '@lb-studio/contracts/course-generation';
 
 function getServiceConfig() {
   const url = (process.env.PARSER_SERVICE_URL ?? 'http://localhost:8000').replace(/\/$/, '');

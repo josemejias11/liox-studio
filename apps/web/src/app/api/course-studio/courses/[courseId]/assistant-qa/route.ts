@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { AssistantQaItemSchema } from '@moto-ai/contracts';
+import { AssistantQaItemSchema } from '@lb-studio/contracts';
 import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
 import { jsonError, readJson, unexpectedApiError } from '@/shared/server/http';
 import {

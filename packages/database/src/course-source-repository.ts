@@ -2,7 +2,7 @@ import type {
   CourseRevisionSource,
   CourseSourceFile,
   CourseSourceIndexStatus,
-} from '@moto-ai/contracts/course-studio';
+} from '@lb-studio/contracts/course-studio';
 import { prisma } from './index';
 
 export interface CreatePendingSourceInput {

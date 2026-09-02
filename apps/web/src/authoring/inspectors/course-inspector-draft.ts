@@ -1,9 +1,9 @@
-import type { CourseGraph } from '@moto-ai/contracts/course-studio';
+import type { CourseGraph } from '@lb-studio/contracts/course-studio';
 import {
   DEFAULT_COURSE_THEME,
   courseThemeSchema,
   type CourseTheme,
-} from '@moto-ai/contracts/course-themes';
+} from '@lb-studio/contracts/course-themes';
 import {
   booleanField,
   createStableCourseStudioKey,

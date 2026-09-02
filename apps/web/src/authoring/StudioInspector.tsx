@@ -1,7 +1,7 @@
 'use client';
 
-import type { CourseAssessmentInput } from '@moto-ai/contracts';
-import type { CourseGraph, LessonInput } from '@moto-ai/contracts/course-studio';
+import type { CourseAssessmentInput } from '@lb-studio/contracts';
+import type { CourseGraph, LessonInput } from '@lb-studio/contracts/course-studio';
 import { useState, type ReactNode } from 'react';
 import { AssessmentInspector } from './AssessmentInspector';
 import type { CourseSettingsInput } from '@/shared/contracts/course-settings';

@@ -6,9 +6,9 @@ import {
   CourseDuplicateAssistantQaItemSchema,
   type CourseDuplicateResult,
   type CourseDuplicateArtifact,
-} from '@moto-ai/contracts/jobs';
-import { courseAssetUrlSchema } from '@moto-ai/contracts';
-import { collectAssetRefs, rewriteAssetUrls, type CopiedCourseAsset } from '@moto-ai/storage';
+} from '@lb-studio/contracts/jobs';
+import { courseAssetUrlSchema } from '@lb-studio/contracts';
+import { collectAssetRefs, rewriteAssetUrls, type CopiedCourseAsset } from '@lb-studio/storage';
 
 import { prisma } from './index';
 import { courseGraphSelect, toCourseGraph } from './course-repository';

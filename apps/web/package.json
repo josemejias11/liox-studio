@@ -1,5 +1,5 @@
 {
-  "name": "@moto-ai/web",
+  "name": "@lb-studio/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,11 +9,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@moto-ai/contracts": "0.1.0",
-    "@moto-ai/database": "0.1.0",
-    "@moto-ai/jobs": "0.1.0",
-    "@moto-ai/parser-client": "0.1.0",
-    "@moto-ai/storage": "0.1.0",
+    "@lb-studio/contracts": "0.1.0",
+    "@lb-studio/database": "0.1.0",
+    "@lb-studio/jobs": "0.1.0",
+    "@lb-studio/parser-client": "0.1.0",
+    "@lb-studio/storage": "0.1.0",
     "@portabletext/react": "^6.2.0",
     "@portabletext/types": "^4.0.2",
     "framer-motion": "^12.40.0",

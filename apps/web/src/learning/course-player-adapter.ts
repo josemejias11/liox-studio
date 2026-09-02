@@ -1,4 +1,4 @@
-import type { CourseGraph } from '@moto-ai/contracts/course-studio';
+import type { CourseGraph } from '@lb-studio/contracts/course-studio';
 import { normalizeCourseContent, type NormalizedCourseContent } from '@/learning/course-content';
 
 function objectPayload(value: unknown): Record<string, unknown> {

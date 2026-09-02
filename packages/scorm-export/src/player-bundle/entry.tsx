@@ -1,7 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import MotoViewer from '@/learning/player/MotoViewer';
 import type { CourseContent, CourseSection } from '@/shared/contracts/player-course';
-import type { OfflineAssistantPayload } from '@moto-ai/contracts';
+import type { OfflineAssistantPayload } from '@lb-studio/contracts';
 import { ScormBridge } from './scorm-api';
 
 // styles.css is NOT imported here on purpose: it is compiled to dist/player.css by a

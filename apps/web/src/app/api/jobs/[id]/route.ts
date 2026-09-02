@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { deleteCourseDuplicateJob, JobDeleteBlockedError } from '@moto-ai/jobs';
+import { deleteCourseDuplicateJob, JobDeleteBlockedError } from '@lb-studio/jobs';
 
 import { isCourseStudioAuthorized } from '@/server/auth/course-studio';
 import { jsonError, unexpectedApiError } from '@/shared/server/http';

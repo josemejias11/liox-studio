@@ -2,8 +2,8 @@ import {
   CourseAssessmentInputSchema,
   type CourseAssessmentInput,
   type CourseImageReference,
-} from '@moto-ai/contracts';
-import type { CourseGraphQuiz } from '@moto-ai/contracts/course-studio';
+} from '@lb-studio/contracts';
+import type { CourseGraphQuiz } from '@lb-studio/contracts/course-studio';
 import {
   createCourseStudioKey,
   createStableCourseStudioKey,

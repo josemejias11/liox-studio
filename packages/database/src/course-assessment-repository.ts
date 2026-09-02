@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
-import type { CourseAssessmentInput } from '@moto-ai/contracts';
-import type { CourseGraph } from '@moto-ai/contracts/course-studio';
+import type { CourseAssessmentInput } from '@lb-studio/contracts';
+import type { CourseGraph } from '@lb-studio/contracts/course-studio';
 import { prisma } from './index';
 import { getAuthoringCourse } from './course-repository';
 

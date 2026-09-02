@@ -107,7 +107,7 @@ export type {
 export {
   COURSE_LESSON_TYPES,
   COURSE_SOURCE_INDEX_STATUSES,
-} from '@moto-ai/contracts/course-studio';
+} from '@lb-studio/contracts/course-studio';
 export type {
   ChapterInput,
   CourseGraph,
@@ -118,7 +118,7 @@ export type {
   CourseSourceFile as CourseSourceFileContract,
   CourseSourceIndexStatus as CourseSourceIndexStatusContract,
   LessonInput,
-} from '@moto-ai/contracts/course-studio';
+} from '@lb-studio/contracts/course-studio';
 export type { CourseTrashItem } from './course-trash-repository';
 export {
   removeChapterQuickCheck,
