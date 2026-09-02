@@ -21,6 +21,7 @@ services/parser-service/chroma_db/
 # Agent-managed git worktrees (linked working trees, not submodules —
 # never meant to be tracked as a gitlink)
 .claude/worktrees/
+.worktrees/
 
 # Package build output
 packages/scorm-export/dist/
