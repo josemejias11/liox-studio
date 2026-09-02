@@ -1,4 +1,4 @@
-# Moto AI Course Studio — User Guide
+# Lionbridge Course Studio — User Guide
 
 This is the practical "how do I actually use this" guide. For architecture,
 environment variables, and deployment details, see [README.md](README.md).
@@ -33,7 +33,7 @@ Four things need to be running at once:
 2. **Parser service** (Python/FastAPI) — from `services/parser-service`:
    ```bash
    source venv/bin/activate
-   python -m moto_parser
+   python -m lb_studio_parser
    ```
 3. **Job worker** — from the repo root:
    ```bash
@@ -295,7 +295,7 @@ Before exporting for the first time, build the standalone player from the
 repository root:
 
 ```bash
-npm run build --workspace=@moto-ai/scorm-export
+npm run build --workspace=@lb-studio/scorm-export
 ```
 
 Then set `SCORM_PLAYER_BUNDLE_PATH` in the root `.env` to the absolute path
@@ -335,7 +335,7 @@ To export a course:
 6. When the job succeeds, click **Download SCORM package** in the same panel
    to save the `.zip`.
 
-The ZIP includes the standalone Moto Player, frozen course content, media,
+The ZIP includes the standalone Course Player, frozen course content, media,
 manifest, approved offline assistant content, answer keys, bookmarking,
 score, and completion reporting. Upload the ZIP directly to a SCORM 1.2 LMS;
 do not unzip it first. The exported player runs inside the LMS and does not
@@ -356,7 +356,7 @@ indicators. It's a read-only internal dashboard, not tenant-aware reporting.
   actually running and can reach Postgres. Indexing, Q&A drafting, and AI
   generation also require the parser service; SCORM export does not.
 - **SCORM export reports missing configuration** — rebuild
-  `@moto-ai/scorm-export` and confirm `SCORM_PLAYER_BUNDLE_PATH` points to the
+  `@lb-studio/scorm-export` and confirm `SCORM_PLAYER_BUNDLE_PATH` points to the
   `packages/scorm-export` directory containing `dist/player.js` and
   `dist/player.css`.
 - **Uploads or exports fail** — confirm `LOCAL_STORAGE_ROOT` is set and

@@ -4,8 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Moto AI Course Studio is an app-owned e-learning authoring platform. Authors
-create an English learning master in Course Studio; the shared Moto Player
+Lionbridge Course Studio is an app-owned e-learning authoring platform. Authors
+create an English learning master in Course Studio; the shared Course Player
 renders that content in the author preview and in immutable, shareable review
 links. Authored course content is the source of truth — AI only assists
 authors by processing approved source material into editable drafts that a
@@ -48,7 +48,7 @@ course corpus.
 
 - `authoring/` — Course Studio UI (outline, inspectors, source panel, AI
   generation dialogs) and its client/server helpers.
-- `learning/` — the Moto Player itself: `player/` holds the renderer and
+- `learning/` — the Course Player itself: `player/` holds the renderer and
   per-lesson-type components, plus `course-flow.ts`, `course-structure.ts`,
   `course-content.ts`, `quiz-session.ts` for course/lesson graph logic shared
   across preview, review, and (eventually) delivery.
@@ -124,13 +124,13 @@ work, not a missing script to guess at — confirm with the user first.
 cd services/parser-service
 python3 -m venv venv && source venv/bin/activate
 pip install -e '.[dev]'
-python -m moto_parser        # dev server w/ reload, http://127.0.0.1:8000
+python -m lb_studio_parser   # dev server w/ reload, http://127.0.0.1:8000
 ```
 
 - Tests: `python -m unittest discover -s tests` (from within the activated
   venv — `unittest`, not `pytest`).
 - Lint/format: `ruff check .` / `ruff format .` (line length 100,
-  `E`/`F`/`I`/`UP`/`B` rules, first-party import group is `moto_parser`).
+  `E`/`F`/`I`/`UP`/`B` rules, first-party import group is `lb_studio_parser`).
 - Types: `mypy src` (strict-ish subset — `disallow_untyped_defs`,
   `warn_return_any` are on; being incrementally tightened, don't relax them).
 - `PARSER_SERVICE_TOKEN` in this service's env must match the root app's
@@ -160,7 +160,7 @@ python -m moto_parser        # dev server w/ reload, http://127.0.0.1:8000
 - ESLint enforces `@typescript-eslint/no-explicit-any` as an error (not just
   the Next.js default warn) — don't introduce `any` to silence a type error.
 - Shared types/schemas live in `packages/contracts` and are imported by both
-  `apps/web` and `apps/job-worker` (e.g. `@moto-ai/contracts/jobs`); add new
+  `apps/web` and `apps/job-worker` (e.g. `@lb-studio/contracts/jobs`); add new
   cross-package payload shapes there rather than duplicating them.
 - `apps/job-worker/src/handlers.ts` is the single dispatch point
   (`executeJob`) for every background job kind; a `NonRetryableJobError`

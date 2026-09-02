@@ -1,7 +1,7 @@
-# Moto AI Course Studio
+# Lionbridge Course Studio
 
-Moto AI is an app-owned e-learning authoring platform. Course Studio is where
-authors create the English learning master; the shared Moto Player renders that
+Lionbridge Course Studio is an app-owned e-learning authoring platform. Course Studio is where
+authors create the English learning master; the shared Course Player renders that
 content in the author preview and in immutable, shareable review links.
 
 Learning comes first: authored course content and assessments are the source of
@@ -19,7 +19,7 @@ configured OpenAI API service.
 | Capability                          | Status          | Notes                                                                                                                                                                                             |
 | ----------------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Course Studio authoring             | Implemented     | Password-protected course, chapter, lesson, assessment, media, source, revision, and trash workflows                                                                                              |
-| Author preview                      | Implemented     | Uses the same Moto Player components as review and SCORM delivery                                                                                                                                 |
+| Author preview                      | Implemented     | Uses the same Course Player components as review and SCORM delivery                                                                                                                                 |
 | Structural assessments              | Implemented     | Dedicated `CourseQuiz`-backed chapter quick checks and one course final assessment, authored through a shared guided editor; the inline `Quiz` lesson type is no longer offered for new lessons   |
 | Product Stage authoring parity      | Implemented     | The Stage lesson inspector exposes both the foreground product image and the stage background as independent, always-visible fields                                                               |
 | Course readiness gates              | Implemented     | A shared validator blocks freezing a revision, creating/replacing a review link, and requesting a SCORM export until the course graph and its assessments pass readiness checks                   |
@@ -38,7 +38,7 @@ configured OpenAI API service.
 
 ## Learning and authoring lifecycle
 
-Moto AI separates authoring assistance from learner delivery.
+Lionbridge Course Studio separates authoring assistance from learner delivery.
 
 1. An author creates or edits a course in Course Studio.
 2. Source files are uploaded to the course source library.
@@ -88,7 +88,7 @@ but are not exposed as generative learner behavior.
 - Exact course duplication into an independent destination course (see
   "Course templates and duplication" below).
 
-### Moto Player
+### Course Player
 
 The shared player supports content, hotspot interactions, product stages, video,
 quizzes, canvas inspection, colour switching, split-screen comparison, drag and
@@ -194,7 +194,7 @@ receive the full answer-key projection.
 
 SCORM export is a background job created from a frozen revision. The worker
 loads the immutable course and approved assistant, copies referenced media from
-local filesystem storage, builds a standalone Moto Player, writes the SCORM 1.2
+local filesystem storage, builds a standalone Course Player, writes the SCORM 1.2
 manifest, writes the ZIP to local filesystem storage, and records it for
 authenticated download.
 
@@ -214,7 +214,7 @@ weak-topic metadata. It is an internal dashboard, not tenant-aware reporting.
 Author or reviewer browser
         |
         v
-apps/web — Next.js Course Studio, Moto Player, review, analytics, HTTP APIs
+apps/web — Next.js Course Studio, Course Player, review, analytics, HTTP APIs
    |             |                         |
    |             |                         +--> Local filesystem storage
    |             |                              assets, sources, SCORM ZIPs
@@ -249,7 +249,7 @@ token and OpenAI key must never be exposed to browser code.
 ```text
 .
 ├── apps/
-│   ├── web/                    Next.js application and shared Moto Player
+│   ├── web/                    Next.js application and shared Course Player
 │   └── job-worker/             Long-running PostgreSQL queue consumer
 ├── packages/
 │   ├── contracts/              Shared TypeScript and Zod contracts
@@ -295,14 +295,14 @@ token and OpenAI key must never be exposed to browser code.
 
 ## Runtime processes
 
-Moto AI is not one process. Local development and production require
+Lionbridge Course Studio is not one process. Local development and production require
 independently supervised services.
 
 | Process                  | Command                                  | Required for                                                                        |
 | ------------------------ | ---------------------------------------- | ----------------------------------------------------------------------------------- |
 | Next.js web              | `npm run dev` or `npm start`             | Studio, preview, review, analytics, HTTP APIs, downloads                            |
 | Job worker               | `npm run jobs:worker`                    | Source indexing, Q&A drafting, AI course drafting, SCORM export, course duplication |
-| Parser service           | `python -m moto_parser`                  | Document indexing and optional OpenAI-backed authoring operations                   |
+| Parser service           | `python -m lb_studio_parser`             | Document indexing and optional OpenAI-backed authoring operations                   |
 | PostgreSQL               | Platform-specific                        | Application state, revisions, progress, and durable jobs                            |
 | ChromaDB                 | Embedded in parser service               | Persistent source embeddings and retrieval                                          |
 | Local filesystem storage | Local disk, shared by web app and worker | Media, source bytes, and export artifacts                                           |
@@ -375,7 +375,7 @@ contracts and configuration boundary.
 From the repository root:
 
 ```bash
-npm run build --workspace=@moto-ai/scorm-export
+npm run build --workspace=@lb-studio/scorm-export
 ```
 
 Set `SCORM_PLAYER_BUNDLE_PATH` in `.env` to the absolute path of
@@ -439,7 +439,7 @@ Use separate terminals so failures and logs remain attributable to one runtime.
 ```bash
 cd services/parser-service
 source venv/bin/activate
-python -m moto_parser
+python -m lb_studio_parser
 ```
 
 The parser listens on `http://127.0.0.1:8000` by default. Check readiness with:
@@ -505,7 +505,7 @@ There is no public `/course/[slug]` page.
 | `npm run db:migrate`                              | Apply committed Prisma migrations                                     |
 | `npm run db:migrate:dev`                          | Create or apply a development migration                               |
 | `npm run db:studio`                               | Open Prisma Studio                                                    |
-| `npm run build --workspace=@moto-ai/scorm-export` | Build the standalone SCORM player bundle                              |
+| `npm run build --workspace=@lb-studio/scorm-export` | Build the standalone SCORM player bundle                              |
 
 `npm run format` is not a read-only check. To inspect formatting without
 changing files, run Prettier directly with `--check` and an explicit path.
@@ -595,7 +595,7 @@ venv/bin/python -m pip check
 Build both delivery artifacts:
 
 ```bash
-npm run build --workspace=@moto-ai/scorm-export
+npm run build --workspace=@lb-studio/scorm-export
 npm run build
 ```
 
@@ -632,7 +632,7 @@ Deploy the runtimes independently even when they share one repository.
 - Run `npm run jobs:worker` as a continuously supervised process.
 - Use the same PostgreSQL, parser URL and token, and local storage root as the
   web app.
-- Build `@moto-ai/scorm-export` during the worker image or build phase.
+- Build `@lb-studio/scorm-export` during the worker image or build phase.
 - Set `SCORM_PLAYER_BUNDLE_PATH` to the deployed package directory.
 - Restart automatically after process failure and monitor queue age, retries,
   and failed jobs.
