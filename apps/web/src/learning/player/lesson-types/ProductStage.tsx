@@ -240,6 +240,7 @@ export function ProductStage({
       onMouseLeave={handleMouseLeave}
       onScroll={(e) => {
         if (e.currentTarget.scrollTop !== 0) e.currentTarget.scrollTop = 0;
+        if (e.currentTarget.scrollLeft !== 0) e.currentTarget.scrollLeft = 0;
       }}
     >
       {stageBackground ? (
@@ -257,7 +258,7 @@ export function ProductStage({
           />
         </motion.div>
       ) : (
-        <div className="stage-enter-bg absolute inset-0 bg-[radial-gradient(ellipse_70%_65%_at_50%_42%,#1b1d38_0%,#0b0c16_56%,#05060b_100%)]" />
+        <div className="stage-enter-bg absolute inset-0 bg-[radial-gradient(ellipse_130%_110%_at_50%_42%,#1b1d38_0%,#171a30_45%,#0b0c16_80%,#05060b_100%)]" />
       )}
 
       <motion.div
