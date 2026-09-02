@@ -15,8 +15,8 @@ class OpenAISettingsTests(unittest.TestCase):
         previous_chat_model = os.environ.pop("OPENAI_CHAT_MODEL", None)
         previous_embedding_model = os.environ.pop("OPENAI_EMBEDDING_MODEL", None)
         try:
-            sys.modules.pop("moto_parser.settings", None)
-            settings = importlib.import_module("moto_parser.settings")
+            sys.modules.pop("lb_studio_parser.settings", None)
+            settings = importlib.import_module("lb_studio_parser.settings")
             self.assertEqual(settings.OPENAI_CHAT_MODEL, "gpt-5.4-mini")
             self.assertEqual(settings.OPENAI_EMBEDDING_MODEL, "text-embedding-3-small")
         finally:

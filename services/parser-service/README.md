@@ -1,6 +1,6 @@
-# Moto AI Parser Service
+# Lionbridge Course Studio Parser Service
 
-The parser service is Moto AI's internal FastAPI service for source parsing,
+The parser service is Lionbridge Course Studio's internal FastAPI service for source parsing,
 embedding, source-grounded authoring drafts, and supplemental quiz-draft
 generation. It is called by the Next.js backend and background worker;
 browsers never call it directly. OpenAI is the language-model and embedding
@@ -19,14 +19,14 @@ source venv/bin/activate
 pip install -e '.[dev]'
 cp .env.example .env
 # Set OPENAI_API_KEY and match PARSER_SERVICE_TOKEN to the root .env.local.
-moto-parser
+lb-studio-parser
 ```
 
 The development server listens on `http://127.0.0.1:8000` by default. Check
 readiness with `curl http://127.0.0.1:8000/health`; when enabled, Swagger is at
 `http://127.0.0.1:8000/docs`.
 
-`python -m moto_parser` starts the same reload-enabled development server.
+`python -m lb_studio_parser` starts the same reload-enabled development server.
 
 ## Endpoints
 
@@ -41,7 +41,7 @@ readiness with `curl http://127.0.0.1:8000/health`; when enabled, Swagger is at
 
 All endpoints except `/health` require `X-Internal-Token`.
 
-Pydantic models in `src/moto_parser/contracts.py` own the parser service's HTTP
+Pydantic models in `src/lb_studio_parser/contracts.py` own the parser service's HTTP
 validation. The TypeScript parser client validates every untrusted HTTP
 response again; course-generation responses use the canonical schema in
 `packages/contracts`, while endpoint-specific transport responses remain local

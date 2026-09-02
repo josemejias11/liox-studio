@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 SERVICE_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SERVICE_ROOT / "src"))
 
-from moto_parser import retrieval  # noqa: E402
+from lb_studio_parser import retrieval  # noqa: E402
 
 
 class ReplaceDocumentChunksTests(unittest.TestCase):

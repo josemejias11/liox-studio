@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "moto-parser"
+name = "lb-studio-parser"
 version = "1.2.0"
-description = "Moto AI internal document parsing, retrieval, chat, and quiz service"
+description = "Lionbridge Course Studio internal document parsing, retrieval, chat, and quiz service"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -30,7 +30,7 @@ dev = [
 ]
 
 [project.scripts]
-moto-parser = "moto_parser.main:run"
+lb-studio-parser = "lb_studio_parser.main:run"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -52,7 +52,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["moto_parser"]
+known-first-party = ["lb_studio_parser"]
 
 [tool.mypy]
 python_version = "3.11"

@@ -217,7 +217,7 @@ def run() -> None:
         )
         sys.exit(1)
 
-    uvicorn.run("moto_parser.main:app", host="127.0.0.1", port=_port, reload=True)
+    uvicorn.run("lb_studio_parser.main:app", host="127.0.0.1", port=_port, reload=True)
 
 
 if __name__ == "__main__":
