@@ -1,6 +1,7 @@
 'use client';
 
 import type { CourseGraph } from '@moto-ai/contracts/course-studio';
+import { COURSE_THEMES, type CourseTheme } from '@moto-ai/contracts/course-themes';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   courseSettingsInputSchema,
@@ -276,6 +277,31 @@ export function CourseInspector({
         />
 
         <fieldset className="studio-glass-control border-border space-y-4 rounded-xl border p-3">
+          <legend className="px-1 text-sm font-semibold">Theme</legend>
+          <label className="block text-xs font-medium" htmlFor="course-theme">
+            Client theme
+            <select
+              className={inputClass}
+              disabled={locked}
+              id="course-theme"
+              onChange={(event) =>
+                update((current) => ({
+                  ...current,
+                  theme: event.target.value as CourseTheme,
+                }))
+              }
+              value={form.theme}
+            >
+              {Object.entries(COURSE_THEMES).map(([id, tokens]) => (
+                <option key={id} value={id}>
+                  {tokens.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </fieldset>
+
+        <fieldset className="studio-glass-control border-border space-y-4 rounded-xl border p-3">
           <legend className="px-1 text-sm font-semibold">Course cover</legend>
           <label className="block text-xs font-medium" htmlFor="cover-headline">
             Cover headline
@@ -326,10 +352,19 @@ export function CourseInspector({
               value={form.cover.coverButtonColor}
             >
               <option value="">Default</option>
-              <option value="moto-indigo">Moto Indigo</option>
-              <option value="moto-frost">Moto Frost</option>
-              <option value="moto-pearl">Moto Pearl</option>
+              <option value="primary">Primary</option>
+              <option value="secondary">Secondary</option>
+              <option value="tertiary">Tertiary</option>
             </select>
+            <span className="mt-2 flex gap-2" aria-hidden="true">
+              {(['primary', 'secondary', 'tertiary'] as const).map((slot) => (
+                <span
+                  key={slot}
+                  className={`h-5 w-5 rounded-full border border-white/20 ${COURSE_THEMES[form.theme].buttonColors[slot]}`}
+                  title={slot}
+                />
+              ))}
+            </span>
           </label>
           <CourseMediaField
             courseId={course.id}

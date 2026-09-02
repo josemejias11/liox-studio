@@ -1,5 +1,10 @@
 import type { CourseGraph } from '@moto-ai/contracts/course-studio';
 import {
+  DEFAULT_COURSE_THEME,
+  courseThemeSchema,
+  type CourseTheme,
+} from '@moto-ai/contracts/course-themes';
+import {
   booleanField,
   createStableCourseStudioKey,
   disclaimerCategorySchema,
@@ -18,7 +23,7 @@ import {
 import type { StringListItem } from './StringListField';
 
 export interface CoverDraft {
-  coverButtonColor: '' | 'moto-indigo' | 'moto-frost' | 'moto-pearl';
+  coverButtonColor: '' | 'primary' | 'secondary' | 'tertiary';
   coverButtonText: string;
   coverHeadline: string;
   coverImage?: ImageReference;
@@ -40,6 +45,7 @@ export interface DisclaimerDraft {
 
 export interface CourseFormDraft {
   cover: CoverDraft;
+  theme: CourseTheme;
   description: string;
   disclaimer: DisclaimerDraft | null;
   learningObjectives: StringListItem[];
@@ -66,7 +72,7 @@ function coverDraft(value: unknown): CoverDraft {
     coverHeadline: stringField(source.coverHeadline),
     coverButtonText: stringField(source.coverButtonText),
     coverButtonColor:
-      color === 'moto-indigo' || color === 'moto-frost' || color === 'moto-pearl' ? color : '',
+      color === 'primary' || color === 'secondary' || color === 'tertiary' ? color : '',
     coverImage: imageReference(source.coverImage),
     thumbnail: imageReference(source.thumbnail),
   };
@@ -100,6 +106,7 @@ export function formDraft(course: CourseGraph): CourseFormDraft {
     description: course.description ?? '',
     learningObjectives: objectiveDrafts(course.learningObjectives),
     cover: coverDraft(course.cover),
+    theme: courseThemeSchema.catch(DEFAULT_COURSE_THEME).parse(course.theme),
     specifications: specificationDrafts(course.specifications),
     disclaimer: disclaimerDraft(course.disclaimer),
   };
@@ -155,6 +162,7 @@ export function formPayload(form: CourseFormDraft): unknown {
     description: form.description || null,
     learningObjectives: form.learningObjectives.map((item) => item.value),
     cover: coverPayload,
+    theme: form.theme,
     specifications: specificationsPayload(form.specifications),
     disclaimer,
   };
