@@ -40,14 +40,14 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         raise RuntimeError("OPENAI_API_KEY environment variable is not set.")
     runtime.token = token
     try:
-        runtime.embeddings = OpenAIEmbeddings(  # type: ignore[call-arg,arg-type]
+        runtime.embeddings = OpenAIEmbeddings(
             model=OPENAI_EMBEDDING_MODEL,
-            api_key=OPENAI_API_KEY,  # type: ignore[arg-type]
+            api_key=OPENAI_API_KEY,
             request_timeout=OPENAI_TIMEOUT_SECONDS,
         )
-        runtime.generation_model = ChatOpenAI(  # type: ignore[arg-type]
+        runtime.generation_model = ChatOpenAI(
             model=OPENAI_CHAT_MODEL,
-            api_key=OPENAI_API_KEY,  # type: ignore[arg-type]
+            api_key=OPENAI_API_KEY,
             timeout=OPENAI_TIMEOUT_SECONDS,
             model_kwargs={"response_format": {"type": "json_object"}},
         )
