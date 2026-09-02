@@ -1,1 +1,1 @@
-"""Moto AI parser-service package."""
+"""Lionbridge Course Studio parser-service package."""

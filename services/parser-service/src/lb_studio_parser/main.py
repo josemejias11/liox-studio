@@ -1,4 +1,4 @@
-"""Moto AI Parser Service HTTP application and executable entrypoint."""
+"""Lionbridge Course Studio Parser Service HTTP application and executable entrypoint."""
 
 import logging
 import os
@@ -34,7 +34,7 @@ from .settings import CHROMA_DIR, OPENAI_API_KEY, OPENAI_CHAT_MODEL, OPENAI_EMBE
 
 logger = logging.getLogger(__name__)
 app = FastAPI(
-    title="Moto AI Parser Service",
+    title="Lionbridge Course Studio Parser Service",
     description=(
         "Internal development service that indexes immutable Course Studio sources and "
         "retrieves only the source IDs attached to a frozen revision using OpenAI."
