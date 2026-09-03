@@ -33,7 +33,7 @@ export function ReviewPlayer({
         <header className="mb-6 flex items-end justify-between gap-6">
           <div>
             <p className="text-primary text-xs font-semibold tracking-[0.16em] uppercase">
-              Motorola course review
+              Course review
             </p>
             <h1 className="mt-2 text-3xl font-semibold">{title}</h1>
             <p className="text-muted-foreground mt-1 text-sm">Immutable review version {version}</p>

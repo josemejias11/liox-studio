@@ -72,7 +72,7 @@ export default async function AnalyticsLoginPage({ searchParams }: LoginPageProp
         </div>
 
         <p className="text-muted-foreground mt-6 text-center text-xs">
-          Access restricted to Motorola instructors.
+          Access restricted to authorized instructors.
         </p>
       </div>
     </div>
