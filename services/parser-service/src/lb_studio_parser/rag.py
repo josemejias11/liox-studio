@@ -83,7 +83,7 @@ def generate_quiz(course_id: str, source_ids: list[str], weak_topics: list[str])
         raise LookupError("No relevant course materials found for the requested topics.")
     context_str = format_context(documents)
     prompt = f"""You are an expert AI teaching assistant.
-Your task is to generate a 5-question multiple-choice quiz based strictly on the provided context below. The quiz should focus on these weak topics: {', '.join(weak_topics)}.
+Your task is to generate a 5-question multiple-choice quiz based strictly on the provided context below. The quiz should focus on these weak topics: {", ".join(weak_topics)}.
 
 Rules:
 1. Only use the provided context to create the questions.

@@ -28,14 +28,15 @@
     "nanoid": "^3.3.18"
   },
   "devDependencies": {
-    "@types/node": "^24.13.2",
+    "dotenv": "^17.4.2",
+    "@types/node": "^26.4.1",
     "@types/react": "^19",
-    "@types/react-dom": "^19.2.3",
+    "@types/react-dom": "^19.2.7",
     "eslint": "^9",
     "eslint-config-next": "^16.2.9",
     "prettier": "^3.8.4",
     "prettier-plugin-tailwindcss": "^0.8.0",
-    "prisma": "^5.22.0",
+    "prisma": "^7.10.0",
     "typescript": "^6.0.3"
   },
   "engines": {

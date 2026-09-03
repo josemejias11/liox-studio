@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import archiver from 'archiver';
+import { ZipArchive } from 'archiver';
 import { getObject } from '@lb-studio/storage';
 import { buildImsManifest } from './manifest';
 import { collectAssetRefs, rewriteAssetUrls, r2KeyFor } from './assets';
@@ -119,7 +119,7 @@ export async function buildScormPackage(input: ScormPackageInput): Promise<{
 
   try {
     await new Promise<void>((resolve, reject) => {
-      const archive = archiver('zip', { zlib: { level: 9 } });
+      const archive = new ZipArchive({ zlib: { level: 9 } });
       const output = createWriteStream(tempZipPath);
       archive.pipe(output);
       archive.on('warning', (warning) => {
@@ -148,7 +148,10 @@ export async function buildScormPackage(input: ScormPackageInput): Promise<{
         { name: entryHref },
       );
 
-      void archive.finalize();
+      // archiver v8's finalize() returns a promise that rejects on the same errors already
+      // surfaced through the 'error' event above (which calls reject()); swallow it here so
+      // that rejection doesn't also surface as an unhandled promise rejection.
+      archive.finalize().catch(() => {});
     });
 
     const buffer = await readFile(tempZipPath);

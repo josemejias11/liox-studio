@@ -173,7 +173,10 @@ async function enqueue(
                 create: {
                   filename: artifact.filename,
                   ...(artifact.contentType ? { contentType: artifact.contentType } : {}),
-                  bytes: artifact.bytes,
+                  // Prisma's generated input type now requires a Uint8Array backed by a
+                  // concrete ArrayBuffer; Buffer's type declares the wider ArrayBufferLike
+                  // (which also covers SharedArrayBuffer), so it doesn't structurally match.
+                  bytes: new Uint8Array(artifact.bytes),
                 },
               },
             }
@@ -302,7 +305,7 @@ export async function findExistingCourseDuplicateJob(input: {
     duplicateRequestConflict();
   }
 
-  const normalized = normalizeCourseDuplicatePayload(job.payload, job.artifact.bytes);
+  const normalized = normalizeCourseDuplicatePayload(job.payload, Buffer.from(job.artifact.bytes));
   if (!normalized) duplicateRequestConflict();
   const { payload, artifact } = normalized;
   if (
@@ -520,18 +523,31 @@ export async function claimNextJob(): Promise<ClaimedJob | null> {
     });
 
     if (job.kind === BackgroundJobKind.COURSE_DUPLICATE && job.artifact) {
-      const normalized = normalizeCourseDuplicatePayload(job.payload, job.artifact.bytes);
+      const normalized = normalizeCourseDuplicatePayload(
+        job.payload,
+        Buffer.from(job.artifact.bytes),
+      );
       if (normalized?.legacy) {
         const updated = await tx.backgroundJob.update({
           where: { id: job.id },
           data: { payload: jsonValue(normalized.payload) },
           include: { artifact: true },
         });
-        return { ...updated, leaseToken };
+        return {
+          ...updated,
+          leaseToken,
+          artifact: updated.artifact
+            ? { ...updated.artifact, bytes: Buffer.from(updated.artifact.bytes) }
+            : null,
+        };
       }
     }
 
-    return { ...job, leaseToken };
+    return {
+      ...job,
+      leaseToken,
+      artifact: job.artifact ? { ...job.artifact, bytes: Buffer.from(job.artifact.bytes) } : null,
+    };
   });
 }
 

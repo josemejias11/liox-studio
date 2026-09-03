@@ -12,6 +12,11 @@
   "dependencies": {
     "@lb-studio/contracts": "0.1.0",
     "@lb-studio/storage": "0.1.0",
-    "@prisma/client": "^5.22.0"
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.10.0",
+    "pg": "^8.23.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1"
   }
 }
