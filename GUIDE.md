@@ -302,7 +302,7 @@ Then set `SCORM_PLAYER_BUNDLE_PATH` in the root `.env` to the absolute path
 of `packages/scorm-export`. For this checkout, that is:
 
 ```env
-SCORM_PLAYER_BUNDLE_PATH=/Users/josemejias/Workbench-QA/moto-ai/packages/scorm-export
+SCORM_PLAYER_BUNDLE_PATH=/Users/josemejias/Workbench-QA/liox-studio/packages/scorm-export
 ```
 
 PostgreSQL, shared local storage, the web app, and the job worker must be
