@@ -17,7 +17,7 @@ export default async function AnalyticsLoginPage({ searchParams }: LoginPageProp
             <Bot className="h-6 w-6" aria-hidden="true" />
           </div>
           <div className="text-center">
-            <h1 className="text-foreground text-xl font-semibold">moto tutor</h1>
+            <h1 className="text-foreground text-xl font-semibold">Lionbridge Course Studio</h1>
             <p className="text-muted-foreground mt-0.5 text-sm">Instructor Dashboard</p>
           </div>
         </div>

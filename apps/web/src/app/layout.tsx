@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'moto tutor | e-learning',
+  title: 'Lionbridge Course Studio | e-learning',
   description: 'Upload your presentation and learn interactively with an AI tutor.',
 };
 
