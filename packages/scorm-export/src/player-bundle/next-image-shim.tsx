@@ -8,7 +8,7 @@ import type { ImgHTMLAttributes } from 'react';
  * real `next/image` everywhere else (Course Studio, review, etc.); this alias is scoped to
  * this build only.
  *
- * Verified against every `<Image>` usage reachable from MotoViewer (12 call sites across
+ * Verified against every `<Image>` usage reachable from CoursePlayer (12 call sites across
  * CourseCover, ContentLesson, ProductStage x2, SplitScreenLesson, CanvasInspectionLesson,
  * ColorSwitcherLesson, ScrollStoryLesson x2, DragDropLesson, PhotoCardStack,
  * CourseQuizPlayer):

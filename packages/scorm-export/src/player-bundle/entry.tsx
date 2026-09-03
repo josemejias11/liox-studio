@@ -1,5 +1,5 @@
 import { createRoot } from 'react-dom/client';
-import MotoViewer from '@/learning/player/MotoViewer';
+import CoursePlayer from '@/learning/player/CoursePlayer';
 import type { CourseContent, CourseSection } from '@/shared/contracts/player-course';
 import type { OfflineAssistantPayload } from '@lb-studio/contracts';
 import { ScormBridge } from './scorm-api';
@@ -34,7 +34,7 @@ function mount(): void {
 
   const root = createRoot(container);
   root.render(
-    <MotoViewer
+    <CoursePlayer
       course={payload.content.course}
       sections={payload.content.sections}
       preview

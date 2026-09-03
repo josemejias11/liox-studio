@@ -194,7 +194,7 @@ def health_check() -> dict[str, str | bool]:
         chroma_writable = False
     return {
         "status": "ok" if openai_configured and chroma_writable else "degraded",
-        "service": "moto-ai-parser",
+        "service": "lb-studio-parser",
         "openai_configured": openai_configured,
         "chroma_dir_writable": chroma_writable,
         "llm_model": OPENAI_CHAT_MODEL,

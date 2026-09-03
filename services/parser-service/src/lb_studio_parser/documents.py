@@ -58,7 +58,7 @@ def validate_upload_file(filename: str) -> str:
 
 def stream_upload_to_disk(file_obj: BinaryIO, ext: str) -> tuple[str, str]:
     """Stream upload to a temp file. Returns (temp_dir, temp_file_path)."""
-    temp_dir = tempfile.mkdtemp(prefix="moto-upload-")
+    temp_dir = tempfile.mkdtemp(prefix="lb-studio-upload-")
     temp_file_path = os.path.join(temp_dir, secrets.token_hex(16) + ext)
 
     bytes_written = 0

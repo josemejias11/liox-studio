@@ -30,11 +30,11 @@
 
 /* This standalone build has no Next.js content config telling Tailwind which files to scan
    for class usage, so it needs an explicit @source pointing at apps/web/src (where every
-   component MotoViewer can render actually lives). */
+   component CoursePlayer can render actually lives). */
 @source '../../../../apps/web/src';
 
 /* apps/web's own root layout gives the page a height:100% chain from <html> down for free;
-   this standalone bundle's index.html has no such layout, so MotoViewer's absolutely
+   this standalone bundle's index.html has no such layout, so CoursePlayer's absolutely
    positioned content collapses to 0 height without this. */
 html,
 body,
