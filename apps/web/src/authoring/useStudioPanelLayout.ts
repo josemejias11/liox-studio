@@ -38,13 +38,13 @@ export function useStudioPanelLayout() {
   const outlinePointerId = useRef<number | null>(null);
   const toolsPointerId = useRef<number | null>(null);
   const [outlineWidth, setOutlineWidth] = usePersistentPanelSize({
-    key: 'moto-tutor:course-studio:outline-width',
+    key: 'lb-studio:course-studio:outline-width',
     defaultValue: 320,
     minimum: outlineMinimum,
     maximum: outlineMaximum,
   });
   const [toolsHeight, setToolsHeight] = usePersistentPanelSize({
-    key: 'moto-tutor:course-studio:tools-height',
+    key: 'lb-studio:course-studio:tools-height',
     defaultValue: 260,
     minimum: toolsMinimum,
     maximum: toolsMaximum,

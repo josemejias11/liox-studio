@@ -17,7 +17,7 @@ interface ProgressData {
   lessons?: Record<string, LessonData>;
 }
 
-const PREVIEW_PROGRESS_KEY_PREFIX = 'mototutor_preview_progress:';
+const PREVIEW_PROGRESS_KEY_PREFIX = 'lb_studio_preview_progress:';
 
 function isProgressData(value: unknown): value is ProgressData {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;

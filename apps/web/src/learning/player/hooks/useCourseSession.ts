@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-const SESSION_KEY = 'mototutor_session';
+const SESSION_KEY = 'lb_studio_session';
 
 // crypto.randomUUID is secure-context-only and is undefined on plain http://
 // (except localhost). apps/web's own browser usage is always secure-context,
