@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const courseThemeSchema = z.enum(['moto-theme', 'yamaha-theme']);
+export const courseThemeSchema = z.enum(['unbranded', 'moto-theme', 'yamaha-theme']);
 export type CourseTheme = z.output<typeof courseThemeSchema>;
 
 export interface ThemeButtonColors {
@@ -20,6 +20,16 @@ export interface ThemeTokens {
 // own. Moving this registry or renaming globals.css without updating that @source will silently
 // break theme button colors.
 export const COURSE_THEMES: Record<CourseTheme, ThemeTokens> = {
+  unbranded: {
+    label: 'No client theme (default)',
+    buttonColors: {
+      // Deliberately generic — no client's brand colors. New courses start here until an
+      // author explicitly opts into a client palette below.
+      primary: 'bg-black text-white hover:bg-black/90',
+      secondary: 'bg-white text-black hover:bg-white/90',
+      tertiary: 'bg-neutral-200 text-black hover:bg-neutral-200/90',
+    },
+  },
   'moto-theme': {
     label: 'Motorola',
     buttonColors: {
@@ -40,4 +50,4 @@ export const COURSE_THEMES: Record<CourseTheme, ThemeTokens> = {
   },
 };
 
-export const DEFAULT_COURSE_THEME: CourseTheme = 'moto-theme';
+export const DEFAULT_COURSE_THEME: CourseTheme = 'unbranded';
