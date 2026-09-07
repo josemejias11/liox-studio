@@ -73,24 +73,40 @@ wrapper). Decision was to remove rather than finish it. Removed, in order:
 
 `npm run typecheck` and `npm run lint` pass clean after the change.
 
-### Related finding surfaced by this removal, left untouched
+## 3. Done: the `'ai'`-source quiz-grading path — removed
 
-While tracing `weak_topics`, found that `apps/web/src/learning/server/quiz-grading.ts`
-has a `source === 'ai'` branch that reads a `GeneratedQuiz` Prisma row
-(`prisma.generatedQuiz.findUnique`) — but **nothing in the codebase ever
-wrote a `GeneratedQuiz` row** even before this removal; `QUIZ_GENERATE` never
-ran, and no other code path calls `prisma.generatedQuiz.create`. That
-`'ai'`-source grading branch, the `GeneratedQuiz` Prisma model, and the
-`ServerAiQuizSchema`/`QuizSourceSchema` 'ai' variant in
-`packages/contracts/src/quiz.ts` were already unreachable and now definitely
-have no path to ever become reachable. Left alone here — it's woven into the
-live, working quiz-grading/session code (which real chapter/final
-assessments depend on via the `'course'` source), so removing it is a
-separate, more invasive decision than this one. Flagging for a future pass.
+Follow-up decision: this feature is confirmed gone for good, so the related
+finding above was removed too rather than left as permanent dead weight.
+`apps/web/src/learning/server/quiz-grading.ts` had a `source === 'ai'`
+branch reading a `GeneratedQuiz` Prisma row — but nothing in the codebase
+ever wrote one, even before the `QUIZ_GENERATE` removal, so it was already
+unreachable and had no path to ever become reachable.
+
+Removed, since only the `'course'` source was ever actually exercised (the
+only `ClientQuiz` constructor, `CourseQuizPlayer.tsx`'s `toClientQuiz`,
+always hardcoded `source: 'course'`):
+
+- **Database**: dropped the `GeneratedQuiz` model/table via migration
+  (confirmed zero existing rows first; no FK pointed at it, so a plain
+  `DROP TABLE` was safe). Updated `QuizAttempt`'s comment, which used to
+  describe `quizId` as "`GeneratedQuiz.id` for AI quizzes or `CourseQuiz.id`
+  for authored quizzes" — now just `CourseQuiz.id`.
+- **`packages/contracts/src/quiz.ts`**: removed `ServerAiQuizSchema` and
+  `QuizSourceSchema`/`QuizSource` entirely, and dropped the now-single-value
+  `source` field from `ClientQuizSchema` and the grade/submit request
+  schemas — it was never anything but `'course'` on the wire in practice.
+- **`quiz-grading.ts`**: `loadQuizAnswerKey` dropped its `source` parameter
+  and the whole `'ai'` branch; `AnswerKey.courseId` narrowed from
+  `string | null` to `string` (only ever null on the removed branch).
+- **`apps/api/quiz/grade/route.ts`**: dropped `body.source` plumbing.
+- **`CourseQuizPlayer.tsx`**: dropped the hardcoded `source: 'course'` from
+  `toClientQuiz` and both grade-request bodies.
+
+`npm run typecheck` and `npm run lint` pass clean after the change.
 
 ---
 
-## 3. Confirmed non-issues (checked because they looked suspicious, ruled out)
+## 4. Confirmed non-issues (checked because they looked suspicious, ruled out)
 
 These were the strongest bloat *candidates* going in; all turned out to be
 legitimate, wired-up architecture:
@@ -109,7 +125,7 @@ legitimate, wired-up architecture:
   CI step, downloaded through
   `apps/web/src/app/api/course-studio/exports/[exportId]/download`. Not
   documented in `CLAUDE.md`'s architecture table before this audit — now
-  fixed (see §4).
+  fixed (see §5).
 - **`MotoSans` font + `Motorola`/`Yamaha` themes** — not leftover
   branding. `packages/contracts/src/course-themes.ts` implements
   deliberate multi-client theming (`unbranded` is now the default per a
@@ -118,10 +134,11 @@ legitimate, wired-up architecture:
   placeholder pending real brand colors). The font file and CSS blocks are
   actively `@import`ed in both `apps/web/src/app/globals.css` and the SCORM
   player bundle's own stylesheet.
-- **`services/parser-service` endpoints** — exactly 5 authenticated routes
-  (`generate-assistant-qa`, `upload`, `generate-quiz`, `generate-course`,
-  `document` delete) plus `/health`; `packages/parser-client` calls exactly
-  those 5 paths and no others. 1:1, no orphans either direction.
+- **`services/parser-service` endpoints** — 4 authenticated routes
+  (`generate-assistant-qa`, `upload`, `generate-course`, `document` delete)
+  plus `/health`, after `generate-quiz` was removed in §2;
+  `packages/parser-client` calls exactly those 4 paths and no others. 1:1,
+  no orphans either direction.
 - **`packages/database`'s repository files** — all nine repository modules
   are re-exported through the single `index.ts` barrel and consumed by
   `apps/web`/`apps/job-worker`; no module bypasses the repositories to hit
@@ -144,10 +161,10 @@ legitimate, wired-up architecture:
 
 ---
 
-## 4. Documentation fixes applied during this audit
+## 5. Documentation fixes applied during this audit
 
 - **`CLAUDE.md`** — its architecture table was missing `packages/scorm-export`
-  and `packages/storage` entirely (both real, both wired up — see §3).
+  and `packages/storage` entirely (both real, both wired up — see §4).
   Added both rows, and added the `npm run build
   --workspace=@lb-studio/scorm-export` command (run in CI, previously only
   documented in README) to the Commands section.
@@ -162,7 +179,7 @@ legitimate, wired-up architecture:
 
 ---
 
-## 5. Lower-priority observations (not action items, just noted)
+## 6. Lower-priority observations (not action items, just noted)
 
 - **Parser-service test coverage**: only `tests/test_retrieval.py` and
   `tests/test_settings.py` exist against 10 source modules; none of the 5
@@ -187,16 +204,15 @@ legitimate, wired-up architecture:
 ## Net assessment
 
 No graveyard of abandoned features, no forgotten packages, no dependency
-cruft, no accidentally-committed build artifacts. Both original findings
-(§1, §2) are resolved — the dead component and legacy schemas deleted, and
-`QUIZ_GENERATE` plus its entire unwired backend (parser-service route,
-`rag.py` function, parser-client method, Prisma enum value) removed rather
-than finished. `typecheck`/`lint` pass clean throughout. One new item
-surfaced along the way (the `'ai'`-source quiz-grading path, now provably
-unreachable) and is left open for a separate decision. If you're looking
-for "where did we overbuild," the honest answer is: you mostly didn't — the
-codebase is smaller and more consistent than the amount of documented
-functionality would suggest.
+cruft, no accidentally-committed build artifacts. All three findings (§1–§3)
+are resolved — the dead component and legacy schemas deleted, and the whole
+AI-quiz feature (job kind, parser-service route, `rag.py` function,
+parser-client method, `GeneratedQuiz` model, and the `'ai'`-source grading
+branch it fed) removed end to end rather than left half-wired.
+`typecheck`/`lint` pass clean throughout. If you're looking for "where did
+we overbuild," the honest answer is: you mostly didn't — the codebase is
+smaller and more consistent than the amount of documented functionality
+would suggest.
 
 ## Status
 
@@ -205,6 +221,6 @@ functionality would suggest.
 | `QuizQuestionsField.tsx` | Deleted |
 | Legacy course-duplicate payload schemas | Deleted, `normalizeCourseDuplicatePayload` collapsed |
 | `QUIZ_GENERATE` job kind + parser-service/parser-client backend | Deleted (all layers, incl. migration) |
-| `'ai'`-source quiz grading (`GeneratedQuiz` model, `quiz-grading.ts` branch) | Open — newly confirmed unreachable, left untouched pending a separate decision |
+| `'ai'`-source quiz grading (`GeneratedQuiz` model, `quiz-grading.ts` branch, `source` field) | Deleted (all layers, incl. migration) |
 | Parser-service endpoint test coverage | Not started — lower priority |
 | `r2Key` naming in `packages/storage` | Not started — rename opportunistically only |

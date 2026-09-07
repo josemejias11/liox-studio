@@ -20,7 +20,6 @@ const OPTION_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 function toClientQuiz(courseQuiz: AuthoredQuiz): ClientQuiz {
   return {
     quizId: courseQuiz._key,
-    source: 'course',
     title: courseQuiz.title ?? '',
     ...(courseQuiz.instructions !== undefined ? { instructions: courseQuiz.instructions } : {}),
     questions: courseQuiz.questions.map((q) => ({
@@ -111,7 +110,6 @@ export function CourseQuizPlayer({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'question',
-          source: quiz.source,
           quizId: quiz.quizId,
           questionIndex: session.currentQuestionIndex,
           selectedIndex: optionIndex,
@@ -150,7 +148,6 @@ export function CourseQuizPlayer({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'submit',
-          source: quiz.source,
           quizId: quiz.quizId,
           answers,
           ...(courseId ? { courseId } : {}),

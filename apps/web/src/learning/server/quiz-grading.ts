@@ -1,10 +1,5 @@
 import { prisma } from '@lb-studio/database';
-import {
-  ServerAiQuizSchema,
-  type QuestionResult,
-  type QuizSource,
-  type SubmitQuizResponse,
-} from '@lb-studio/contracts/quiz';
+import { type QuestionResult, type SubmitQuizResponse } from '@lb-studio/contracts/quiz';
 import { z } from 'zod';
 
 export interface GradableQuestion {
@@ -54,35 +49,10 @@ const courseGradingSchema = z.object({
 interface AnswerKey {
   questions: GradableQuestion[];
   passingScore: number;
-  courseId: string | null;
+  courseId: string;
 }
 
-export async function loadQuizAnswerKey(
-  source: QuizSource,
-  quizId: string,
-): Promise<AnswerKey | null> {
-  if (source === 'ai') {
-    const record = await prisma.generatedQuiz.findUnique({ where: { id: quizId } });
-    if (!record) return null;
-    let payload: unknown;
-    try {
-      payload = JSON.parse(record.payload);
-    } catch {
-      return null;
-    }
-    const parsed = ServerAiQuizSchema.safeParse(payload);
-    if (!parsed.success) return null;
-    return {
-      questions: parsed.data.questions.map((question) => ({
-        options: question.options,
-        correctIndex: question.options.indexOf(question.correct_answer),
-        explanation: question.explanation,
-      })),
-      passingScore: DEFAULT_PASSING_SCORE,
-      courseId: null,
-    };
-  }
-
+export async function loadQuizAnswerKey(quizId: string): Promise<AnswerKey | null> {
   const record = await prisma.courseQuiz.findUnique({
     where: { id: quizId },
     select: { payload: true, courseId: true },
