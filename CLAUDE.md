@@ -170,3 +170,11 @@ python -m lb_studio_parser   # dev server w/ reload, http://127.0.0.1:8000
   short-circuits retries and writes a failure message straight to the DB
   record the user sees, so its message must be UI-appropriate copy, not a
   debug string.
+- `services/parser-service`'s HTTP routes (`main.py`) have no endpoint-level
+  tests today (only `tests/test_retrieval.py` and `tests/test_settings.py`
+  exist) — a coverage gap to keep in mind, not something to backfill
+  incidentally.
+- `r2Key`/`r2KeyFor` naming in `packages/storage` is vestigial (the
+  abstraction reads as modeled after Cloudflare R2/S3, but the only
+  implementation is local filesystem) — rename opportunistically if you're
+  already touching that file, not worth a dedicated pass.
