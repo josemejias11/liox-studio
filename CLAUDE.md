@@ -42,6 +42,8 @@ course corpus.
 | `packages/contracts`      | Shared TypeScript contracts and Zod validation schemas               |
 | `packages/jobs`           | Queueing, leasing, retries, status, retention                        |
 | `packages/parser-client`  | Typed internal client for the parser service                         |
+| `packages/scorm-export`   | Standalone player bundle + SCORM 1.2 package builder                 |
+| `packages/storage`        | Local filesystem object-storage client                               |
 | `services/parser-service` | Private FastAPI source-processing / authoring-draft service (Python) |
 
 ### `apps/web/src` layout
@@ -107,6 +109,7 @@ npm run format            # prettier --write . (writes; not a check)
 
 npm run build            # db:migrate, then build apps/web
 npm start                 # start the built web app
+npm run build --workspace=@lb-studio/scorm-export  # build the standalone SCORM player bundle (also run in CI)
 ```
 
 `npm run dev` / `npm run jobs:worker` / `npm run build` / `npm start` are

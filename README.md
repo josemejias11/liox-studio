@@ -262,7 +262,6 @@ token and OpenAI key must never be exposed to browser code.
 │   └── parser-service/         Native Python FastAPI, OpenAI, and Chroma service
 ├── scripts/
 │   └── run-workspace.mjs       Root environment loading and workspace delegation
-├── docs/superpowers/           Historical implementation plans and design records
 ├── .env.example                Database and non-secret service configuration
 ├── .env.local.example          Local passwords, tokens, and local storage root
 └── package.json                Root workspace commands
