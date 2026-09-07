@@ -15,8 +15,6 @@ import {
   type CourseDuplicateCurrentPayload,
   type CourseDuplicatePayload,
   CourseDuplicateArtifactSchema,
-  CourseDuplicateFingerprintLegacyPayloadSchema,
-  CourseDuplicateLegacyPayloadSchema,
   CourseDuplicatePayloadSchema,
   type CourseGenerationPayload,
   type DocumentIndexPayload,
@@ -225,7 +223,6 @@ function normalizeCourseDuplicatePayload(
 ): {
   payload: CourseDuplicateCurrentPayload;
   artifact: CourseDuplicateArtifact;
-  legacy: boolean;
 } | null {
   let artifact: CourseDuplicateArtifact;
   try {
@@ -235,41 +232,8 @@ function normalizeCourseDuplicatePayload(
   }
 
   const current = CourseDuplicatePayloadSchema.safeParse(payload);
-  if (current.success) return { payload: current.data, artifact, legacy: false };
-
-  const fingerprintLegacy = CourseDuplicateFingerprintLegacyPayloadSchema.safeParse(payload);
-  if (
-    fingerprintLegacy.success &&
-    fingerprintLegacy.data.requestFingerprint ===
-      duplicateRequestFingerprint(fingerprintLegacy.data.sourceCourseId, artifact.requestedTitle)
-  ) {
-    return {
-      payload: {
-        sourceCourseId: fingerprintLegacy.data.sourceCourseId,
-        destinationCourseId: fingerprintLegacy.data.destinationCourseId,
-        requestedTitle: artifact.requestedTitle,
-        requestFingerprint: fingerprintLegacy.data.requestFingerprint,
-      },
-      artifact,
-      legacy: true,
-    };
-  }
-
-  const legacy = CourseDuplicateLegacyPayloadSchema.safeParse(payload);
-  if (!legacy.success) return null;
-  return {
-    payload: {
-      sourceCourseId: legacy.data.sourceCourseId,
-      destinationCourseId: legacy.data.destinationCourseId,
-      requestedTitle: artifact.requestedTitle,
-      requestFingerprint: duplicateRequestFingerprint(
-        legacy.data.sourceCourseId,
-        artifact.requestedTitle,
-      ),
-    },
-    artifact,
-    legacy: true,
-  };
+  if (!current.success) return null;
+  return { payload: current.data, artifact };
 }
 
 export async function findExistingCourseDuplicateJob(input: {
@@ -521,27 +485,6 @@ export async function claimNextJob(): Promise<ClaimedJob | null> {
       },
       include: { artifact: true },
     });
-
-    if (job.kind === BackgroundJobKind.COURSE_DUPLICATE && job.artifact) {
-      const normalized = normalizeCourseDuplicatePayload(
-        job.payload,
-        Buffer.from(job.artifact.bytes),
-      );
-      if (normalized?.legacy) {
-        const updated = await tx.backgroundJob.update({
-          where: { id: job.id },
-          data: { payload: jsonValue(normalized.payload) },
-          include: { artifact: true },
-        });
-        return {
-          ...updated,
-          leaseToken,
-          artifact: updated.artifact
-            ? { ...updated.artifact, bytes: Buffer.from(updated.artifact.bytes) }
-            : null,
-        };
-      }
-    }
 
     return {
       ...job,

@@ -49,17 +49,6 @@ const CourseDuplicatePayloadBaseSchema = z.object({
   destinationCourseId: z.string().min(1).max(100),
 });
 
-export const CourseDuplicateLegacyPayloadSchema = CourseDuplicatePayloadBaseSchema.strict();
-export type CourseDuplicateLegacyPayload = z.infer<typeof CourseDuplicateLegacyPayloadSchema>;
-
-export const CourseDuplicateFingerprintLegacyPayloadSchema =
-  CourseDuplicatePayloadBaseSchema.extend({
-    requestFingerprint: z.string().regex(/^[0-9a-f]{64}$/),
-  }).strict();
-export type CourseDuplicateFingerprintLegacyPayload = z.infer<
-  typeof CourseDuplicateFingerprintLegacyPayloadSchema
->;
-
 export const CourseDuplicateCurrentPayloadSchema = CourseDuplicatePayloadBaseSchema.extend({
   requestedTitle: z
     .string()

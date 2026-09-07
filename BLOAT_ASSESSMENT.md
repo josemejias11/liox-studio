@@ -20,52 +20,64 @@ fixed.
 
 ---
 
-## 1. Confirmed: safe to delete
+## 1. Done: deleted
 
-### `apps/web/src/authoring/inspectors/lesson/QuizQuestionsField.tsx`
-100-line component, exported, **zero import sites anywhere in the repo**
-(every sibling field component in that directory — `AssetField`,
-`HotspotsField`, `DragDropField`, etc. — has at least one real caller; this
-one has none). It's the editable counterpart to the inline-quiz lesson type
-that `LegacyInlineQuizInspector` (same file family, `LessonInspector.tsx`)
-now renders as a **read-only** "this is legacy, migrate to the guided
-assessment editor" screen. When inline-quiz editing was replaced by the
-chapter-quick-check / final-assessment flow, this file was left behind.
-**Recommendation:** delete it.
+### `apps/web/src/authoring/inspectors/lesson/QuizQuestionsField.tsx` — deleted
+100-line component, zero import sites anywhere in the repo (every sibling
+field component in that directory had at least one real caller; this one
+had none). It was the editable counterpart to the inline-quiz lesson type
+that `LegacyInlineQuizInspector` now renders as a read-only "migrate to the
+guided assessment editor" screen. Left behind when inline-quiz editing was
+replaced by the chapter-quick-check / final-assessment flow.
 
-### `packages/contracts/src/jobs.ts` — `CourseDuplicateLegacyPayloadSchema` / `CourseDuplicateFingerprintLegacyPayloadSchema`
-Two "old payload shape" fallback schemas, consumed only by
-`normalizeCourseDuplicatePayload()` in `packages/jobs/src/queue.ts:222-273`,
-which tries the current schema first and falls back to these if it doesn't
-parse. This is defensive code for **in-flight queued jobs that predate a
-payload-shape change** — but per README's own "Current limitations" /
-"Production-readiness gates" sections, this product has never been exposed
-to production traffic, and `BackgroundJob` retention is 7 days
-(`RETENTION_MS` in `queue.ts:32`). There is no external system and no
-surviving job row that could still be in the old shape.
-**Recommendation:** confirm no queued/failed job currently has the old
-shape (`SELECT kind, payload FROM "BackgroundJob" WHERE kind =
-'COURSE_DUPLICATE'`), then delete both schemas and collapse
-`normalizeCourseDuplicatePayload` to the single current-schema path.
+### `packages/contracts/src/jobs.ts` — `CourseDuplicateLegacyPayloadSchema` / `CourseDuplicateFingerprintLegacyPayloadSchema` — deleted
+Removed both schemas and their type exports. Collapsed
+`normalizeCourseDuplicatePayload()` in `packages/jobs/src/queue.ts` to the
+single current-schema path (dropped the `legacy` result flag along with the
+two fallback-parse branches), and removed the now-unreachable claim-time
+payload-migration block in the job-lease transaction that only fired when
+`legacy` was true. This product has never carried production traffic and
+`BackgroundJob` retention is 7 days, so no surviving job row could still be
+in the old shape. `npm run typecheck` and `npm run lint` both pass clean
+after the change.
 
 ---
 
-## 2. Confirmed: real gap, not urgent, but worth a decision
+## 2. Open: `BackgroundJobKind.QUIZ_GENERATE` — bigger than it first looked, holding for a product decision
 
-### `BackgroundJobKind.QUIZ_GENERATE` is unreachable
-It's a real value in the Prisma enum (`schema.prisma:416`) and gets carried
-through `packages/jobs/src/queue.ts`'s `publicKind` exhaustiveness map
-(line 45), but **nothing in the codebase ever enqueues a job with this
-kind** — the enqueue-side `databaseKind` map (`queue.ts:34-41`) only ever
-produces `DOCUMENT_INDEX`, `AI_OPERATION`, `SCORM_EXPORT`, or
-`COURSE_DUPLICATE`. `apps/job-worker/src/handlers.ts`'s `executeJob` has no
-case for it either. This is already self-documented in README's "Current
-limitations" ("Parser quiz generation is not registered as a
-background-worker workflow") — so it's a known, intentional gap, not a
-surprise. **Recommendation:** not bloat to remove reflexively — it's a
-placeholder for a planned feature. But it should be a deliberate choice:
-either wire it up, or drop the enum value (migration) and stop carrying it
-through the exhaustiveness map. Leaving it silently is the only bad option.
+Deeper look past the enum itself: this isn't just an idle `BackgroundJobKind`
+value carried through `packages/jobs/src/queue.ts`'s `publicKind`
+exhaustiveness map (line 45) with no `databaseKind` producer and no
+`executeJob` case in `apps/job-worker/src/handlers.ts` — there's a full,
+working backend for it that nothing calls:
+
+- `services/parser-service/src/lb_studio_parser/main.py` exposes
+  `POST /api/generate-quiz`, backed by `rag.py::generate_quiz(course_id,
+  source_ids, weak_topics)`.
+- `packages/parser-client/src/index.ts` has a typed `generateCourseQuiz()`
+  wrapper for that exact route.
+- **Zero callers of `generateCourseQuiz` anywhere in `apps/job-worker` or
+  `apps/web`.**
+
+The `weak_topics` parameter lines up with the "weak-topic indicators" the
+Analytics dashboard already computes (per README) — this reads like a
+designed remediation loop (analytics flags a weak topic → AI drafts a
+supplemental quiz targeting it → worker runs the job) whose backend got
+built and whose trigger never did. Already self-documented as a gap in
+README's "Current limitations."
+
+**Recommendation:** this is a product call, not a cleanup call:
+- **Finish it** — add a `QUIZ_GENERATE` handler to `handlers.ts` calling
+  `generateCourseQuiz`, wire a UI trigger (Analytics is the natural home,
+  next to the weak-topic data). The backend is already done, so this is
+  smaller than it looks.
+- **Remove it** — if superseded by the guided chapter/final-assessment
+  editor, remove all three layers together (Prisma enum value via
+  migration, the parser-client method, the parser-service route and
+  `rag.py` function) — not just the enum, or two dead layers get left
+  behind instead of one.
+
+Holding open until that direction is decided.
 
 ---
 
@@ -167,8 +179,19 @@ legitimate, wired-up architecture:
 
 No graveyard of abandoned features, no forgotten packages, no dependency
 cruft, no accidentally-committed build artifacts. The two real deletions
-(§1) total ~150 lines. The one open design question (§2, `QUIZ_GENERATE`)
-is a known, self-documented gap, not a surprise. If you're looking for
-"where did we overbuild," the honest answer is: you didn't — the codebase
-is smaller and more consistent than the amount of documented functionality
-would suggest.
+(§1) are done — ~150 lines removed, `typecheck`/`lint` clean. The one open
+design question (§2, `QUIZ_GENERATE`) is a known, self-documented gap, not
+a surprise — held open pending a product decision on whether to finish or
+remove the weak-topic quiz feature. If you're looking for "where did we
+overbuild," the honest answer is: you didn't — the codebase is smaller and
+more consistent than the amount of documented functionality would suggest.
+
+## Status
+
+| Item | Status |
+| --- | --- |
+| `QuizQuestionsField.tsx` | Deleted |
+| Legacy course-duplicate payload schemas | Deleted, `normalizeCourseDuplicatePayload` collapsed |
+| `QUIZ_GENERATE` / weak-topic quiz feature | Open — pending product decision (finish vs. remove all 3 layers) |
+| Parser-service endpoint test coverage | Not started — lower priority |
+| `r2Key` naming in `packages/storage` | Not started — rename opportunistically only |
