@@ -1,11 +1,5 @@
 import { z } from 'zod';
 
-export const GenerateQuizRequestSchema = z.object({
-  courseId: z.string().min(1).max(100),
-  weakTopics: z.array(z.string().min(1).max(200)).max(20).optional(),
-});
-
-export type GenerateQuizRequest = z.infer<typeof GenerateQuizRequestSchema>;
 export const ServerAiQuizSchema = z.object({
   title: z.string().max(200),
   instructions: z.string().max(2000).optional(),

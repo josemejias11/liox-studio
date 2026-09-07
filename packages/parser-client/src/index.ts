@@ -86,18 +86,6 @@ const ParserAssistantQaResponseSchema = z.object({
     .min(1),
 });
 
-const ParserQuizResponseSchema = z.object({
-  questions: z
-    .array(
-      z.object({
-        question: z.string(),
-        options: z.array(z.string()).length(4),
-        correct_answer_index: z.number().int().min(0).max(3),
-      }),
-    )
-    .length(5),
-});
-
 const ParserUploadResponseSchema = z.object({
   status: z.string(),
   source_id: z.string(),
@@ -109,16 +97,6 @@ const ParserDeleteResponseSchema = z.object({
   status: z.string(),
   source_id: z.string(),
 });
-
-export interface RagQuizQuestion {
-  question: string;
-  options: string[];
-  correctAnswerIndex: number;
-}
-
-export interface RagQuizResponse {
-  questions: RagQuizQuestion[];
-}
 
 export interface RagUploadResponse {
   status: string;
@@ -153,38 +131,6 @@ export async function generateAssistantQaDrafts(courseId: string, sourceIds: str
   const parsed = ParserAssistantQaResponseSchema.safeParse(raw);
   if (!parsed.success) throw new RagServiceError(userSafe);
   return parsed.data.drafts;
-}
-
-export async function generateCourseQuiz(
-  courseId: string,
-  sourceIds: string[],
-  weakTopics: string[],
-): Promise<RagQuizResponse> {
-  const userSafe = 'Quiz generation is temporarily unavailable. Please try again in a moment.';
-  const raw = await parserRequest(
-    'POST',
-    '/api/generate-quiz',
-    {
-      json: { course_id: courseId, source_ids: sourceIds, weak_topics: weakTopics },
-      timeoutMs: 120_000,
-    },
-    'api/quiz',
-    userSafe,
-  );
-
-  const parsed = ParserQuizResponseSchema.safeParse(raw);
-  if (!parsed.success) {
-    console.error('[api/quiz] parser response failed validation:', parsed.error.issues);
-    throw new RagServiceError(userSafe);
-  }
-
-  return {
-    questions: parsed.data.questions.map((q) => ({
-      question: q.question,
-      options: q.options,
-      correctAnswerIndex: q.correct_answer_index,
-    })),
-  };
 }
 
 export async function generateCourseDraft(

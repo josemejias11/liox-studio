@@ -413,7 +413,6 @@ model QuizAttempt {
 
 enum BackgroundJobKind {
   DOCUMENT_INDEX
-  QUIZ_GENERATE
   AI_OPERATION
   SCORM_EXPORT
   COURSE_DUPLICATE

@@ -43,41 +43,50 @@ after the change.
 
 ---
 
-## 2. Open: `BackgroundJobKind.QUIZ_GENERATE` — bigger than it first looked, holding for a product decision
+## 2. Done: `BackgroundJobKind.QUIZ_GENERATE` and its backend — removed
 
-Deeper look past the enum itself: this isn't just an idle `BackgroundJobKind`
-value carried through `packages/jobs/src/queue.ts`'s `publicKind`
-exhaustiveness map (line 45) with no `databaseKind` producer and no
-`executeJob` case in `apps/job-worker/src/handlers.ts` — there's a full,
-working backend for it that nothing calls:
+Turned out to be bigger than the enum: a full, working backend existed with
+zero callers (`services/parser-service`'s `POST /api/generate-quiz` +
+`rag.py::generate_quiz`, and `packages/parser-client`'s `generateCourseQuiz()`
+wrapper). Decision was to remove rather than finish it. Removed, in order:
 
-- `services/parser-service/src/lb_studio_parser/main.py` exposes
-  `POST /api/generate-quiz`, backed by `rag.py::generate_quiz(course_id,
-  source_ids, weak_topics)`.
-- `packages/parser-client/src/index.ts` has a typed `generateCourseQuiz()`
-  wrapper for that exact route.
-- **Zero callers of `generateCourseQuiz` anywhere in `apps/job-worker` or
-  `apps/web`.**
+- **Database**: dropped `QUIZ_GENERATE` from the `BackgroundJobKind` Prisma
+  enum via a hand-written migration (Postgres has no direct "drop enum
+  value," so it recreates the type and repoints the column) — confirmed zero
+  existing `BackgroundJob` rows used it before altering.
+- **`packages/jobs/src/queue.ts`**: removed the `QUIZ_GENERATE` entry from
+  the `publicKind` map.
+- **`packages/parser-client`**: removed `generateCourseQuiz()`,
+  `ParserQuizResponseSchema`, `RagQuizQuestion`, `RagQuizResponse`.
+- **`packages/contracts/src/quiz.ts`**: removed the unused
+  `GenerateQuizRequestSchema` / `GenerateQuizRequest` (zero consumers even
+  before this).
+- **`services/parser-service`**: removed the `/api/generate-quiz` route,
+  `rag.py::generate_quiz()`, its `QuizRequest`/`QuizQuestion`/`QuizResponse`/
+  `QuizQuestionPayload`/`QuizPayload` pydantic models, and the
+  `RETRIEVAL_K_PER_TOPIC` / `QUIZ_MAX_CONTEXT_DOCS` settings that only it
+  used. Updated its README's endpoint table and description.
+- **Docs**: removed the "Supplemental parser quiz generation" product-status
+  row, the `/api/generate-quiz` HTTP-surfaces row, and the "Parser quiz
+  generation is not registered" current-limitation bullet from root
+  `README.md`.
 
-The `weak_topics` parameter lines up with the "weak-topic indicators" the
-Analytics dashboard already computes (per README) — this reads like a
-designed remediation loop (analytics flags a weak topic → AI drafts a
-supplemental quiz targeting it → worker runs the job) whose backend got
-built and whose trigger never did. Already self-documented as a gap in
-README's "Current limitations."
+`npm run typecheck` and `npm run lint` pass clean after the change.
 
-**Recommendation:** this is a product call, not a cleanup call:
-- **Finish it** — add a `QUIZ_GENERATE` handler to `handlers.ts` calling
-  `generateCourseQuiz`, wire a UI trigger (Analytics is the natural home,
-  next to the weak-topic data). The backend is already done, so this is
-  smaller than it looks.
-- **Remove it** — if superseded by the guided chapter/final-assessment
-  editor, remove all three layers together (Prisma enum value via
-  migration, the parser-client method, the parser-service route and
-  `rag.py` function) — not just the enum, or two dead layers get left
-  behind instead of one.
+### Related finding surfaced by this removal, left untouched
 
-Holding open until that direction is decided.
+While tracing `weak_topics`, found that `apps/web/src/learning/server/quiz-grading.ts`
+has a `source === 'ai'` branch that reads a `GeneratedQuiz` Prisma row
+(`prisma.generatedQuiz.findUnique`) — but **nothing in the codebase ever
+wrote a `GeneratedQuiz` row** even before this removal; `QUIZ_GENERATE` never
+ran, and no other code path calls `prisma.generatedQuiz.create`. That
+`'ai'`-source grading branch, the `GeneratedQuiz` Prisma model, and the
+`ServerAiQuizSchema`/`QuizSourceSchema` 'ai' variant in
+`packages/contracts/src/quiz.ts` were already unreachable and now definitely
+have no path to ever become reachable. Left alone here — it's woven into the
+live, working quiz-grading/session code (which real chapter/final
+assessments depend on via the `'course'` source), so removing it is a
+separate, more invasive decision than this one. Flagging for a future pass.
 
 ---
 
@@ -178,13 +187,16 @@ legitimate, wired-up architecture:
 ## Net assessment
 
 No graveyard of abandoned features, no forgotten packages, no dependency
-cruft, no accidentally-committed build artifacts. The two real deletions
-(§1) are done — ~150 lines removed, `typecheck`/`lint` clean. The one open
-design question (§2, `QUIZ_GENERATE`) is a known, self-documented gap, not
-a surprise — held open pending a product decision on whether to finish or
-remove the weak-topic quiz feature. If you're looking for "where did we
-overbuild," the honest answer is: you didn't — the codebase is smaller and
-more consistent than the amount of documented functionality would suggest.
+cruft, no accidentally-committed build artifacts. Both original findings
+(§1, §2) are resolved — the dead component and legacy schemas deleted, and
+`QUIZ_GENERATE` plus its entire unwired backend (parser-service route,
+`rag.py` function, parser-client method, Prisma enum value) removed rather
+than finished. `typecheck`/`lint` pass clean throughout. One new item
+surfaced along the way (the `'ai'`-source quiz-grading path, now provably
+unreachable) and is left open for a separate decision. If you're looking
+for "where did we overbuild," the honest answer is: you mostly didn't — the
+codebase is smaller and more consistent than the amount of documented
+functionality would suggest.
 
 ## Status
 
@@ -192,6 +204,7 @@ more consistent than the amount of documented functionality would suggest.
 | --- | --- |
 | `QuizQuestionsField.tsx` | Deleted |
 | Legacy course-duplicate payload schemas | Deleted, `normalizeCourseDuplicatePayload` collapsed |
-| `QUIZ_GENERATE` / weak-topic quiz feature | Open — pending product decision (finish vs. remove all 3 layers) |
+| `QUIZ_GENERATE` job kind + parser-service/parser-client backend | Deleted (all layers, incl. migration) |
+| `'ai'`-source quiz grading (`GeneratedQuiz` model, `quiz-grading.ts` branch) | Open — newly confirmed unreachable, left untouched pending a separate decision |
 | Parser-service endpoint test coverage | Not started — lower priority |
 | `r2Key` naming in `packages/storage` | Not started — rename opportunistically only |

@@ -3,7 +3,6 @@
 import logging
 import os
 import secrets
-from typing import cast
 
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 
@@ -13,8 +12,6 @@ from .contracts import (
     CourseGenerationRequest,
     CourseGenerationResponse,
     DeleteDocumentRequest,
-    QuizRequest,
-    QuizResponse,
     UploadResponse,
 )
 from .documents import (
@@ -28,7 +25,7 @@ from .documents import (
     store_course_document,
 )
 from .generation import generate_course
-from .rag import generate_assistant_qa, generate_quiz
+from .rag import generate_assistant_qa
 from .runtime import lifespan, runtime
 from .settings import CHROMA_DIR, OPENAI_API_KEY, OPENAI_CHAT_MODEL, OPENAI_EMBEDDING_MODEL
 
@@ -109,37 +106,6 @@ def upload_file(  # noqa: B008
         raise HTTPException(status_code=400, detail=str(error)) from error
     except DocumentProcessingError as error:
         raise HTTPException(status_code=500, detail=str(error)) from error
-
-
-@app.post(
-    "/api/generate-quiz",
-    response_model=QuizResponse,
-    dependencies=[Depends(require_internal_token)],
-    tags=["quiz"],
-)
-def generate_quiz_route(request: QuizRequest) -> QuizResponse:
-    try:
-        return cast(
-            QuizResponse,
-            QuizResponse.model_validate(
-                {
-                    "questions": generate_quiz(
-                        request.course_id,
-                        request.source_ids,
-                        request.weak_topics,
-                    )
-                }
-            ),
-        )
-    except LookupError as error:
-        raise HTTPException(status_code=404, detail=str(error)) from error
-    except RuntimeError as error:
-        raise HTTPException(status_code=502, detail=str(error)) from error
-    except Exception as error:
-        logger.exception("Error during quiz generation for course %s", request.course_id)
-        raise HTTPException(
-            status_code=500, detail="Internal server error generating quiz."
-        ) from error
 
 
 @app.post(

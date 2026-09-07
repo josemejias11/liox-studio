@@ -40,7 +40,6 @@ const databaseKind: Record<JobKind, BackgroundJobKind> = {
 
 const publicKind: Record<BackgroundJobKind, Exclude<JobKind, 'course_generate'>> = {
   DOCUMENT_INDEX: 'document_index',
-  QUIZ_GENERATE: 'ai_operation',
   AI_OPERATION: 'ai_operation',
   SCORM_EXPORT: 'scorm_export',
   COURSE_DUPLICATE: 'course_duplicate',

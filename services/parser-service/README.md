@@ -1,8 +1,7 @@
 # Lionbridge Course Studio Parser Service
 
 The parser service is Lionbridge Course Studio's internal FastAPI service for source parsing,
-embedding, source-grounded authoring drafts, and supplemental quiz-draft
-generation. It is called by the Next.js backend and background worker;
+embedding, and source-grounded authoring drafts. It is called by the Next.js backend and background worker;
 browsers never call it directly. OpenAI is the language-model and embedding
 provider behind this service boundary; browsers never receive the API key.
 Ollama and other local-model runtimes are not supported: this service does not
@@ -34,7 +33,6 @@ readiness with `curl http://127.0.0.1:8000/health`; when enabled, Swagger is at
 | -------- | ---------------------------- | ----------------------------------------------------------------- |
 | `POST`   | `/api/upload`                | Index one immutable source ID and its SHA-256.                    |
 | `POST`   | `/api/generate-assistant-qa` | Draft source-cited Course Assistant Q&A for author approval.      |
-| `POST`   | `/api/generate-quiz`         | Generate a supplemental quiz from explicit revision sources.      |
 | `POST`   | `/api/generate-course`       | Generate an editable course draft from explicit revision sources. |
 | `DELETE` | `/api/document`              | Delete chunks for one source ID.                                  |
 | `GET`    | `/health`                    | Report OpenAI configuration and Chroma readiness.                 |

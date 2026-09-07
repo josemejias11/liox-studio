@@ -32,7 +32,6 @@ configured OpenAI API service.
 | Deterministic Course Assistant      | Implemented     | Frozen approved Q&A is matched locally; learners never call OpenAI or the parser                                                                                                                  |
 | SCORM 1.2 export                    | Implemented     | Produces a standalone package with player assets, course media, answer keys, bookmarks, score, and completion reporting                                                                           |
 | Analytics dashboard                 | Implemented     | Displays stored session, hotspot, quiz, and lesson-engagement data                                                                                                                                |
-| Supplemental parser quiz generation | Boundary only   | The parser endpoint and typed client exist, but no web workflow or worker handler is registered                                                                                                   |
 | Public `/course/[slug]` delivery    | Not implemented | There is no public learner page or browser-verified public progress flow yet                                                                                                                      |
 | Multi-user accounts and RBAC        | Not implemented | Studio and analytics currently use separate shared passwords                                                                                                                                      |
 
@@ -110,8 +109,7 @@ parser service. Parser retrieval is scoped to an explicit course and source-ID
 set; an empty source set never falls back to the entire corpus.
 
 The parser can extract and index documents, propose source-cited Course
-Assistant Q&A, create an editable course graph, and expose a supplemental quiz
-draft endpoint for future authoring integration.
+Assistant Q&A, and create an editable course graph.
 
 ### Course templates and duplication
 
@@ -530,7 +528,6 @@ The parser service owns:
 | `POST`   | `/api/upload`                | Parse and index one immutable source                       |
 | `POST`   | `/api/generate-assistant-qa` | Produce source-cited authoring drafts                      |
 | `POST`   | `/api/generate-course`       | Produce a validated editable course draft                  |
-| `POST`   | `/api/generate-quiz`         | Produce a supplemental quiz draft; not wired to the worker |
 | `DELETE` | `/api/document`              | Remove chunks for one source identity                      |
 | `GET`    | `/health`                    | Report OpenAI configuration and Chroma writability         |
 
@@ -736,7 +733,6 @@ and `apps/job-worker` can read from and write to.
   public learner flow.
 - Authentication is shared-password based; there are no user accounts, roles,
   tenant boundaries, password recovery, or identity-provider integration.
-- Parser quiz generation is not registered as a background-worker workflow.
 - The web app, worker, parser, PostgreSQL, Chroma persistence, and local
   filesystem storage must be operated as separate dependencies.
 - Production exposure requires dedicated security, retention, monitoring, and

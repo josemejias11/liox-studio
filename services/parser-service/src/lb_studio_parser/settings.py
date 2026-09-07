@@ -41,8 +41,5 @@ def validate_course_id(value: str) -> str:
 # Relevance cutoff for cosine-space collections.
 RELEVANCE_THRESHOLD = float(os.environ.get("RELEVANCE_THRESHOLD", "0.45"))
 
-RETRIEVAL_K_PER_TOPIC = 4
-QUIZ_MAX_CONTEXT_DOCS = 12
-
 CHUNK_SIZE = int(os.environ.get("CHUNK_SIZE", "1000"))
 CHUNK_OVERLAP = int(os.environ.get("CHUNK_OVERLAP", "200"))
