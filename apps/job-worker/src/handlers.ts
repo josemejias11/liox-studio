@@ -19,6 +19,7 @@ import {
   findCourseCreatedByJob,
   markCourseGenerationFailed,
   markCourseGenerationRunning,
+  markSourceExtracted,
   markSourceFailed,
   markSourceIndexed,
   persistGeneratedCourse,
@@ -49,7 +50,9 @@ import {
   putObject,
 } from '@lb-studio/storage';
 
-async function indexDocument(job: ClaimedJob): Promise<{ filename: string; chunksStored: number }> {
+async function indexDocument(
+  job: ClaimedJob,
+): Promise<{ filename: string; chunksStored: number; status: 'indexed' | 'extracted' }> {
   const payload = DocumentIndexPayloadSchema.safeParse(job.payload);
   if (!payload.success) {
     throw new NonRetryableJobError('The queued document is incomplete. Upload it again to retry.');
@@ -91,8 +94,12 @@ async function indexDocument(job: ClaimedJob): Promise<{ filename: string; chunk
         'The indexing service returned a mismatched source. Upload it again to retry.',
       );
     }
-    await markSourceIndexed(courseId, sourceId, result.chunksStored);
-    return { filename: result.filename, chunksStored: result.chunksStored };
+    if (result.status === 'extracted') {
+      await markSourceExtracted(courseId, sourceId, result.chunksStored);
+    } else {
+      await markSourceIndexed(courseId, sourceId, result.chunksStored);
+    }
+    return { filename: result.filename, chunksStored: result.chunksStored, status: result.status };
   } catch (error: unknown) {
     const retryable = isRetryableJobError(error);
     if (!retryable || job.attempts >= job.maxAttempts) {
