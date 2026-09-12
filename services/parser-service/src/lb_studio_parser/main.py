@@ -27,7 +27,13 @@ from .documents import (
 from .generation import generate_course
 from .rag import generate_assistant_qa
 from .runtime import lifespan, runtime
-from .settings import CHROMA_DIR, OPENAI_API_KEY, OPENAI_CHAT_MODEL, OPENAI_EMBEDDING_MODEL
+from .settings import (
+    CHROMA_DIR,
+    EMBEDDINGS_ENABLED,
+    OPENAI_API_KEY,
+    OPENAI_CHAT_MODEL,
+    OPENAI_EMBEDDING_MODEL,
+)
 
 logger = logging.getLogger(__name__)
 app = FastAPI(
@@ -85,7 +91,7 @@ def upload_file(  # noqa: B008
     file: UploadFile = File(...),  # noqa: B008
 ) -> UploadResponse:
     try:
-        filename, chunks_stored = store_course_document(
+        filename, chunks_stored, status = store_course_document(
             course_id,
             source_id,
             sha256,
@@ -93,7 +99,7 @@ def upload_file(  # noqa: B008
             file.file,
         )
         return UploadResponse(
-            status="success",
+            status=status,
             source_id=source_id,
             filename=filename,
             chunks_stored=chunks_stored,
@@ -158,9 +164,11 @@ def health_check() -> dict[str, str | bool]:
         chroma_writable = True
     except OSError:
         chroma_writable = False
+    ready = chroma_writable and (openai_configured if EMBEDDINGS_ENABLED else True)
     return {
-        "status": "ok" if openai_configured and chroma_writable else "degraded",
+        "status": "ok" if ready else "degraded",
         "service": "lb-studio-parser",
+        "embeddings_enabled": EMBEDDINGS_ENABLED,
         "openai_configured": openai_configured,
         "chroma_dir_writable": chroma_writable,
         "llm_model": OPENAI_CHAT_MODEL,

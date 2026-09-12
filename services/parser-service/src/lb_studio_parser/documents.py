@@ -10,9 +10,11 @@ from typing import BinaryIO, cast
 
 from markitdown import MarkItDown
 
+from .extraction_store import delete_extracted_chunks, store_extracted_chunks
 from .retrieval import build_text_splitter, delete_document_chunks, replace_document_chunks
 from .settings import (
     ALLOWED_EXTENSIONS,
+    EMBEDDINGS_ENABLED,
     MAX_UPLOAD_BYTES,
     UPLOAD_CHUNK_BYTES,
     validate_course_id,
@@ -93,8 +95,8 @@ def store_course_document(
     sha256: str,
     filename: str,
     file_obj: BinaryIO,
-) -> tuple[str, int]:
-    """Validate, stage, parse, and index one course document."""
+) -> tuple[str, int, str]:
+    """Validate, stage, parse, and index (or locally extract) one course document."""
     try:
         validate_course_id(course_id)
     except ValueError as error:
@@ -121,13 +123,15 @@ def store_course_document(
     try:
         temp_dir, temp_file_path = stream_upload_to_disk(file_obj, extension)
         chunks = build_text_splitter().split_text(extract_document_text(temp_file_path))
-        return original_filename, replace_document_chunks(
-            course_id,
-            source_id,
-            sha256,
-            original_filename,
-            chunks,
+        if EMBEDDINGS_ENABLED:
+            chunks_stored = replace_document_chunks(
+                course_id, source_id, sha256, original_filename, chunks
+            )
+            return original_filename, chunks_stored, "indexed"
+        chunks_stored = store_extracted_chunks(
+            course_id, source_id, sha256, original_filename, chunks
         )
+        return original_filename, chunks_stored, "extracted"
     except ValueError as error:
         detail = str(error)
         if "MB upload limit" in detail:
@@ -147,7 +151,8 @@ def remove_course_document(course_id: str, source_id: str) -> str:
     """Remove one document's chunks and return the public deletion status."""
     logger.info("Source delete request: course=%s source=%s", course_id, source_id)
     try:
-        deleted = delete_document_chunks(course_id, source_id)
+        deleted_indexed = delete_document_chunks(course_id, source_id)
+        deleted_extracted = delete_extracted_chunks(course_id, source_id)
     except Exception as error:
         logger.warning(
             "Could not delete chunks for source %s in course %s",
@@ -156,6 +161,7 @@ def remove_course_document(course_id: str, source_id: str) -> str:
             exc_info=True,
         )
         raise DocumentDeletionError("Failed to delete document chunks.") from error
+    deleted = deleted_indexed or deleted_extracted
     if deleted:
         logger.info("Deleted chunks for source %s in course %s", source_id, course_id)
     return "deleted" if deleted else "not_found"
