@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import { CourseTemplateChecklistSchema } from '@lb-studio/contracts';
 import { prisma } from './index';
 import { getAuthoringCourse, type CourseGraph } from './course-repository';
 
@@ -42,6 +43,42 @@ function toInputJson(
   value: Prisma.JsonValue | null,
 ): Prisma.InputJsonValue | Prisma.NullTypes.JsonNull {
   return value === null ? Prisma.JsonNull : (value as Prisma.InputJsonValue);
+}
+
+/**
+ * Trashing a lesson (or, later, a chapter) can remove the only entity a
+ * template-completeness requirement pointed at. Left alone, that requirement's
+ * `entityId` no longer resolves against the live graph and the readiness
+ * check (`resolveEntity` in `@lb-studio/contracts/course-readiness`) reports
+ * it as "references an unknown template item" forever — the course could
+ * never be frozen again even though the author deliberately, and validly,
+ * removed that screen via Trash. Prune requirements whose entity no longer
+ * exists so deleting a templated screen doesn't permanently block freeze.
+ */
+async function pruneTemplateChecklistRequirements(
+  tx: Prisma.TransactionClient,
+  courseId: string,
+  removedEntityIds: readonly string[],
+): Promise<void> {
+  if (removedEntityIds.length === 0) return;
+  const course = await tx.course.findUnique({
+    where: { id: courseId },
+    select: { templateChecklist: true },
+  });
+  if (!course?.templateChecklist) return;
+  const parsed = CourseTemplateChecklistSchema.safeParse(course.templateChecklist);
+  if (!parsed.success) return;
+  const removed = new Set(removedEntityIds);
+  const requirements = parsed.data.requirements.filter(
+    (requirement) => !removed.has(requirement.entityId),
+  );
+  if (requirements.length === parsed.data.requirements.length) return;
+  await tx.course.update({
+    where: { id: courseId },
+    data: {
+      templateChecklist: { ...parsed.data, requirements } as unknown as Prisma.InputJsonValue,
+    },
+  });
 }
 
 async function requireAuthoringCourse(courseId: string): Promise<CourseGraph> {
@@ -125,6 +162,7 @@ export async function trashLesson(lessonId: string): Promise<TrashLessonResult> 
     for (const [position, sibling] of siblings.filter((item) => item.id !== lesson.id).entries()) {
       await tx.courseLesson.update({ where: { id: sibling.id }, data: { position } });
     }
+    await pruneTemplateChecklistRequirements(tx, lesson.chapter.course.id, [lesson.id]);
 
     return {
       courseId: lesson.chapter.course.id,
