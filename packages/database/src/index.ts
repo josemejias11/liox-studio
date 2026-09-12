@@ -90,6 +90,7 @@ export {
   listCourseSources,
   listFrozenRevisionSourceIds,
   listRevisionSources,
+  markSourceExtracted,
   markSourceFailed,
   markSourceIndexed,
   retryCourseSourceIndex,

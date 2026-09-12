@@ -22,7 +22,7 @@ type SourceRecord = {
   contentType: string;
   byteSize: number;
   sha256: string;
-  indexStatus: 'PENDING' | 'INDEXED' | 'FAILED' | 'DELETING';
+  indexStatus: 'PENDING' | 'EXTRACTED' | 'INDEXED' | 'FAILED' | 'DELETING';
   chunksStored: number | null;
   indexError: string | null;
   createdAt: Date;
@@ -89,6 +89,20 @@ export async function markSourceIndexed(
   const source = await prisma.courseSourceFile.update({
     where: { id: sourceId },
     data: { indexStatus: 'INDEXED', chunksStored, indexError: null },
+  });
+  return toCourseSourceFile(source);
+}
+
+export async function markSourceExtracted(
+  courseId: string,
+  sourceId: string,
+  chunksStored: number,
+): Promise<CourseSourceFile> {
+  const existing = await requireOwnedCourseSource(courseId, sourceId);
+  if (existing.indexStatus === 'DELETING') throw new Error('COURSE_SOURCE_REMOVAL_IN_PROGRESS');
+  const source = await prisma.courseSourceFile.update({
+    where: { id: sourceId },
+    data: { indexStatus: 'EXTRACTED', chunksStored, indexError: null },
   });
   return toCourseSourceFile(source);
 }
