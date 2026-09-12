@@ -87,7 +87,7 @@ const ParserAssistantQaResponseSchema = z.object({
 });
 
 const ParserUploadResponseSchema = z.object({
-  status: z.string(),
+  status: z.enum(['indexed', 'extracted']),
   source_id: z.string(),
   filename: z.string(),
   chunks_stored: z.number().int().min(0),
@@ -99,7 +99,7 @@ const ParserDeleteResponseSchema = z.object({
 });
 
 export interface RagUploadResponse {
-  status: string;
+  status: 'indexed' | 'extracted';
   sourceId: string;
   filename: string;
   chunksStored: number;
