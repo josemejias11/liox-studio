@@ -29,6 +29,7 @@ export type DocumentIndexPayload = z.infer<typeof DocumentIndexPayloadSchema>;
 export const DocumentIndexResultSchema = z.object({
   filename: z.string().min(1).max(255),
   chunksStored: z.number().int().min(0),
+  status: z.enum(['indexed', 'extracted']),
 });
 export type DocumentIndexResult = z.infer<typeof DocumentIndexResultSchema>;
 

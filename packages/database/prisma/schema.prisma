@@ -29,6 +29,7 @@ enum CourseFeedbackStatus {
 
 enum CourseSourceIndexStatus {
   PENDING
+  EXTRACTED
   INDEXED
   FAILED
   DELETING

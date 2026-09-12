@@ -36,7 +36,13 @@ export const COURSE_LESSON_TYPES = [
 
 export type CourseLessonType = (typeof COURSE_LESSON_TYPES)[number];
 
-export const COURSE_SOURCE_INDEX_STATUSES = ['pending', 'indexed', 'failed', 'deleting'] as const;
+export const COURSE_SOURCE_INDEX_STATUSES = [
+  'pending',
+  'extracted',
+  'indexed',
+  'failed',
+  'deleting',
+] as const;
 
 export type CourseSourceIndexStatus = (typeof COURSE_SOURCE_INDEX_STATUSES)[number];
 
