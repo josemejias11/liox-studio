@@ -130,7 +130,11 @@ export async function freezeCourseRevision(
         ...ownedSources,
         ...inheritedBindings.map((binding) => binding.sourceFile),
       ].sort((left, right) => left.id.localeCompare(right.id));
-      if (sources.some((source) => source.indexStatus !== 'INDEXED')) {
+      if (
+        sources.some(
+          (source) => source.indexStatus !== 'INDEXED' && source.indexStatus !== 'EXTRACTED',
+        )
+      ) {
         throw new Error('COURSE_SOURCES_NOT_INDEXED');
       }
 
