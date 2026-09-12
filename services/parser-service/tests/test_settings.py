@@ -25,6 +25,29 @@ class OpenAISettingsTests(unittest.TestCase):
             if previous_embedding_model is not None:
                 os.environ["OPENAI_EMBEDDING_MODEL"] = previous_embedding_model
 
+    def test_embeddings_disabled_by_default(self) -> None:
+        previous = os.environ.pop("EMBEDDINGS_ENABLED", None)
+        try:
+            sys.modules.pop("lb_studio_parser.settings", None)
+            settings = importlib.import_module("lb_studio_parser.settings")
+            self.assertFalse(settings.EMBEDDINGS_ENABLED)
+        finally:
+            if previous is not None:
+                os.environ["EMBEDDINGS_ENABLED"] = previous
+
+    def test_embeddings_enabled_when_flag_set_true(self) -> None:
+        previous = os.environ.get("EMBEDDINGS_ENABLED")
+        os.environ["EMBEDDINGS_ENABLED"] = "true"
+        try:
+            sys.modules.pop("lb_studio_parser.settings", None)
+            settings = importlib.import_module("lb_studio_parser.settings")
+            self.assertTrue(settings.EMBEDDINGS_ENABLED)
+        finally:
+            if previous is None:
+                os.environ.pop("EMBEDDINGS_ENABLED", None)
+            else:
+                os.environ["EMBEDDINGS_ENABLED"] = previous
+
 
 if __name__ == "__main__":
     unittest.main()

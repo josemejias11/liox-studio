@@ -20,6 +20,13 @@ CHROMA_DIR = str(
     if _configured_chroma_dir.is_absolute()
     else SERVICE_ROOT / _configured_chroma_dir
 )
+EMBEDDINGS_ENABLED = os.environ.get("EMBEDDINGS_ENABLED", "false").strip().lower() == "true"
+_configured_extracted_dir = Path(os.environ.get("EXTRACTED_DIR", "extracted_chunks"))
+EXTRACTED_DIR = str(
+    _configured_extracted_dir
+    if _configured_extracted_dir.is_absolute()
+    else SERVICE_ROOT / _configured_extracted_dir
+)
 MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50MB hard cap
 UPLOAD_CHUNK_BYTES = 1024 * 1024
 ALLOWED_EXTENSIONS = {".pdf", ".pptx", ".docx", ".xlsx"}
