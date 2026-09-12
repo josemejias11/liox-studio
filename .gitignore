@@ -23,6 +23,9 @@ services/parser-service/chroma_db/
 .claude/worktrees/
 .worktrees/
 
+# Subagent-driven-development scratch workspace (ledgers, briefs, reports)
+.superpowers/
+
 # Package build output
 packages/scorm-export/dist/
 
