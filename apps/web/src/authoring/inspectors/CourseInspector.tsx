@@ -67,10 +67,18 @@ export function CourseInspector({
 
   if (course !== sourceCourse) {
     setSourceCourse(course);
-    setForm(initial);
-    setBaseline(formFingerprint(initial));
-    setSaveError(null);
-    setSaved(false);
+    // A course-prop update can arrive from a completely unrelated save (a lesson,
+    // chapter, or assessment edit elsewhere in the same course) while this panel
+    // still has unsaved course-settings edits in progress. Only resync the draft
+    // from the new prop when there is nothing unsaved to lose; otherwise an
+    // in-flight save resolving after the author started typing here would
+    // silently discard their not-yet-saved course-settings changes.
+    if (formFingerprint(form) === baseline) {
+      setForm(initial);
+      setBaseline(formFingerprint(initial));
+      setSaveError(null);
+      setSaved(false);
+    }
   }
 
   const dirty = formFingerprint(form) !== baseline;
