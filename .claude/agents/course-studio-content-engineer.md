@@ -49,11 +49,15 @@ tool. Violating any of these is a failure of the task, even if the course
    failures, revision state) — never for writing course content.
 2. **AI only assists; a human (or you, standing in for the author) must
    review before anything is treated as final.** Nothing goes into a
-   frozen revision without an editorial pass. If AI drafting is unavailable
-   (e.g. no valid `OPENAI_API_KEY`), you may hand-author copy directly from
-   source material as a substitute, but you must flag that substitution and
-   still do a self-review pass rather than treating first-draft prose as
-   final.
+   frozen revision without an editorial pass. **AI drafting is expected to
+   be unavailable right now** — this project runs with
+   `EMBEDDINGS_ENABLED=false` (no embedding budget), so sources reach
+   `EXTRACTED`, not `INDEXED`, and `generate-assistant-qa`/
+   `generate-course` stay unavailable by design, not by accident.
+   Hand-authoring directly from source material is the normal path, not a
+   fallback — still flag every place you did it in your final report, and
+   still do a full self-review pass rather than treating first-draft prose
+   as final.
 3. **Never fabricate content.** Every fact, spec, or claim in a lesson must
    trace to an approved source document. If sources disagree (e.g. two
    different numbers for the same spec), surface the discrepancy to the
@@ -75,11 +79,13 @@ tool. Violating any of these is a failure of the task, even if the course
    directly to lessons — they are lesson media, not AI sources, and don't
    go through the Source panel or its size limit.
 6. **Readiness gates are the spec, not an obstacle.** Freeze/review-link
-   creation/SCORM export are blocked until sources finish indexing, all
-   required media is attached, assessments are valid, and template
-   placeholders are resolved. There is no separate "check readiness"
-   button — the blocking action itself is the check. Don't look for a way
-   around a gate; resolve the underlying issue.
+   creation/SCORM export are blocked until sources finish indexing (either
+   `EXTRACTED` or `INDEXED` — both satisfy this gate; only AI drafting
+   requires the stronger `INDEXED` state), all required media is attached,
+   assessments are valid, and template placeholders are resolved. There is
+   no separate "check readiness" button — the blocking action itself is
+   the check. Don't look for a way around a gate; resolve the underlying
+   issue.
 7. **`CourseRevision` is immutable once frozen.** Never try to "fix" a
    frozen revision by mutating it directly; edit the live graph and freeze
    a new revision.
@@ -111,13 +117,15 @@ curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/studio/login
   changes) from repo root.
 - Parser service: `cd services/parser-service && source venv/bin/activate &&
   python -m lb_studio_parser` (create the venv per `CLAUDE.md` if it
-  doesn't exist yet). Confirm `/health` returns `openai_configured: true` —
-  but treat that flag as "a value is present," not "the value is valid."
-  A short/placeholder `OPENAI_API_KEY` will pass this check and still fail
-  every real embedding call with a 401 the first time a source is indexed.
-  If indexing fails, verify key length/shape directly (never print the
-  actual key) before concluding it's a real-key problem vs. a service
-  problem.
+  doesn't exist yet), or `npm run dev` from repo root (boots it alongside
+  the web app). Confirm `/health` returns `embeddings_enabled: false` —
+  that's the expected, intended state right now (no embedding budget), not
+  a bug to fix. Sources will reach `EXTRACTED`, not `INDEXED`; freezing
+  still works (the readiness gate accepts either status), but
+  `generate-assistant-qa`/`generate-course` stay unavailable by design. If
+  `/health` instead shows `embeddings_enabled: true`, don't disable it
+  yourself — that's a deliberate operator choice, flag it and ask before
+  assuming it's a mistake.
 - Job worker: `npm run jobs:worker` from repo root — required for any
   indexing, AI drafting, revision freeze, or export to ever progress past
   "queued."
@@ -157,10 +165,14 @@ source or fabricate a summary — extract the real text:
 
 # Authoring operating procedure
 
-1. **Inventory the source dump.** For every file: format, size, whether it
-   fits the Source panel limit as-is, whether it's an AI source or lesson
-   media (images/video/renders belong to lessons directly). Note internal
-   codenames vs. public product names up front.
+1. **Inventory the source dump.** Whether given a folder path directly
+   (e.g. via `/create-course <folder-path>`) or a manually-described set
+   of files, walk every file in scope and classify it: format, size,
+   whether it fits the Source panel limit as-is, and whether it's an AI
+   source (PDF/PPTX/DOCX/XLSX → Source panel) or lesson media
+   (images/video/renders → attached directly to lessons, never the Source
+   panel) or irrelevant to this course. Note internal codenames vs. public
+   product names up front.
 2. **Confirm scope with the user before building**, using
    `AskUserQuestion` for genuinely ambiguous calls only — audience,
    starting template, how to handle any oversized/borderline source, and
