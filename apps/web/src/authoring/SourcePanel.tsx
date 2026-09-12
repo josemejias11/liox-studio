@@ -24,7 +24,11 @@ function sizeLabel(byteSize: number): string {
 
 function statusLabel(source: CourseSourceFile): string {
   if (source.indexStatus === 'indexed') {
-    return `${source.chunksStored ?? 0} indexed chunk${source.chunksStored === 1 ? '' : 's'}`;
+    return `${source.chunksStored ?? 0} indexed chunk${source.chunksStored === 1 ? '' : 's'} · AI drafting ready`;
+  }
+  if (source.indexStatus === 'extracted') {
+    const count = source.chunksStored ?? 0;
+    return `${count} extracted chunk${count === 1 ? '' : 's'} · ready to freeze, not searchable by AI drafting`;
   }
   if (source.indexStatus === 'pending') return 'Indexing queued';
   if (source.indexStatus === 'deleting') return 'Cleanup needs completion';
