@@ -141,6 +141,18 @@ observable without reading `.env` — closes the exact ambiguity that cost
 time earlier (`openai_configured: true` looking like "ready" when it
 wasn't).
 
+**Addendum found during plan-writing:** `runtime.py`'s `lifespan()`
+(lines 34-59) currently `raise`s at startup — refusing to boot the whole
+service — if `OPENAI_API_KEY` is unset, and unconditionally constructs
+`OpenAIEmbeddings`/`ChatOpenAI`. That's inconsistent with this spec's own
+purpose (no billed-API dependency): a fresh setup with
+`EMBEDDINGS_ENABLED=false` shouldn't need an OpenAI account just to
+start. `lifespan()` must gate the `OPENAI_API_KEY` requirement and the
+`OpenAIEmbeddings` construction behind `EMBEDDINGS_ENABLED == true`;
+`ChatOpenAI` construction (used only by the already-out-of-scope
+generation routes) can stay as-is since building the client is lazy and
+harmless without a real key.
+
 ### 4. `packages/parser-client` / `packages/contracts` — response shape
 
 `ParserUploadResponseSchema` (`packages/parser-client/src/index.ts:89-94`)
