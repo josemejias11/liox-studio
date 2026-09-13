@@ -100,7 +100,9 @@ npm run db:migrate      # apply committed Prisma migrations (deploy)
 npm run db:migrate:dev  # create/apply a new migration in dev
 npm run db:studio       # Prisma Studio
 
-npm run dev             # start the Next.js web app (apps/web) at :3000
+npm run dev             # start the Next.js web app (apps/web) at :3000 AND the parser service at :8000
+npm run dev:web         # start only the Next.js web app (apps/web) at :3000
+npm run dev:parser      # start only the parser service (services/parser-service) at :8000
 npm run jobs:worker     # start the durable background-job worker
 
 npm run lint             # eslint over apps, packages, scripts
@@ -112,10 +114,18 @@ npm start                 # start the built web app
 npm run build --workspace=@lb-studio/scorm-export  # build the standalone SCORM player bundle (also run in CI)
 ```
 
-`npm run dev` / `npm run jobs:worker` / `npm run build` / `npm start` are
+`npm run jobs:worker` / `npm run build` / `npm start` / `npm run dev:web` are
 thin wrappers around `scripts/run-workspace.mjs`, which runs the named
 workspace's own script — don't `cd` into `apps/web` to run these, use the
-root npm scripts.
+root npm scripts. `npm run dev` itself runs `scripts/dev.mjs`, which
+preflight-checks that Postgres is reachable at `DATABASE_URL` (fails fast
+with a fix hint — e.g. `brew services start postgresql@18` — instead of
+letting the web app fail cryptically later), warns if
+`services/parser-service/.env` still has a placeholder `OPENAI_API_KEY`,
+then runs the web app and the parser service together with prefixed output
+and shared shutdown. It does **not** start or stop Postgres itself — that's
+a persistent background service (Homebrew/launchd here), not a per-session
+process this repo owns.
 
 There is no root JS/TS test runner configured (`npm run lint` and
 `npm run typecheck` are the checks that exist). Adding one is real setup

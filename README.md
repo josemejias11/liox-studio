@@ -26,7 +26,7 @@ configured OpenAI API service.
 | Comprehensive course template       | Implemented     | A versioned, code-owned neutral template instantiates a full nine-lesson-type outline with a chapter check and final assessment and no product-specific media or grounding                        |
 | Exact course duplication            | Implemented     | A durable background job deep-copies a course's graph, media, assessments, and approved Course Assistant Q&A into an independent destination course without invoking the parser service or OpenAI |
 | Frozen review links                 | Implemented     | Capability-token access to one immutable revision, with contextual feedback                                                                                                                       |
-| Source indexing                     | Implemented     | PDF, PPTX, DOCX, and XLSX sources are processed asynchronously by the parser service                                                                                                              |
+| Source indexing                     | Implemented     | PDF, PPTX, DOCX, and XLSX sources are processed asynchronously by the parser service. With `EMBEDDINGS_ENABLED=true` (default `false`) sources are chunked and embedded for AI drafting (`INDEXED`); otherwise they are extracted locally at no API cost and satisfy freeze/export without embeddings (`EXTRACTED`) |
 | Course Assistant drafting           | Implemented     | Source-cited Q&A drafts require explicit author approval                                                                                                                                          |
 | AI course drafting                  | Implemented     | Creates a new editable course from a frozen revision and its exact source set                                                                                                                     |
 | Deterministic Course Assistant      | Implemented     | Frozen approved Q&A is matched locally; learners never call OpenAI or the parser                                                                                                                  |
@@ -41,8 +41,10 @@ Lionbridge Course Studio separates authoring assistance from learner delivery.
 
 1. An author creates or edits a course in Course Studio.
 2. Source files are uploaded to the course source library.
-3. The background worker asks the parser service to extract, chunk, embed, and
-   index those immutable source identities.
+3. The background worker asks the parser service to extract and chunk those
+   immutable source identities, embedding and indexing them for AI drafting
+   only when `EMBEDDINGS_ENABLED=true`; otherwise extraction stays local and
+   free, and the source still satisfies freeze/export requirements.
 4. The author may request cited Course Assistant Q&A drafts or a new editable
    course draft from an explicitly frozen source revision.
 5. Generated material stays editable and unapproved until the author accepts it.
@@ -109,7 +111,17 @@ parser service. Parser retrieval is scoped to an explicit course and source-ID
 set; an empty source set never falls back to the entire corpus.
 
 The parser can extract and index documents, propose source-cited Course
-Assistant Q&A, and create an editable course graph.
+Assistant Q&A, and create an editable course graph. Indexing runs in one of
+two modes, controlled by the parser's `EMBEDDINGS_ENABLED` setting (default
+`false`, no billed API call):
+
+- **`EMBEDDINGS_ENABLED=false` (default):** documents are extracted and
+  chunked locally (no OpenAI call) and reach `EXTRACTED` status — enough to
+  freeze a revision and export SCORM, but not enough for AI-assisted
+  drafting.
+- **`EMBEDDINGS_ENABLED=true`:** chunks are additionally embedded via OpenAI
+  and stored in Chroma, reaching `INDEXED` status, which unlocks Course
+  Assistant Q&A drafting and AI course generation.
 
 ### Course templates and duplication
 
@@ -297,9 +309,9 @@ independently supervised services.
 
 | Process                  | Command                                  | Required for                                                                        |
 | ------------------------ | ---------------------------------------- | ----------------------------------------------------------------------------------- |
-| Next.js web              | `npm run dev` or `npm start`             | Studio, preview, review, analytics, HTTP APIs, downloads                            |
+| Next.js web + parser     | `npm run dev` (or `npm start` for web alone) | Studio, preview, review, analytics, HTTP APIs, downloads, and document indexing — `npm run dev` boots both together and preflight-checks Postgres |
 | Job worker               | `npm run jobs:worker`                    | Source indexing, Q&A drafting, AI course drafting, SCORM export, course duplication |
-| Parser service           | `python -m lb_studio_parser`             | Document indexing and optional OpenAI-backed authoring operations                   |
+| Parser service (alone)   | `npm run dev:parser` or `python -m lb_studio_parser` | Document indexing and, only with `EMBEDDINGS_ENABLED=true`, OpenAI-backed authoring operations |
 | PostgreSQL               | Platform-specific                        | Application state, revisions, progress, and durable jobs                            |
 | ChromaDB                 | Embedded in parser service               | Persistent source embeddings and retrieval                                          |
 | Local filesystem storage | Local disk, shared by web app and worker | Media, source bytes, and export artifacts                                           |
@@ -316,11 +328,14 @@ own database and storage dependencies are available.
 - Python 3.11 or later for the parser service.
 - A local filesystem directory, readable and writable by both the web app and
   the job worker, for media, source, and export flows.
-- An OpenAI API project with billing enabled when source indexing or AI
-  authoring is required.
+- An OpenAI API project with billing enabled only if you set
+  `EMBEDDINGS_ENABLED=true` for AI-assisted drafting (Course Assistant Q&A,
+  AI course generation). By default source indexing runs free and local, with
+  no OpenAI account required.
 
-The web application can be developed without invoking OpenAI, but parser
-startup requires both `PARSER_SERVICE_TOKEN` and `OPENAI_API_KEY`.
+The web application can be developed without invoking OpenAI. Parser startup
+always requires `PARSER_SERVICE_TOKEN`; it requires `OPENAI_API_KEY` only
+when `EMBEDDINGS_ENABLED=true`.
 
 ## Initial setup
 
@@ -413,31 +428,42 @@ job worker.
 Copy `services/parser-service/.env.example` to
 `services/parser-service/.env`.
 
-| Variable                 | Required | Default or purpose                                               |
-| ------------------------ | -------- | ---------------------------------------------------------------- |
-| `PARSER_SERVICE_TOKEN`   | Yes      | Must exactly match root `.env.local`                             |
-| `OPENAI_API_KEY`         | Yes      | Server-only OpenAI credential                                    |
-| `OPENAI_CHAT_MODEL`      | No       | `gpt-5.4-mini`                                                   |
-| `OPENAI_EMBEDDING_MODEL` | No       | `text-embedding-3-small`                                         |
-| `CHROMA_DIR`             | No       | `./chroma_db`, resolved relative to the parser-service directory |
-| `OPENAI_TIMEOUT_SECONDS` | No       | `120`                                                            |
-| `RELEVANCE_THRESHOLD`    | No       | `0.45` for cosine relevance                                      |
-| `CHUNK_SIZE`             | No       | `1000` characters                                                |
-| `CHUNK_OVERLAP`          | No       | `200` characters                                                 |
-| `VECTORSTORE_CACHE_SIZE` | No       | `50` cached per-course Chroma wrappers                           |
-| `PARSER_PORT`            | No       | `8000`; must be 1024 or higher                                   |
+| Variable                 | Required                     | Default or purpose                                                    |
+| ------------------------ | ----------------------------- | ---------------------------------------------------------------------- |
+| `PARSER_SERVICE_TOKEN`   | Yes                           | Must exactly match root `.env.local`                                  |
+| `EMBEDDINGS_ENABLED`     | No                            | `false`; set to `true` only when you have a real `OPENAI_API_KEY` and want to pay for embeddings + AI drafting |
+| `EXTRACTED_DIR`          | No                            | `./extracted_chunks`, resolved relative to the parser-service directory; local storage for extracted-but-not-embedded chunk text when `EMBEDDINGS_ENABLED=false` |
+| `OPENAI_API_KEY`         | Only if `EMBEDDINGS_ENABLED=true` | Server-only OpenAI credential                                     |
+| `OPENAI_CHAT_MODEL`      | No                            | `gpt-5.4-mini`                                                         |
+| `OPENAI_EMBEDDING_MODEL` | No                            | `text-embedding-3-small`                                               |
+| `CHROMA_DIR`             | No                            | `./chroma_db`, resolved relative to the parser-service directory      |
+| `OPENAI_TIMEOUT_SECONDS` | No                            | `120`                                                                  |
+| `RELEVANCE_THRESHOLD`    | No                            | `0.45` for cosine relevance                                            |
+| `CHUNK_SIZE`             | No                            | `1000` characters                                                      |
+| `CHUNK_OVERLAP`          | No                            | `200` characters                                                       |
+| `VECTORSTORE_CACHE_SIZE` | No                            | `50` cached per-course Chroma wrappers                                 |
+| `PARSER_PORT`            | No                            | `8000`; must be 1024 or higher                                        |
 
 ## Running locally
 
-Use separate terminals so failures and logs remain attributable to one runtime.
+`npm run dev` (Terminal 1 below) boots the web app and the parser service
+together, so a full local setup only needs two terminals. Use separate
+terminals so failures and logs remain attributable to one runtime; run the
+parser on its own (`npm run dev:parser`, or `python -m lb_studio_parser` from
+its venv) only when you want to restart it independently of the web app.
 
-### Terminal 1: parser service
+### Terminal 1: web application + parser service
 
 ```bash
-cd services/parser-service
-source venv/bin/activate
-python -m lb_studio_parser
+npm run dev
 ```
+
+This preflight-checks that Postgres is reachable (failing fast with a fix
+hint if not — it does not start or stop Postgres itself, which is a
+persistent background service on this machine, not a per-session process),
+warns if `services/parser-service/.env` still has a placeholder
+`OPENAI_API_KEY`, then starts the web app and the parser service together
+with prefixed output. Open `http://localhost:3000`.
 
 The parser listens on `http://127.0.0.1:8000` by default. Check readiness with:
 
@@ -445,8 +471,11 @@ The parser listens on `http://127.0.0.1:8000` by default. Check readiness with:
 curl http://127.0.0.1:8000/health
 ```
 
-Swagger is available at `http://127.0.0.1:8000/docs` during local development.
-Every parser endpoint except `/health` requires `X-Internal-Token`.
+The response includes `embeddings_enabled` — confirm it reads `false` for
+the default free-extraction setup, or `true` only if you've deliberately
+enabled paid embeddings. Swagger is available at `http://127.0.0.1:8000/docs`
+during local development. Every parser endpoint except `/health` requires
+`X-Internal-Token`.
 
 ### Terminal 2: job worker
 
@@ -468,13 +497,8 @@ Registered handlers currently cover:
   kind `course_duplicate`), which copies media, graph, and assessment data
   without calling the parser service or OpenAI.
 
-### Terminal 3: web application
-
-```bash
-npm run dev
-```
-
-Open `http://localhost:3000`. The root URL redirects to `/studio`.
+Terminal 1's web app is at `http://localhost:3000`; the root URL redirects to
+`/studio`.
 
 | Surface             | Local path           |
 | ------------------- | -------------------- |
@@ -491,7 +515,9 @@ There is no public `/course/[slug]` page.
 
 | Command                                           | Purpose                                                               |
 | ------------------------------------------------- | --------------------------------------------------------------------- |
-| `npm run dev`                                     | Start the Next.js development server                                  |
+| `npm run dev`                                     | Start the Next.js development server and the parser service together, preflight-checking Postgres |
+| `npm run dev:web`                                  | Start only the Next.js development server                             |
+| `npm run dev:parser`                               | Start only the parser service                                         |
 | `npm run jobs:worker`                             | Start the durable background worker                                   |
 | `npm run build`                                   | Apply committed Prisma migrations, then build the Next.js application |
 | `npm start`                                       | Start the built Next.js application                                   |
@@ -701,11 +727,23 @@ service and listener before changing application queries. Confirm both
 ### Parser will not start
 
 - Confirm `services/parser-service/.env` exists.
-- Set both `PARSER_SERVICE_TOKEN` and `OPENAI_API_KEY`.
-- Confirm `CHROMA_DIR` is writable.
+- Set `PARSER_SERVICE_TOKEN` — always required.
+- Set `OPENAI_API_KEY` only if you've set `EMBEDDINGS_ENABLED=true`; with the
+  default `EMBEDDINGS_ENABLED=false`, the parser starts without any OpenAI
+  key at all.
+- Confirm `CHROMA_DIR` is writable (checked at startup only when
+  `EMBEDDINGS_ENABLED=true`).
 - Use Python 3.11 or later and the parser's virtual environment.
 - If port 8000 is occupied, set `PARSER_PORT` to an available port at or above
   1024 and update `PARSER_SERVICE_URL` accordingly.
+
+### Sources reach `EXTRACTED` but never `INDEXED` / AI drafting stays unavailable
+
+This is the intended behavior when `EMBEDDINGS_ENABLED=false` (the default,
+free path) — sources still satisfy freeze/SCORM-export requirements, but
+Course Assistant Q&A drafting and AI course generation require the stronger
+`INDEXED` status. Set `EMBEDDINGS_ENABLED=true` and a real `OPENAI_API_KEY`
+to enable them.
 
 ### Login rejects the correct password
 

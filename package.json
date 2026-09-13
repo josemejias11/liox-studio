@@ -7,7 +7,9 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "node scripts/run-workspace.mjs @lb-studio/web dev",
+    "dev": "node scripts/dev.mjs",
+    "dev:web": "node scripts/run-workspace.mjs @lb-studio/web dev",
+    "dev:parser": "cd services/parser-service && ./venv/bin/python -m lb_studio_parser",
     "jobs:worker": "node scripts/run-workspace.mjs @lb-studio/job-worker dev",
     "build": "npm run db:migrate && node scripts/run-workspace.mjs @lb-studio/web build",
     "start": "node scripts/run-workspace.mjs @lb-studio/web start",
