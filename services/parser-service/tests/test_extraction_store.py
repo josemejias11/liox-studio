@@ -61,6 +61,12 @@ class ExtractionStoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.extraction_store.delete_extracted_chunks("course-1", "sub/dir")
 
+    def test_store_rejects_a_course_id_with_a_path_separator(self) -> None:
+        with self.assertRaises(ValueError):
+            self.extraction_store.store_extracted_chunks(
+                "course/1", "source-1", "a" * 64, "brief.docx", ["chunk one"]
+            )
+
     def test_store_and_delete_still_accept_a_cuid_shaped_source_id(self) -> None:
         cuid_like = "cljk3x9q00001z2r4b8f9h2a"
         count = self.extraction_store.store_extracted_chunks(
