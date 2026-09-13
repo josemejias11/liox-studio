@@ -54,6 +54,22 @@ class StoreCourseDocumentModeTests(unittest.TestCase):
         replace_chunks.assert_called_once()
         store_extracted.assert_not_called()
 
+    def test_rejects_unsafe_source_id_before_any_extraction_work(self) -> None:
+        documents = importlib.import_module("lb_studio_parser.documents")
+        course_id, filename, sha256, file_obj = self._args()
+        with (
+            patch.object(documents, "extract_document_text") as extract_text,
+            patch.object(documents, "store_extracted_chunks") as store_extracted,
+            patch.object(documents, "replace_document_chunks") as replace_chunks,
+        ):
+            with self.assertRaises(ValueError):
+                documents.store_course_document(
+                    course_id, "../../etc/passwd", sha256, filename, file_obj
+                )
+        extract_text.assert_not_called()
+        store_extracted.assert_not_called()
+        replace_chunks.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

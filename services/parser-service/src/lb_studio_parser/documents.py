@@ -18,6 +18,7 @@ from .settings import (
     MAX_UPLOAD_BYTES,
     UPLOAD_CHUNK_BYTES,
     validate_course_id,
+    validate_source_id,
 )
 
 logger = logging.getLogger(__name__)
@@ -102,8 +103,11 @@ def store_course_document(
     except ValueError as error:
         raise InvalidCourseIdError(str(error)) from error
 
-    if not source_id or len(source_id) > 100:
-        raise InvalidUploadError("source_id must be between 1 and 100 characters.")
+    try:
+        validate_source_id(source_id)
+    except ValueError as error:
+        raise InvalidUploadError(str(error)) from error
+
     if not re.fullmatch(r"[0-9a-f]{64}", sha256):
         raise InvalidUploadError("sha256 must be a lowercase hexadecimal SHA-256 digest.")
 

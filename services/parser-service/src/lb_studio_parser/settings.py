@@ -45,6 +45,21 @@ def validate_course_id(value: str) -> str:
     return value
 
 
+# Cuid-shaped and permissive enough for test fixtures, but no path separators
+# or '..' are expressible with this charset.
+SOURCE_ID_PATTERN = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,99}$")
+
+
+def validate_source_id(value: str) -> str:
+    """Validate a source identifier before it reaches the filesystem."""
+    if not SOURCE_ID_PATTERN.fullmatch(value):
+        raise ValueError(
+            "source_id must be 1-100 characters, start with a letter or digit, "
+            "and contain only letters, digits, '_' or '-'."
+        )
+    return value
+
+
 # Relevance cutoff for cosine-space collections.
 RELEVANCE_THRESHOLD = float(os.environ.get("RELEVANCE_THRESHOLD", "0.45"))
 

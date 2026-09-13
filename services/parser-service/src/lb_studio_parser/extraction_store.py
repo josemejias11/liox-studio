@@ -11,12 +11,13 @@ import json
 import logging
 import os
 
-from .settings import EXTRACTED_DIR
+from .settings import EXTRACTED_DIR, validate_source_id
 
 logger = logging.getLogger(__name__)
 
 
 def _chunk_file_path(course_id: str, source_id: str) -> str:
+    validate_source_id(source_id)
     course_dir = os.path.join(EXTRACTED_DIR, course_id)
     os.makedirs(course_dir, exist_ok=True)
     return os.path.join(course_dir, f"{source_id}.json")
