@@ -1,6 +1,6 @@
 # Authoring e-learning Studio
 
-Lionbridge Course Studio is an app-owned e-learning authoring platform. Course Studio is where
+Authoring e-learning Course Studio is an app-owned e-learning authoring platform. Course Studio is where
 authors create the English learning master; the shared Course Player renders that
 content in the author preview and in immutable, shareable review links.
 
@@ -37,7 +37,7 @@ configured OpenAI API service.
 
 ## Learning and authoring lifecycle
 
-Lionbridge Course Studio separates authoring assistance from learner delivery.
+Authoring e-learning Course Studio separates authoring assistance from learner delivery.
 
 1. An author creates or edits a course in Course Studio.
 2. Source files are uploaded to the course source library.
@@ -304,7 +304,7 @@ token and OpenAI key must never be exposed to browser code.
 
 ## Runtime processes
 
-Lionbridge Course Studio is not one process. Local development and production require
+Authoring e-learning Course Studio is not one process. Local development and production require
 independently supervised services.
 
 | Process                  | Command                                  | Required for                                                                        |
