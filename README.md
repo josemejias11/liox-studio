@@ -1,4 +1,4 @@
-# Lionbridge Course Studio
+# Authoring e-learning Studio
 
 Lionbridge Course Studio is an app-owned e-learning authoring platform. Course Studio is where
 authors create the English learning master; the shared Course Player renders that
