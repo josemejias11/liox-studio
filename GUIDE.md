@@ -1,4 +1,4 @@
-# Lionbridge Course Studio — User Guide
+# Authoring e-learning Course Studio — User Guide
 
 This is the practical "how do I actually use this" guide. For architecture,
 environment variables, and deployment details, see [README.md](README.md).
